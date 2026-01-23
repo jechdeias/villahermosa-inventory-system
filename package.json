@@ -1,0 +1,15 @@
+{
+  "name": "inventory_management_app",
+  "version": "1.0.0",
+  "description": "A Flutter inventory management application",
+  "main": "lib/main.dart",
+  "scripts": {
+    "analyze": "flutter analyze",
+    "format": "flutter format .",
+    "test": "flutter test",
+    "run": "flutter run -d chrome"
+  },
+  "keywords": ["inventory", "management", "flutter", "dart"],
+  "author": "",
+  "license": "MIT"
+}
