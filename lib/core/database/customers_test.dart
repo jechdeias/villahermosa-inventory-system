@@ -1,0 +1,209 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:drift/drift.dart' hide isNotNull;
+import 'package:drift/native.dart';
+import 'app_database.dart';
+
+void main() {
+  // Initialize Flutter binding for tests
+  TestWidgetsFlutterBinding.ensureInitialized();
+  
+  group('Customers Database Tests', () {
+    late AppDatabase database;
+
+    setUp(() {
+      // Use in-memory database for testing
+      database = AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
+    });
+
+    tearDown(() async {
+      await database.close();
+    });
+
+    test('Create and retrieve customer', () async {
+      // Create a customer with UUID
+      final customerId = '550e8400-e29b-41d4-a716-446655440100';
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: customerId,
+          name: 'John Customer',
+          email: 'customer@example.com',
+          phone: const Value('+1234567890'),
+          address: const Value('123 Main St'),
+        ),
+      );
+
+      // Retrieve the customer
+      final customer = await database.getCustomerById(customerId);
+      
+      expect(customer, isNotNull);
+      expect(customer!.name, equals('John Customer'));
+      expect(customer.email, equals('customer@example.com'));
+      expect(customer.phone, equals('+1234567890'));
+      expect(customer.address, equals('123 Main St'));
+      expect(customer.customerType, equals('individual'));
+      expect(customer.status, equals('active'));
+      expect(customer.syncStatus, equals('pending'));
+    });
+
+    test('Get all customers', () async {
+      // Create multiple customers
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440101',
+          name: 'Alice Customer',
+          email: 'alice@example.com',
+          customerType: const Value('individual'),
+        ),
+      );
+
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440102',
+          name: 'Bob Business',
+          email: 'bob@business.com',
+          businessName: const Value('Bob Enterprises'),
+          customerType: const Value('business'),
+        ),
+      );
+
+      // Get all customers
+      final customers = await database.getAllCustomers();
+      
+      expect(customers.length, equals(2));
+      expect(customers[0].name, equals('Alice Customer')); // Should be alphabetically sorted
+      expect(customers[1].name, equals('Bob Business'));
+    });
+
+    test('Search customers by name', () async {
+      // Create customers
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440103',
+          name: 'Alice Smith',
+          email: 'alice@example.com',
+        ),
+      );
+
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440104',
+          name: 'Bob Johnson',
+          email: 'bob@example.com',
+        ),
+      );
+
+      // Search for "Alice"
+      final results = await database.searchCustomersByName('Alice');
+      
+      expect(results.length, equals(1));
+      expect(results[0].name, equals('Alice Smith'));
+    });
+
+    test('Update customer', () async {
+      // Create a customer
+      final customerId = '550e8400-e29b-41d4-a716-446655440105';
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: customerId,
+          name: 'John Customer',
+          email: 'john@example.com',
+          customerType: const Value('individual'),
+        ),
+      );
+
+      // Update the customer
+      final updated = await database.updateCustomer(
+        customerId,
+        CustomersCompanion(
+          name: const Value('John Updated'),
+          phone: const Value('+9876543210'),
+          customerType: const Value('business'),
+        ),
+      );
+
+      expect(updated, isTrue);
+
+      // Verify the update
+      final customer = await database.getCustomerById(customerId);
+      expect(customer!.name, equals('John Updated'));
+      expect(customer.phone, equals('+9876543210'));
+      expect(customer.customerType, equals('business'));
+    });
+
+    test('Soft delete customer', () async {
+      // Create a customer
+      final customerId = '550e8400-e29b-41d4-a716-446655440106';
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: customerId,
+          name: 'To Be Deleted',
+          email: 'delete@example.com',
+        ),
+      );
+
+      // Soft delete the customer
+      final deleted = await database.softDeleteCustomer(customerId);
+      expect(deleted, isTrue);
+
+      // Customer should not appear in getAllCustomers
+      final customers = await database.getAllCustomers();
+      expect(customers.where((c) => c.id == customerId), isEmpty);
+
+      // But should still be retrievable by ID
+      final customer = await database.getCustomerById(customerId);
+      expect(customer, isNotNull);
+      expect(customer!.isDeleted, isTrue);
+    });
+
+    test('Get pending sync customers', () async {
+      // Create customers with different sync statuses
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440107',
+          name: 'Pending Customer',
+          email: 'pending@example.com',
+          syncStatus: const Value('pending'),
+        ),
+      );
+
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440108',
+          name: 'Synced Customer',
+          email: 'synced@example.com',
+          syncStatus: const Value('synced'),
+        ),
+      );
+
+      // Get pending sync customers
+      final pendingCustomers = await database.getPendingSyncCustomers();
+      
+      expect(pendingCustomers.length, equals(1));
+      expect(pendingCustomers[0].name, equals('Pending Customer'));
+    });
+
+    test('Mark customer as synced', () async {
+      // Create a customer
+      final customerId = '550e8400-e29b-41d4-a716-446655440109';
+      final remoteId = 'remote-uuid-123';
+      
+      database.createCustomer(
+        CustomersCompanion.insert(
+          id: customerId,
+          name: 'Sync Test Customer',
+          email: 'sync@example.com',
+          syncStatus: const Value('pending'),
+        ),
+      );
+
+      // Mark as synced
+      final synced = await database.markCustomerAsSynced(customerId, remoteId);
+      expect(synced, isTrue);
+
+      // Verify the sync status
+      final customer = await database.getCustomerById(customerId);
+      expect(customer!.syncStatus, equals('synced'));
+      expect(customer.remoteId, equals(remoteId));
+    });
+  });
+}

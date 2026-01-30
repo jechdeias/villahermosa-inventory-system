@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'tables/customers_table.dart';
 
 part 'app_database.g.dart';
 
@@ -31,7 +32,7 @@ class Users extends Table {
 }
 
 // Database class
-@DriftDatabase(tables: [Users])
+@DriftDatabase(tables: [Users, Customers])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   
@@ -79,6 +80,62 @@ class AppDatabase extends _$AppDatabase {
   Future<bool> markUserAsSynced(String id, String remoteId) async {
     return await (update(users)..where((t) => t.id.equals(id)))
         .write(UsersCompanion(
+          syncStatus: const Value('synced'),
+          remoteId: Value(remoteId),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
+  // CRUD operations for Customers
+  Future<void> createCustomer(CustomersCompanion customer) async {
+    await into(customers).insert(customer);
+  }
+
+  Future<List<Customer>> getAllCustomers() async {
+    return await (select(customers)
+          ..where((t) => t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .get();
+  }
+
+  Future<Customer?> getCustomerById(String id) async {
+    return await (select(customers)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<Customer?> getCustomerByEmail(String email) async {
+    return await (select(customers)
+          ..where((t) => t.email.equals(email) & t.isDeleted.equals(false)))
+        .getSingleOrNull();
+  }
+
+  Future<List<Customer>> searchCustomersByName(String name) async {
+    return await (select(customers)
+          ..where((t) => t.name.contains(name) & t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .get();
+  }
+
+  Future<bool> updateCustomer(String id, CustomersCompanion customer) async {
+    return await (update(customers)..where((t) => t.id.equals(id)))
+        .write(customer.copyWith(updatedAt: Value(DateTime.now()))) > 0;
+  }
+
+  Future<bool> softDeleteCustomer(String id) async {
+    return await (update(customers)..where((t) => t.id.equals(id)))
+        .write(CustomersCompanion(
+          isDeleted: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
+  // Sync-related queries for Customers
+  Future<List<Customer>> getPendingSyncCustomers() async {
+    return await (select(customers)..where((t) => t.syncStatus.equals('pending'))).get();
+  }
+
+  Future<bool> markCustomerAsSynced(String id, String remoteId) async {
+    return await (update(customers)..where((t) => t.id.equals(id)))
+        .write(CustomersCompanion(
           syncStatus: const Value('synced'),
           remoteId: Value(remoteId),
           updatedAt: Value(DateTime.now()),
