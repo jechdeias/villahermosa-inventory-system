@@ -3,8 +3,11 @@ import 'package:drift/drift.dart';
 // Customers table definition
 @DataClassName('Customer')
 class Customers extends Table {
-  // UUID primary key (matches Supabase)
-  TextColumn get id => text()(); // UUID
+  // Local integer primary key (SQLite)
+  IntColumn get id => integer().autoIncrement()();
+  
+  // UUID for Supabase sync
+  TextColumn get uuid => text().unique()(); // Local UUID for this record
   
   // Customer information
   TextColumn get name => text()();
@@ -29,11 +32,8 @@ class Customers extends Table {
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   
   // Sync tracking
-  TextColumn get syncStatus => text().withDefault(const Constant('pending'))(); // pending, synced, conflict
   TextColumn get remoteId => text().nullable()(); // Supabase UUID
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))(); // pending, synced, conflict
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
-  
-  @override
-  Set<Column> get primaryKey => {id};
 }

@@ -4,35 +4,52 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'tables/customers_table.dart';
+import 'tables/products_table.dart';
+import 'tables/stock_movements_table.dart';
+import 'tables/categories.drift.dart';
+import 'tables/orders.drift.dart';
+import 'tables/order_items.drift.dart';
+import 'tables/deliveries.drift.dart';
 
 part 'app_database.g.dart';
 
 // Users table definition
 @DataClassName('User')
 class Users extends Table {
-  // UUID primary key (matches Supabase)
-  TextColumn get id => text()(); // UUID
+  // Local integer primary key (SQLite)
+  IntColumn get id => integer().autoIncrement()();
+  
+  // UUID for Supabase sync
+  TextColumn get uuid => text().unique()(); // Local UUID for this record
   
   // User fields
   TextColumn get name => text()();
   TextColumn get email => text().unique()();
   TextColumn get role => text()(); // admin, warehouse, delivery, customer
+  TextColumn get phone => text().nullable()();
+  TextColumn get address => text().nullable()();
   
   // Soft delete for sync safety
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   
   // Sync tracking
-  TextColumn get syncStatus => text().withDefault(const Constant('pending'))(); // pending, synced, conflict
   TextColumn get remoteId => text().nullable()(); // Supabase UUID
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))(); // pending, synced, conflict
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
-  
-  @override
-  Set<Column> get primaryKey => {id};
 }
 
 // Database class
-@DriftDatabase(tables: [Users, Customers])
+@DriftDatabase(tables: [
+  Users,
+  Customers, 
+  Products, 
+  StockMovements,
+  Categories,
+  Orders,
+  OrderItems,
+  Deliveries,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   
@@ -51,7 +68,7 @@ class AppDatabase extends _$AppDatabase {
     return await (select(users)..orderBy([(t) => OrderingTerm(expression: t.name)])).get();
   }
 
-  Future<User?> getUserById(String id) async {
+  Future<User?> getUserById(int id) async {
     return await (select(users)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
@@ -136,6 +153,129 @@ class AppDatabase extends _$AppDatabase {
   Future<bool> markCustomerAsSynced(String id, String remoteId) async {
     return await (update(customers)..where((t) => t.id.equals(id)))
         .write(CustomersCompanion(
+          syncStatus: const Value('synced'),
+          remoteId: Value(remoteId),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
+  // CRUD operations for Products
+  Future<void> createProduct(ProductsCompanion product) async {
+    await into(products).insert(product);
+  }
+
+  Future<List<Product>> getAllProducts() async {
+    return await (select(products)
+          ..where((t) => t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .get();
+  }
+
+  Future<Product?> getProductById(String id) async {
+    return await (select(products)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<Product?> getProductBySku(String sku) async {
+    return await (select(products)
+          ..where((t) => t.sku.equals(sku) & t.isDeleted.equals(false)))
+        .getSingleOrNull();
+  }
+
+  Future<List<Product>> searchProductsByName(String name) async {
+    return await (select(products)
+          ..where((t) => t.name.contains(name) & t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .get();
+  }
+
+  Future<List<Product>> getProductsByCategory(String category) async {
+    return await (select(products)
+          ..where((t) => t.category.equals(category) & t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .get();
+  }
+
+  Future<List<Product>> getLowStockProducts() async {
+    return await (select(products)
+          ..where((t) => 
+            t.currentStock.isSmallerThan(t.minStock) & 
+            t.isDeleted.equals(false) & 
+            t.status.equals('active')
+          )
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .get();
+  }
+
+  Future<bool> updateProduct(String id, ProductsCompanion product) async {
+    return await (update(products)..where((t) => t.id.equals(id)))
+        .write(product.copyWith(updatedAt: Value(DateTime.now()))) > 0;
+  }
+
+  Future<bool> softDeleteProduct(String id) async {
+    return await (update(products)..where((t) => t.id.equals(id)))
+        .write(ProductsCompanion(
+          isDeleted: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
+  // Sync-related queries for Products
+  Future<List<Product>> getPendingSyncProducts() async {
+    return await (select(products)..where((t) => t.syncStatus.equals('pending'))).get();
+  }
+
+  Future<bool> markProductAsSynced(String id, String remoteId) async {
+    return await (update(products)..where((t) => t.id.equals(id)))
+        .write(ProductsCompanion(
+          syncStatus: const Value('synced'),
+          remoteId: Value(remoteId),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
+  // CRUD operations for StockMovements
+  Future<void> createStockMovement(StockMovementsCompanion movement) async {
+    await into(stockMovements).insert(movement);
+  }
+
+  Future<List<StockMovement>> getStockMovementsByProduct(String productId) async {
+    return await (select(stockMovements)
+          ..where((t) => t.productId.equals(productId) & t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)]))
+        .get();
+  }
+
+  Future<List<StockMovement>> getStockMovementsByType(String movementType) async {
+    return await (select(stockMovements)
+          ..where((t) => t.movementType.equals(movementType) & t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)]))
+        .get();
+  }
+
+  Future<List<StockMovement>> getRecentStockMovements({int limit = 50}) async {
+    return await (select(stockMovements)
+          ..where((t) => t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
+          ..limit(limit))
+        .get();
+  }
+
+  Future<bool> softDeleteStockMovement(String id) async {
+    return await (update(stockMovements)..where((t) => t.id.equals(id)))
+        .write(StockMovementsCompanion(
+          isDeleted: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
+  // Sync-related queries for StockMovements
+  Future<List<StockMovement>> getPendingSyncStockMovements() async {
+    return await (select(stockMovements)..where((t) => t.syncStatus.equals('pending'))).get();
+  }
+
+  Future<bool> markStockMovementAsSynced(String id, String remoteId) async {
+    return await (update(stockMovements)..where((t) => t.id.equals(id)))
+        .write(StockMovementsCompanion(
           syncStatus: const Value('synced'),
           remoteId: Value(remoteId),
           updatedAt: Value(DateTime.now()),
