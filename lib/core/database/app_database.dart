@@ -9,21 +9,25 @@ part 'app_database.g.dart';
 // Users table definition
 @DataClassName('User')
 class Users extends Table {
-  // Local unique ID (primary key)
-  IntColumn get id => integer().autoIncrement()();
+  // UUID primary key (matches Supabase)
+  TextColumn get id => text()(); // UUID
   
   // User fields
   TextColumn get name => text()();
   TextColumn get email => text().unique()();
-  TextColumn get role => text()(); // admin, warehouse, delivery
+  TextColumn get role => text()(); // admin, warehouse, delivery, customer
+  
+  // Soft delete for sync safety
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   
   // Sync tracking
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))(); // pending, synced, conflict
+  TextColumn get remoteId => text().nullable()(); // Supabase UUID
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   
-  // Optional remote ID for sync purposes
-  IntColumn get remoteId => integer().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 // Database class
@@ -38,15 +42,15 @@ class AppDatabase extends _$AppDatabase {
   int get schemaVersion => 1;
 
   // CRUD operations for Users
-  Future<int> createUser(UsersCompanion user) async {
-    return await into(users).insert(user);
+  Future<void> createUser(UsersCompanion user) async {
+    await into(users).insert(user);
   }
 
   Future<List<User>> getAllUsers() async {
     return await (select(users)..orderBy([(t) => OrderingTerm(expression: t.name)])).get();
   }
 
-  Future<User?> getUserById(int id) async {
+  Future<User?> getUserById(String id) async {
     return await (select(users)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
@@ -54,13 +58,17 @@ class AppDatabase extends _$AppDatabase {
     return await (select(users)..where((t) => t.email.equals(email))).getSingleOrNull();
   }
 
-  Future<bool> updateUser(int id, UsersCompanion user) async {
+  Future<bool> updateUser(String id, UsersCompanion user) async {
     return await (update(users)..where((t) => t.id.equals(id)))
         .write(user.copyWith(updatedAt: Value(DateTime.now()))) > 0;
   }
 
-  Future<bool> deleteUser(int id) async {
-    return await (delete(users)..where((t) => t.id.equals(id))).go() > 0;
+  Future<bool> softDeleteUser(String id) async {
+    return await (update(users)..where((t) => t.id.equals(id)))
+        .write(UsersCompanion(
+          isDeleted: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
   }
 
   // Sync-related queries
@@ -68,7 +76,7 @@ class AppDatabase extends _$AppDatabase {
     return await (select(users)..where((t) => t.syncStatus.equals('pending'))).get();
   }
 
-  Future<bool> markUserAsSynced(int id, int remoteId) async {
+  Future<bool> markUserAsSynced(String id, String remoteId) async {
     return await (update(users)..where((t) => t.id.equals(id)))
         .write(UsersCompanion(
           syncStatus: const Value('synced'),

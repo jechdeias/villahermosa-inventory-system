@@ -20,9 +20,11 @@ void main() {
     });
 
     test('Create and retrieve user', () async {
-      // Create a user
-      final userId = await database.createUser(
+      // Create a user with UUID
+      final userId = '550e8400-e29b-41d4-a716-446655440000';
+      database.createUser(
         UsersCompanion.insert(
+          id: userId,
           name: 'Test User',
           email: 'test@example.com',
           role: 'admin',
@@ -41,16 +43,18 @@ void main() {
 
     test('Get all users', () async {
       // Create multiple users
-      await database.createUser(
+      database.createUser(
         UsersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440001',
           name: 'Alice',
           email: 'alice@example.com',
           role: 'warehouse',
         ),
       );
 
-      await database.createUser(
+      database.createUser(
         UsersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440002',
           name: 'Bob',
           email: 'bob@example.com',
           role: 'delivery',
@@ -67,8 +71,10 @@ void main() {
 
     test('Update user', () async {
       // Create a user
-      final userId = await database.createUser(
+      final userId = '550e8400-e29b-41d4-a716-446655440003';
+      database.createUser(
         UsersCompanion.insert(
+          id: userId,
           name: 'John Doe',
           email: 'john@example.com',
           role: 'admin',
@@ -94,8 +100,9 @@ void main() {
 
     test('Get pending sync users', () async {
       // Create users with different sync statuses
-      await database.createUser(
+      database.createUser(
         UsersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440004',
           name: 'Pending User',
           email: 'pending@example.com',
           role: 'admin',
@@ -103,8 +110,9 @@ void main() {
         ),
       );
 
-      await database.createUser(
+      database.createUser(
         UsersCompanion.insert(
+          id: '550e8400-e29b-41d4-a716-446655440005',
           name: 'Synced User',
           email: 'synced@example.com',
           role: 'admin',

@@ -10,16 +10,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   $UsersTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
@@ -49,6 +45,21 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _syncStatusMeta = const VerificationMeta(
     'syncStatus',
   );
@@ -60,6 +71,17 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -85,27 +107,17 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
-  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
-    'remoteId',
-  );
-  @override
-  late final GeneratedColumn<int> remoteId = GeneratedColumn<int>(
-    'remote_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     name,
     email,
     role,
+    isDeleted,
     syncStatus,
+    remoteId,
     createdAt,
     updatedAt,
-    remoteId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -121,6 +133,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -146,10 +160,22 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     } else if (isInserting) {
       context.missing(_roleMeta);
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
     if (data.containsKey('sync_status')) {
       context.handle(
         _syncStatusMeta,
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -164,12 +190,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
-    if (data.containsKey('remote_id')) {
-      context.handle(
-        _remoteIdMeta,
-        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
-      );
-    }
     return context;
   }
 
@@ -180,7 +200,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return User(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
       name: attachedDatabase.typeMapping.read(
@@ -195,10 +215,18 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.string,
         data['${effectivePrefix}role'],
       )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
       syncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
       )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -207,10 +235,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
-      remoteId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}remote_id'],
-      ),
     );
   }
 
@@ -221,37 +245,40 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
 }
 
 class User extends DataClass implements Insertable<User> {
-  final int id;
+  final String id;
   final String name;
   final String email;
   final String role;
+  final bool isDeleted;
   final String syncStatus;
+  final String? remoteId;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final int? remoteId;
   const User({
     required this.id,
     required this.name,
     required this.email,
     required this.role,
+    required this.isDeleted,
     required this.syncStatus,
+    this.remoteId,
     required this.createdAt,
     required this.updatedAt,
-    this.remoteId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['email'] = Variable<String>(email);
     map['role'] = Variable<String>(role);
+    map['is_deleted'] = Variable<bool>(isDeleted);
     map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || remoteId != null) {
-      map['remote_id'] = Variable<int>(remoteId);
-    }
     return map;
   }
 
@@ -261,12 +288,13 @@ class User extends DataClass implements Insertable<User> {
       name: Value(name),
       email: Value(email),
       role: Value(role),
+      isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
     );
   }
 
@@ -276,49 +304,53 @@ class User extends DataClass implements Insertable<User> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return User(
-      id: serializer.fromJson<int>(json['id']),
+      id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String>(json['email']),
       role: serializer.fromJson<String>(json['role']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      remoteId: serializer.fromJson<int?>(json['remoteId']),
     );
   }
   @override
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
+      'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String>(email),
       'role': serializer.toJson<String>(role),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
       'syncStatus': serializer.toJson<String>(syncStatus),
+      'remoteId': serializer.toJson<String?>(remoteId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'remoteId': serializer.toJson<int?>(remoteId),
     };
   }
 
   User copyWith({
-    int? id,
+    String? id,
     String? name,
     String? email,
     String? role,
+    bool? isDeleted,
     String? syncStatus,
+    Value<String?> remoteId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
-    Value<int?> remoteId = const Value.absent(),
   }) => User(
     id: id ?? this.id,
     name: name ?? this.name,
     email: email ?? this.email,
     role: role ?? this.role,
+    isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
+    remoteId: remoteId.present ? remoteId.value : this.remoteId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
-    remoteId: remoteId.present ? remoteId.value : this.remoteId,
   );
   User copyWithCompanion(UsersCompanion data) {
     return User(
@@ -326,12 +358,13 @@ class User extends DataClass implements Insertable<User> {
       name: data.name.present ? data.name.value : this.name,
       email: data.email.present ? data.email.value : this.email,
       role: data.role.present ? data.role.value : this.role,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
     );
   }
 
@@ -342,10 +375,11 @@ class User extends DataClass implements Insertable<User> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('role: $role, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
+          ..write('remoteId: $remoteId, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('remoteId: $remoteId')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -356,10 +390,11 @@ class User extends DataClass implements Insertable<User> {
     name,
     email,
     role,
+    isDeleted,
     syncStatus,
+    remoteId,
     createdAt,
     updatedAt,
-    remoteId,
   );
   @override
   bool operator ==(Object other) =>
@@ -369,84 +404,100 @@ class User extends DataClass implements Insertable<User> {
           other.name == this.name &&
           other.email == this.email &&
           other.role == this.role &&
+          other.isDeleted == this.isDeleted &&
           other.syncStatus == this.syncStatus &&
+          other.remoteId == this.remoteId &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.remoteId == this.remoteId);
+          other.updatedAt == this.updatedAt);
 }
 
 class UsersCompanion extends UpdateCompanion<User> {
-  final Value<int> id;
+  final Value<String> id;
   final Value<String> name;
   final Value<String> email;
   final Value<String> role;
+  final Value<bool> isDeleted;
   final Value<String> syncStatus;
+  final Value<String?> remoteId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
-  final Value<int?> remoteId;
+  final Value<int> rowid;
   const UsersCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.email = const Value.absent(),
     this.role = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
+    this.remoteId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.remoteId = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   UsersCompanion.insert({
-    this.id = const Value.absent(),
+    required String id,
     required String name,
     required String email,
     required String role,
+    this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
+    this.remoteId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.remoteId = const Value.absent(),
-  }) : name = Value(name),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
        email = Value(email),
        role = Value(role);
   static Insertable<User> custom({
-    Expression<int>? id,
+    Expression<String>? id,
     Expression<String>? name,
     Expression<String>? email,
     Expression<String>? role,
+    Expression<bool>? isDeleted,
     Expression<String>? syncStatus,
+    Expression<String>? remoteId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
-    Expression<int>? remoteId,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (email != null) 'email': email,
       if (role != null) 'role': role,
+      if (isDeleted != null) 'is_deleted': isDeleted,
       if (syncStatus != null) 'sync_status': syncStatus,
+      if (remoteId != null) 'remote_id': remoteId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
-      if (remoteId != null) 'remote_id': remoteId,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   UsersCompanion copyWith({
-    Value<int>? id,
+    Value<String>? id,
     Value<String>? name,
     Value<String>? email,
     Value<String>? role,
+    Value<bool>? isDeleted,
     Value<String>? syncStatus,
+    Value<String?>? remoteId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
-    Value<int?>? remoteId,
+    Value<int>? rowid,
   }) {
     return UsersCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,
+      isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
+      remoteId: remoteId ?? this.remoteId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      remoteId: remoteId ?? this.remoteId,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -454,7 +505,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -465,8 +516,14 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (role.present) {
       map['role'] = Variable<String>(role.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -474,8 +531,8 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
-    if (remoteId.present) {
-      map['remote_id'] = Variable<int>(remoteId.value);
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
     }
     return map;
   }
@@ -487,10 +544,12 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('role: $role, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
+          ..write('remoteId: $remoteId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('remoteId: $remoteId')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -509,25 +568,29 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 
 typedef $$UsersTableCreateCompanionBuilder =
     UsersCompanion Function({
-      Value<int> id,
+      required String id,
       required String name,
       required String email,
       required String role,
+      Value<bool> isDeleted,
       Value<String> syncStatus,
+      Value<String?> remoteId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      Value<int?> remoteId,
+      Value<int> rowid,
     });
 typedef $$UsersTableUpdateCompanionBuilder =
     UsersCompanion Function({
-      Value<int> id,
+      Value<String> id,
       Value<String> name,
       Value<String> email,
       Value<String> role,
+      Value<bool> isDeleted,
       Value<String> syncStatus,
+      Value<String?> remoteId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      Value<int?> remoteId,
+      Value<int> rowid,
     });
 
 class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
@@ -538,7 +601,7 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
@@ -558,8 +621,18 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -570,11 +643,6 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -588,7 +656,7 @@ class $$UsersTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
@@ -608,8 +676,18 @@ class $$UsersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -620,11 +698,6 @@ class $$UsersTableOrderingComposer
 
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -638,7 +711,7 @@ class $$UsersTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
@@ -650,19 +723,22 @@ class $$UsersTableAnnotationComposer
   GeneratedColumn<String> get role =>
       $composableBuilder(column: $table.role, builder: (column) => column);
 
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
   GeneratedColumn<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<int> get remoteId =>
-      $composableBuilder(column: $table.remoteId, builder: (column) => column);
 }
 
 class $$UsersTableTableManager
@@ -693,43 +769,51 @@ class $$UsersTableTableManager
               $$UsersTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> role = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
-                Value<int?> remoteId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => UsersCompanion(
                 id: id,
                 name: name,
                 email: email,
                 role: role,
+                isDeleted: isDeleted,
                 syncStatus: syncStatus,
+                remoteId: remoteId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                remoteId: remoteId,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                required String id,
                 required String name,
                 required String email,
                 required String role,
+                Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
-                Value<int?> remoteId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => UsersCompanion.insert(
                 id: id,
                 name: name,
                 email: email,
                 role: role,
+                isDeleted: isDeleted,
                 syncStatus: syncStatus,
+                remoteId: remoteId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                remoteId: remoteId,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
