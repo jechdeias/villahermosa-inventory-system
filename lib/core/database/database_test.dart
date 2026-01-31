@@ -32,7 +32,7 @@ void main() {
       );
 
       // Retrieve the user
-      final user = await database.getUserById(userId);
+      final user = await database.getUserByEmail('test@example.com');
       
       expect(user, isNotNull);
       expect(user!.name, equals('Test User'));
@@ -93,7 +93,7 @@ void main() {
       expect(updated, isTrue);
 
       // Verify the update
-      final user = await database.getUserById(userId);
+      final user = await database.getUserByEmail('test@example.com');
       expect(user!.name, equals('John Smith'));
       expect(user.role, equals('warehouse'));
     });

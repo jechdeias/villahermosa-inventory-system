@@ -150,7 +150,7 @@ class AppDatabase extends _$AppDatabase {
     return await (select(customers)..where((t) => t.syncStatus.equals('pending'))).get();
   }
 
-  Future<bool> markCustomerAsSynced(String id, String remoteId) async {
+  Future<bool> markCustomerAsSynced(int id, String remoteId) async {
     return await (update(customers)..where((t) => t.id.equals(id)))
         .write(CustomersCompanion(
           syncStatus: const Value('synced'),
@@ -171,7 +171,7 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  Future<Product?> getProductById(String id) async {
+  Future<Product?> getProductById(int id) async {
     return await (select(products)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
@@ -206,12 +206,12 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  Future<bool> updateProduct(String id, ProductsCompanion product) async {
+  Future<bool> updateProduct(int id, ProductsCompanion product) async {
     return await (update(products)..where((t) => t.id.equals(id)))
         .write(product.copyWith(updatedAt: Value(DateTime.now()))) > 0;
   }
 
-  Future<bool> softDeleteProduct(String id) async {
+  Future<bool> softDeleteProduct(int id) async {
     return await (update(products)..where((t) => t.id.equals(id)))
         .write(ProductsCompanion(
           isDeleted: const Value(true),
@@ -224,7 +224,7 @@ class AppDatabase extends _$AppDatabase {
     return await (select(products)..where((t) => t.syncStatus.equals('pending'))).get();
   }
 
-  Future<bool> markProductAsSynced(String id, String remoteId) async {
+  Future<bool> markProductAsSynced(int id, String remoteId) async {
     return await (update(products)..where((t) => t.id.equals(id)))
         .write(ProductsCompanion(
           syncStatus: const Value('synced'),

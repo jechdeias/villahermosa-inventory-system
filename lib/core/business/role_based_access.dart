@@ -324,15 +324,17 @@ class RoleBasedAccess {
     switch (user.role) {
       case 'admin':
         // Admin can see all orders
-        return await _database.customSelect(
-          'SELECT * FROM orders WHERE is_deleted = 0 ORDER BY created_at DESC',
-        ).map((row) => Order.fromData(row.data, _database)).get();
+        return await (_database.select(_database.orders)
+              ..where((tbl) => tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
+            .get();
         
       case 'warehouse':
         // Warehouse can see all orders
-        return await _database.customSelect(
-          'SELECT * FROM orders WHERE is_deleted = 0 ORDER BY created_at DESC',
-        ).map((row) => Order.fromData(row.data, _database)).get();
+        return await (_database.select(_database.orders)
+              ..where((tbl) => tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
+            .get();
         
       case 'delivery':
         // Delivery can see orders assigned to them
