@@ -39,8 +39,8 @@ class RoleGuard extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<UserRole>('allowedRoles', allowedRoles));
-    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+    properties.add(IterableProperty<UserRole>('allowedRoles', allowedRoles, defaultValue: const <UserRole>{}));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole, defaultValue: null));
   }
 }
 
