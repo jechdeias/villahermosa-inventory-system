@@ -1,11 +1,11 @@
 import 'package:drift/drift.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../database/app_database.dart';
 import 'sync_engine.dart';
 
 /// Concrete implementation of SyncEngine with real record conversion
 class SyncEngineImpl extends SyncEngine {
-  SyncEngineImpl(super.database, super.authService);
+  SyncEngineImpl(super.database);
 
   @override
   Map<String, dynamic> _recordToMap(dynamic record) {
@@ -128,17 +128,18 @@ class SyncEngineImpl extends SyncEngine {
     
     switch (tableName) {
       case 'users':
-        await _database.customUpdateOnly(
-          UsersCompanion(
-            remoteId: Value(remoteId),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.now()),
-          ),
-          where: (tbl) => tbl.id.equals(record.id),
+        await database.customUpdate(
+          'UPDATE users SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withString(remoteId),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.now()),
+            Variable.withString(record.id),
+          ],
         );
         break;
       case 'products':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           ProductsCompanion(
             remoteId: Value(remoteId),
             syncStatus: const Value('synced'),
@@ -148,7 +149,7 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'customers':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           CustomersCompanion(
             remoteId: Value(remoteId),
             syncStatus: const Value('synced'),
@@ -158,7 +159,7 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'stock_movements':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           StockMovementsCompanion(
             remoteId: Value(remoteId),
             syncStatus: const Value('synced'),
@@ -176,7 +177,7 @@ class SyncEngineImpl extends SyncEngine {
     
     switch (tableName) {
       case 'users':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           const UsersCompanion(
             syncStatus: Value('conflict'),
             updatedAt: Value(null),
@@ -185,7 +186,7 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'products':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           const ProductsCompanion(
             syncStatus: Value('conflict'),
             updatedAt: Value(null),
@@ -194,7 +195,7 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'customers':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           const CustomersCompanion(
             syncStatus: Value('conflict'),
             updatedAt: Value(null),
@@ -203,7 +204,7 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'stock_movements':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           const StockMovementsCompanion(
             syncStatus: Value('conflict'),
             updatedAt: Value(null),
@@ -218,7 +219,7 @@ class SyncEngineImpl extends SyncEngine {
   Future<void> _updateLocalRecord(String tableName, Map<String, dynamic> data) async {
     switch (tableName) {
       case 'users':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           UsersCompanion(
             name: Value(data['name']),
             email: Value(data['email']),
@@ -233,7 +234,7 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'products':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           ProductsCompanion(
             sku: Value(data['sku']),
             name: Value(data['name']),
@@ -258,7 +259,7 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'customers':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           CustomersCompanion(
             name: Value(data['name']),
             email: Value(data['email']),
@@ -279,7 +280,7 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'stock_movements':
-        await _database.customUpdateOnly(
+        await database.customUpdateOnly(
           StockMovementsCompanion(
             productId: Value(data['product_id']),
             movementType: Value(data['movement_type']),

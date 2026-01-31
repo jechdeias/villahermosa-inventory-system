@@ -1,7 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../database/app_database.dart';
-import '../services/auth_service.dart';
 
 enum SyncOperation {
   insert,
@@ -18,9 +17,11 @@ enum SyncConflictResolution {
 
 class SyncEngine {
   final AppDatabase _database;
-  final AuthService _authService;
   
-  SyncEngine(this._database, this._authService);
+  SyncEngine(this._database);
+  
+  /// Protected access to database for implementations
+  AppDatabase get database => _database;
   
   /// Main sync orchestrator - thesis-worthy core logic
   Future<SyncResult> performFullSync() async {
@@ -52,14 +53,14 @@ class SyncEngine {
     print('📤 Pushing local changes to Supabase...');
     
     // Sync in priority order
-    await _syncTable('users', _pushUsers, SyncConflictResolution.adminWins);
+    await _syncTable('users', _pushUsers, SyncConflictResolution.remoteWins);
     await _syncTable('categories', _pushCategories, SyncConflictResolution.lastWriteWins);
-    await _syncTable('products', _pushProducts, SyncConflictResolution.warehouseWins);
-    await _syncTable('customers', _pushCustomers, SyncConflictResolution.customerWins);
-    await _syncTable('orders', _pushOrders, SyncConflictResolution.customerWins);
-    await _syncTable('order_items', _pushOrderItems, SyncConflictResolution.followsParent);
+    await _syncTable('products', _pushProducts, SyncConflictResolution.localWins);
+    await _syncTable('customers', _pushCustomers, SyncConflictResolution.localWins);
+    await _syncTable('orders', _pushOrders, SyncConflictResolution.localWins);
+    await _syncTable('order_items', _pushOrderItems, SyncConflictResolution.localWins);
     await _syncTable('stock_movements', _pushStockMovements, SyncConflictResolution.lastWriteWins);
-    await _syncTable('deliveries', _pushDeliveries, SyncConflictResolution.deliveryWins);
+    await _syncTable('deliveries', _pushDeliveries, SyncConflictResolution.localWins);
     
     print('✅ Local changes pushed successfully');
   }
@@ -119,19 +120,19 @@ class SyncEngine {
     print('🔄 Updating sync status...');
     
     // Mark all pending records as synced
-    await _database.customUpdateOnly(
-      const CustomersCompanion(syncStatus: Value('synced')),
-      where: (tbl) => tbl.syncStatus.equals('pending'),
+    await _database.customUpdate(
+      'UPDATE customers SET sync_status = ? WHERE sync_status = ?',
+      variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
     
-    await _database.customUpdateOnly(
-      const ProductsCompanion(syncStatus: Value('synced')),
-      where: (tbl) => tbl.syncStatus.equals('pending'),
+    await _database.customUpdate(
+      'UPDATE products SET sync_status = ? WHERE sync_status = ?',
+      variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
     
-    await _database.customUpdateOnly(
-      const StockMovementsCompanion(syncStatus: Value('synced')),
-      where: (tbl) => tbl.syncStatus.equals('pending'),
+    await _database.customUpdate(
+      'UPDATE stock_movements SET sync_status = ? WHERE sync_status = ?',
+      variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
     
     print('✅ Sync status updated');

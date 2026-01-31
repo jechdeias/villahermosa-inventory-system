@@ -150,29 +150,31 @@ class OrderWorkflow {
     }
     
     // Reserve stock (update order status to CONFIRMED)
-    await _database.customUpdateOnly(
-      OrdersCompanion(
-        status: const Value('confirmed'),
-        warehouseStatus: const Value('picking'),
-        pickerId: Value(warehouseUserId),
-        pickedAt: Value(DateTime.now()),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
-      ),
-      where: (tbl) => tbl.id.equals(orderId),
+    await _database.customUpdate(
+      'UPDATE orders SET status = ?, warehouse_status = ?, picker_id = ?, picked_at = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+      variables: [
+        Variable.withString('confirmed'),
+        Variable.withString('picking'),
+        Variable.withString(warehouseUserId.toString()),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString('pending'),
+        Variable.withString(orderId),
+      ],
     );
     
     // Update order items status to PICKED
     for (final item in orderItems) {
-      await _database.customUpdateOnly(
-        OrderItemsCompanion(
-          status: const Value('picked'),
-          pickerId: Value(warehouseUserId),
-          pickedAt: Value(DateTime.now()),
-          updatedAt: Value(DateTime.now()),
-          syncStatus: const Value('pending'),
-        ),
-        where: (tbl) => tbl.id.equals(item.id),
+      await _database.customUpdate(
+        'UPDATE order_items SET status = ?, picker_id = ?, picked_at = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+        variables: [
+          Variable.withString('picked'),
+          Variable.withString(warehouseUserId.toString()),
+          Variable.withDateTime(DateTime.now()),
+          Variable.withDateTime(DateTime.now()),
+          Variable.withString('pending'),
+          Variable.withString(item.id),
+        ],
       );
     }
     
@@ -199,28 +201,30 @@ class OrderWorkflow {
     }
     
     // Update order status to PACKED
-    await _database.customUpdateOnly(
-      OrdersCompanion(
-        status: const Value('packed'),
-        warehouseStatus: const Value('ready'),
-        packerId: Value(packerUserId),
-        packedAt: Value(DateTime.now()),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
-      ),
-      where: (tbl) => tbl.id.equals(orderId),
+    await _database.customUpdate(
+      'UPDATE orders SET status = ?, warehouse_status = ?, packer_id = ?, packed_at = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+      variables: [
+        Variable.withString('packed'),
+        Variable.withString('ready'),
+        Variable.withString(packerUserId.toString()),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString('pending'),
+        Variable.withString(orderId),
+      ],
     );
     
     // Update order items status to PACKED
     final orderItems = await _database.getOrderItemsByOrderId(orderId);
     for (final item in orderItems) {
-      await _database.customUpdateOnly(
-        OrderItemsCompanion(
-          status: const Value('packed'),
-          updatedAt: Value(DateTime.now()),
-          syncStatus: const Value('pending'),
-        ),
-        where: (tbl) => tbl.id.equals(item.id),
+      await _database.customUpdate(
+        'UPDATE order_items SET status = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+        variables: [
+          Variable.withString('packed'),
+          Variable.withDateTime(DateTime.now()),
+          Variable.withString('pending'),
+          Variable.withString(item.id),
+        ],
       );
     }
     
@@ -274,14 +278,15 @@ class OrderWorkflow {
     );
     
     // Update order status to DISPATCHED
-    await _database.customUpdateOnly(
-      OrdersCompanion(
-        status: const Value('dispatched'),
-        warehouseStatus: const Value('shipped'),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
-      ),
-      where: (tbl) => tbl.id.equals(orderId),
+    await _database.customUpdate(
+      'UPDATE orders SET status = ?, warehouse_status = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+      variables: [
+        Variable.withString('dispatched'),
+        Variable.withString('shipped'),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString('pending'),
+        Variable.withString(orderId),
+      ],
     );
     
     print('✅ Delivery accepted successfully: $deliveryNumber');
@@ -306,24 +311,26 @@ class OrderWorkflow {
     }
     
     // Update delivery status to IN_PROGRESS
-    await _database.customUpdateOnly(
-      DeliveriesCompanion(
-        status: const Value('in_progress'),
-        actualStartTime: Value(DateTime.now()),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
-      ),
-      where: (tbl) => tbl.id.equals(deliveryId),
+    await _database.customUpdate(
+      'UPDATE deliveries SET status = ?, actual_start_time = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+      variables: [
+        Variable.withString('in_progress'),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString('pending'),
+        Variable.withString(deliveryId),
+      ],
     );
     
     // Update order status to OUT_FOR_DELIVERY
-    await _database.customUpdateOnly(
-      OrdersCompanion(
-        status: const Value('out_for_delivery'),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
-      ),
-      where: (tbl) => tbl.id.equals(delivery.orderId),
+    await _database.customUpdate(
+      'UPDATE orders SET status = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+      variables: [
+        Variable.withString('out_for_delivery'),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString('pending'),
+        Variable.withString(delivery.orderId),
+      ],
     );
     
     print('✅ Delivery started');
@@ -373,13 +380,14 @@ class OrderWorkflow {
         throw Exception('Insufficient stock for ${product.name}. Current: ${product.currentStock}, Required: ${item.quantity}');
       }
       
-      await _database.customUpdateOnly(
-        ProductsCompanion(
-          currentStock: Value(newStock),
-          updatedAt: Value(DateTime.now()),
-          syncStatus: const Value('pending'),
-        ),
-        where: (tbl) => tbl.id.equals(item.productId),
+      await _database.customUpdate(
+        'UPDATE products SET current_stock = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+        variables: [
+          Variable.withInt(newStock),
+          Variable.withDateTime(DateTime.now()),
+          Variable.withString('pending'),
+          Variable.withString(item.productId),
+        ],
       );
       
       // Log stock movement
@@ -407,46 +415,47 @@ class OrderWorkflow {
       );
       
       // Update order item delivered quantity
-      await _database.customUpdateOnly(
-        OrderItemsCompanion(
-          deliveredQuantity: Value(item.quantity),
-          status: const Value('delivered'),
-          updatedAt: Value(DateTime.now()),
-          syncStatus: const Value('pending'),
-        ),
-        where: (tbl) => tbl.id.equals(item.id),
+      await _database.customUpdate(
+        'UPDATE order_items SET delivered_quantity = ?, status = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+        variables: [
+          Variable.withInt(item.quantity),
+          Variable.withString('delivered'),
+          Variable.withDateTime(DateTime.now()),
+          Variable.withString('pending'),
+          Variable.withString(item.id),
+        ],
       );
     }
     
     // Update delivery status to COMPLETED
-    await _database.customUpdateOnly(
-      DeliveriesCompanion(
-        status: const Value('completed'),
-        actualCompletionTime: Value(DateTime.now()),
-        recipientName: Value(recipientName),
-        recipientRelation: Value(recipientRelation),
-        deliveryNotes: Value(deliveryNotes),
-        collectedAmount: Value(collectedAmount ?? 0.0),
-        paymentMethod: Value(paymentMethod),
-        proofOfDeliveryUrl: Value(proofOfDeliveryUrl),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
-      ),
-      where: (tbl) => tbl.id.equals(deliveryId),
+    await _database.customUpdate(
+      'UPDATE deliveries SET status = ?, actual_completion_time = ?, recipient_name = ?, recipient_relation = ?, delivery_notes = ?, collected_amount = ?, payment_method = ?, proof_of_delivery_url = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+      variables: [
+        Variable.withString('completed'),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString(recipientName),
+        Variable.withString(recipientRelation),
+        Variable.withString(deliveryNotes ?? ''),
+        Variable.withReal(collectedAmount ?? 0.0),
+        Variable.withString(paymentMethod ?? ''),
+        Variable.withString(proofOfDeliveryUrl ?? ''),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString('pending'),
+        Variable.withString(deliveryId),
+      ],
     );
     
     // Update order status to DELIVERED
-    await _database.customUpdateOnly(
-      OrdersCompanion(
-        status: const Value('delivered'),
-        actualDeliveryDate: Value(DateTime.now()),
-        paymentStatus: collectedAmount != null && collectedAmount > 0 
-            ? const Value('paid') 
-            : const Value('pending'),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
-      ),
-      where: (tbl) => tbl.id.equals(delivery.orderId),
+    await _database.customUpdate(
+      'UPDATE orders SET status = ?, actual_delivery_date = ?, payment_status = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+      variables: [
+        Variable.withString('delivered'),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString(collectedAmount != null && collectedAmount > 0 ? 'paid' : 'pending'),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withString('pending'),
+        Variable.withString(delivery.orderId),
+      ],
     );
     
     print('✅ Delivery confirmed and stock deducted successfully');
@@ -457,26 +466,26 @@ class OrderWorkflow {
   
   /// Get pending orders for warehouse staff
   Future<List<Order>> getPendingOrders() async {
-    return await _database.customSelect(
-      'SELECT * FROM orders WHERE status = ? AND is_deleted = 0 ORDER BY created_at ASC',
-      variables: [Variable.withString('pending')],
-    ).map((row) => Order.fromData(row.data, _database)).get();
+    return await (_database.select(_database.orders)
+          ..where((tbl) => tbl.status.equals('pending') & tbl.isDeleted.equals(false))
+          ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)]))
+        .get();
   }
   
   /// Get orders ready for delivery
   Future<List<Order>> getOrdersReadyForDelivery() async {
-    return await _database.customSelect(
-      'SELECT * FROM orders WHERE status = ? AND is_deleted = 0 ORDER BY created_at ASC',
-      variables: [Variable.withString('packed')],
-    ).map((row) => Order.fromData(row.data, _database)).get();
+    return await (_database.select(_database.orders)
+          ..where((tbl) => tbl.status.equals('packed') & tbl.isDeleted.equals(false))
+          ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)]))
+        .get();
   }
   
   /// Get active deliveries for delivery personnel
   Future<List<Delivery>> getActiveDeliveries() async {
-    return await _database.customSelect(
-      'SELECT * FROM deliveries WHERE status IN (?, ?) AND is_deleted = 0 ORDER BY created_at ASC',
-      variables: [Variable.withString('assigned'), Variable.withString('in_progress')],
-    ).map((row) => Delivery.fromData(row.data, _database)).get();
+    return await (_database.select(_database.deliveries)
+          ..where((tbl) => (tbl.status.equals('assigned') | tbl.status.equals('in_progress')) & tbl.isDeleted.equals(false))
+          ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)]))
+        .get();
   }
   
   /// Utility methods

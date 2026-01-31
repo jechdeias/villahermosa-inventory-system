@@ -57,7 +57,7 @@ class SecureOrderService {
     }
     
     return await _workflow.createOrder(
-      customerId: customerId,
+      customerId: customerId.toString(),
       items: items,
       deliveryAddress: deliveryAddress,
       customerNotes: customerNotes,
@@ -97,7 +97,7 @@ class SecureOrderService {
     }
     
     await _workflow.confirmOrderAvailability(
-      orderId: orderId,
+      orderId: orderId.toString(),
       warehouseUserId: warehouseUserId,
     );
   }
@@ -135,7 +135,7 @@ class SecureOrderService {
     }
     
     await _workflow.packOrder(
-      orderId: orderId,
+      orderId: orderId.toString(),
       packerUserId: packerUserId,
     );
   }
@@ -174,7 +174,7 @@ class SecureOrderService {
     }
     
     await _workflow.acceptDelivery(
-      orderId: orderId,
+      orderId: orderId.toString(),
       deliveryPersonnelId: deliveryPersonnelId,
       deliveryPersonnelName: deliveryPersonnelName,
       deliveryPersonnelPhone: deliveryPersonnelPhone,
@@ -213,7 +213,7 @@ class SecureOrderService {
       throw Exception('Only delivery personnel can start deliveries');
     }
     
-    await _workflow.startDelivery(deliveryId: deliveryId);
+    await _workflow.startDelivery(deliveryId: deliveryId.toString());
   }
   
   /// DELIVERY: Confirm Delivery (CRITICAL - Stock Deduction Point)
@@ -255,7 +255,7 @@ class SecureOrderService {
     }
     
     await _workflow.confirmDelivery(
-      deliveryId: deliveryId,
+      deliveryId: deliveryId.toString(),
       recipientName: recipientName,
       recipientRelation: recipientRelation,
       deliveryNotes: deliveryNotes,
