@@ -21,8 +21,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: AppTheme.lightBackground,
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -52,5 +51,4 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ],
       ),
     );
-  }
 }

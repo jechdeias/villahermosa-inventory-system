@@ -19,17 +19,14 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
   final int _activeRoutes = 6;
 
   @override
-  Widget build(BuildContext context) {
-    return TabletWarehouseTheme.responsiveLayout(
+  Widget build(BuildContext context) => TabletWarehouseTheme.responsiveLayout(
       context: context,
       mobile: _buildMobileLayout(),
       tablet: _buildTabletLayout(),
       desktop: _buildDesktopLayout(),
     );
-  }
 
-  Widget _buildMobileLayout() {
-    return Scaffold(
+  Widget _buildMobileLayout() => Scaffold(
       backgroundColor: WarehouseTheme.lightBackground,
       appBar: AppBar(
         title: const Text('Villahermosa Warehouse'),
@@ -73,10 +70,8 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
         ],
       ),
     );
-  }
 
-  Widget _buildTabletLayout() {
-    return Scaffold(
+  Widget _buildTabletLayout() => Scaffold(
       backgroundColor: WarehouseTheme.lightBackground,
       body: Row(
         children: [
@@ -202,7 +197,6 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
         ],
       ),
     );
-  }
 
   Widget _buildDesktopLayout() {
     return _buildTabletLayout(); // Same as tablet for now
@@ -236,8 +230,7 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
     );
   }
 
-  Widget _buildMainContent() {
-    return Scaffold(
+  Widget _buildMainContent() => Scaffold(
       backgroundColor: WarehouseTheme.lightBackground,
       appBar: TabletWarehouseTheme.tabletAppBar(
         context: context,
@@ -275,10 +268,8 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
         ),
       ),
     );
-  }
 
-  Widget _buildSummaryCards() {
-    return TabletWarehouseTheme.responsiveGrid(
+  Widget _buildSummaryCards() => TabletWarehouseTheme.responsiveGrid(
       context: context,
       children: [
         TabletWarehouseTheme.tabletCard(
@@ -319,10 +310,8 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
         ),
       ],
     );
-  }
 
-  Widget _buildRecentActivity() {
-    return Card(
+  Widget _buildRecentActivity() => Card(
       child: Column(
         children: [
           TabletWarehouseTheme.tabletListTile(
@@ -367,5 +356,4 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
         ],
       ),
     );
-  }
 }

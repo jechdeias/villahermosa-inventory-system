@@ -21,7 +21,7 @@ void main() {
 
     test('Create and retrieve user', () async {
       // Create a user with UUID
-      final userId = '550e8400-e29b-41d4-a716-446655440000';
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
       database.createUser(
         UsersCompanion.insert(
           uuid: userId,
@@ -71,7 +71,7 @@ void main() {
 
     test('Update user', () async {
       // Create a user
-      final userId = '550e8400-e29b-41d4-a716-446655440003';
+      const userId = '550e8400-e29b-41d4-a716-446655440003';
       database.createUser(
         UsersCompanion.insert(
           uuid: userId,
@@ -84,9 +84,9 @@ void main() {
       // Update the user
       final updated = await database.updateUser(
         userId,
-        UsersCompanion(
-          name: const Value('John Smith'),
-          role: const Value('warehouse'),
+        const UsersCompanion(
+          name: Value('John Smith'),
+          role: Value('warehouse'),
         ),
       );
 

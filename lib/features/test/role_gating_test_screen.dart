@@ -17,7 +17,7 @@ class RoleGatingTestScreen extends StatelessWidget {
         title: const Text('Role Gating Test'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -26,20 +26,20 @@ class RoleGatingTestScreen extends StatelessWidget {
             const SizedBox(height: 16),
             
             // This should be hidden for customer role
-            RoleGuard(
+            const RoleGuard(
               allowedRoles: [UserRole.admin, UserRole.warehouse],
               currentUserRole: UserRole.customer,
-              fallback: const Card(
+              fallback: Card(
                 color: Colors.grey,
                 child: Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(16),
                   child: Text('Content Hidden - Insufficient Permissions'),
                 ),
               ),
-              child: const Card(
+              child: Card(
                 color: Colors.red,
                 child: Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(16),
                   child: Text('Admin/Warehouse Only Content', 
                       style: TextStyle(color: Colors.white)),
                 ),
@@ -49,13 +49,13 @@ class RoleGatingTestScreen extends StatelessWidget {
             const SizedBox(height: 16),
             
             // This should be visible for customer role
-            RoleGuard(
+            const RoleGuard(
               allowedRoles: [UserRole.admin, UserRole.customer],
               currentUserRole: UserRole.customer,
-              child: const Card(
+              child: Card(
                 color: Colors.green,
                 child: Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(16),
                   child: Text('Customer Can See This', 
                       style: TextStyle(color: Colors.white)),
                 ),

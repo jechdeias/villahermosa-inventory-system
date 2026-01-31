@@ -323,9 +323,7 @@ class SyncEngineImpl extends SyncEngine {
             Variable.withReal(data['total_cost']),
             Variable.withString(data['status']),
             Variable.withString(data['approved_by']),
-            data['approved_at'] != null 
-                ? Variable.withDateTime(DateTime.parse(data['approved_at']))
-                : const Variable(null),
+            if (data['approved_at'] != null) Variable.withDateTime(DateTime.parse(data['approved_at'])) else const Variable(null),
             Variable.withBool(data['is_deleted']),
             Variable.withString('synced'),
             Variable.withDateTime(DateTime.parse(data['updated_at'])),

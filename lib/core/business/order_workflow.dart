@@ -6,15 +6,15 @@ import '../utils/type_validator.dart';
 /// Order Workflow - Core Business Logic
 /// Implements the complete order lifecycle with proper stock management
 class OrderWorkflow {
-  final AppDatabase _database;
-  final SyncManager _syncManager;
   
   OrderWorkflow(this._database, this._syncManager);
   
+  OrderWorkflow._() : _database = AppDatabase(), _syncManager = SyncManager.instance;
+  final AppDatabase _database;
+  final SyncManager _syncManager;
+  
   static OrderWorkflow? _instance;
   static OrderWorkflow get instance => _instance ??= OrderWorkflow._();
-  
-  OrderWorkflow._() : _database = AppDatabase(), _syncManager = SyncManager.instance;
   
   /// CUSTOMER: Create Order (offline OK)
   /// Stock is NOT deducted at this stage
@@ -43,7 +43,7 @@ class OrderWorkflow {
     final totalAmount = subtotal + taxAmount;
     
     // Generate order number
-    final orderNumber = await _generateOrderNumber();
+    final orderNumber = _generateOrderNumber();
     
     // Create order in PENDING status
     final orderId = _generateUuid();
@@ -77,12 +77,12 @@ class OrderWorkflow {
       TypeValidator.ensureExists(product, 'Product', validatedProductId);
       
       if (product!.isDeleted) {
-        throw Exception('Product ${validatedProductId} not found or inactive');
+        throw Exception('Product $validatedProductId not found or inactive');
       }
       
       // Check availability (but don't reserve yet)
       if (product.currentStock < validatedQuantity) {
-        throw Exception('Insufficient stock for ${product.name}. Available: ${product.currentStock}, Requested: ${validatedQuantity}');
+        throw Exception('Insufficient stock for ${product.name}. Available: ${product.currentStock}, Requested: $validatedQuantity');
       }
       
       await _database.into(_database.orderItems).insert(
@@ -253,7 +253,7 @@ class OrderWorkflow {
     }
     
     // Create delivery record
-    final deliveryNumber = await _generateDeliveryNumber();
+    final deliveryNumber = _generateDeliveryNumber();
     
     await _database.into(_database.deliveries).insert(
       DeliveriesCompanion.insert(
@@ -465,28 +465,22 @@ class OrderWorkflow {
   }
   
   /// Get pending orders for warehouse staff
-  Future<List<Order>> getPendingOrders() async {
-    return await (_database.select(_database.orders)
+  Future<List<Order>> getPendingOrders() async => await (_database.select(_database.orders)
           ..where((tbl) => tbl.status.equals('pending') & tbl.isDeleted.equals(false))
           ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)]))
         .get();
-  }
   
   /// Get orders ready for delivery
-  Future<List<Order>> getOrdersReadyForDelivery() async {
-    return await (_database.select(_database.orders)
+  Future<List<Order>> getOrdersReadyForDelivery() async => await (_database.select(_database.orders)
           ..where((tbl) => tbl.status.equals('packed') & tbl.isDeleted.equals(false))
           ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)]))
         .get();
-  }
   
   /// Get active deliveries for delivery personnel
-  Future<List<Delivery>> getActiveDeliveries() async {
-    return await (_database.select(_database.deliveries)
+  Future<List<Delivery>> getActiveDeliveries() async => await (_database.select(_database.deliveries)
           ..where((tbl) => (tbl.status.equals('assigned') | tbl.status.equals('in_progress')) & tbl.isDeleted.equals(false))
           ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)]))
         .get();
-  }
   
   /// Utility methods
   String _generateOrderNumber() {
@@ -499,20 +493,11 @@ class OrderWorkflow {
     return 'DEL-$timestamp';
   }
   
-  String _generateUuid() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
+  String _generateUuid() => DateTime.now().millisecondsSinceEpoch.toString();
 }
 
 /// Data class for order items
 class OrderItemData {
-  final int productId;
-  final int quantity;
-  final double unitPrice;
-  final double subtotal;
-  final double discountAmount;
-  final double totalAmount;
-  final String? notes;
   
   OrderItemData({
     required this.productId,
@@ -523,4 +508,11 @@ class OrderItemData {
     required this.totalAmount,
     this.notes,
   });
+  final int productId;
+  final int quantity;
+  final double unitPrice;
+  final double subtotal;
+  final double discountAmount;
+  final double totalAmount;
+  final String? notes;
 }

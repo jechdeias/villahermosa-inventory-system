@@ -27,13 +27,9 @@ class TabletWarehouseTheme {
   static const Color error = Color(0xFFF44336);
   static const Color info = Color(0xFF2196F3);
 
-  static bool isTablet(BuildContext context) {
-    return MediaQuery.of(context).size.width >= tabletBreakpoint;
-  }
+  static bool isTablet(BuildContext context) => MediaQuery.of(context).size.width >= tabletBreakpoint;
 
-  static bool isDesktop(BuildContext context) {
-    return MediaQuery.of(context).size.width >= desktopBreakpoint;
-  }
+  static bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= desktopBreakpoint;
 
   static double getSidebarWidth(BuildContext context) {
     if (isDesktop(context)) {
@@ -96,8 +92,7 @@ class TabletWarehouseTheme {
     required Color color,
     required VoidCallback onTap,
     String? subtitle,
-  }) {
-    return Card(
+  }) => Card(
       elevation: 2,
       child: InkWell(
         onTap: onTap,
@@ -159,19 +154,14 @@ class TabletWarehouseTheme {
         ),
       ),
     );
-  }
 
   // Tablet-optimized list tile
   static Widget tabletListTile({
     required BuildContext context,
     required String title,
-    String? subtitle,
-    required IconData leadingIcon,
-    required IconData trailingIcon,
-    required VoidCallback onTap,
+    required IconData leadingIcon, required IconData trailingIcon, required VoidCallback onTap, String? subtitle,
     Color? iconColor,
-  }) {
-    return ListTile(
+  }) => ListTile(
       contentPadding: EdgeInsets.symmetric(
         horizontal: isTablet(context) ? 20 : 16,
         vertical: 8,
@@ -207,7 +197,6 @@ class TabletWarehouseTheme {
       trailing: Icon(trailingIcon, color: textSecondary),
       onTap: onTap,
     );
-  }
 
   // Responsive grid
   static Widget responsiveGrid({
@@ -216,7 +205,7 @@ class TabletWarehouseTheme {
     double childAspectRatio = 1.2,
   }) {
     final columns = getGridColumns(context);
-    final spacing = cardSpacing;
+    const spacing = cardSpacing;
     
     return GridView.count(
       shrinkWrap: true,
@@ -234,8 +223,7 @@ class TabletWarehouseTheme {
     required BuildContext context,
     required String title,
     List<Widget>? actions,
-  }) {
-    return AppBar(
+  }) => AppBar(
       title: Text(
         title,
         style: TextStyle(
@@ -250,7 +238,6 @@ class TabletWarehouseTheme {
       actions: actions,
       toolbarHeight: isTablet(context) ? 64 : 56,
     );
-  }
 
   // Tablet-optimized floating action button
   static Widget tabletFAB({
@@ -258,8 +245,7 @@ class TabletWarehouseTheme {
     required VoidCallback onPressed,
     required IconData icon,
     String? tooltip,
-  }) {
-    return FloatingActionButton(
+  }) => FloatingActionButton(
       onPressed: onPressed,
       backgroundColor: info,
       foregroundColor: Colors.white,
@@ -270,5 +256,4 @@ class TabletWarehouseTheme {
         size: isTablet(context) ? 28 : 24,
       ),
     );
-  }
 }

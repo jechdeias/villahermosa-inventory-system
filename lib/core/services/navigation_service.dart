@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../business/role_based_access.dart';
+import '../../main.dart';
 
 /// Navigation Service
 /// Handles role-based navigation and routing
 class NavigationService {
-  final AuthService _authService;
-  final RoleBasedAccess _roleBasedAccess;
 
   NavigationService(this._authService, this._roleBasedAccess);
+  final AuthService _authService;
+  final RoleBasedAccess _roleBasedAccess;
 
   /// Get dashboard widget based on user role
   Widget getDashboardForRole(String role) {
@@ -90,58 +91,5 @@ class NavigationService {
         (route) => false,
       );
     }
-  }
-}
-
-// Placeholder dashboard widgets - these will be implemented later
-class AdminDashboard extends StatelessWidget {
-  const AdminDashboard({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Admin Dashboard - Coming Soon'),
-      ),
-    );
-  }
-}
-
-class WarehouseDashboard extends StatelessWidget {
-  const WarehouseDashboard({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Warehouse Dashboard - Coming Soon'),
-      ),
-    );
-  }
-}
-
-class DeliveryDashboard extends StatelessWidget {
-  const DeliveryDashboard({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Delivery Dashboard - Coming Soon'),
-      ),
-    );
-  }
-}
-
-class CustomerDashboard extends StatelessWidget {
-  const CustomerDashboard({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Customer Dashboard - Coming Soon'),
-      ),
-    );
   }
 }

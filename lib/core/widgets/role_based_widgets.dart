@@ -3,10 +3,6 @@ import '../constants/user_roles.dart';
 
 /// Widget that conditionally shows children based on user role
 class RoleGuard extends StatelessWidget {
-  final Widget child;
-  final List<UserRole> allowedRoles;
-  final UserRole? currentUserRole;
-  final Widget? fallback;
 
   const RoleGuard({
     super.key,
@@ -15,6 +11,10 @@ class RoleGuard extends StatelessWidget {
     this.currentUserRole,
     this.fallback,
   });
+  final Widget child;
+  final List<UserRole> allowedRoles;
+  final UserRole? currentUserRole;
+  final Widget? fallback;
 
   @override
   Widget build(BuildContext context) {
@@ -32,15 +32,17 @@ class RoleGuard extends StatelessWidget {
     // For now, return customer as default
     return UserRole.customer;
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IterableProperty<UserRole>('allowedRoles', allowedRoles));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+  }
 }
 
 /// Widget that conditionally shows children based on specific permissions
 class PermissionGuard extends StatelessWidget {
-  final Widget child;
-  final String screen;
-  final UserAction action;
-  final UserRole? currentUserRole;
-  final Widget? fallback;
 
   const PermissionGuard({
     super.key,
@@ -50,6 +52,11 @@ class PermissionGuard extends StatelessWidget {
     this.currentUserRole,
     this.fallback,
   });
+  final Widget child;
+  final String screen;
+  final UserAction action;
+  final UserRole? currentUserRole;
+  final Widget? fallback;
 
   @override
   Widget build(BuildContext context) {
@@ -69,14 +76,18 @@ class PermissionGuard extends StatelessWidget {
     // For now, return customer as default
     return UserRole.customer;
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('screen', screen));
+    properties.add(EnumProperty<UserAction>('action', action));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+  }
 }
 
 /// Widget that shows content only if user has any of the specified roles
 class AnyRoleGuard extends StatelessWidget {
-  final Widget child;
-  final List<UserRole> roles;
-  final UserRole? currentUserRole;
-  final Widget? fallback;
 
   const AnyRoleGuard({
     super.key,
@@ -85,6 +96,10 @@ class AnyRoleGuard extends StatelessWidget {
     this.currentUserRole,
     this.fallback,
   });
+  final Widget child;
+  final List<UserRole> roles;
+  final UserRole? currentUserRole;
+  final Widget? fallback;
 
   @override
   Widget build(BuildContext context) {
@@ -102,13 +117,17 @@ class AnyRoleGuard extends StatelessWidget {
     // For now, return customer as default
     return UserRole.customer;
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IterableProperty<UserRole>('roles', roles));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+  }
 }
 
 /// Widget that hides content for specific roles
 class RoleHide extends StatelessWidget {
-  final Widget child;
-  final List<UserRole> hiddenRoles;
-  final UserRole? currentUserRole;
 
   const RoleHide({
     super.key,
@@ -116,6 +135,9 @@ class RoleHide extends StatelessWidget {
     required this.hiddenRoles,
     this.currentUserRole,
   });
+  final Widget child;
+  final List<UserRole> hiddenRoles;
+  final UserRole? currentUserRole;
 
   @override
   Widget build(BuildContext context) {
@@ -133,17 +155,17 @@ class RoleHide extends StatelessWidget {
     // For now, return customer as default
     return UserRole.customer;
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IterableProperty<UserRole>('hiddenRoles', hiddenRoles));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+  }
 }
 
 /// Button that is enabled/disabled based on permissions
 class PermissionButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final Widget child;
-  final String screen;
-  final UserAction action;
-  final UserRole? currentUserRole;
-  final ButtonStyle? style;
-  final bool showDisabled;
 
   const PermissionButton({
     super.key,
@@ -155,6 +177,13 @@ class PermissionButton extends StatelessWidget {
     this.style,
     this.showDisabled = true,
   });
+  final VoidCallback onPressed;
+  final Widget child;
+  final String screen;
+  final UserAction action;
+  final UserRole? currentUserRole;
+  final ButtonStyle? style;
+  final bool showDisabled;
 
   @override
   Widget build(BuildContext context) {
@@ -179,17 +208,21 @@ class PermissionButton extends StatelessWidget {
     // For now, return customer as default
     return UserRole.customer;
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(ObjectFlagProperty<VoidCallback>.has('onPressed', onPressed));
+    properties.add(StringProperty('screen', screen));
+    properties.add(EnumProperty<UserAction>('action', action));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+    properties.add(DiagnosticsProperty<ButtonStyle?>('style', style));
+    properties.add(DiagnosticsProperty<bool>('showDisabled', showDisabled));
+  }
 }
 
 /// ListTile that is shown/hidden based on permissions
 class PermissionListTile extends StatelessWidget {
-  final Widget leading;
-  final Widget title;
-  final Widget? subtitle;
-  final VoidCallback? onTap;
-  final String screen;
-  final UserAction action;
-  final UserRole? currentUserRole;
 
   const PermissionListTile({
     super.key,
@@ -201,6 +234,13 @@ class PermissionListTile extends StatelessWidget {
     required this.action,
     this.currentUserRole,
   });
+  final Widget leading;
+  final Widget title;
+  final Widget? subtitle;
+  final VoidCallback? onTap;
+  final String screen;
+  final UserAction action;
+  final UserRole? currentUserRole;
 
   @override
   Widget build(BuildContext context) {
@@ -225,5 +265,14 @@ class PermissionListTile extends StatelessWidget {
     // TODO: Get actual user role from auth service
     // For now, return customer as default
     return UserRole.customer;
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(ObjectFlagProperty<VoidCallback?>.has('onTap', onTap));
+    properties.add(StringProperty('screen', screen));
+    properties.add(EnumProperty<UserAction>('action', action));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
   }
 }

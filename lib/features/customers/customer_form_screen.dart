@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../shared/theme/app_theme.dart';
 
-class CustomerFormScreen extends StatefulWidget {
-  final String? customerId; // null for new customer, ID for editing
+class CustomerFormScreen extends StatefulWidget { // null for new customer, ID for editing
   
   const CustomerFormScreen({
     super.key,
     this.customerId,
   });
+  final String? customerId;
 
   @override
   State<CustomerFormScreen> createState() => _CustomerFormScreenState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('customerId', customerId));
+  }
 }
 
 class _CustomerFormScreenState extends State<CustomerFormScreen> {
@@ -210,17 +216,14 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
+  Widget _buildSectionHeader(String title) => Text(
       title,
       style: AppTheme.headingMedium.copyWith(
         color: AppTheme.primaryColor,
       ),
     );
-  }
 
-  Widget _buildBasicInfoSection() {
-    return Card(
+  Widget _buildBasicInfoSection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -246,10 +249,8 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildBusinessInfoSection() {
-    return Card(
+  Widget _buildBusinessInfoSection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -267,10 +268,8 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildLocationSection() {
-    return Card(
+  Widget _buildLocationSection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -286,10 +285,8 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildCreditStatusSection() {
-    return Card(
+  Widget _buildCreditStatusSection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -305,7 +302,6 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildTextField(
     TextEditingController controller,
@@ -313,8 +309,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     bool required = false,
     int maxLines = 1,
     TextInputType? keyboardType,
-  }) {
-    return TextFormField(
+  }) => TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
@@ -351,15 +346,13 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
             }
           : null,
     );
-  }
 
   Widget _buildDropdownField(
     String label,
     String value,
     List<String> items,
     Function(String) onChanged,
-  ) {
-    return DropdownButtonFormField<String>(
+  ) => DropdownButtonFormField<String>(
       value: value.isEmpty ? null : value,
       decoration: InputDecoration(
         labelText: label,
@@ -377,7 +370,6 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         if (value != null) onChanged(value);
       },
     );
-  }
 
   void _showDeleteConfirmDialog() {
     showDialog(

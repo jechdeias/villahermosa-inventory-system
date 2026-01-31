@@ -76,8 +76,7 @@ class WarehouseTheme {
   );
 
   // Component Themes
-  static ThemeData get theme {
-    return ThemeData(
+  static ThemeData get theme => ThemeData(
       brightness: Brightness.light,
       fontFamily: fontFamily,
       scaffoldBackgroundColor: lightBackground,
@@ -201,7 +200,6 @@ class WarehouseTheme {
         ),
       ),
     );
-  }
 
   // Custom Components
   static Widget sidebarItem({
@@ -209,8 +207,7 @@ class WarehouseTheme {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
-  }) {
-    return Container(
+  }) => Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: isSelected ? darkSidebarVariant : Colors.transparent,
@@ -234,13 +231,11 @@ class WarehouseTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
-  }
 
   static Widget statusBadge({
     required String text,
     required Color color,
-  }) {
-    return Container(
+  }) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
@@ -255,7 +250,6 @@ class WarehouseTheme {
         ),
       ),
     );
-  }
 
   static Widget summaryCard({
     required String title,
@@ -263,8 +257,7 @@ class WarehouseTheme {
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
-  }) {
-    return Card(
+  }) => Card(
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
@@ -295,5 +288,4 @@ class WarehouseTheme {
         ),
       ),
     );
-  }
 }

@@ -44,7 +44,7 @@ class Deliveries extends Table {
   TextColumn get deliveryNotes => text().nullable()(); // Notes from delivery personnel
   
   // Financial
-  RealColumn get collectedAmount => real().withDefault(const Constant(0.0))(); // Cash collected on delivery
+  RealColumn get collectedAmount => real().withDefault(const Constant(0))(); // Cash collected on delivery
   TextColumn get paymentMethod => text().nullable()(); // cash | check | digital
   TextColumn get checkNumber => text().nullable()(); // If paid by check
   

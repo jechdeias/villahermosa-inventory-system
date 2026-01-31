@@ -17,8 +17,7 @@ class _MobileWarehouseDashboardState extends State<MobileWarehouseDashboard> {
   final int _activeRoutes = 6;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Villahermosa Warehouse'),
@@ -167,10 +166,8 @@ class _MobileWarehouseDashboardState extends State<MobileWarehouseDashboard> {
         ],
       ),
     );
-  }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Card(
+  Widget _buildMetricCard(String title, String value, IconData icon, Color color) => Card(
       elevation: 2,
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -221,7 +218,6 @@ class _MobileWarehouseDashboardState extends State<MobileWarehouseDashboard> {
         ),
       ),
     );
-  }
 
   Widget _buildActivityItem(
     String title,
@@ -229,8 +225,7 @@ class _MobileWarehouseDashboardState extends State<MobileWarehouseDashboard> {
     String time,
     IconData icon,
     Color color,
-  ) {
-    return ListTile(
+  ) => ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -262,5 +257,4 @@ class _MobileWarehouseDashboardState extends State<MobileWarehouseDashboard> {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
-  }
 }

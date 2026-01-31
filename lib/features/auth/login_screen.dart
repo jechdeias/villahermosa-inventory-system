@@ -7,15 +7,21 @@ import '../../core/business/role_based_access.dart';
 /// Login Screen
 /// Handles user authentication and role-based navigation
 class LoginScreen extends StatefulWidget {
-  final AppDatabase database;
   
   const LoginScreen({
     Key? key,
     required this.database,
   }) : super(key: key);
+  final AppDatabase database;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AppDatabase>('database', database));
+  }
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -81,8 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: Center(
@@ -253,7 +258,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
 
   Future<void> _handleForgotPassword() async {
     final emailController = TextEditingController();

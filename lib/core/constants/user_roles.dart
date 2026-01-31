@@ -8,12 +8,10 @@ enum UserRole {
   const UserRole(this.value);
   final String value;
 
-  static UserRole fromString(String role) {
-    return UserRole.values.firstWhere(
+  static UserRole fromString(String role) => UserRole.values.firstWhere(
       (e) => e.value == role,
       orElse: () => UserRole.customer,
     );
-  }
 }
 
 /// Actions that can be performed on resources
@@ -32,12 +30,10 @@ enum UserAction {
   const UserAction(this.value);
   final String value;
 
-  static UserAction fromString(String action) {
-    return UserAction.values.firstWhere(
+  static UserAction fromString(String action) => UserAction.values.firstWhere(
       (e) => e.value == action,
       orElse: () => UserAction.view,
     );
-  }
 }
 
 /// Resources that can be accessed
@@ -53,12 +49,10 @@ enum ResourceType {
   const ResourceType(this.value);
   final String value;
 
-  static ResourceType fromString(String resource) {
-    return ResourceType.values.firstWhere(
+  static ResourceType fromString(String resource) => ResourceType.values.firstWhere(
       (e) => e.value == resource,
       orElse: () => ResourceType.orders,
     );
-  }
 }
 
 /// Role-based navigation configuration

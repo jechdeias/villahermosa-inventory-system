@@ -19,7 +19,7 @@ class OrderItems extends Table {
   IntColumn get deliveredQuantity => integer().withDefault(const Constant(0))(); // Actual delivered quantity
   RealColumn get unitPrice => real()(); // Price per unit at time of order
   RealColumn get subtotal => real()(); // quantity * unitPrice
-  RealColumn get discountAmount => real().withDefault(const Constant(0.0))(); // Line item discount
+  RealColumn get discountAmount => real().withDefault(const Constant(0))(); // Line item discount
   RealColumn get totalAmount => real()(); // subtotal - discountAmount
   
   // Stock information

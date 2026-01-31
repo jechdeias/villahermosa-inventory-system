@@ -15,10 +15,10 @@ class Orders extends Table {
   TextColumn get orderNumber => text().unique()(); // Human-readable order number
   
   // Financial
-  RealColumn get subtotal => real().withDefault(const Constant(0.0))();
-  RealColumn get taxAmount => real().withDefault(const Constant(0.0))();
-  RealColumn get discountAmount => real().withDefault(const Constant(0.0))();
-  RealColumn get totalAmount => real().withDefault(const Constant(0.0))();
+  RealColumn get subtotal => real().withDefault(const Constant(0))();
+  RealColumn get taxAmount => real().withDefault(const Constant(0))();
+  RealColumn get discountAmount => real().withDefault(const Constant(0))();
+  RealColumn get totalAmount => real().withDefault(const Constant(0))();
   TextColumn get paymentStatus => text().withDefault(const Constant('pending'))(); // pending | paid | partial | overdue
   
   // Delivery information

@@ -4,14 +4,14 @@ import '../database/app_database.dart';
 
 /// Core Sync Manager - Thesis-worthy offline-first sync logic
 class SyncManager {
-  final AppDatabase _database;
   
   SyncManager(this._database);
   
+  SyncManager._() : _database = AppDatabase();
+  final AppDatabase _database;
+  
   static SyncManager? _instance;
   static SyncManager get instance => _instance ??= SyncManager._();
-  
-  SyncManager._() : _database = AppDatabase();
   
   /// Main sync orchestrator - core thesis logic
   Future<SyncResult> performFullSync() async {
@@ -714,10 +714,6 @@ class SyncManager {
 }
 
 class SyncResult {
-  final bool success;
-  final String? error;
-  final DateTime timestamp;
-  final Map<String, int> syncedCounts;
   
   SyncResult.success({
     this.syncedCounts = const {},
@@ -726,6 +722,10 @@ class SyncResult {
   SyncResult.failure(this.error, {
     this.syncedCounts = const {},
   }) : success = false, timestamp = DateTime.now();
+  final bool success;
+  final String? error;
+  final DateTime timestamp;
+  final Map<String, int> syncedCounts;
   
   @override
   String toString() {

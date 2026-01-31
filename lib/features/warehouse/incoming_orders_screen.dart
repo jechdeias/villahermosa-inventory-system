@@ -85,15 +85,13 @@ class _IncomingOrdersScreenState extends State<IncomingOrdersScreen> {
   List<String> get _routes => ['All', 'Boac North', 'Boac Central', 'Gasan East', 'Sta. Cruz West', 'Torrijos South', 'Buenavista North'];
   List<String> get _statuses => ['All', 'pending', 'processing', 'ready'];
 
-  List<Map<String, dynamic>> get _filteredOrders {
-    return _orders.where((order) {
+  List<Map<String, dynamic>> get _filteredOrders => _orders.where((order) {
       final matchesSearch = order['storeName'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
                            order['id'].toString().toLowerCase().contains(_searchController.text.toLowerCase());
       final matchesStatus = _selectedStatus == 'All' || order['status'] == _selectedStatus;
       final matchesRoute = _selectedRoute == 'All' || order['route'] == _selectedRoute;
       return matchesSearch && matchesStatus && matchesRoute;
     }).toList();
-  }
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -128,8 +126,7 @@ class _IncomingOrdersScreenState extends State<IncomingOrdersScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Theme(
+  Widget build(BuildContext context) => Theme(
       data: WarehouseTheme.theme,
       child: Scaffold(
         backgroundColor: WarehouseTheme.lightBackground,
@@ -258,10 +255,8 @@ class _IncomingOrdersScreenState extends State<IncomingOrdersScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildOrderCard(Map<String, dynamic> order) {
-    return Card(
+  Widget _buildOrderCard(Map<String, dynamic> order) => Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
@@ -383,10 +378,8 @@ class _IncomingOrdersScreenState extends State<IncomingOrdersScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildDetailItem(String label, String value, IconData icon) {
-    return Column(
+  Widget _buildDetailItem(String label, String value, IconData icon) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -410,5 +403,4 @@ class _IncomingOrdersScreenState extends State<IncomingOrdersScreen> {
         ),
       ],
     );
-  }
 }

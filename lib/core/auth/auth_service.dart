@@ -4,9 +4,9 @@ import '../database/app_database.dart' as db;
 /// Authentication Service
 /// Handles user authentication using Supabase and local database
 class AuthService {
-  final db.AppDatabase _database;
 
   AuthService(this._database);
+  final db.AppDatabase _database;
 
   /// Get current authenticated user from Supabase
   User? get currentUser => Supabase.instance.client.auth.currentUser;
@@ -66,7 +66,7 @@ class AuthService {
   /// Get user role from local database
   Future<String> getUserRole() async {
     if (currentUser == null) {
-      throw AuthException('No authenticated user');
+      throw const AuthException('No authenticated user');
     }
 
     try {
@@ -96,7 +96,7 @@ class AuthService {
       return null;
     }
 
-    return await _database.getUserByEmail(currentUser!.email!);
+    return _database.getUserByEmail(currentUser!.email!);
   }
 
   /// Reset password
@@ -111,9 +111,9 @@ class AuthService {
 
 /// Authentication Exception
 class AuthException implements Exception {
-  final String message;
   
   const AuthException(this.message);
+  final String message;
   
   @override
   String toString() => 'AuthException: $message';

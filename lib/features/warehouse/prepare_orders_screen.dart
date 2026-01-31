@@ -108,25 +108,16 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
     },
   ];
 
-  List<Map<String, dynamic>> get _currentOrderItems {
-    return _orderItems[_selectedOrder] ?? [];
-  }
+  List<Map<String, dynamic>> get _currentOrderItems => _orderItems[_selectedOrder] ?? [];
 
-  int get _totalPicked {
-    return _currentOrderItems.fold<int>(0, (sum, item) => sum + (item['picked'] as int));
-  }
+  int get _totalPicked => _currentOrderItems.fold<int>(0, (sum, item) => sum + (item['picked'] as int));
 
-  int get _totalRequired {
-    return _currentOrderItems.fold<int>(0, (sum, item) => sum + (item['required'] as int));
-  }
+  int get _totalRequired => _currentOrderItems.fold<int>(0, (sum, item) => sum + (item['required'] as int));
 
-  bool get _isOrderComplete {
-    return _currentOrderItems.every((item) => (item['picked'] as int) >= (item['required'] as int));
-  }
+  bool get _isOrderComplete => _currentOrderItems.every((item) => (item['picked'] as int) >= (item['required'] as int));
 
   @override
-  Widget build(BuildContext context) {
-    return Theme(
+  Widget build(BuildContext context) => Theme(
       data: WarehouseTheme.theme,
       child: Scaffold(
         backgroundColor: WarehouseTheme.lightBackground,
@@ -297,7 +288,6 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildPicklistItem(Map<String, dynamic> item) {
     final required = item['required'] as int;
@@ -360,7 +350,6 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
                 // Required Quantity
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         'Required',
@@ -382,7 +371,6 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
                 // Available Quantity
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         'Available',
@@ -404,7 +392,6 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
                 // Picked Quantity
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         'Picked',
@@ -521,7 +508,7 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
   void _resetAllPicks() {
     setState(() {
       final items = _orderItems[_selectedOrder]!;
-      for (var item in items) {
+      for (final item in items) {
         item['picked'] = 0;
       }
     });

@@ -82,8 +82,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: AppTheme.lightBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.darkNavigation,
@@ -166,7 +165,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ],
       ),
     );
-  }
 
   Widget _buildLowStockAlert() {
     final lowStockProducts = _products.where((p) => 
@@ -207,8 +205,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
+  Widget _buildEmptyState() => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -246,10 +243,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildProductsList() {
-    return ListView.builder(
+  Widget _buildProductsList() => ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _filteredProducts.length,
       itemBuilder: (context, index) {
@@ -260,18 +255,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
         );
       },
     );
-  }
 }
 
 class ProductCard extends StatelessWidget {
-  final Product product;
-  final VoidCallback onTap;
 
   const ProductCard({
     super.key,
     required this.product,
     required this.onTap,
   });
+  final Product product;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -398,6 +392,13 @@ class ProductCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Product>('product', product));
+    properties.add(ObjectFlagProperty<VoidCallback>.has('onTap', onTap));
   }
 }
 

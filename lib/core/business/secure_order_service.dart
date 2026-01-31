@@ -7,21 +7,21 @@ import 'role_based_access.dart';
 /// Secure Order Service - Combines workflow with role-based access
 /// Ensures only authorized users can perform specific actions
 class SecureOrderService {
-  final AppDatabase _database;
-  final SyncManager _syncManager;
-  final RoleBasedAccess _rbac;
-  final OrderWorkflow _workflow;
   
   SecureOrderService(this._database, this._syncManager, this._rbac, this._workflow);
-  
-  static SecureOrderService? _instance;
-  static SecureOrderService get instance => _instance ??= SecureOrderService._();
   
   SecureOrderService._() 
     : _database = AppDatabase(),
       _syncManager = SyncManager.instance,
       _rbac = RoleBasedAccess.instance,
       _workflow = OrderWorkflow.instance;
+  final AppDatabase _database;
+  final SyncManager _syncManager;
+  final RoleBasedAccess _rbac;
+  final OrderWorkflow _workflow;
+  
+  static SecureOrderService? _instance;
+  static SecureOrderService get instance => _instance ??= SecureOrderService._();
   
   /// CUSTOMER: Create Order (with permission check)
   Future<Order> createOrderAsCustomer({
@@ -56,7 +56,7 @@ class SecureOrderService {
       throw Exception('Only customers can create orders');
     }
     
-    return await _workflow.createOrder(
+    return _workflow.createOrder(
       customerId: customerId.toString(),
       items: items,
       deliveryAddress: deliveryAddress,
@@ -281,7 +281,7 @@ class SecureOrderService {
     switch (role) {
       case 'admin':
         // Admin can see all orders
-        return await _database.customSelect('''
+        return _database.customSelect('''
           SELECT 
             o.*,
             c.name as customer_name,
@@ -298,7 +298,7 @@ class SecureOrderService {
         
       case 'warehouse':
         // Warehouse can see all orders
-        return await _database.customSelect('''
+        return _database.customSelect('''
           SELECT 
             o.*,
             c.name as customer_name,
@@ -315,7 +315,7 @@ class SecureOrderService {
         
       case 'delivery':
         // Delivery can see orders assigned to them
-        return await _database.customSelect('''
+        return _database.customSelect('''
           SELECT 
             o.*,
             c.name as customer_name,
@@ -335,7 +335,7 @@ class SecureOrderService {
         
       case 'customer':
         // Customer can see own orders
-        return await _database.customSelect('''
+        return _database.customSelect('''
           SELECT 
             o.*,
             COUNT(oi.id) as item_count,
@@ -370,7 +370,7 @@ class SecureOrderService {
       );
     }
     
-    return await _database.customSelect('''
+    return _database.customSelect('''
       SELECT 
         o.*,
         c.name as customer_name,
@@ -405,7 +405,7 @@ class SecureOrderService {
       );
     }
     
-    return await _database.customSelect('''
+    return _database.customSelect('''
       SELECT 
         o.*,
         c.name as customer_name,
@@ -440,7 +440,7 @@ class SecureOrderService {
       );
     }
     
-    return await _database.customSelect('''
+    return _database.customSelect('''
       SELECT 
         d.*,
         o.order_number,

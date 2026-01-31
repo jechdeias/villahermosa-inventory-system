@@ -21,7 +21,7 @@ void main() {
 
     test('Create and retrieve customer', () async {
       // Create a customer with UUID
-      final customerId = '550e8400-e29b-41d4-a716-446655440100';
+      const customerId = '550e8400-e29b-41d4-a716-446655440100';
       database.createCustomer(
         CustomersCompanion.insert(
           uuid: customerId,
@@ -101,7 +101,7 @@ void main() {
 
     test('Update customer', () async {
       // Create a customer
-      final customerId = '550e8400-e29b-41d4-a716-446655440105';
+      const customerId = '550e8400-e29b-41d4-a716-446655440105';
       database.createCustomer(
         CustomersCompanion.insert(
           uuid: customerId,
@@ -114,10 +114,10 @@ void main() {
       // Update the customer
       final updated = await database.updateCustomer(
         customerId,
-        CustomersCompanion(
-          name: const Value('John Updated'),
-          phone: const Value('+9876543210'),
-          customerType: const Value('business'),
+        const CustomersCompanion(
+          name: Value('John Updated'),
+          phone: Value('+9876543210'),
+          customerType: Value('business'),
         ),
       );
 
@@ -132,7 +132,7 @@ void main() {
 
     test('Soft delete customer', () async {
       // Create a customer
-      final customerId = '550e8400-e29b-41d4-a716-446655440106';
+      const customerId = '550e8400-e29b-41d4-a716-446655440106';
       database.createCustomer(
         CustomersCompanion.insert(
           uuid: customerId,
@@ -184,8 +184,8 @@ void main() {
 
     test('Mark customer as synced', () async {
       // Create a customer
-      final customerId = '550e8400-e29b-41d4-a716-446655440109';
-      final remoteId = 'remote-uuid-123';
+      const customerId = '550e8400-e29b-41d4-a716-446655440109';
+      const remoteId = 'remote-uuid-123';
       
       database.createCustomer(
         CustomersCompanion.insert(

@@ -4,8 +4,7 @@ class SimpleWarehouseDashboard extends StatelessWidget {
   const SimpleWarehouseDashboard({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Villahermosa Warehouse'),
@@ -74,10 +73,8 @@ class SimpleWarehouseDashboard extends StatelessWidget {
         ),
       ),
     );
-  }
 
-  Widget _buildCard(String title, String value, IconData icon, Color color) {
-    return Container(
+  Widget _buildCard(String title, String value, IconData icon, Color color) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
@@ -109,10 +106,8 @@ class SimpleWarehouseDashboard extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildActivity(String title, String description, String time) {
-    return Container(
+  Widget _buildActivity(String title, String description, String time) => Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -147,5 +142,4 @@ class SimpleWarehouseDashboard extends StatelessWidget {
         ],
       ),
     );
-  }
 }

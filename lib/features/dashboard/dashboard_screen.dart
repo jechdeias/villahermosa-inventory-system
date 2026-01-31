@@ -20,8 +20,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   int _totalProducts = 0;
   int _totalCustomers = 0;
   int _lowStockProducts = 0;
-  double _totalInventoryValue = 0.0;
-  double _totalCreditExposure = 0.0;
+  double _totalInventoryValue = 0;
+  double _totalCreditExposure = 0;
   int _wholesaleCustomers = 0;
   
   // Municipality distribution
@@ -38,31 +38,31 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   void _loadMockData() {
     // Load product data (simplified for demo)
     _products = [
-      MockProduct(id: '1', sku: 'BNB', name: 'Beer na Beer 330ml', category: 'Beer', unitPrice: 750.00, costPrice: 600.00, unit: 'cs', currentStock: 50, minStock: 20, status: 'active', location: 'Warehouse A'),
-      MockProduct(id: '2', sku: 'BNB MACHO', name: 'Beer na Beer 1000ml', category: 'Beer', unitPrice: 555.00, costPrice: 450.00, unit: 'cs', currentStock: 30, minStock: 15, status: 'active', location: 'Warehouse A'),
-      MockProduct(id: '3', sku: 'C ASTIG-G', name: 'Cobra Astig - Green', category: 'Energy Drink', unitPrice: 208.00, costPrice: 170.00, unit: 'cs', currentStock: 100, minStock: 50, status: 'active', location: 'Warehouse B'),
-      MockProduct(id: '27', sku: 'AB350', name: 'Absolute Drinking Water 350ml', category: 'Water', unitPrice: 379.00, costPrice: 300.00, unit: 'cs', currentStock: 200, minStock: 100, status: 'active', location: 'Warehouse E'),
-      MockProduct(id: '64', sku: 'RC COLA', name: 'RC Cola Drink 240ml - Cola Flavor', category: 'Soft Drinks', unitPrice: 180.00, costPrice: 140.00, unit: 'cs', currentStock: 300, minStock: 150, status: 'active', location: 'Warehouse G'),
-      MockProduct(id: '94', sku: 'J.CONDENSED 1KG', name: 'Jersey Condensed Milk 1KG', category: 'Milk', unitPrice: 108.00, costPrice: 85.00, unit: 'cs', currentStock: 20, minStock: 10, status: 'active', location: 'Warehouse F'),
-      MockProduct(id: '125', sku: 'POWDET LAVENDER 57G', name: 'Powder Detergent 57g - Lavender', category: 'Detergent', unitPrice: 34.80, costPrice: 27.00, unit: 'cs', currentStock: 100, minStock: 50, status: 'active', location: 'Warehouse H'),
-      MockProduct(id: '186', sku: 'GLUTINOUS', name: 'Kings Glutinous Rice Flour 500g', category: 'Food', unitPrice: 45.00, costPrice: 35.00, unit: 'cs', currentStock: 18, minStock: 10, status: 'active', location: 'Warehouse I'),
-      MockProduct(id: '216', sku: 'ICEPOPS 90ML', name: 'Snow Time Icepops 90ml x 8 x 15', category: 'Snacks', unitPrice: 23.00, costPrice: 18.00, unit: 'cs', currentStock: 12, minStock: 6, status: 'active', location: 'Warehouse J'),
+      MockProduct(id: '1', sku: 'BNB', name: 'Beer na Beer 330ml', category: 'Beer', unitPrice: 750, costPrice: 600, unit: 'cs', currentStock: 50, minStock: 20, status: 'active', location: 'Warehouse A'),
+      MockProduct(id: '2', sku: 'BNB MACHO', name: 'Beer na Beer 1000ml', category: 'Beer', unitPrice: 555, costPrice: 450, unit: 'cs', currentStock: 30, minStock: 15, status: 'active', location: 'Warehouse A'),
+      MockProduct(id: '3', sku: 'C ASTIG-G', name: 'Cobra Astig - Green', category: 'Energy Drink', unitPrice: 208, costPrice: 170, unit: 'cs', currentStock: 100, minStock: 50, status: 'active', location: 'Warehouse B'),
+      MockProduct(id: '27', sku: 'AB350', name: 'Absolute Drinking Water 350ml', category: 'Water', unitPrice: 379, costPrice: 300, unit: 'cs', currentStock: 200, minStock: 100, status: 'active', location: 'Warehouse E'),
+      MockProduct(id: '64', sku: 'RC COLA', name: 'RC Cola Drink 240ml - Cola Flavor', category: 'Soft Drinks', unitPrice: 180, costPrice: 140, unit: 'cs', currentStock: 300, minStock: 150, status: 'active', location: 'Warehouse G'),
+      MockProduct(id: '94', sku: 'J.CONDENSED 1KG', name: 'Jersey Condensed Milk 1KG', category: 'Milk', unitPrice: 108, costPrice: 85, unit: 'cs', currentStock: 20, minStock: 10, status: 'active', location: 'Warehouse F'),
+      MockProduct(id: '125', sku: 'POWDET LAVENDER 57G', name: 'Powder Detergent 57g - Lavender', category: 'Detergent', unitPrice: 34.80, costPrice: 27, unit: 'cs', currentStock: 100, minStock: 50, status: 'active', location: 'Warehouse H'),
+      MockProduct(id: '186', sku: 'GLUTINOUS', name: 'Kings Glutinous Rice Flour 500g', category: 'Food', unitPrice: 45, costPrice: 35, unit: 'cs', currentStock: 18, minStock: 10, status: 'active', location: 'Warehouse I'),
+      MockProduct(id: '216', sku: 'ICEPOPS 90ML', name: 'Snow Time Icepops 90ml x 8 x 15', category: 'Snacks', unitPrice: 23, costPrice: 18, unit: 'cs', currentStock: 12, minStock: 6, status: 'active', location: 'Warehouse J'),
       // Low stock items
-      MockProduct(id: '298', sku: 'S TIBAY TRIAL', name: 'Super Tibay Trial Size', category: 'Cleaning', unitPrice: 13.00, costPrice: 10.00, unit: 'cs', currentStock: 5, minStock: 20, status: 'active', location: 'Warehouse K'),
-      MockProduct(id: '299', sku: 'S TIBAY SCOURING', name: 'Super Tibay Scouring Regular', category: 'Cleaning', unitPrice: 24.00, costPrice: 19.00, unit: 'cs', currentStock: 8, minStock: 25, status: 'active', location: 'Warehouse K'),
-      MockProduct(id: '300', sku: 'S TIBAY 2IN1', name: 'Super Tibay 2in1 Economy Size', category: 'Cleaning', unitPrice: 32.40, costPrice: 25.00, unit: 'cs', currentStock: 3, minStock: 15, status: 'active', location: 'Warehouse K'),
+      MockProduct(id: '298', sku: 'S TIBAY TRIAL', name: 'Super Tibay Trial Size', category: 'Cleaning', unitPrice: 13, costPrice: 10, unit: 'cs', currentStock: 5, minStock: 20, status: 'active', location: 'Warehouse K'),
+      MockProduct(id: '299', sku: 'S TIBAY SCOURING', name: 'Super Tibay Scouring Regular', category: 'Cleaning', unitPrice: 24, costPrice: 19, unit: 'cs', currentStock: 8, minStock: 25, status: 'active', location: 'Warehouse K'),
+      MockProduct(id: '300', sku: 'S TIBAY 2IN1', name: 'Super Tibay 2in1 Economy Size', category: 'Cleaning', unitPrice: 32.40, costPrice: 25, unit: 'cs', currentStock: 3, minStock: 15, status: 'active', location: 'Warehouse K'),
     ];
 
     // Load customer data (simplified for demo)
     _customers = [
-      MockCustomer(id: '1', name: 'Anding Maningas', businessName: 'ABC Market', municipality: 'Boac', province: 'Marinduque', storeType: 'Market Stall', contactNumber: '09123456789', creditLimit: 50000.00, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 365)), updatedAt: DateTime.now().subtract(const Duration(days: 30))),
-      MockCustomer(id: '2', name: 'Arnold', businessName: 'ABC Market', municipality: 'Boac', province: 'Marinduque', storeType: 'Market Stall', contactNumber: '09123456790', creditLimit: 45000.00, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 300)), updatedAt: DateTime.now().subtract(const Duration(days: 15))),
-      MockCustomer(id: '11', name: 'GMART', businessName: 'GMART', municipality: 'Balaring', province: 'Boac', storeType: 'Mini Mart', contactNumber: '09123456800', creditLimit: 100000.00, customerType: 'wholesale', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 150)), updatedAt: DateTime.now().subtract(const Duration(days: 25))),
-      MockCustomer(id: '66', name: 'Black Mustache', businessName: 'Black Mustache Coffee', municipality: 'Poblacion', province: 'Boac', storeType: 'Coffee Shop', contactNumber: '09123456855', creditLimit: 75000.00, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 90)), updatedAt: DateTime.now().subtract(const Duration(days: 12))),
-      MockCustomer(id: '84', name: 'Kathlyn Joy Sienna', businessName: 'Kathlyn Store', municipality: 'Bagtingon', province: 'Buenavista', storeType: 'Sari-Sari Store', contactNumber: '09123456873', creditLimit: 30000.00, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 120)), updatedAt: DateTime.now().subtract(const Duration(days: 8))),
-      MockCustomer(id: '153', name: 'Happyroo', businessName: 'Happyroo Supermarket', municipality: 'Bahi', province: 'Gasan', storeType: 'Supermarket', contactNumber: '09123456942', creditLimit: 200000.00, customerType: 'wholesale', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 85)), updatedAt: DateTime.now().subtract(const Duration(days: 15))),
-      MockCustomer(id: '323', name: 'Home Town Drugstore', businessName: 'Home Town Drugstore', municipality: 'Napo', province: 'Sta. Cruz', storeType: 'Pharmacy Store', contactNumber: '09123457012', creditLimit: 150000.00, customerType: 'wholesale', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 70)), updatedAt: DateTime.now().subtract(const Duration(days: 20))),
-      MockCustomer(id: '373', name: 'Sunshine Bakery', businessName: 'Sunshine Bakery', municipality: 'Mabuhay', province: 'Torrijos', storeType: 'Bakery', contactNumber: '09123457062', creditLimit: 55000.00, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 40)), updatedAt: DateTime.now().subtract(const Duration(days: 10))),
+      MockCustomer(id: '1', name: 'Anding Maningas', businessName: 'ABC Market', municipality: 'Boac', province: 'Marinduque', storeType: 'Market Stall', contactNumber: '09123456789', creditLimit: 50000, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 365)), updatedAt: DateTime.now().subtract(const Duration(days: 30))),
+      MockCustomer(id: '2', name: 'Arnold', businessName: 'ABC Market', municipality: 'Boac', province: 'Marinduque', storeType: 'Market Stall', contactNumber: '09123456790', creditLimit: 45000, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 300)), updatedAt: DateTime.now().subtract(const Duration(days: 15))),
+      MockCustomer(id: '11', name: 'GMART', businessName: 'GMART', municipality: 'Balaring', province: 'Boac', storeType: 'Mini Mart', contactNumber: '09123456800', creditLimit: 100000, customerType: 'wholesale', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 150)), updatedAt: DateTime.now().subtract(const Duration(days: 25))),
+      MockCustomer(id: '66', name: 'Black Mustache', businessName: 'Black Mustache Coffee', municipality: 'Poblacion', province: 'Boac', storeType: 'Coffee Shop', contactNumber: '09123456855', creditLimit: 75000, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 90)), updatedAt: DateTime.now().subtract(const Duration(days: 12))),
+      MockCustomer(id: '84', name: 'Kathlyn Joy Sienna', businessName: 'Kathlyn Store', municipality: 'Bagtingon', province: 'Buenavista', storeType: 'Sari-Sari Store', contactNumber: '09123456873', creditLimit: 30000, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 120)), updatedAt: DateTime.now().subtract(const Duration(days: 8))),
+      MockCustomer(id: '153', name: 'Happyroo', businessName: 'Happyroo Supermarket', municipality: 'Bahi', province: 'Gasan', storeType: 'Supermarket', contactNumber: '09123456942', creditLimit: 200000, customerType: 'wholesale', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 85)), updatedAt: DateTime.now().subtract(const Duration(days: 15))),
+      MockCustomer(id: '323', name: 'Home Town Drugstore', businessName: 'Home Town Drugstore', municipality: 'Napo', province: 'Sta. Cruz', storeType: 'Pharmacy Store', contactNumber: '09123457012', creditLimit: 150000, customerType: 'wholesale', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 70)), updatedAt: DateTime.now().subtract(const Duration(days: 20))),
+      MockCustomer(id: '373', name: 'Sunshine Bakery', businessName: 'Sunshine Bakery', municipality: 'Mabuhay', province: 'Torrijos', storeType: 'Bakery', contactNumber: '09123457062', creditLimit: 55000, customerType: 'regular', status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 40)), updatedAt: DateTime.now().subtract(const Duration(days: 10))),
     ];
   }
 
@@ -89,8 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: AppTheme.lightBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.darkNavigation,
@@ -149,10 +148,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ),
       ),
     );
-  }
 
-  Widget _buildKeyMetricsSection() {
-    return Column(
+  Widget _buildKeyMetricsSection() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -183,10 +180,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ),
       ],
     );
-  }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Container(
+  Widget _buildMetricCard(String title, String value, IconData icon, Color color) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
@@ -216,10 +211,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ],
       ),
     );
-  }
 
-  Widget _buildMunicipalityChart() {
-    return Card(
+  Widget _buildMunicipalityChart() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -240,10 +233,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ),
       ),
     );
-  }
 
-  Widget _buildStoreTypeChart() {
-    return Card(
+  Widget _buildStoreTypeChart() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -264,7 +255,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ),
       ),
     );
-  }
 
   Widget _buildBarChart(Map<String, int> data, Color color) {
     if (data.isEmpty) {
@@ -342,11 +332,11 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
           children: [
             Row(
               children: [
-                Icon(Icons.warning, color: AppTheme.warningColor),
+                const Icon(Icons.warning, color: AppTheme.warningColor),
                 const SizedBox(width: 8),
                 Text(
                   '$_lowStockProducts products need restocking',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.warningColor,
                     fontWeight: FontWeight.w600,
                   ),
@@ -380,7 +370,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                       ),
                       Text(
                         '${product.currentStock}/${product.minStock}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.red,
                           fontWeight: FontWeight.w600,
@@ -395,8 +385,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     );
   }
 
-  Widget _buildQuickActionsSection() {
-    return Column(
+  Widget _buildQuickActionsSection() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -467,10 +456,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ),
       ],
     );
-  }
 
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
-    return ElevatedButton.icon(
+  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onPressed) => ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 20),
       label: Text(label),
@@ -480,10 +467,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         padding: const EdgeInsets.symmetric(vertical: 12),
       ),
     );
-  }
 
-  Widget _buildRecentActivitySection() {
-    return Card(
+  Widget _buildRecentActivitySection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -505,10 +490,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ),
       ),
     );
-  }
 
-  Widget _buildActivityItem(String action, String item, String time, IconData icon) {
-    return Padding(
+  Widget _buildActivityItem(String action, String item, String time, IconData icon) => Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
@@ -545,5 +528,4 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ],
       ),
     );
-  }
 }

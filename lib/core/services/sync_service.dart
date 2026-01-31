@@ -22,9 +22,9 @@ enum ConflictResolution {
 }
 
 class SyncService {
-  final AppDatabase _database;
   
   SyncService(this._database);
+  final AppDatabase _database;
   
   // Main sync orchestrator
   Future<SyncResult> performFullSync() async {
@@ -109,22 +109,16 @@ class SyncService {
   }
   
   // Table-specific push methods
-  Future<List<User>> _pushUsers() async {
-    return await _database.getPendingSyncUsers();
-  }
+  Future<List<User>> _pushUsers() async => await _database.getPendingSyncUsers();
   
   Future<List<Category>> _pushCategories() async {
     // Implementation needed
     return [];
   }
   
-  Future<List<Product>> _pushProducts() async {
-    return await _database.getPendingSyncProducts();
-  }
+  Future<List<Product>> _pushProducts() async => await _database.getPendingSyncProducts();
   
-  Future<List<Customer>> _pushCustomers() async {
-    return await _database.getPendingSyncCustomers();
-  }
+  Future<List<Customer>> _pushCustomers() async => await _database.getPendingSyncCustomers();
   
   Future<List<Order>> _pushOrders() async {
     // Implementation needed
@@ -136,9 +130,7 @@ class SyncService {
     return [];
   }
   
-  Future<List<StockMovement>> _pushStockMovements() async {
-    return await _database.getPendingSyncStockMovements();
-  }
+  Future<List<StockMovement>> _pushStockMovements() async => await _database.getPendingSyncStockMovements();
   
   Future<List<Delivery>> _pushDeliveries() async {
     // Implementation needed
@@ -147,10 +139,6 @@ class SyncService {
 }
 
 class SyncResult {
-  final bool success;
-  final String? error;
-  final DateTime timestamp;
-  final Map<String, int> syncedCounts;
   
   SyncResult.success({
     this.syncedCounts = const {},
@@ -159,6 +147,10 @@ class SyncResult {
   SyncResult.failure(this.error, {
     this.syncedCounts = const {},
   }) : success = false, timestamp = DateTime.now();
+  final bool success;
+  final String? error;
+  final DateTime timestamp;
+  final Map<String, int> syncedCounts;
   
   @override
   String toString() {

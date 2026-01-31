@@ -5,15 +5,15 @@ import '../sync/sync_manager.dart';
 /// Stock Movement Service - Industry Standard Inventory Logic
 /// Stock quantity = SUM(StockMovements), not a magic number
 class StockMovementService {
-  final AppDatabase _database;
-  final SyncManager _syncManager;
   
   StockMovementService(this._database, this._syncManager);
   
+  StockMovementService._() : _database = AppDatabase(), _syncManager = SyncManager.instance;
+  final AppDatabase _database;
+  final SyncManager _syncManager;
+  
   static StockMovementService? _instance;
   static StockMovementService get instance => _instance ??= StockMovementService._();
-  
-  StockMovementService._() : _database = AppDatabase(), _syncManager = SyncManager.instance;
   
   /// Get current stock for a product (calculated from movements)
   Future<int> getCurrentStock(int productId) async {
@@ -27,8 +27,7 @@ class StockMovementService {
   }
   
   /// Get stock movement history for a product
-  Future<List<Map<String, dynamic>>> getStockMovementHistory(int productId) async {
-    return await _database.customSelect('''
+  Future<List<Map<String, dynamic>>> getStockMovementHistory(int productId) async => await _database.customSelect('''
       SELECT 
         sm.*,
         u.name as user_name,
@@ -40,7 +39,6 @@ class StockMovementService {
       WHERE sm.product_id = ? AND sm.is_deleted = 0
       ORDER BY sm.created_at DESC
     ''', variables: [Variable.withInt(productId)]).get().then((rows) => rows.map((row) => row.data).toList());
-  }
   
   /// STOCK IN: Supplier delivery
   Future<void> recordStockIn({
@@ -74,7 +72,7 @@ class StockMovementService {
         productId: productId.toString(),
         movementType: 'stock_in',
         quantity: quantity, // Positive for stock in
-        referenceType: Value('supplier_delivery'),
+        referenceType: const Value('supplier_delivery'),
         referenceId: Value(purchaseOrderNumber ?? ''),
         reason: 'Supplier delivery: ${supplierName ?? 'Unknown supplier'}',
         notes: Value(notes),
@@ -84,7 +82,7 @@ class StockMovementService {
         toLocation: Value(toLocation ?? 'Warehouse'),
         unitCost: Value(unitCost),
         totalCost: Value(unitCost != null ? unitCost * quantity : null),
-        status: Value('completed'),
+        status: const Value('completed'),
         syncStatus: const Value('pending'),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
@@ -133,7 +131,7 @@ class StockMovementService {
         productId: productId.toString(),
         movementType: 'stock_out',
         quantity: -quantity, // Negative for stock out
-        referenceType: Value('order'),
+        referenceType: const Value('order'),
         referenceId: Value(orderId),
         reason: 'Customer order: $orderNumber',
         notes: Value(notes),
@@ -143,7 +141,7 @@ class StockMovementService {
         toLocation: Value(toLocation ?? 'Customer'),
         unitCost: Value(unitCost),
         totalCost: Value(unitCost != null ? unitCost * quantity : null),
-        status: Value('completed'),
+        status: const Value('completed'),
         syncStatus: const Value('pending'),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
@@ -193,8 +191,8 @@ class StockMovementService {
         productId: productId.toString(),
         movementType: 'adjustment',
         quantity: quantity, // Can be positive or negative
-        referenceType: Value('manual_adjustment'),
-        referenceId: Value(''),
+        referenceType: const Value('manual_adjustment'),
+        referenceId: const Value(''),
         reason: '${adjustmentType.name}: $reason',
         notes: Value(notes),
         userId: userId.toString(),
@@ -203,7 +201,7 @@ class StockMovementService {
         toLocation: Value(location ?? 'Warehouse'),
         unitCost: Value(unitCost),
         totalCost: Value(unitCost != null ? unitCost * quantity.abs() : null),
-        status: Value('completed'),
+        status: const Value('completed'),
         syncStatus: const Value('pending'),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
@@ -248,7 +246,7 @@ class StockMovementService {
         productId: productId.toString(),
         movementType: 'stock_in', // Returns are stock IN
         quantity: quantity, // Positive for stock in
-        referenceType: Value('return'),
+        referenceType: const Value('return'),
         referenceId: Value(orderId),
         reason: '${returnReason.name}: Order $orderNumber',
         notes: Value(notes),
@@ -258,7 +256,7 @@ class StockMovementService {
         toLocation: Value(toLocation ?? 'Warehouse'),
         unitCost: Value(unitCost),
         totalCost: Value(unitCost != null ? unitCost * quantity : null),
-        status: Value('completed'),
+        status: const Value('completed'),
         syncStatus: const Value('pending'),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
@@ -270,8 +268,7 @@ class StockMovementService {
   }
   
   /// Get low stock alerts
-  Future<List<Map<String, dynamic>>> getLowStockAlerts() async {
-    return await _database.customSelect('''
+  Future<List<Map<String, dynamic>>> getLowStockAlerts() async => await _database.customSelect('''
       SELECT 
         p.id,
         p.name,
@@ -286,11 +283,9 @@ class StockMovementService {
       HAVING COALESCE(SUM(sm.quantity), 0) < p.min_stock
       ORDER BY shortage DESC
     ''').get().then((rows) => rows.map((row) => row.data).toList());
-  }
   
   /// Get stock summary for all products
-  Future<List<Map<String, dynamic>>> getStockSummary() async {
-    return await _database.customSelect('''
+  Future<List<Map<String, dynamic>>> getStockSummary() async => await _database.customSelect('''
       SELECT 
         p.id,
         p.name,
@@ -315,7 +310,6 @@ class StockMovementService {
       GROUP BY p.id
       ORDER BY p.name ASC
     ''').get().then((rows) => rows.map((row) => row.data).toList());
-  }
   
   /// Get stock movement report by date range
   Future<List<Map<String, dynamic>>> getStockMovementReport({
@@ -324,8 +318,8 @@ class StockMovementService {
     int? productId,
     String? movementType,
   }) async {
-    String whereClause = 'sm.created_at BETWEEN ? AND ? AND sm.is_deleted = 0';
-    List<Variable> variables = [
+    var whereClause = 'sm.created_at BETWEEN ? AND ? AND sm.is_deleted = 0';
+    var variables = <Variable>[
       Variable.withString(startDate.toIso8601String()),
       Variable.withString(endDate.toIso8601String()),
     ];
@@ -340,7 +334,7 @@ class StockMovementService {
       variables.add(Variable.withString(movementType));
     }
     
-    return await _database.customSelect('''
+    return _database.customSelect('''
       SELECT 
         sm.*,
         p.name as product_name,
@@ -383,9 +377,7 @@ class StockMovementService {
   }
   
   /// Utility method to generate UUID
-  String _generateUuid() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
+  String _generateUuid() => DateTime.now().millisecondsSinceEpoch.toString();
 }
 
 /// Types of stock adjustments

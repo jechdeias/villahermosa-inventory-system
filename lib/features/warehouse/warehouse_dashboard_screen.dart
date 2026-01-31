@@ -18,8 +18,7 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
   final int _activeRoutes = 6; // Boac, Buenavista, Gasan, Sta. Cruz, Torrijos + Central
   
   @override
-  Widget build(BuildContext context) {
-    return Theme(
+  Widget build(BuildContext context) => Theme(
       data: WarehouseTheme.theme,
       child: Scaffold(
         backgroundColor: WarehouseTheme.lightBackground,
@@ -205,7 +204,6 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildMainContent() {
     switch (_selectedIndex) {
@@ -234,8 +232,7 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
     }
   }
 
-  Widget _buildDashboardContent() {
-    return Scaffold(
+  Widget _buildDashboardContent() => Scaffold(
       appBar: AppBar(
         title: const Text('Warehouse Dashboard'),
         actions: [
@@ -350,7 +347,6 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildActivityItem(
     String title,
@@ -358,8 +354,7 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
     String time,
     IconData icon,
     Color color,
-  ) {
-    return ListTile(
+  ) => ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -373,11 +368,9 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
       trailing: Text(time, style: WarehouseTheme.caption),
       contentPadding: const EdgeInsets.all(16),
     );
-  }
 
   // Placeholder content for other screens
-  Widget _buildIncomingOrdersContent() {
-    return Scaffold(
+  Widget _buildIncomingOrdersContent() => Scaffold(
       appBar: AppBar(title: const Text('Incoming Orders')),
       body: const Center(
         child: Text(
@@ -387,10 +380,8 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildPrepareOrdersContent() {
-    return Scaffold(
+  Widget _buildPrepareOrdersContent() => Scaffold(
       appBar: AppBar(title: const Text('Prepare Orders')),
       body: const Center(
         child: Text(
@@ -400,10 +391,8 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildInventoryStockContent() {
-    return Scaffold(
+  Widget _buildInventoryStockContent() => Scaffold(
       appBar: AppBar(title: const Text('Inventory Stock')),
       body: const Center(
         child: Text(
@@ -413,10 +402,8 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildStockInOutContent() {
-    return Scaffold(
+  Widget _buildStockInOutContent() => Scaffold(
       appBar: AppBar(title: const Text('Stock In/Out')),
       body: const Center(
         child: Text(
@@ -426,10 +413,8 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildLoadingDispatchContent() {
-    return Scaffold(
+  Widget _buildLoadingDispatchContent() => Scaffold(
       appBar: AppBar(title: const Text('Loading & Dispatch')),
       body: const Center(
         child: Text(
@@ -439,10 +424,8 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildRoutesTodayContent() {
-    return Scaffold(
+  Widget _buildRoutesTodayContent() => Scaffold(
       appBar: AppBar(title: const Text('Routes Today')),
       body: const Center(
         child: Text(
@@ -452,10 +435,8 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildReturnsDamagedContent() {
-    return Scaffold(
+  Widget _buildReturnsDamagedContent() => Scaffold(
       appBar: AppBar(title: const Text('Returns & Damaged Goods')),
       body: const Center(
         child: Text(
@@ -465,10 +446,8 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildReportsContent() {
-    return Scaffold(
+  Widget _buildReportsContent() => Scaffold(
       appBar: AppBar(title: const Text('Warehouse Reports')),
       body: const Center(
         child: Text(
@@ -478,10 +457,8 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildSyncStatusContent() {
-    return Scaffold(
+  Widget _buildSyncStatusContent() => Scaffold(
       appBar: AppBar(title: const Text('Sync Status & Activity Logs')),
       body: const Center(
         child: Text(
@@ -491,5 +468,4 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         ),
       ),
     );
-  }
 }

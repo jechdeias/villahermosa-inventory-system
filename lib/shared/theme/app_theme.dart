@@ -124,7 +124,6 @@ class AppTheme {
       primary: primaryColor,
       secondary: accentColor,
       error: errorColor,
-      surface: Colors.white,
       onSurface: Color(0xFF1E293B),
     ),
     appBarTheme: appBarTheme,
@@ -152,7 +151,6 @@ class AppTheme {
       secondary: accentColor,
       error: errorColor,
       surface: Color(0xFF1E293B),
-      onSurface: Colors.white,
     ),
     appBarTheme: appBarTheme,
     cardTheme: cardTheme.copyWith(

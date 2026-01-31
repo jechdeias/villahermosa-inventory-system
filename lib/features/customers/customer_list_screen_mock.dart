@@ -4,20 +4,6 @@ import 'customer_form_screen.dart';
 
 // Mock Customer class for web testing
 class MockCustomer {
-  final String id;
-  final String name;
-  final String businessName;
-  final String municipality;
-  final String province;
-  final String storeType;
-  final String? contactNumber;
-  final String? email;
-  final String? address;
-  final double creditLimit;
-  final String customerType;
-  final String status;
-  final DateTime createdAt;
-  final DateTime updatedAt;
 
   MockCustomer({
     required this.id,
@@ -35,6 +21,20 @@ class MockCustomer {
     required this.createdAt,
     required this.updatedAt,
   });
+  final String id;
+  final String name;
+  final String businessName;
+  final String municipality;
+  final String province;
+  final String storeType;
+  final String? contactNumber;
+  final String? email;
+  final String? address;
+  final double creditLimit;
+  final String customerType;
+  final String status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 }
 
 class CustomerListScreenMock extends StatefulWidget {
@@ -73,7 +73,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Marinduque',
           storeType: 'Market Stall',
           contactNumber: '09123456789',
-          creditLimit: 50000.00,
+          creditLimit: 50000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 365)),
@@ -87,7 +87,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Marinduque',
           storeType: 'Market Stall',
           contactNumber: '09123456790',
-          creditLimit: 45000.00,
+          creditLimit: 45000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 300)),
@@ -101,7 +101,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Marinduque',
           storeType: 'Market Stall',
           contactNumber: '09123456791',
-          creditLimit: 60000.00,
+          creditLimit: 60000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 280)),
@@ -115,7 +115,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Boac',
           storeType: 'Market Stall',
           contactNumber: '09123456798',
-          creditLimit: 35000.00,
+          creditLimit: 35000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 200)),
@@ -129,7 +129,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Boac',
           storeType: 'Sari-Sari Store',
           contactNumber: '09123456799',
-          creditLimit: 25000.00,
+          creditLimit: 25000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 180)),
@@ -143,7 +143,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Boac',
           storeType: 'Mini Mart',
           contactNumber: '09123456800',
-          creditLimit: 100000.00,
+          creditLimit: 100000,
           customerType: 'wholesale',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 150)),
@@ -157,7 +157,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Boac',
           storeType: 'Coffee Shop',
           contactNumber: '09123456855',
-          creditLimit: 75000.00,
+          creditLimit: 75000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 90)),
@@ -173,7 +173,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Buenavista',
           storeType: 'Sari-Sari Store',
           contactNumber: '09123456873',
-          creditLimit: 30000.00,
+          creditLimit: 30000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 120)),
@@ -187,7 +187,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Buenavista',
           storeType: 'Sari-Sari Store',
           contactNumber: '09123456874',
-          creditLimit: 28000.00,
+          creditLimit: 28000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 110)),
@@ -203,7 +203,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Gasan',
           storeType: 'Sari-Sari Store',
           contactNumber: '09123456933',
-          creditLimit: 32000.00,
+          creditLimit: 32000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 95)),
@@ -217,7 +217,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Gasan',
           storeType: 'Supermarket',
           contactNumber: '09123456942',
-          creditLimit: 200000.00,
+          creditLimit: 200000,
           customerType: 'wholesale',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 85)),
@@ -233,7 +233,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Sta. Cruz',
           storeType: 'Pharmacy Store',
           contactNumber: '09123457012',
-          creditLimit: 150000.00,
+          creditLimit: 150000,
           customerType: 'wholesale',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 70)),
@@ -247,7 +247,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Sta. Cruz',
           storeType: 'Mini Mart',
           contactNumber: '09123457013',
-          creditLimit: 80000.00,
+          creditLimit: 80000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 60)),
@@ -263,7 +263,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Torrijos',
           storeType: 'Sari-Sari Store',
           contactNumber: '09123457046',
-          creditLimit: 25000.00,
+          creditLimit: 25000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 45)),
@@ -277,7 +277,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Torrijos',
           storeType: 'Bakery',
           contactNumber: '09123457062',
-          creditLimit: 55000.00,
+          creditLimit: 55000,
           customerType: 'regular',
           status: 'active',
           createdAt: DateTime.now().subtract(const Duration(days: 40)),
@@ -293,7 +293,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           province: 'Test',
           storeType: 'Sari-Sari Store',
           contactNumber: '09123459999',
-          creditLimit: 0.00,
+          creditLimit: 0,
           customerType: 'regular',
           status: 'inactive',
           createdAt: DateTime.now().subtract(const Duration(days: 365)),
@@ -348,8 +348,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: AppTheme.lightBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.darkNavigation,
@@ -459,7 +458,6 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
         ],
       ),
     );
-  }
 
   Widget _buildCustomerStats() {
     final totalCustomers = _customers.where((c) => c.status == 'active').length;
@@ -492,8 +490,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
-    return Column(
+  Widget _buildStatCard(String title, String value, IconData icon) => Column(
       children: [
         Icon(icon, color: AppTheme.primaryColor, size: 24),
         const SizedBox(height: 4),
@@ -514,10 +511,8 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
         ),
       ],
     );
-  }
 
-  Widget _buildEmptyState() {
-    return Center(
+  Widget _buildEmptyState() => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -555,10 +550,8 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
         ],
       ),
     );
-  }
 
-  Widget _buildCustomersList() {
-    return ListView.builder(
+  Widget _buildCustomersList() => ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _filteredCustomers.length,
       itemBuilder: (context, index) {
@@ -569,18 +562,17 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
         );
       },
     );
-  }
 }
 
 class CustomerCard extends StatelessWidget {
-  final MockCustomer customer;
-  final VoidCallback onTap;
 
   const CustomerCard({
     super.key,
     required this.customer,
     required this.onTap,
   });
+  final MockCustomer customer;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -706,5 +698,12 @@ class CustomerCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<MockCustomer>('customer', customer));
+    properties.add(ObjectFlagProperty<VoidCallback>.has('onTap', onTap));
   }
 }

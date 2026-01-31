@@ -6,19 +6,19 @@ import 'stock_movement_service.dart';
 /// Updated Order Workflow - Uses proper Stock Movement Logic
 /// Stock quantity = SUM(StockMovements), not a magic number
 class OrderWorkflowUpdated {
-  final AppDatabase _database;
-  final SyncManager _syncManager;
-  final StockMovementService _stockService;
   
   OrderWorkflowUpdated(this._database, this._syncManager, this._stockService);
-  
-  static OrderWorkflowUpdated? _instance;
-  static OrderWorkflowUpdated get instance => _instance ??= OrderWorkflowUpdated._();
   
   OrderWorkflowUpdated._() 
     : _database = AppDatabase(), 
       _syncManager = SyncManager.instance,
       _stockService = StockMovementService.instance;
+  final AppDatabase _database;
+  final SyncManager _syncManager;
+  final StockMovementService _stockService;
+  
+  static OrderWorkflowUpdated? _instance;
+  static OrderWorkflowUpdated get instance => _instance ??= OrderWorkflowUpdated._();
   
   /// DELIVERY: Confirm Delivery (CRITICAL - Stock Deduction Point)
   /// Now uses proper Stock Movement Service
@@ -231,9 +231,7 @@ class OrderWorkflowUpdated {
   }
   
   /// Get real-time stock for a product
-  Future<int> getRealTimeStock(int productId) async {
-    return await _stockService.getCurrentStock(productId);
-  }
+  Future<int> getRealTimeStock(int productId) async => await _stockService.getCurrentStock(productId);
   
   /// Check if order can be fulfilled (stock availability)
   Future<bool> canFulfillOrder(int orderId) async {
@@ -255,8 +253,7 @@ class OrderWorkflowUpdated {
   }
   
   /// Get stock availability report for order items
-  Future<List<Map<String, dynamic>>> getOrderStockAvailability(int orderId) async {
-    return await _database.customSelect('''
+  Future<List<Map<String, dynamic>>> getOrderStockAvailability(int orderId) async => await _database.customSelect('''
       SELECT 
         oi.*,
         p.name as product_name,
@@ -274,7 +271,6 @@ class OrderWorkflowUpdated {
       GROUP BY oi.id
       ORDER BY oi.created_at ASC
     ''', variables: [Variable.withInt(orderId)]).get().then((rows) => rows.map((row) => row.data).toList());
-  }
   
   /// Get inventory valuation
   Future<Map<String, dynamic>> getInventoryValuation() async {
@@ -305,8 +301,8 @@ class OrderWorkflowUpdated {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    String whereClause = 'sm.is_deleted = 0';
-    List<Variable> variables = [];
+    var whereClause = 'sm.is_deleted = 0';
+    var variables = <Variable>[];
     
     if (startDate != null) {
       whereClause += ' AND sm.created_at >= ?';
@@ -318,7 +314,7 @@ class OrderWorkflowUpdated {
       variables.add(Variable.withString(endDate.toIso8601String()));
     }
     
-    return await _database.customSelect('''
+    return _database.customSelect('''
       SELECT 
         sm.movement_type,
         sm.reference_type,
@@ -334,7 +330,5 @@ class OrderWorkflowUpdated {
   }
   
   /// Utility method to generate UUID
-  String _generateUuid() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
+  String _generateUuid() => DateTime.now().millisecondsSinceEpoch.toString();
 }

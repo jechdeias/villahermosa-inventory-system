@@ -22,8 +22,7 @@ class VillahermosaInventoryApp extends StatelessWidget {
   const VillahermosaInventoryApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context) => MaterialApp(
       title: 'Villahermosa Inventory System',
       theme: ThemeData(
         primarySwatch: Colors.grey,
@@ -49,7 +48,6 @@ class VillahermosaInventoryApp extends StatelessWidget {
         );
       },
     );
-  }
 
   Widget _getRouteWidget(String? route) {
     switch (route) {
@@ -72,7 +70,7 @@ class VillahermosaInventoryApp extends StatelessWidget {
 /// Auth Wrapper
 /// Handles authentication state and redirects appropriately
 class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
 
   @override
   State<AuthWrapper> createState() => _AuthWrapperState();
@@ -107,8 +105,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
+  Widget build(BuildContext context) => const Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -120,16 +117,76 @@ class _AuthWrapperState extends State<AuthWrapper> {
         ),
       ),
     );
-  }
 }
 
 // Dashboard widgets with logout functionality
 class AdminDashboard extends StatelessWidget {
-  const AdminDashboard({Key? key}) : super(key: key);
+  const AdminDashboard({super.key});
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
@@ -157,31 +214,197 @@ class AdminDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.admin_panel_settings, size: 80),
-            SizedBox(height: 16),
-            Text(
-              'Admin Dashboard',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      body: Container(
+        color: Colors.grey[50],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.admin_panel_settings, size: 40, color: Colors.grey[800]),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Welcome, Administrator',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Manage the entire inventory system',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Quick Actions Grid
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  children: [
+                    _buildActionCard(
+                      icon: Icons.people,
+                      title: 'Users',
+                      subtitle: 'Manage user accounts',
+                      color: Colors.blue,
+                      onTap: () {
+                        // TODO: Navigate to users management
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.inventory,
+                      title: 'Products',
+                      subtitle: 'Manage products',
+                      color: Colors.green,
+                      onTap: () {
+                        // TODO: Navigate to products management
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.shopping_cart,
+                      title: 'Orders',
+                      subtitle: 'View all orders',
+                      color: Colors.orange,
+                      onTap: () {
+                        // TODO: Navigate to orders management
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.business,
+                      title: 'Customers',
+                      subtitle: 'Manage customers',
+                      color: Colors.purple,
+                      onTap: () {
+                        // TODO: Navigate to customers management
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.local_shipping,
+                      title: 'Deliveries',
+                      subtitle: 'Manage deliveries',
+                      color: Colors.red,
+                      onTap: () {
+                        // TODO: Navigate to deliveries management
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.assessment,
+                      title: 'Reports',
+                      subtitle: 'View reports',
+                      color: Colors.teal,
+                      onTap: () {
+                        // TODO: Navigate to reports
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+}
+
+class WarehouseDashboard extends StatelessWidget {
+  const WarehouseDashboard({super.key});
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 8),
-            Text('Welcome, Administrator'),
-          ],
+          ),
         ),
       ),
     );
   }
-}
-
-class WarehouseDashboard extends StatelessWidget {
-  const WarehouseDashboard({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
@@ -209,33 +432,211 @@ class WarehouseDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inventory, size: 80),
-            SizedBox(height: 16),
-            Text(
-              'Warehouse Dashboard',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text('Welcome, Warehouse Staff'),
-          ],
+      body: Container(
+        color: Colors.grey[50],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.inventory, size: 40, color: Colors.grey[800]),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Welcome, Warehouse Staff',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Manage inventory and stock movements',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Quick Actions Grid
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  children: [
+                    _buildActionCard(
+                      icon: Icons.inventory,
+                      title: 'Products',
+                      subtitle: 'View and manage products',
+                      color: Colors.blue,
+                      onTap: () {
+                        // TODO: Navigate to products
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.swap_vert,
+                      title: 'Stock Movements',
+                      subtitle: 'Track stock changes',
+                      color: Colors.green,
+                      onTap: () {
+                        // TODO: Navigate to stock movements
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.shopping_cart,
+                      title: 'Orders',
+                      subtitle: 'Process orders',
+                      color: Colors.orange,
+                      onTap: () {
+                        // TODO: Navigate to orders
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.add_circle,
+                      title: 'Stock In',
+                      subtitle: 'Add new stock',
+                      color: Colors.purple,
+                      onTap: () {
+                        // TODO: Navigate to stock in
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.remove_circle,
+                      title: 'Stock Out',
+                      subtitle: 'Remove stock',
+                      color: Colors.red,
+                      onTap: () {
+                        // TODO: Navigate to stock out
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.assessment,
+                      title: 'Reports',
+                      subtitle: 'View inventory reports',
+                      color: Colors.teal,
+                      onTap: () {
+                        // TODO: Navigate to reports
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
-  }
 }
 
 class DeliveryDashboard extends StatelessWidget {
-  const DeliveryDashboard({Key? key}) : super(key: key);
+  const DeliveryDashboard({super.key});
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
-        title: const Text('Delivery Dashboard'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/logo/villahermosa_logo.png',
+              height: 32,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.local_shipping, size: 32);
+              },
+            ),
+            const SizedBox(width: 12),
+            const Text('Delivery Dashboard'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -249,33 +650,193 @@ class DeliveryDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.local_shipping, size: 80),
-            SizedBox(height: 16),
-            Text(
-              'Delivery Dashboard',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text('Welcome, Delivery Personnel'),
-          ],
+      body: Container(
+        color: Colors.grey[50],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.local_shipping, size: 40, color: Colors.grey[800]),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Welcome, Delivery Personnel',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Manage your deliveries and routes',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Quick Actions Grid
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  children: [
+                    _buildActionCard(
+                      icon: Icons.delivery_dining,
+                      title: 'Active Deliveries',
+                      subtitle: 'View current deliveries',
+                      color: Colors.blue,
+                      onTap: () {
+                        // TODO: Navigate to active deliveries
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.history,
+                      title: 'Delivery History',
+                      subtitle: 'View past deliveries',
+                      color: Colors.green,
+                      onTap: () {
+                        // TODO: Navigate to delivery history
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.map,
+                      title: 'Routes',
+                      subtitle: 'View delivery routes',
+                      color: Colors.orange,
+                      onTap: () {
+                        // TODO: Navigate to routes
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.qr_code_scanner,
+                      title: 'Scan QR',
+                      subtitle: 'Scan delivery QR codes',
+                      color: Colors.purple,
+                      onTap: () {
+                        // TODO: Open QR scanner
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
-  }
 }
 
 class CustomerDashboard extends StatelessWidget {
-  const CustomerDashboard({Key? key}) : super(key: key);
+  const CustomerDashboard({super.key});
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
-        title: const Text('Customer Dashboard'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/logo/villahermosa_logo.png',
+              height: 32,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.person, size: 32);
+              },
+            ),
+            const SizedBox(width: 12),
+            const Text('Customer Dashboard'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -289,21 +850,108 @@ class CustomerDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.person, size: 80),
-            SizedBox(height: 16),
-            Text(
-              'Customer Dashboard',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text('Welcome, Customer'),
-          ],
+      body: Container(
+        color: Colors.grey[50],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.person, size: 40, color: Colors.grey[800]),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Welcome, Customer',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'View your orders and inventory',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Quick Actions Grid
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  children: [
+                    _buildActionCard(
+                      icon: Icons.shopping_cart,
+                      title: 'My Orders',
+                      subtitle: 'View your orders',
+                      color: Colors.blue,
+                      onTap: () {
+                        // TODO: Navigate to orders
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.inventory,
+                      title: 'Products',
+                      subtitle: 'Browse products',
+                      color: Colors.green,
+                      onTap: () {
+                        // TODO: Navigate to products
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.history,
+                      title: 'Order History',
+                      subtitle: 'View past orders',
+                      color: Colors.orange,
+                      onTap: () {
+                        // TODO: Navigate to order history
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.account_circle,
+                      title: 'Profile',
+                      subtitle: 'Manage your profile',
+                      color: Colors.purple,
+                      onTap: () {
+                        // TODO: Navigate to profile
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
-  }
 }

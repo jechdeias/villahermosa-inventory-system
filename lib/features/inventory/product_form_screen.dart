@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../shared/theme/app_theme.dart';
 
-class ProductFormScreen extends StatefulWidget {
-  final String? productId; // null for new product, ID for editing
+class ProductFormScreen extends StatefulWidget { // null for new product, ID for editing
   
   const ProductFormScreen({
     super.key,
     this.productId,
   });
+  final String? productId;
 
   @override
   State<ProductFormScreen> createState() => _ProductFormScreenState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('productId', productId));
+  }
 }
 
 class _ProductFormScreenState extends State<ProductFormScreen> {
@@ -235,17 +241,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
+  Widget _buildSectionHeader(String title) => Text(
       title,
       style: AppTheme.headingMedium.copyWith(
         color: AppTheme.primaryColor,
       ),
     );
-  }
 
-  Widget _buildBasicInfoSection() {
-    return Card(
+  Widget _buildBasicInfoSection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -285,10 +288,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildPricingSection() {
-    return Card(
+  Widget _buildPricingSection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -312,10 +313,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildInventorySection() {
-    return Card(
+  Widget _buildInventorySection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -333,10 +332,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildPhysicalPropertiesSection() {
-    return Card(
+  Widget _buildPhysicalPropertiesSection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -360,10 +357,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildSupplierSection() {
-    return Card(
+  Widget _buildSupplierSection() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -381,7 +376,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildTextField(
     TextEditingController controller,
@@ -389,8 +383,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     bool required = false,
     int maxLines = 1,
     TextInputType? keyboardType,
-  }) {
-    return TextFormField(
+  }) => TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
@@ -415,15 +408,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             }
           : null,
     );
-  }
 
   Widget _buildDropdownField(
     String label,
     String value,
     List<String> items,
     Function(String) onChanged,
-  ) {
-    return DropdownButtonFormField<String>(
+  ) => DropdownButtonFormField<String>(
       value: value.isEmpty ? null : value,
       decoration: InputDecoration(
         labelText: label,
@@ -441,7 +432,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         if (value != null) onChanged(value);
       },
     );
-  }
 
   void _showDeleteConfirmDialog() {
     showDialog(

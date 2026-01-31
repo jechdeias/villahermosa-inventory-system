@@ -5,14 +5,14 @@ import 'order_workflow.dart';
 /// Role-Based Access Control
 /// Enforces WHO can do WHAT and WHEN
 class RoleBasedAccess {
-  final AppDatabase _database;
   
   RoleBasedAccess(this._database);
   
+  RoleBasedAccess._() : _database = AppDatabase();
+  final AppDatabase _database;
+  
   static RoleBasedAccess? _instance;
   static RoleBasedAccess get instance => _instance ??= RoleBasedAccess._();
-  
-  RoleBasedAccess._() : _database = AppDatabase();
   
   /// Check if user has permission to perform action
   Future<bool> checkPermission({
@@ -30,11 +30,11 @@ class RoleBasedAccess {
       case 'admin':
         return _hasAdminPermission(action, resource);
       case 'warehouse':
-        return await _hasWarehousePermission(userId, action, resource, resourceId);
+        return _hasWarehousePermission(userId, action, resource, resourceId);
       case 'delivery':
-        return await _hasDeliveryPermission(userId, action, resource, resourceId);
+        return _hasDeliveryPermission(userId, action, resource, resourceId);
       case 'customer':
-        return await _hasCustomerPermission(userId, action, resource, resourceId);
+        return _hasCustomerPermission(userId, action, resource, resourceId);
       default:
         return false;
     }
@@ -140,9 +140,9 @@ class RoleBasedAccess {
   ) async {
     switch (resource) {
       case 'deliveries':
-        return await _hasDeliveryDeliveryPermission(userId, action, resourceId);
+        return _hasDeliveryDeliveryPermission(userId, action, resourceId);
       case 'orders':
-        return await _hasDeliveryOrderPermission(userId, action, resourceId);
+        return _hasDeliveryOrderPermission(userId, action, resourceId);
       case 'products':
         return _hasDeliveryProductPermission(action);
       case 'customers':
@@ -236,9 +236,9 @@ class RoleBasedAccess {
   ) async {
     switch (resource) {
       case 'orders':
-        return await _hasCustomerOrderPermission(userId, action, resourceId);
+        return _hasCustomerOrderPermission(userId, action, resourceId);
       case 'customers':
-        return await _hasCustomerCustomerPermission(userId, action, resourceId);
+        return _hasCustomerCustomerPermission(userId, action, resourceId);
       case 'products':
         return _hasCustomerProductPermission(action);
       default:
@@ -324,28 +324,28 @@ class RoleBasedAccess {
     switch (user.role) {
       case 'admin':
         // Admin can see all orders
-        return await (_database.select(_database.orders)
+        return (_database.select(_database.orders)
               ..where((tbl) => tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
             .get();
         
       case 'warehouse':
         // Warehouse can see all orders
-        return await (_database.select(_database.orders)
+        return (_database.select(_database.orders)
               ..where((tbl) => tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
             .get();
         
       case 'delivery':
         // Delivery can see orders assigned to them
-        return await (_database.select(_database.orders)
+        return (_database.select(_database.orders)
               ..where((tbl) => tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
             .get();
         
       case 'customer':
         // Customer can see own orders
-        return await (_database.select(_database.orders)
+        return (_database.select(_database.orders)
               ..where((tbl) => tbl.customerId.equals(userId.toString()) & tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
             .get();
@@ -364,28 +364,28 @@ class RoleBasedAccess {
     switch (user.role) {
       case 'admin':
         // Admin can see all deliveries
-        return await (_database.select(_database.deliveries)
+        return (_database.select(_database.deliveries)
               ..where((tbl) => tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
             .get();
         
       case 'warehouse':
         // Warehouse can see all deliveries
-        return await (_database.select(_database.deliveries)
+        return (_database.select(_database.deliveries)
               ..where((tbl) => tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
             .get();
         
       case 'delivery':
         // Delivery can see own deliveries
-        return await (_database.select(_database.deliveries)
+        return (_database.select(_database.deliveries)
               ..where((tbl) => tbl.deliveryPersonnelId.equals(userId.toString()) & tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
             .get();
         
       case 'customer':
         // Customer can see deliveries for their orders
-        return await (_database.select(_database.deliveries)
+        return (_database.select(_database.deliveries)
               ..where((tbl) => tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
             .get();
@@ -406,14 +406,14 @@ class RoleBasedAccess {
       case 'warehouse':
       case 'delivery':
         // Can see all products
-        return await (_database.select(_database.products)
+        return (_database.select(_database.products)
               ..where((tbl) => tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
             .get();
         
       case 'customer':
         // Customers can see active products only
-        return await (_database.select(_database.products)
+        return (_database.select(_database.products)
               ..where((tbl) => tbl.isDeleted.equals(false) & tbl.status.equals('active'))
               ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
             .get();
@@ -434,14 +434,14 @@ class RoleBasedAccess {
       case 'warehouse':
       case 'delivery':
         // Can see all customers
-        return await (_database.select(_database.customers)
+        return (_database.select(_database.customers)
               ..where((tbl) => tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
             .get();
         
       case 'customer':
         // Can see own profile only
-        return await (_database.select(_database.customers)
+        return (_database.select(_database.customers)
               ..where((tbl) => tbl.id.equals(userId) & tbl.isDeleted.equals(false))
               ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
             .get();
@@ -454,10 +454,6 @@ class RoleBasedAccess {
 
 /// Permission check exception
 class PermissionDeniedException implements Exception {
-  final String message;
-  final String? action;
-  final String? resource;
-  final int? userId;
   
   PermissionDeniedException(
     this.message, {
@@ -465,9 +461,11 @@ class PermissionDeniedException implements Exception {
     this.resource,
     this.userId,
   });
+  final String message;
+  final String? action;
+  final String? resource;
+  final int? userId;
   
   @override
-  String toString() {
-    return 'PermissionDeniedException: $message (User: $userId, Action: $action, Resource: $resource)';
-  }
+  String toString() => 'PermissionDeniedException: $message (User: $userId, Action: $action, Resource: $resource)';
 }

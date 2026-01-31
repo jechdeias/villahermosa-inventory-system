@@ -9,17 +9,11 @@ class RoleBasedNavigationService {
     _currentUserRole = role;
   }
   
-  static UserRole getCurrentUserRole() {
-    return _currentUserRole ?? UserRole.customer;
-  }
+  static UserRole getCurrentUserRole() => _currentUserRole ?? UserRole.customer;
   
-  static List<String> getAllowedScreens() {
-    return RoleBasedNavigation.allowedScreens[getCurrentUserRole()] ?? [];
-  }
+  static List<String> getAllowedScreens() => RoleBasedNavigation.allowedScreens[getCurrentUserRole()] ?? [];
   
-  static bool canAccessScreen(String screenName) {
-    return getAllowedScreens().contains(screenName);
-  }
+  static bool canAccessScreen(String screenName) => getAllowedScreens().contains(screenName);
   
   static bool hasPermission(String screen, UserAction action) {
     final permissions = RoleBasedNavigation.screenPermissions[getCurrentUserRole()];
@@ -30,9 +24,6 @@ class RoleBasedNavigationService {
 
 /// Role-based navigation rail widget
 class RoleBasedNavigationRail extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onDestinationSelected;
-  final UserRole? userRole;
 
   const RoleBasedNavigationRail({
     super.key,
@@ -40,6 +31,9 @@ class RoleBasedNavigationRail extends StatelessWidget {
     required this.onDestinationSelected,
     this.userRole,
   });
+  final int selectedIndex;
+  final Function(int) onDestinationSelected;
+  final UserRole? userRole;
 
   @override
   Widget build(BuildContext context) {
@@ -122,13 +116,18 @@ class RoleBasedNavigationRail extends StatelessWidget {
         );
     }
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IntProperty('selectedIndex', selectedIndex));
+    properties.add(ObjectFlagProperty<Function(int p1)>.has('onDestinationSelected', onDestinationSelected));
+    properties.add(EnumProperty<UserRole?>('userRole', userRole));
+  }
 }
 
 /// Role-based bottom navigation bar widget
 class RoleBasedBottomNavigationBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
-  final UserRole? userRole;
 
   const RoleBasedBottomNavigationBar({
     super.key,
@@ -136,6 +135,9 @@ class RoleBasedBottomNavigationBar extends StatelessWidget {
     required this.onTap,
     this.userRole,
   });
+  final int currentIndex;
+  final Function(int) onTap;
+  final UserRole? userRole;
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +218,14 @@ class RoleBasedBottomNavigationBar extends StatelessWidget {
           label: 'Unknown',
         );
     }
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IntProperty('currentIndex', currentIndex));
+    properties.add(ObjectFlagProperty<Function(int p1)>.has('onTap', onTap));
+    properties.add(EnumProperty<UserRole?>('userRole', userRole));
   }
 }
 
