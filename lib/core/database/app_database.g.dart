@@ -254,26 +254,31 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   User map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return User(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      uuid: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}uuid'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      email: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}email'],
-      )!,
-      role: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}role'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}id'],
+          )!,
+      uuid:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}uuid'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      email:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}email'],
+          )!,
+      role:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}role'],
+          )!,
       phone: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}phone'],
@@ -282,26 +287,30 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.string,
         data['${effectivePrefix}address'],
       ),
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
+      isDeleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_deleted'],
+          )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sync_status'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      syncStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sync_status'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -369,16 +378,17 @@ class User extends DataClass implements Insertable<User> {
       name: Value(name),
       email: Value(email),
       role: Value(role),
-      phone: phone == null && nullToAbsent
-          ? const Value.absent()
-          : Value(phone),
-      address: address == null && nullToAbsent
-          ? const Value.absent()
-          : Value(address),
+      phone:
+          phone == null && nullToAbsent ? const Value.absent() : Value(phone),
+      address:
+          address == null && nullToAbsent
+              ? const Value.absent()
+              : Value(address),
       isDeleted: Value(isDeleted),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
+      remoteId:
+          remoteId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(remoteId),
       syncStatus: Value(syncStatus),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -462,9 +472,8 @@ class User extends DataClass implements Insertable<User> {
       address: data.address.present ? data.address.value : this.address,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1062,22 +1071,26 @@ class $CustomersTable extends Customers
   Customer map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Customer(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      uuid: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}uuid'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      email: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}email'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}id'],
+          )!,
+      uuid:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}uuid'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      email:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}email'],
+          )!,
       phone: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}phone'],
@@ -1094,10 +1107,11 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}tax_id'],
       ),
-      customerType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}customer_type'],
-      )!,
+      customerType:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}customer_type'],
+          )!,
       creditLimit: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}credit_limit'],
@@ -1106,34 +1120,40 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}payment_terms'],
       ),
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
-      preferredContactMethod: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}preferred_contact_method'],
-      )!,
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
+      preferredContactMethod:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}preferred_contact_method'],
+          )!,
+      isDeleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_deleted'],
+          )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sync_status'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      syncStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sync_status'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -1226,31 +1246,34 @@ class Customer extends DataClass implements Insertable<Customer> {
       uuid: Value(uuid),
       name: Value(name),
       email: Value(email),
-      phone: phone == null && nullToAbsent
-          ? const Value.absent()
-          : Value(phone),
-      address: address == null && nullToAbsent
-          ? const Value.absent()
-          : Value(address),
-      businessName: businessName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(businessName),
-      taxId: taxId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(taxId),
+      phone:
+          phone == null && nullToAbsent ? const Value.absent() : Value(phone),
+      address:
+          address == null && nullToAbsent
+              ? const Value.absent()
+              : Value(address),
+      businessName:
+          businessName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(businessName),
+      taxId:
+          taxId == null && nullToAbsent ? const Value.absent() : Value(taxId),
       customerType: Value(customerType),
-      creditLimit: creditLimit == null && nullToAbsent
-          ? const Value.absent()
-          : Value(creditLimit),
-      paymentTerms: paymentTerms == null && nullToAbsent
-          ? const Value.absent()
-          : Value(paymentTerms),
+      creditLimit:
+          creditLimit == null && nullToAbsent
+              ? const Value.absent()
+              : Value(creditLimit),
+      paymentTerms:
+          paymentTerms == null && nullToAbsent
+              ? const Value.absent()
+              : Value(paymentTerms),
       status: Value(status),
       preferredContactMethod: Value(preferredContactMethod),
       isDeleted: Value(isDeleted),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
+      remoteId:
+          remoteId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(remoteId),
       syncStatus: Value(syncStatus),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -1360,28 +1383,30 @@ class Customer extends DataClass implements Insertable<Customer> {
       email: data.email.present ? data.email.value : this.email,
       phone: data.phone.present ? data.phone.value : this.phone,
       address: data.address.present ? data.address.value : this.address,
-      businessName: data.businessName.present
-          ? data.businessName.value
-          : this.businessName,
+      businessName:
+          data.businessName.present
+              ? data.businessName.value
+              : this.businessName,
       taxId: data.taxId.present ? data.taxId.value : this.taxId,
-      customerType: data.customerType.present
-          ? data.customerType.value
-          : this.customerType,
-      creditLimit: data.creditLimit.present
-          ? data.creditLimit.value
-          : this.creditLimit,
-      paymentTerms: data.paymentTerms.present
-          ? data.paymentTerms.value
-          : this.paymentTerms,
+      customerType:
+          data.customerType.present
+              ? data.customerType.value
+              : this.customerType,
+      creditLimit:
+          data.creditLimit.present ? data.creditLimit.value : this.creditLimit,
+      paymentTerms:
+          data.paymentTerms.present
+              ? data.paymentTerms.value
+              : this.paymentTerms,
       status: data.status.present ? data.status.value : this.status,
-      preferredContactMethod: data.preferredContactMethod.present
-          ? data.preferredContactMethod.value
-          : this.preferredContactMethod,
+      preferredContactMethod:
+          data.preferredContactMethod.present
+              ? data.preferredContactMethod.value
+              : this.preferredContactMethod,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2268,50 +2293,58 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   Product map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Product(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      uuid: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}uuid'],
-      )!,
-      sku: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sku'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}id'],
+          )!,
+      uuid:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}uuid'],
+          )!,
+      sku:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sku'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
       description: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
-      category: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}category'],
-      )!,
+      category:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}category'],
+          )!,
       brand: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}brand'],
       ),
-      currentStock: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}current_stock'],
-      )!,
-      minStock: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}min_stock'],
-      )!,
+      currentStock:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}current_stock'],
+          )!,
+      minStock:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}min_stock'],
+          )!,
       maxStock: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}max_stock'],
       ),
-      unit: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}unit'],
-      )!,
+      unit:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}unit'],
+          )!,
       weight: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}weight'],
@@ -2320,22 +2353,25 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}dimensions'],
       ),
-      unitPrice: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}unit_price'],
-      )!,
-      costPrice: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}cost_price'],
-      )!,
+      unitPrice:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}unit_price'],
+          )!,
+      costPrice:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}cost_price'],
+          )!,
       wholesalePrice: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}wholesale_price'],
       ),
-      currency: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}currency'],
-      )!,
+      currency:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}currency'],
+          )!,
       supplier: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}supplier'],
@@ -2348,10 +2384,11 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.int,
         data['${effectivePrefix}lead_time_days'],
       ),
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
       location: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}location'],
@@ -2364,26 +2401,30 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}tags'],
       ),
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
-      syncStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sync_status'],
-      )!,
+      isDeleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_deleted'],
+          )!,
+      syncStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sync_status'],
+          )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -2521,53 +2562,61 @@ class Product extends DataClass implements Insertable<Product> {
       uuid: Value(uuid),
       sku: Value(sku),
       name: Value(name),
-      description: description == null && nullToAbsent
-          ? const Value.absent()
-          : Value(description),
+      description:
+          description == null && nullToAbsent
+              ? const Value.absent()
+              : Value(description),
       category: Value(category),
-      brand: brand == null && nullToAbsent
-          ? const Value.absent()
-          : Value(brand),
+      brand:
+          brand == null && nullToAbsent ? const Value.absent() : Value(brand),
       currentStock: Value(currentStock),
       minStock: Value(minStock),
-      maxStock: maxStock == null && nullToAbsent
-          ? const Value.absent()
-          : Value(maxStock),
+      maxStock:
+          maxStock == null && nullToAbsent
+              ? const Value.absent()
+              : Value(maxStock),
       unit: Value(unit),
-      weight: weight == null && nullToAbsent
-          ? const Value.absent()
-          : Value(weight),
-      dimensions: dimensions == null && nullToAbsent
-          ? const Value.absent()
-          : Value(dimensions),
+      weight:
+          weight == null && nullToAbsent ? const Value.absent() : Value(weight),
+      dimensions:
+          dimensions == null && nullToAbsent
+              ? const Value.absent()
+              : Value(dimensions),
       unitPrice: Value(unitPrice),
       costPrice: Value(costPrice),
-      wholesalePrice: wholesalePrice == null && nullToAbsent
-          ? const Value.absent()
-          : Value(wholesalePrice),
+      wholesalePrice:
+          wholesalePrice == null && nullToAbsent
+              ? const Value.absent()
+              : Value(wholesalePrice),
       currency: Value(currency),
-      supplier: supplier == null && nullToAbsent
-          ? const Value.absent()
-          : Value(supplier),
-      supplierSku: supplierSku == null && nullToAbsent
-          ? const Value.absent()
-          : Value(supplierSku),
-      leadTimeDays: leadTimeDays == null && nullToAbsent
-          ? const Value.absent()
-          : Value(leadTimeDays),
+      supplier:
+          supplier == null && nullToAbsent
+              ? const Value.absent()
+              : Value(supplier),
+      supplierSku:
+          supplierSku == null && nullToAbsent
+              ? const Value.absent()
+              : Value(supplierSku),
+      leadTimeDays:
+          leadTimeDays == null && nullToAbsent
+              ? const Value.absent()
+              : Value(leadTimeDays),
       status: Value(status),
-      location: location == null && nullToAbsent
-          ? const Value.absent()
-          : Value(location),
-      barcode: barcode == null && nullToAbsent
-          ? const Value.absent()
-          : Value(barcode),
+      location:
+          location == null && nullToAbsent
+              ? const Value.absent()
+              : Value(location),
+      barcode:
+          barcode == null && nullToAbsent
+              ? const Value.absent()
+              : Value(barcode),
       tags: tags == null && nullToAbsent ? const Value.absent() : Value(tags),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
+      remoteId:
+          remoteId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(remoteId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2692,9 +2741,8 @@ class Product extends DataClass implements Insertable<Product> {
     dimensions: dimensions.present ? dimensions.value : this.dimensions,
     unitPrice: unitPrice ?? this.unitPrice,
     costPrice: costPrice ?? this.costPrice,
-    wholesalePrice: wholesalePrice.present
-        ? wholesalePrice.value
-        : this.wholesalePrice,
+    wholesalePrice:
+        wholesalePrice.present ? wholesalePrice.value : this.wholesalePrice,
     currency: currency ?? this.currency,
     supplier: supplier.present ? supplier.value : this.supplier,
     supplierSku: supplierSku.present ? supplierSku.value : this.supplierSku,
@@ -2715,42 +2763,41 @@ class Product extends DataClass implements Insertable<Product> {
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
       sku: data.sku.present ? data.sku.value : this.sku,
       name: data.name.present ? data.name.value : this.name,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
+      description:
+          data.description.present ? data.description.value : this.description,
       category: data.category.present ? data.category.value : this.category,
       brand: data.brand.present ? data.brand.value : this.brand,
-      currentStock: data.currentStock.present
-          ? data.currentStock.value
-          : this.currentStock,
+      currentStock:
+          data.currentStock.present
+              ? data.currentStock.value
+              : this.currentStock,
       minStock: data.minStock.present ? data.minStock.value : this.minStock,
       maxStock: data.maxStock.present ? data.maxStock.value : this.maxStock,
       unit: data.unit.present ? data.unit.value : this.unit,
       weight: data.weight.present ? data.weight.value : this.weight,
-      dimensions: data.dimensions.present
-          ? data.dimensions.value
-          : this.dimensions,
+      dimensions:
+          data.dimensions.present ? data.dimensions.value : this.dimensions,
       unitPrice: data.unitPrice.present ? data.unitPrice.value : this.unitPrice,
       costPrice: data.costPrice.present ? data.costPrice.value : this.costPrice,
-      wholesalePrice: data.wholesalePrice.present
-          ? data.wholesalePrice.value
-          : this.wholesalePrice,
+      wholesalePrice:
+          data.wholesalePrice.present
+              ? data.wholesalePrice.value
+              : this.wholesalePrice,
       currency: data.currency.present ? data.currency.value : this.currency,
       supplier: data.supplier.present ? data.supplier.value : this.supplier,
-      supplierSku: data.supplierSku.present
-          ? data.supplierSku.value
-          : this.supplierSku,
-      leadTimeDays: data.leadTimeDays.present
-          ? data.leadTimeDays.value
-          : this.leadTimeDays,
+      supplierSku:
+          data.supplierSku.present ? data.supplierSku.value : this.supplierSku,
+      leadTimeDays:
+          data.leadTimeDays.present
+              ? data.leadTimeDays.value
+              : this.leadTimeDays,
       status: data.status.present ? data.status.value : this.status,
       location: data.location.present ? data.location.value : this.location,
       barcode: data.barcode.present ? data.barcode.value : this.barcode,
       tags: data.tags.present ? data.tags.value : this.tags,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -3663,22 +3710,26 @@ class $StockMovementsTable extends StockMovements
   StockMovement map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return StockMovement(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      productId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}product_id'],
-      )!,
-      movementType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}movement_type'],
-      )!,
-      quantity: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}quantity'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      productId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}product_id'],
+          )!,
+      movementType:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}movement_type'],
+          )!,
+      quantity:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}quantity'],
+          )!,
       referenceType: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}reference_type'],
@@ -3687,22 +3738,25 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.string,
         data['${effectivePrefix}reference_id'],
       ),
-      reason: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}reason'],
-      )!,
+      reason:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}reason'],
+          )!,
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
-      userId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}user_id'],
-      )!,
-      userName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}user_name'],
-      )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      userName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_name'],
+          )!,
       fromLocation: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}from_location'],
@@ -3719,10 +3773,11 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.double,
         data['${effectivePrefix}total_cost'],
       ),
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
       approvedBy: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}approved_by'],
@@ -3731,26 +3786,30 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.dateTime,
         data['${effectivePrefix}approved_at'],
       ),
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
-      syncStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sync_status'],
-      )!,
+      isDeleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_deleted'],
+          )!,
+      syncStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sync_status'],
+          )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -3861,42 +3920,50 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       productId: Value(productId),
       movementType: Value(movementType),
       quantity: Value(quantity),
-      referenceType: referenceType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(referenceType),
-      referenceId: referenceId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(referenceId),
+      referenceType:
+          referenceType == null && nullToAbsent
+              ? const Value.absent()
+              : Value(referenceType),
+      referenceId:
+          referenceId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(referenceId),
       reason: Value(reason),
-      notes: notes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(notes),
+      notes:
+          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
       userId: Value(userId),
       userName: Value(userName),
-      fromLocation: fromLocation == null && nullToAbsent
-          ? const Value.absent()
-          : Value(fromLocation),
-      toLocation: toLocation == null && nullToAbsent
-          ? const Value.absent()
-          : Value(toLocation),
-      unitCost: unitCost == null && nullToAbsent
-          ? const Value.absent()
-          : Value(unitCost),
-      totalCost: totalCost == null && nullToAbsent
-          ? const Value.absent()
-          : Value(totalCost),
+      fromLocation:
+          fromLocation == null && nullToAbsent
+              ? const Value.absent()
+              : Value(fromLocation),
+      toLocation:
+          toLocation == null && nullToAbsent
+              ? const Value.absent()
+              : Value(toLocation),
+      unitCost:
+          unitCost == null && nullToAbsent
+              ? const Value.absent()
+              : Value(unitCost),
+      totalCost:
+          totalCost == null && nullToAbsent
+              ? const Value.absent()
+              : Value(totalCost),
       status: Value(status),
-      approvedBy: approvedBy == null && nullToAbsent
-          ? const Value.absent()
-          : Value(approvedBy),
-      approvedAt: approvedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(approvedAt),
+      approvedBy:
+          approvedBy == null && nullToAbsent
+              ? const Value.absent()
+              : Value(approvedBy),
+      approvedAt:
+          approvedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(approvedAt),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
+      remoteId:
+          remoteId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(remoteId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -3989,9 +4056,8 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     productId: productId ?? this.productId,
     movementType: movementType ?? this.movementType,
     quantity: quantity ?? this.quantity,
-    referenceType: referenceType.present
-        ? referenceType.value
-        : this.referenceType,
+    referenceType:
+        referenceType.present ? referenceType.value : this.referenceType,
     referenceId: referenceId.present ? referenceId.value : this.referenceId,
     reason: reason ?? this.reason,
     notes: notes.present ? notes.value : this.notes,
@@ -4014,39 +4080,37 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     return StockMovement(
       id: data.id.present ? data.id.value : this.id,
       productId: data.productId.present ? data.productId.value : this.productId,
-      movementType: data.movementType.present
-          ? data.movementType.value
-          : this.movementType,
+      movementType:
+          data.movementType.present
+              ? data.movementType.value
+              : this.movementType,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
-      referenceType: data.referenceType.present
-          ? data.referenceType.value
-          : this.referenceType,
-      referenceId: data.referenceId.present
-          ? data.referenceId.value
-          : this.referenceId,
+      referenceType:
+          data.referenceType.present
+              ? data.referenceType.value
+              : this.referenceType,
+      referenceId:
+          data.referenceId.present ? data.referenceId.value : this.referenceId,
       reason: data.reason.present ? data.reason.value : this.reason,
       notes: data.notes.present ? data.notes.value : this.notes,
       userId: data.userId.present ? data.userId.value : this.userId,
       userName: data.userName.present ? data.userName.value : this.userName,
-      fromLocation: data.fromLocation.present
-          ? data.fromLocation.value
-          : this.fromLocation,
-      toLocation: data.toLocation.present
-          ? data.toLocation.value
-          : this.toLocation,
+      fromLocation:
+          data.fromLocation.present
+              ? data.fromLocation.value
+              : this.fromLocation,
+      toLocation:
+          data.toLocation.present ? data.toLocation.value : this.toLocation,
       unitCost: data.unitCost.present ? data.unitCost.value : this.unitCost,
       totalCost: data.totalCost.present ? data.totalCost.value : this.totalCost,
       status: data.status.present ? data.status.value : this.status,
-      approvedBy: data.approvedBy.present
-          ? data.approvedBy.value
-          : this.approvedBy,
-      approvedAt: data.approvedAt.present
-          ? data.approvedAt.value
-          : this.approvedAt,
+      approvedBy:
+          data.approvedBy.present ? data.approvedBy.value : this.approvedBy,
+      approvedAt:
+          data.approvedAt.present ? data.approvedAt.value : this.approvedAt,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -4591,34 +4655,39 @@ class $CategoriesTable extends Categories
   Category map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Category(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}id'],
+          )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}remote_id'],
       ),
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
       description: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
-      syncStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sync_status'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      syncStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sync_status'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -4665,13 +4734,15 @@ class Category extends DataClass implements Insertable<Category> {
   CategoriesCompanion toCompanion(bool nullToAbsent) {
     return CategoriesCompanion(
       id: Value(id),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
+      remoteId:
+          remoteId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(remoteId),
       name: Value(name),
-      description: description == null && nullToAbsent
-          ? const Value.absent()
-          : Value(description),
+      description:
+          description == null && nullToAbsent
+              ? const Value.absent()
+              : Value(description),
       syncStatus: Value(syncStatus),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -4729,12 +4800,10 @@ class Category extends DataClass implements Insertable<Category> {
       id: data.id.present ? data.id.value : this.id,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       name: data.name.present ? data.name.value : this.name,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      description:
+          data.description.present ? data.description.value : this.description,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -5493,54 +5562,65 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
   Order map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Order(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      customerId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}customer_id'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      customerId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}customer_id'],
+          )!,
       salesRepId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sales_rep_id'],
       ),
-      orderDate: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}order_date'],
-      )!,
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
-      orderNumber: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}order_number'],
-      )!,
-      subtotal: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}subtotal'],
-      )!,
-      taxAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}tax_amount'],
-      )!,
-      discountAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}discount_amount'],
-      )!,
-      totalAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}total_amount'],
-      )!,
-      paymentStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}payment_status'],
-      )!,
-      deliveryAddress: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}delivery_address'],
-      )!,
+      orderDate:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}order_date'],
+          )!,
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
+      orderNumber:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}order_number'],
+          )!,
+      subtotal:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}subtotal'],
+          )!,
+      taxAmount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}tax_amount'],
+          )!,
+      discountAmount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}discount_amount'],
+          )!,
+      totalAmount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}total_amount'],
+          )!,
+      paymentStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}payment_status'],
+          )!,
+      deliveryAddress:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}delivery_address'],
+          )!,
       deliveryContact: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}delivery_contact'],
@@ -5557,10 +5637,11 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}actual_delivery_date'],
       ),
-      warehouseStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}warehouse_status'],
-      )!,
+      warehouseStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}warehouse_status'],
+          )!,
       pickerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}picker_id'],
@@ -5585,30 +5666,35 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
         DriftSqlType.string,
         data['${effectivePrefix}internal_notes'],
       ),
-      priority: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}priority'],
-      )!,
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
-      syncStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sync_status'],
-      )!,
+      priority:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}priority'],
+          )!,
+      isDeleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_deleted'],
+          )!,
+      syncStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sync_status'],
+          )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -5744,9 +5830,10 @@ class Order extends DataClass implements Insertable<Order> {
     return OrdersCompanion(
       id: Value(id),
       customerId: Value(customerId),
-      salesRepId: salesRepId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(salesRepId),
+      salesRepId:
+          salesRepId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(salesRepId),
       orderDate: Value(orderDate),
       status: Value(status),
       orderNumber: Value(orderNumber),
@@ -5756,43 +5843,54 @@ class Order extends DataClass implements Insertable<Order> {
       totalAmount: Value(totalAmount),
       paymentStatus: Value(paymentStatus),
       deliveryAddress: Value(deliveryAddress),
-      deliveryContact: deliveryContact == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deliveryContact),
-      deliveryPhone: deliveryPhone == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deliveryPhone),
-      requestedDeliveryDate: requestedDeliveryDate == null && nullToAbsent
-          ? const Value.absent()
-          : Value(requestedDeliveryDate),
-      actualDeliveryDate: actualDeliveryDate == null && nullToAbsent
-          ? const Value.absent()
-          : Value(actualDeliveryDate),
+      deliveryContact:
+          deliveryContact == null && nullToAbsent
+              ? const Value.absent()
+              : Value(deliveryContact),
+      deliveryPhone:
+          deliveryPhone == null && nullToAbsent
+              ? const Value.absent()
+              : Value(deliveryPhone),
+      requestedDeliveryDate:
+          requestedDeliveryDate == null && nullToAbsent
+              ? const Value.absent()
+              : Value(requestedDeliveryDate),
+      actualDeliveryDate:
+          actualDeliveryDate == null && nullToAbsent
+              ? const Value.absent()
+              : Value(actualDeliveryDate),
       warehouseStatus: Value(warehouseStatus),
-      pickerId: pickerId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(pickerId),
-      pickedAt: pickedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(pickedAt),
-      packerId: packerId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(packerId),
-      packedAt: packedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(packedAt),
-      customerNotes: customerNotes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(customerNotes),
-      internalNotes: internalNotes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(internalNotes),
+      pickerId:
+          pickerId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(pickerId),
+      pickedAt:
+          pickedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(pickedAt),
+      packerId:
+          packerId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(packerId),
+      packedAt:
+          packedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(packedAt),
+      customerNotes:
+          customerNotes == null && nullToAbsent
+              ? const Value.absent()
+              : Value(customerNotes),
+      internalNotes:
+          internalNotes == null && nullToAbsent
+              ? const Value.absent()
+              : Value(internalNotes),
       priority: Value(priority),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
+      remoteId:
+          remoteId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(remoteId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -5920,29 +6018,27 @@ class Order extends DataClass implements Insertable<Order> {
     totalAmount: totalAmount ?? this.totalAmount,
     paymentStatus: paymentStatus ?? this.paymentStatus,
     deliveryAddress: deliveryAddress ?? this.deliveryAddress,
-    deliveryContact: deliveryContact.present
-        ? deliveryContact.value
-        : this.deliveryContact,
-    deliveryPhone: deliveryPhone.present
-        ? deliveryPhone.value
-        : this.deliveryPhone,
-    requestedDeliveryDate: requestedDeliveryDate.present
-        ? requestedDeliveryDate.value
-        : this.requestedDeliveryDate,
-    actualDeliveryDate: actualDeliveryDate.present
-        ? actualDeliveryDate.value
-        : this.actualDeliveryDate,
+    deliveryContact:
+        deliveryContact.present ? deliveryContact.value : this.deliveryContact,
+    deliveryPhone:
+        deliveryPhone.present ? deliveryPhone.value : this.deliveryPhone,
+    requestedDeliveryDate:
+        requestedDeliveryDate.present
+            ? requestedDeliveryDate.value
+            : this.requestedDeliveryDate,
+    actualDeliveryDate:
+        actualDeliveryDate.present
+            ? actualDeliveryDate.value
+            : this.actualDeliveryDate,
     warehouseStatus: warehouseStatus ?? this.warehouseStatus,
     pickerId: pickerId.present ? pickerId.value : this.pickerId,
     pickedAt: pickedAt.present ? pickedAt.value : this.pickedAt,
     packerId: packerId.present ? packerId.value : this.packerId,
     packedAt: packedAt.present ? packedAt.value : this.packedAt,
-    customerNotes: customerNotes.present
-        ? customerNotes.value
-        : this.customerNotes,
-    internalNotes: internalNotes.present
-        ? internalNotes.value
-        : this.internalNotes,
+    customerNotes:
+        customerNotes.present ? customerNotes.value : this.customerNotes,
+    internalNotes:
+        internalNotes.present ? internalNotes.value : this.internalNotes,
     priority: priority ?? this.priority,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -5953,61 +6049,66 @@ class Order extends DataClass implements Insertable<Order> {
   Order copyWithCompanion(OrdersCompanion data) {
     return Order(
       id: data.id.present ? data.id.value : this.id,
-      customerId: data.customerId.present
-          ? data.customerId.value
-          : this.customerId,
-      salesRepId: data.salesRepId.present
-          ? data.salesRepId.value
-          : this.salesRepId,
+      customerId:
+          data.customerId.present ? data.customerId.value : this.customerId,
+      salesRepId:
+          data.salesRepId.present ? data.salesRepId.value : this.salesRepId,
       orderDate: data.orderDate.present ? data.orderDate.value : this.orderDate,
       status: data.status.present ? data.status.value : this.status,
-      orderNumber: data.orderNumber.present
-          ? data.orderNumber.value
-          : this.orderNumber,
+      orderNumber:
+          data.orderNumber.present ? data.orderNumber.value : this.orderNumber,
       subtotal: data.subtotal.present ? data.subtotal.value : this.subtotal,
       taxAmount: data.taxAmount.present ? data.taxAmount.value : this.taxAmount,
-      discountAmount: data.discountAmount.present
-          ? data.discountAmount.value
-          : this.discountAmount,
-      totalAmount: data.totalAmount.present
-          ? data.totalAmount.value
-          : this.totalAmount,
-      paymentStatus: data.paymentStatus.present
-          ? data.paymentStatus.value
-          : this.paymentStatus,
-      deliveryAddress: data.deliveryAddress.present
-          ? data.deliveryAddress.value
-          : this.deliveryAddress,
-      deliveryContact: data.deliveryContact.present
-          ? data.deliveryContact.value
-          : this.deliveryContact,
-      deliveryPhone: data.deliveryPhone.present
-          ? data.deliveryPhone.value
-          : this.deliveryPhone,
-      requestedDeliveryDate: data.requestedDeliveryDate.present
-          ? data.requestedDeliveryDate.value
-          : this.requestedDeliveryDate,
-      actualDeliveryDate: data.actualDeliveryDate.present
-          ? data.actualDeliveryDate.value
-          : this.actualDeliveryDate,
-      warehouseStatus: data.warehouseStatus.present
-          ? data.warehouseStatus.value
-          : this.warehouseStatus,
+      discountAmount:
+          data.discountAmount.present
+              ? data.discountAmount.value
+              : this.discountAmount,
+      totalAmount:
+          data.totalAmount.present ? data.totalAmount.value : this.totalAmount,
+      paymentStatus:
+          data.paymentStatus.present
+              ? data.paymentStatus.value
+              : this.paymentStatus,
+      deliveryAddress:
+          data.deliveryAddress.present
+              ? data.deliveryAddress.value
+              : this.deliveryAddress,
+      deliveryContact:
+          data.deliveryContact.present
+              ? data.deliveryContact.value
+              : this.deliveryContact,
+      deliveryPhone:
+          data.deliveryPhone.present
+              ? data.deliveryPhone.value
+              : this.deliveryPhone,
+      requestedDeliveryDate:
+          data.requestedDeliveryDate.present
+              ? data.requestedDeliveryDate.value
+              : this.requestedDeliveryDate,
+      actualDeliveryDate:
+          data.actualDeliveryDate.present
+              ? data.actualDeliveryDate.value
+              : this.actualDeliveryDate,
+      warehouseStatus:
+          data.warehouseStatus.present
+              ? data.warehouseStatus.value
+              : this.warehouseStatus,
       pickerId: data.pickerId.present ? data.pickerId.value : this.pickerId,
       pickedAt: data.pickedAt.present ? data.pickedAt.value : this.pickedAt,
       packerId: data.packerId.present ? data.packerId.value : this.packerId,
       packedAt: data.packedAt.present ? data.packedAt.value : this.packedAt,
-      customerNotes: data.customerNotes.present
-          ? data.customerNotes.value
-          : this.customerNotes,
-      internalNotes: data.internalNotes.present
-          ? data.internalNotes.value
-          : this.internalNotes,
+      customerNotes:
+          data.customerNotes.present
+              ? data.customerNotes.value
+              : this.customerNotes,
+      internalNotes:
+          data.internalNotes.present
+              ? data.internalNotes.value
+              : this.internalNotes,
       priority: data.priority.present ? data.priority.value : this.priority,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -6996,66 +7097,80 @@ class $OrderItemsTable extends OrderItems
   OrderItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return OrderItem(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      orderId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}order_id'],
-      )!,
-      productId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}product_id'],
-      )!,
-      productSku: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}product_sku'],
-      )!,
-      productName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}product_name'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      orderId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}order_id'],
+          )!,
+      productId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}product_id'],
+          )!,
+      productSku:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}product_sku'],
+          )!,
+      productName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}product_name'],
+          )!,
       productCategory: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}product_category'],
       ),
-      quantity: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}quantity'],
-      )!,
-      deliveredQuantity: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}delivered_quantity'],
-      )!,
-      unitPrice: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}unit_price'],
-      )!,
-      subtotal: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}subtotal'],
-      )!,
-      discountAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}discount_amount'],
-      )!,
-      totalAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}total_amount'],
-      )!,
-      availableStock: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}available_stock'],
-      )!,
-      stockStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}stock_status'],
-      )!,
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
+      quantity:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}quantity'],
+          )!,
+      deliveredQuantity:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}delivered_quantity'],
+          )!,
+      unitPrice:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}unit_price'],
+          )!,
+      subtotal:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}subtotal'],
+          )!,
+      discountAmount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}discount_amount'],
+          )!,
+      totalAmount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}total_amount'],
+          )!,
+      availableStock:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}available_stock'],
+          )!,
+      stockStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}stock_status'],
+          )!,
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
       pickerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}picker_id'],
@@ -7072,26 +7187,30 @@ class $OrderItemsTable extends OrderItems
         DriftSqlType.string,
         data['${effectivePrefix}cancellation_reason'],
       ),
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
-      syncStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sync_status'],
-      )!,
+      isDeleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_deleted'],
+          )!,
+      syncStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sync_status'],
+          )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -7201,9 +7320,10 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
       productId: Value(productId),
       productSku: Value(productSku),
       productName: Value(productName),
-      productCategory: productCategory == null && nullToAbsent
-          ? const Value.absent()
-          : Value(productCategory),
+      productCategory:
+          productCategory == null && nullToAbsent
+              ? const Value.absent()
+              : Value(productCategory),
       quantity: Value(quantity),
       deliveredQuantity: Value(deliveredQuantity),
       unitPrice: Value(unitPrice),
@@ -7213,23 +7333,26 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
       availableStock: Value(availableStock),
       stockStatus: Value(stockStatus),
       status: Value(status),
-      pickerId: pickerId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(pickerId),
-      pickedAt: pickedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(pickedAt),
-      notes: notes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(notes),
-      cancellationReason: cancellationReason == null && nullToAbsent
-          ? const Value.absent()
-          : Value(cancellationReason),
+      pickerId:
+          pickerId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(pickerId),
+      pickedAt:
+          pickedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(pickedAt),
+      notes:
+          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      cancellationReason:
+          cancellationReason == null && nullToAbsent
+              ? const Value.absent()
+              : Value(cancellationReason),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
+      remoteId:
+          remoteId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(remoteId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -7331,9 +7454,8 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
     productId: productId ?? this.productId,
     productSku: productSku ?? this.productSku,
     productName: productName ?? this.productName,
-    productCategory: productCategory.present
-        ? productCategory.value
-        : this.productCategory,
+    productCategory:
+        productCategory.present ? productCategory.value : this.productCategory,
     quantity: quantity ?? this.quantity,
     deliveredQuantity: deliveredQuantity ?? this.deliveredQuantity,
     unitPrice: unitPrice ?? this.unitPrice,
@@ -7346,9 +7468,10 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
     pickerId: pickerId.present ? pickerId.value : this.pickerId,
     pickedAt: pickedAt.present ? pickedAt.value : this.pickedAt,
     notes: notes.present ? notes.value : this.notes,
-    cancellationReason: cancellationReason.present
-        ? cancellationReason.value
-        : this.cancellationReason,
+    cancellationReason:
+        cancellationReason.present
+            ? cancellationReason.value
+            : this.cancellationReason,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
@@ -7360,44 +7483,44 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
       id: data.id.present ? data.id.value : this.id,
       orderId: data.orderId.present ? data.orderId.value : this.orderId,
       productId: data.productId.present ? data.productId.value : this.productId,
-      productSku: data.productSku.present
-          ? data.productSku.value
-          : this.productSku,
-      productName: data.productName.present
-          ? data.productName.value
-          : this.productName,
-      productCategory: data.productCategory.present
-          ? data.productCategory.value
-          : this.productCategory,
+      productSku:
+          data.productSku.present ? data.productSku.value : this.productSku,
+      productName:
+          data.productName.present ? data.productName.value : this.productName,
+      productCategory:
+          data.productCategory.present
+              ? data.productCategory.value
+              : this.productCategory,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
-      deliveredQuantity: data.deliveredQuantity.present
-          ? data.deliveredQuantity.value
-          : this.deliveredQuantity,
+      deliveredQuantity:
+          data.deliveredQuantity.present
+              ? data.deliveredQuantity.value
+              : this.deliveredQuantity,
       unitPrice: data.unitPrice.present ? data.unitPrice.value : this.unitPrice,
       subtotal: data.subtotal.present ? data.subtotal.value : this.subtotal,
-      discountAmount: data.discountAmount.present
-          ? data.discountAmount.value
-          : this.discountAmount,
-      totalAmount: data.totalAmount.present
-          ? data.totalAmount.value
-          : this.totalAmount,
-      availableStock: data.availableStock.present
-          ? data.availableStock.value
-          : this.availableStock,
-      stockStatus: data.stockStatus.present
-          ? data.stockStatus.value
-          : this.stockStatus,
+      discountAmount:
+          data.discountAmount.present
+              ? data.discountAmount.value
+              : this.discountAmount,
+      totalAmount:
+          data.totalAmount.present ? data.totalAmount.value : this.totalAmount,
+      availableStock:
+          data.availableStock.present
+              ? data.availableStock.value
+              : this.availableStock,
+      stockStatus:
+          data.stockStatus.present ? data.stockStatus.value : this.stockStatus,
       status: data.status.present ? data.status.value : this.status,
       pickerId: data.pickerId.present ? data.pickerId.value : this.pickerId,
       pickedAt: data.pickedAt.present ? data.pickedAt.value : this.pickedAt,
       notes: data.notes.present ? data.notes.value : this.notes,
-      cancellationReason: data.cancellationReason.present
-          ? data.cancellationReason.value
-          : this.cancellationReason,
+      cancellationReason:
+          data.cancellationReason.present
+              ? data.cancellationReason.value
+              : this.cancellationReason,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -8643,34 +8766,41 @@ class $DeliveriesTable extends Deliveries
   Delivery map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Delivery(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      orderId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}order_id'],
-      )!,
-      deliveryPersonnelId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}delivery_personnel_id'],
-      )!,
-      deliveryPersonnelName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}delivery_personnel_name'],
-      )!,
-      deliveryPersonnelPhone: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}delivery_personnel_phone'],
-      )!,
-      deliveryNumber: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}delivery_number'],
-      )!,
-      scheduledDate: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}scheduled_date'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      orderId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}order_id'],
+          )!,
+      deliveryPersonnelId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}delivery_personnel_id'],
+          )!,
+      deliveryPersonnelName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}delivery_personnel_name'],
+          )!,
+      deliveryPersonnelPhone:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}delivery_personnel_phone'],
+          )!,
+      deliveryNumber:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}delivery_number'],
+          )!,
+      scheduledDate:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}scheduled_date'],
+          )!,
       actualStartTime: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}actual_start_time'],
@@ -8679,34 +8809,39 @@ class $DeliveriesTable extends Deliveries
         DriftSqlType.dateTime,
         data['${effectivePrefix}actual_completion_time'],
       ),
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
       subStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sub_status'],
       ),
-      route: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}route'],
-      )!,
-      routeOrder: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}route_order'],
-      )!,
+      route:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}route'],
+          )!,
+      routeOrder:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}route_order'],
+          )!,
       vehicleNumber: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}vehicle_number'],
       ),
-      startLocation: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}start_location'],
-      )!,
-      endLocation: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}end_location'],
-      )!,
+      startLocation:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}start_location'],
+          )!,
+      endLocation:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}end_location'],
+          )!,
       startLatitude: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}start_latitude'],
@@ -8743,10 +8878,11 @@ class $DeliveriesTable extends Deliveries
         DriftSqlType.string,
         data['${effectivePrefix}delivery_notes'],
       ),
-      collectedAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}collected_amount'],
-      )!,
+      collectedAmount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}collected_amount'],
+          )!,
       paymentMethod: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}payment_method'],
@@ -8767,38 +8903,44 @@ class $DeliveriesTable extends Deliveries
         DriftSqlType.string,
         data['${effectivePrefix}resolution'],
       ),
-      priority: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}priority'],
-      )!,
-      attemptCount: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}attempt_count'],
-      )!,
+      priority:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}priority'],
+          )!,
+      attemptCount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}attempt_count'],
+          )!,
       nextAttemptDate: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}next_attempt_date'],
       ),
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
-      syncStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sync_status'],
-      )!,
+      isDeleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_deleted'],
+          )!,
+      syncStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sync_status'],
+          )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -8983,76 +9125,96 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       deliveryPersonnelPhone: Value(deliveryPersonnelPhone),
       deliveryNumber: Value(deliveryNumber),
       scheduledDate: Value(scheduledDate),
-      actualStartTime: actualStartTime == null && nullToAbsent
-          ? const Value.absent()
-          : Value(actualStartTime),
-      actualCompletionTime: actualCompletionTime == null && nullToAbsent
-          ? const Value.absent()
-          : Value(actualCompletionTime),
+      actualStartTime:
+          actualStartTime == null && nullToAbsent
+              ? const Value.absent()
+              : Value(actualStartTime),
+      actualCompletionTime:
+          actualCompletionTime == null && nullToAbsent
+              ? const Value.absent()
+              : Value(actualCompletionTime),
       status: Value(status),
-      subStatus: subStatus == null && nullToAbsent
-          ? const Value.absent()
-          : Value(subStatus),
+      subStatus:
+          subStatus == null && nullToAbsent
+              ? const Value.absent()
+              : Value(subStatus),
       route: Value(route),
       routeOrder: Value(routeOrder),
-      vehicleNumber: vehicleNumber == null && nullToAbsent
-          ? const Value.absent()
-          : Value(vehicleNumber),
+      vehicleNumber:
+          vehicleNumber == null && nullToAbsent
+              ? const Value.absent()
+              : Value(vehicleNumber),
       startLocation: Value(startLocation),
       endLocation: Value(endLocation),
-      startLatitude: startLatitude == null && nullToAbsent
-          ? const Value.absent()
-          : Value(startLatitude),
-      startLongitude: startLongitude == null && nullToAbsent
-          ? const Value.absent()
-          : Value(startLongitude),
-      endLatitude: endLatitude == null && nullToAbsent
-          ? const Value.absent()
-          : Value(endLatitude),
-      endLongitude: endLongitude == null && nullToAbsent
-          ? const Value.absent()
-          : Value(endLongitude),
-      proofOfDeliveryType: proofOfDeliveryType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(proofOfDeliveryType),
-      proofOfDeliveryUrl: proofOfDeliveryUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(proofOfDeliveryUrl),
-      recipientName: recipientName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(recipientName),
-      recipientRelation: recipientRelation == null && nullToAbsent
-          ? const Value.absent()
-          : Value(recipientRelation),
-      deliveryNotes: deliveryNotes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deliveryNotes),
+      startLatitude:
+          startLatitude == null && nullToAbsent
+              ? const Value.absent()
+              : Value(startLatitude),
+      startLongitude:
+          startLongitude == null && nullToAbsent
+              ? const Value.absent()
+              : Value(startLongitude),
+      endLatitude:
+          endLatitude == null && nullToAbsent
+              ? const Value.absent()
+              : Value(endLatitude),
+      endLongitude:
+          endLongitude == null && nullToAbsent
+              ? const Value.absent()
+              : Value(endLongitude),
+      proofOfDeliveryType:
+          proofOfDeliveryType == null && nullToAbsent
+              ? const Value.absent()
+              : Value(proofOfDeliveryType),
+      proofOfDeliveryUrl:
+          proofOfDeliveryUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(proofOfDeliveryUrl),
+      recipientName:
+          recipientName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(recipientName),
+      recipientRelation:
+          recipientRelation == null && nullToAbsent
+              ? const Value.absent()
+              : Value(recipientRelation),
+      deliveryNotes:
+          deliveryNotes == null && nullToAbsent
+              ? const Value.absent()
+              : Value(deliveryNotes),
       collectedAmount: Value(collectedAmount),
-      paymentMethod: paymentMethod == null && nullToAbsent
-          ? const Value.absent()
-          : Value(paymentMethod),
-      checkNumber: checkNumber == null && nullToAbsent
-          ? const Value.absent()
-          : Value(checkNumber),
-      issueType: issueType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(issueType),
-      issueDescription: issueDescription == null && nullToAbsent
-          ? const Value.absent()
-          : Value(issueDescription),
-      resolution: resolution == null && nullToAbsent
-          ? const Value.absent()
-          : Value(resolution),
+      paymentMethod:
+          paymentMethod == null && nullToAbsent
+              ? const Value.absent()
+              : Value(paymentMethod),
+      checkNumber:
+          checkNumber == null && nullToAbsent
+              ? const Value.absent()
+              : Value(checkNumber),
+      issueType:
+          issueType == null && nullToAbsent
+              ? const Value.absent()
+              : Value(issueType),
+      issueDescription:
+          issueDescription == null && nullToAbsent
+              ? const Value.absent()
+              : Value(issueDescription),
+      resolution:
+          resolution == null && nullToAbsent
+              ? const Value.absent()
+              : Value(resolution),
       priority: Value(priority),
       attemptCount: Value(attemptCount),
-      nextAttemptDate: nextAttemptDate == null && nullToAbsent
-          ? const Value.absent()
-          : Value(nextAttemptDate),
+      nextAttemptDate:
+          nextAttemptDate == null && nullToAbsent
+              ? const Value.absent()
+              : Value(nextAttemptDate),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
+      remoteId:
+          remoteId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(remoteId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -9218,59 +9380,56 @@ class Delivery extends DataClass implements Insertable<Delivery> {
         deliveryPersonnelPhone ?? this.deliveryPersonnelPhone,
     deliveryNumber: deliveryNumber ?? this.deliveryNumber,
     scheduledDate: scheduledDate ?? this.scheduledDate,
-    actualStartTime: actualStartTime.present
-        ? actualStartTime.value
-        : this.actualStartTime,
-    actualCompletionTime: actualCompletionTime.present
-        ? actualCompletionTime.value
-        : this.actualCompletionTime,
+    actualStartTime:
+        actualStartTime.present ? actualStartTime.value : this.actualStartTime,
+    actualCompletionTime:
+        actualCompletionTime.present
+            ? actualCompletionTime.value
+            : this.actualCompletionTime,
     status: status ?? this.status,
     subStatus: subStatus.present ? subStatus.value : this.subStatus,
     route: route ?? this.route,
     routeOrder: routeOrder ?? this.routeOrder,
-    vehicleNumber: vehicleNumber.present
-        ? vehicleNumber.value
-        : this.vehicleNumber,
+    vehicleNumber:
+        vehicleNumber.present ? vehicleNumber.value : this.vehicleNumber,
     startLocation: startLocation ?? this.startLocation,
     endLocation: endLocation ?? this.endLocation,
-    startLatitude: startLatitude.present
-        ? startLatitude.value
-        : this.startLatitude,
-    startLongitude: startLongitude.present
-        ? startLongitude.value
-        : this.startLongitude,
+    startLatitude:
+        startLatitude.present ? startLatitude.value : this.startLatitude,
+    startLongitude:
+        startLongitude.present ? startLongitude.value : this.startLongitude,
     endLatitude: endLatitude.present ? endLatitude.value : this.endLatitude,
     endLongitude: endLongitude.present ? endLongitude.value : this.endLongitude,
-    proofOfDeliveryType: proofOfDeliveryType.present
-        ? proofOfDeliveryType.value
-        : this.proofOfDeliveryType,
-    proofOfDeliveryUrl: proofOfDeliveryUrl.present
-        ? proofOfDeliveryUrl.value
-        : this.proofOfDeliveryUrl,
-    recipientName: recipientName.present
-        ? recipientName.value
-        : this.recipientName,
-    recipientRelation: recipientRelation.present
-        ? recipientRelation.value
-        : this.recipientRelation,
-    deliveryNotes: deliveryNotes.present
-        ? deliveryNotes.value
-        : this.deliveryNotes,
+    proofOfDeliveryType:
+        proofOfDeliveryType.present
+            ? proofOfDeliveryType.value
+            : this.proofOfDeliveryType,
+    proofOfDeliveryUrl:
+        proofOfDeliveryUrl.present
+            ? proofOfDeliveryUrl.value
+            : this.proofOfDeliveryUrl,
+    recipientName:
+        recipientName.present ? recipientName.value : this.recipientName,
+    recipientRelation:
+        recipientRelation.present
+            ? recipientRelation.value
+            : this.recipientRelation,
+    deliveryNotes:
+        deliveryNotes.present ? deliveryNotes.value : this.deliveryNotes,
     collectedAmount: collectedAmount ?? this.collectedAmount,
-    paymentMethod: paymentMethod.present
-        ? paymentMethod.value
-        : this.paymentMethod,
+    paymentMethod:
+        paymentMethod.present ? paymentMethod.value : this.paymentMethod,
     checkNumber: checkNumber.present ? checkNumber.value : this.checkNumber,
     issueType: issueType.present ? issueType.value : this.issueType,
-    issueDescription: issueDescription.present
-        ? issueDescription.value
-        : this.issueDescription,
+    issueDescription:
+        issueDescription.present
+            ? issueDescription.value
+            : this.issueDescription,
     resolution: resolution.present ? resolution.value : this.resolution,
     priority: priority ?? this.priority,
     attemptCount: attemptCount ?? this.attemptCount,
-    nextAttemptDate: nextAttemptDate.present
-        ? nextAttemptDate.value
-        : this.nextAttemptDate,
+    nextAttemptDate:
+        nextAttemptDate.present ? nextAttemptDate.value : this.nextAttemptDate,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
@@ -9281,96 +9440,112 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     return Delivery(
       id: data.id.present ? data.id.value : this.id,
       orderId: data.orderId.present ? data.orderId.value : this.orderId,
-      deliveryPersonnelId: data.deliveryPersonnelId.present
-          ? data.deliveryPersonnelId.value
-          : this.deliveryPersonnelId,
-      deliveryPersonnelName: data.deliveryPersonnelName.present
-          ? data.deliveryPersonnelName.value
-          : this.deliveryPersonnelName,
-      deliveryPersonnelPhone: data.deliveryPersonnelPhone.present
-          ? data.deliveryPersonnelPhone.value
-          : this.deliveryPersonnelPhone,
-      deliveryNumber: data.deliveryNumber.present
-          ? data.deliveryNumber.value
-          : this.deliveryNumber,
-      scheduledDate: data.scheduledDate.present
-          ? data.scheduledDate.value
-          : this.scheduledDate,
-      actualStartTime: data.actualStartTime.present
-          ? data.actualStartTime.value
-          : this.actualStartTime,
-      actualCompletionTime: data.actualCompletionTime.present
-          ? data.actualCompletionTime.value
-          : this.actualCompletionTime,
+      deliveryPersonnelId:
+          data.deliveryPersonnelId.present
+              ? data.deliveryPersonnelId.value
+              : this.deliveryPersonnelId,
+      deliveryPersonnelName:
+          data.deliveryPersonnelName.present
+              ? data.deliveryPersonnelName.value
+              : this.deliveryPersonnelName,
+      deliveryPersonnelPhone:
+          data.deliveryPersonnelPhone.present
+              ? data.deliveryPersonnelPhone.value
+              : this.deliveryPersonnelPhone,
+      deliveryNumber:
+          data.deliveryNumber.present
+              ? data.deliveryNumber.value
+              : this.deliveryNumber,
+      scheduledDate:
+          data.scheduledDate.present
+              ? data.scheduledDate.value
+              : this.scheduledDate,
+      actualStartTime:
+          data.actualStartTime.present
+              ? data.actualStartTime.value
+              : this.actualStartTime,
+      actualCompletionTime:
+          data.actualCompletionTime.present
+              ? data.actualCompletionTime.value
+              : this.actualCompletionTime,
       status: data.status.present ? data.status.value : this.status,
       subStatus: data.subStatus.present ? data.subStatus.value : this.subStatus,
       route: data.route.present ? data.route.value : this.route,
-      routeOrder: data.routeOrder.present
-          ? data.routeOrder.value
-          : this.routeOrder,
-      vehicleNumber: data.vehicleNumber.present
-          ? data.vehicleNumber.value
-          : this.vehicleNumber,
-      startLocation: data.startLocation.present
-          ? data.startLocation.value
-          : this.startLocation,
-      endLocation: data.endLocation.present
-          ? data.endLocation.value
-          : this.endLocation,
-      startLatitude: data.startLatitude.present
-          ? data.startLatitude.value
-          : this.startLatitude,
-      startLongitude: data.startLongitude.present
-          ? data.startLongitude.value
-          : this.startLongitude,
-      endLatitude: data.endLatitude.present
-          ? data.endLatitude.value
-          : this.endLatitude,
-      endLongitude: data.endLongitude.present
-          ? data.endLongitude.value
-          : this.endLongitude,
-      proofOfDeliveryType: data.proofOfDeliveryType.present
-          ? data.proofOfDeliveryType.value
-          : this.proofOfDeliveryType,
-      proofOfDeliveryUrl: data.proofOfDeliveryUrl.present
-          ? data.proofOfDeliveryUrl.value
-          : this.proofOfDeliveryUrl,
-      recipientName: data.recipientName.present
-          ? data.recipientName.value
-          : this.recipientName,
-      recipientRelation: data.recipientRelation.present
-          ? data.recipientRelation.value
-          : this.recipientRelation,
-      deliveryNotes: data.deliveryNotes.present
-          ? data.deliveryNotes.value
-          : this.deliveryNotes,
-      collectedAmount: data.collectedAmount.present
-          ? data.collectedAmount.value
-          : this.collectedAmount,
-      paymentMethod: data.paymentMethod.present
-          ? data.paymentMethod.value
-          : this.paymentMethod,
-      checkNumber: data.checkNumber.present
-          ? data.checkNumber.value
-          : this.checkNumber,
+      routeOrder:
+          data.routeOrder.present ? data.routeOrder.value : this.routeOrder,
+      vehicleNumber:
+          data.vehicleNumber.present
+              ? data.vehicleNumber.value
+              : this.vehicleNumber,
+      startLocation:
+          data.startLocation.present
+              ? data.startLocation.value
+              : this.startLocation,
+      endLocation:
+          data.endLocation.present ? data.endLocation.value : this.endLocation,
+      startLatitude:
+          data.startLatitude.present
+              ? data.startLatitude.value
+              : this.startLatitude,
+      startLongitude:
+          data.startLongitude.present
+              ? data.startLongitude.value
+              : this.startLongitude,
+      endLatitude:
+          data.endLatitude.present ? data.endLatitude.value : this.endLatitude,
+      endLongitude:
+          data.endLongitude.present
+              ? data.endLongitude.value
+              : this.endLongitude,
+      proofOfDeliveryType:
+          data.proofOfDeliveryType.present
+              ? data.proofOfDeliveryType.value
+              : this.proofOfDeliveryType,
+      proofOfDeliveryUrl:
+          data.proofOfDeliveryUrl.present
+              ? data.proofOfDeliveryUrl.value
+              : this.proofOfDeliveryUrl,
+      recipientName:
+          data.recipientName.present
+              ? data.recipientName.value
+              : this.recipientName,
+      recipientRelation:
+          data.recipientRelation.present
+              ? data.recipientRelation.value
+              : this.recipientRelation,
+      deliveryNotes:
+          data.deliveryNotes.present
+              ? data.deliveryNotes.value
+              : this.deliveryNotes,
+      collectedAmount:
+          data.collectedAmount.present
+              ? data.collectedAmount.value
+              : this.collectedAmount,
+      paymentMethod:
+          data.paymentMethod.present
+              ? data.paymentMethod.value
+              : this.paymentMethod,
+      checkNumber:
+          data.checkNumber.present ? data.checkNumber.value : this.checkNumber,
       issueType: data.issueType.present ? data.issueType.value : this.issueType,
-      issueDescription: data.issueDescription.present
-          ? data.issueDescription.value
-          : this.issueDescription,
-      resolution: data.resolution.present
-          ? data.resolution.value
-          : this.resolution,
+      issueDescription:
+          data.issueDescription.present
+              ? data.issueDescription.value
+              : this.issueDescription,
+      resolution:
+          data.resolution.present ? data.resolution.value : this.resolution,
       priority: data.priority.present ? data.priority.value : this.priority,
-      attemptCount: data.attemptCount.present
-          ? data.attemptCount.value
-          : this.attemptCount,
-      nextAttemptDate: data.nextAttemptDate.present
-          ? data.nextAttemptDate.value
-          : this.nextAttemptDate,
+      attemptCount:
+          data.attemptCount.present
+              ? data.attemptCount.value
+              : this.attemptCount,
+      nextAttemptDate:
+          data.nextAttemptDate.present
+              ? data.nextAttemptDate.value
+              : this.nextAttemptDate,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -10274,12 +10449,12 @@ class $$UsersTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$UsersTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$UsersTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$UsersTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$UsersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$UsersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$UsersTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -10336,9 +10511,16 @@ class $$UsersTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -10697,12 +10879,12 @@ class $$CustomersTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$CustomersTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$CustomersTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$CustomersTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$CustomersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$CustomersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$CustomersTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -10783,9 +10965,16 @@ class $$CustomersTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -11311,12 +11500,12 @@ class $$ProductsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$ProductsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$ProductsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$ProductsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$ProductsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$ProductsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$ProductsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -11441,9 +11630,16 @@ class $$ProductsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -11873,12 +12069,16 @@ class $$StockMovementsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$StockMovementsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$StockMovementsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$StockMovementsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$StockMovementsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$StockMovementsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$StockMovementsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -11979,9 +12179,16 @@ class $$StockMovementsTableTableManager
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -12170,12 +12377,12 @@ class $$CategoriesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$CategoriesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$CategoriesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$CategoriesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$CategoriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$CategoriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$CategoriesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -12212,9 +12419,16 @@ class $$CategoriesTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -12758,12 +12972,12 @@ class $$OrdersTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$OrdersTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$OrdersTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$OrdersTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$OrdersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$OrdersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$OrdersTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -12892,9 +13106,16 @@ class $$OrdersTableTableManager
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -13356,12 +13577,12 @@ class $$OrderItemsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$OrderItemsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$OrderItemsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$OrderItemsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$OrderItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$OrderItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$OrderItemsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -13470,9 +13691,16 @@ class $$OrderItemsTableTableManager
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -14192,12 +14420,12 @@ class $$DeliveriesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$DeliveriesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$DeliveriesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$DeliveriesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$DeliveriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$DeliveriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$DeliveriesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -14366,9 +14594,16 @@ class $$DeliveriesTableTableManager
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
