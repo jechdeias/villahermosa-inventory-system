@@ -4,6 +4,8 @@ import 'core/database/app_database.dart';
 import 'core/auth/auth_service.dart';
 import 'core/services/navigation_service.dart';
 import 'core/business/role_based_access.dart';
+import 'core/navigation/role_based_navigation.dart';
+import 'core/constants/user_roles.dart';
 import 'features/auth/login_screen.dart';
 
 void main() async {
@@ -120,8 +122,53 @@ class _AuthWrapperState extends State<AuthWrapper> {
 }
 
 // Dashboard widgets with logout functionality
-class AdminDashboard extends StatelessWidget {
+class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
+
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  int _selectedIndex = 0;
+  
+  final List<Widget> _screens = [
+    const _AdminHomeScreen(),
+    const _OrdersScreen(),
+    const _ProductsScreen(),
+    const _CustomersScreen(),
+    const _DeliveriesScreen(),
+    const _WarehouseScreen(),
+    const _ReportsScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      body: Row(
+        children: [
+          // Navigation Rail
+          RoleBasedNavigationRail(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            userRole: UserRole.admin,
+          ),
+          const VerticalDivider(thickness: 1, width: 1),
+          // Main Content
+          Expanded(
+            child: _screens[_selectedIndex],
+          ),
+        ],
+      ),
+    );
+}
+
+// Admin Home Screen with action cards
+class _AdminHomeScreen extends StatelessWidget {
+  const _AdminHomeScreen();
 
   Widget _buildActionCard({
     required IconData icon,
@@ -335,6 +382,145 @@ class AdminDashboard extends StatelessWidget {
           ),
         ),
       ),
+    );
+}
+
+// Placeholder screens for navigation
+class _OrdersScreen extends StatelessWidget {
+  const _OrdersScreen();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(
+        title: const Text('Orders'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService(AppDatabase()).signOut();
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/login',
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+      body: const Center(child: Text('Orders Screen - Coming Soon')),
+    );
+}
+
+class _ProductsScreen extends StatelessWidget {
+  const _ProductsScreen();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(
+        title: const Text('Products'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService(AppDatabase()).signOut();
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/login',
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+      body: const Center(child: Text('Products Screen - Coming Soon')),
+    );
+}
+
+class _CustomersScreen extends StatelessWidget {
+  const _CustomersScreen();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(
+        title: const Text('Customers'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService(AppDatabase()).signOut();
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/login',
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+      body: const Center(child: Text('Customers Screen - Coming Soon')),
+    );
+}
+
+class _DeliveriesScreen extends StatelessWidget {
+  const _DeliveriesScreen();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(
+        title: const Text('Deliveries'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService(AppDatabase()).signOut();
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/login',
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+      body: const Center(child: Text('Deliveries Screen - Coming Soon')),
+    );
+}
+
+class _WarehouseScreen extends StatelessWidget {
+  const _WarehouseScreen();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(
+        title: const Text('Warehouse'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService(AppDatabase()).signOut();
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/login',
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+      body: const Center(child: Text('Warehouse Screen - Coming Soon')),
+    );
+}
+
+class _ReportsScreen extends StatelessWidget {
+  const _ReportsScreen();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(
+        title: const Text('Reports'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService(AppDatabase()).signOut();
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/login',
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+      body: const Center(child: Text('Reports Screen - Coming Soon')),
     );
 }
 
