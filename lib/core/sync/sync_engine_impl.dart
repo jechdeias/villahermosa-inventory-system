@@ -226,92 +226,111 @@ class SyncEngineImpl extends SyncEngine {
   Future<void> _updateLocalRecord(String tableName, Map<String, dynamic> data) async {
     switch (tableName) {
       case 'users':
-        await database.customUpdateOnly(
-          UsersCompanion(
-            name: Value(data['name']),
-            email: Value(data['email']),
-            role: Value(data['role']),
-            phone: Value(data['phone']),
-            address: Value(data['address']),
-            isDeleted: Value(data['is_deleted']),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.parse(data['updated_at'])),
-          ),
-          where: (tbl) => tbl.remoteId.equals(data['id']),
+        await database.customUpdate(
+          '''UPDATE users SET name = ?, email = ?, role = ?, phone = ?, 
+              address = ?, is_deleted = ?, sync_status = ?, updated_at = ? 
+              WHERE remote_id = ?''',
+          variables: [
+            Variable.withString(data['name']),
+            Variable.withString(data['email']),
+            Variable.withString(data['role']),
+            Variable.withString(data['phone']),
+            Variable.withString(data['address']),
+            Variable.withBool(data['is_deleted']),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(data['updated_at'])),
+            Variable.withString(data['id']),
+          ],
         );
         break;
       case 'products':
-        await database.customUpdateOnly(
-          ProductsCompanion(
-            sku: Value(data['sku']),
-            name: Value(data['name']),
-            description: Value(data['description']),
-            category: Value(data['category']),
-            brand: Value(data['brand']),
-            currentStock: Value(data['current_stock']),
-            minStock: Value(data['min_stock']),
-            maxStock: Value(data['max_stock']),
-            unit: Value(data['unit']),
-            unitPrice: Value(data['unit_price']),
-            costPrice: Value(data['cost_price']),
-            status: Value(data['status']),
-            barcode: Value(data['barcode']),
-            location: Value(data['location']),
-            supplier: Value(data['supplier']),
-            isDeleted: Value(data['is_deleted']),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.parse(data['updated_at'])),
-          ),
-          where: (tbl) => tbl.remoteId.equals(data['id']),
+        await database.customUpdate(
+          '''UPDATE products SET sku = ?, name = ?, description = ?, category = ?, 
+              brand = ?, current_stock = ?, min_stock = ?, max_stock = ?, unit = ?, 
+              unit_price = ?, cost_price = ?, status = ?, barcode = ?, location = ?, 
+              supplier = ?, is_deleted = ?, sync_status = ?, updated_at = ? 
+              WHERE remote_id = ?''',
+          variables: [
+            Variable.withString(data['sku']),
+            Variable.withString(data['name']),
+            Variable.withString(data['description']),
+            Variable.withString(data['category']),
+            Variable.withString(data['brand']),
+            Variable.withInt(data['current_stock']),
+            Variable.withInt(data['min_stock']),
+            Variable.withInt(data['max_stock']),
+            Variable.withString(data['unit']),
+            Variable.withReal(data['unit_price']),
+            Variable.withReal(data['cost_price']),
+            Variable.withString(data['status']),
+            Variable.withString(data['barcode']),
+            Variable.withString(data['location']),
+            Variable.withString(data['supplier']),
+            Variable.withBool(data['is_deleted']),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(data['updated_at'])),
+            Variable.withString(data['id']),
+          ],
         );
         break;
       case 'customers':
-        await database.customUpdateOnly(
-          CustomersCompanion(
-            name: Value(data['name']),
-            email: Value(data['email']),
-            phone: Value(data['phone']),
-            address: Value(data['address']),
-            businessName: Value(data['business_name']),
-            taxId: Value(data['tax_id']),
-            customerType: Value(data['customer_type']),
-            creditLimit: Value(data['credit_limit']),
-            paymentTerms: Value(data['payment_terms']),
-            status: Value(data['status']),
-            preferredContactMethod: Value(data['preferred_contact_method']),
-            isDeleted: Value(data['is_deleted']),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.parse(data['updated_at'])),
-          ),
-          where: (tbl) => tbl.remoteId.equals(data['id']),
+        await database.customUpdate(
+          '''UPDATE customers SET name = ?, email = ?, phone = ?, address = ?, 
+              business_name = ?, tax_id = ?, customer_type = ?, credit_limit = ?, 
+              payment_terms = ?, status = ?, preferred_contact_method = ?, 
+              is_deleted = ?, sync_status = ?, updated_at = ? 
+              WHERE remote_id = ?''',
+          variables: [
+            Variable.withString(data['name']),
+            Variable.withString(data['email']),
+            Variable.withString(data['phone']),
+            Variable.withString(data['address']),
+            Variable.withString(data['business_name']),
+            Variable.withString(data['tax_id']),
+            Variable.withString(data['customer_type']),
+            Variable.withReal(data['credit_limit']),
+            Variable.withString(data['payment_terms']),
+            Variable.withString(data['status']),
+            Variable.withString(data['preferred_contact_method']),
+            Variable.withBool(data['is_deleted']),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(data['updated_at'])),
+            Variable.withString(data['id']),
+          ],
         );
         break;
       case 'stock_movements':
-        await database.customUpdateOnly(
-          StockMovementsCompanion(
-            productId: Value(data['product_id']),
-            movementType: Value(data['movement_type']),
-            quantity: Value(data['quantity']),
-            referenceType: Value(data['reference_type']),
-            referenceId: Value(data['reference_id']),
-            reason: Value(data['reason']),
-            notes: Value(data['notes']),
-            userId: Value(data['user_id']),
-            userName: Value(data['user_name']),
-            fromLocation: Value(data['from_location']),
-            toLocation: Value(data['to_location']),
-            unitCost: Value(data['unit_cost']),
-            totalCost: Value(data['total_cost']),
-            status: Value(data['status']),
-            approvedBy: Value(data['approved_by']),
-            approvedAt: data['approved_at'] != null 
-                ? Value(DateTime.parse(data['approved_at']))
-                : const Value(null),
-            isDeleted: Value(data['is_deleted']),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.parse(data['updated_at'])),
-          ),
-          where: (tbl) => tbl.remoteId.equals(data['id']),
+        await database.customUpdate(
+          '''UPDATE stock_movements SET product_id = ?, movement_type = ?, quantity = ?, 
+              reference_type = ?, reference_id = ?, reason = ?, notes = ?, user_id = ?, 
+              user_name = ?, from_location = ?, to_location = ?, unit_cost = ?, 
+              total_cost = ?, status = ?, approved_by = ?, approved_at = ?, 
+              is_deleted = ?, sync_status = ?, updated_at = ? 
+              WHERE remote_id = ?''',
+          variables: [
+            Variable.withString(data['product_id']),
+            Variable.withString(data['movement_type']),
+            Variable.withInt(data['quantity']),
+            Variable.withString(data['reference_type']),
+            Variable.withString(data['reference_id']),
+            Variable.withString(data['reason']),
+            Variable.withString(data['notes']),
+            Variable.withString(data['user_id']),
+            Variable.withString(data['user_name']),
+            Variable.withString(data['from_location']),
+            Variable.withString(data['to_location']),
+            Variable.withReal(data['unit_cost']),
+            Variable.withReal(data['total_cost']),
+            Variable.withString(data['status']),
+            Variable.withString(data['approved_by']),
+            data['approved_at'] != null 
+                ? Variable.withDateTime(DateTime.parse(data['approved_at']))
+                : const Variable(null),
+            Variable.withBool(data['is_deleted']),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(data['updated_at'])),
+            Variable.withString(data['id']),
+          ],
         );
         break;
     }
