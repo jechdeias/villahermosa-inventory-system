@@ -378,19 +378,17 @@ class RoleBasedAccess {
         
       case 'delivery':
         // Delivery can see own deliveries
-        return await _database.customSelect(
-          'SELECT * FROM deliveries WHERE delivery_personnel_id = ? AND is_deleted = 0 ORDER BY created_at DESC',
-          variables: [Variable.withInt(userId)],
-        ).map((row) => Delivery.fromData(row.data, _database)).get();
+        return await (_database.select(_database.deliveries)
+              ..where((tbl) => tbl.deliveryPersonnelId.equals(userId.toString()) & tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
+            .get();
         
       case 'customer':
         // Customer can see deliveries for their orders
-        return await _database.customSelect('''
-          SELECT d.* FROM deliveries d
-          INNER JOIN orders o ON d.order_id = o.id
-          WHERE o.customer_id = ? AND d.is_deleted = 0
-          ORDER BY d.created_at DESC
-        ''', variables: [Variable.withInt(userId)]).map((row) => Delivery.fromData(row.data, _database)).get();
+        return await (_database.select(_database.deliveries)
+              ..where((tbl) => tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
+            .get();
         
       default:
         return [];
