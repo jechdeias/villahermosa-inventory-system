@@ -271,6 +271,11 @@ class SyncEngine {
         
       case SyncConflictResolution.lastWriteWins:
         // Compare timestamps
+        final remoteData = await Supabase.instance.client
+            .from(tableName)
+            .select()
+            .eq('id', remoteId)
+            .single();
         final localUpdatedAt = _getRecordUpdatedAt(record);
         final remoteUpdatedAt = DateTime.parse(remoteData['updated_at']);
         if (localUpdatedAt.isAfter(remoteUpdatedAt)) {
