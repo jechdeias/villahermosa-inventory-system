@@ -139,33 +139,36 @@ class SyncEngineImpl extends SyncEngine {
         );
         break;
       case 'products':
-        await database.customUpdateOnly(
-          ProductsCompanion(
-            remoteId: Value(remoteId),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.now()),
-          ),
-          where: (tbl) => tbl.id.equals(record.id),
+        await database.customUpdate(
+          'UPDATE products SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withString(remoteId),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.now()),
+            Variable.withString(record.id),
+          ],
         );
         break;
       case 'customers':
-        await database.customUpdateOnly(
-          CustomersCompanion(
-            remoteId: Value(remoteId),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.now()),
-          ),
-          where: (tbl) => tbl.id.equals(record.id),
+        await database.customUpdate(
+          'UPDATE customers SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withString(remoteId),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.now()),
+            Variable.withString(record.id),
+          ],
         );
         break;
       case 'stock_movements':
-        await database.customUpdateOnly(
-          StockMovementsCompanion(
-            remoteId: Value(remoteId),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.now()),
-          ),
-          where: (tbl) => tbl.id.equals(record.id),
+        await database.customUpdate(
+          'UPDATE stock_movements SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withString(remoteId),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.now()),
+            Variable.withString(record.id),
+          ],
         );
         break;
     }
