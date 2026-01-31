@@ -6,6 +6,7 @@ import 'core/services/navigation_service.dart';
 import 'core/business/role_based_access.dart';
 import 'core/navigation/role_based_navigation.dart';
 import 'core/constants/user_roles.dart';
+import 'core/widgets/role_based_widgets.dart';
 import 'features/auth/login_screen.dart';
 
 void main() async {
@@ -321,14 +322,18 @@ class _AdminHomeScreen extends StatelessWidget {
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                   children: [
-                    _buildActionCard(
-                      icon: Icons.people,
-                      title: 'Users',
-                      subtitle: 'Manage user accounts',
-                      color: Colors.blue,
-                      onTap: () {
-                        // TODO: Navigate to users management
-                      },
+                    // Example of using RoleGuard - only show for admin users
+                    RoleGuard(
+                      allowedRoles: [UserRole.admin],
+                      child: _buildActionCard(
+                        icon: Icons.people,
+                        title: 'Users',
+                        subtitle: 'Manage user accounts',
+                        color: Colors.blue,
+                        onTap: () {
+                          // TODO: Navigate to users management
+                        },
+                      ),
                     ),
                     _buildActionCard(
                       icon: Icons.inventory,
@@ -339,14 +344,22 @@ class _AdminHomeScreen extends StatelessWidget {
                         // TODO: Navigate to products management
                       },
                     ),
-                    _buildActionCard(
-                      icon: Icons.shopping_cart,
-                      title: 'Orders',
-                      subtitle: 'View all orders',
-                      color: Colors.orange,
-                      onTap: () {
+                    // Example of using PermissionButton
+                    PermissionButton(
+                      screen: 'orders',
+                      action: UserAction.view,
+                      onPressed: () {
                         // TODO: Navigate to orders management
                       },
+                      child: _buildActionCard(
+                        icon: Icons.shopping_cart,
+                        title: 'Orders',
+                        subtitle: 'View all orders',
+                        color: Colors.orange,
+                        onTap: () {
+                          // TODO: Navigate to orders management
+                        },
+                      ),
                     ),
                     _buildActionCard(
                       icon: Icons.business,
@@ -366,14 +379,18 @@ class _AdminHomeScreen extends StatelessWidget {
                         // TODO: Navigate to deliveries management
                       },
                     ),
-                    _buildActionCard(
-                      icon: Icons.assessment,
-                      title: 'Reports',
-                      subtitle: 'View reports',
-                      color: Colors.teal,
-                      onTap: () {
-                        // TODO: Navigate to reports
-                      },
+                    // Example of hiding content from specific roles
+                    RoleHide(
+                      hiddenRoles: [UserRole.customer],
+                      child: _buildActionCard(
+                        icon: Icons.assessment,
+                        title: 'Reports',
+                        subtitle: 'View reports',
+                        color: Colors.teal,
+                        onTap: () {
+                          // TODO: Navigate to reports
+                        },
+                      ),
                     ),
                   ],
                 ),

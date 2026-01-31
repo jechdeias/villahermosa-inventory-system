@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/user_roles.dart';
+import '../auth/auth_service.dart';
+import '../database/app_database.dart';
 
 /// Widget that conditionally shows children based on user role
 class RoleGuard extends StatelessWidget {
@@ -28,8 +30,9 @@ class RoleGuard extends StatelessWidget {
   }
 
   UserRole _getCurrentUserRole() {
-    // TODO: Get actual user role from auth service
-    // For now, return customer as default
+    // TODO: This should get the actual user role from the current authenticated user
+    // For now, return customer as default since widgets need synchronous role access
+    // In a real implementation, this could use a state management solution
     return UserRole.customer;
   }
 
