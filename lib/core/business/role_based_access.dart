@@ -406,16 +406,17 @@ class RoleBasedAccess {
       case 'warehouse':
       case 'delivery':
         // Can see all products
-        return await _database.customSelect(
-          'SELECT * FROM products WHERE is_deleted = 0 ORDER BY name ASC',
-        ).map((row) => Product.fromData(row.data, _database)).get();
+        return await (_database.select(_database.products)
+              ..where((tbl) => tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
+            .get();
         
       case 'customer':
         // Customers can see active products only
-        return await _database.customSelect(
-          'SELECT * FROM products WHERE is_deleted = 0 AND status = ? ORDER BY name ASC',
-          variables: [Variable.withString('active')],
-        ).map((row) => Product.fromData(row.data, _database)).get();
+        return await (_database.select(_database.products)
+              ..where((tbl) => tbl.isDeleted.equals(false) & tbl.status.equals('active'))
+              ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
+            .get();
         
       default:
         return [];
@@ -433,16 +434,17 @@ class RoleBasedAccess {
       case 'warehouse':
       case 'delivery':
         // Can see all customers
-        return await _database.customSelect(
-          'SELECT * FROM customers WHERE is_deleted = 0 ORDER BY name ASC',
-        ).map((row) => Customer.fromData(row.data, _database)).get();
+        return await (_database.select(_database.customers)
+              ..where((tbl) => tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
+            .get();
         
       case 'customer':
         // Can see own profile only
-        return await _database.customSelect(
-          'SELECT * FROM customers WHERE id = ? AND is_deleted = 0',
-          variables: [Variable.withInt(userId)],
-        ).map((row) => Customer.fromData(row.data, _database)).get();
+        return await (_database.select(_database.customers)
+              ..where((tbl) => tbl.id.equals(userId) & tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
+            .get();
         
       default:
         return [];
