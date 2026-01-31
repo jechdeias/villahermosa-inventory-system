@@ -139,7 +139,7 @@ class OrderWorkflow {
     
     // Check stock availability for all items
     for (final item in orderItems) {
-      final product = await _database.getProductById(item.productId);
+      final product = await _database.getProductById(int.parse(item.productId));
       if (product == null || product.isDeleted) {
         throw Exception('Product ${item.productId} not found');
       }
@@ -369,7 +369,7 @@ class OrderWorkflow {
     
     // CRITICAL: Deduct stock for all delivered items
     for (final item in orderItems) {
-      final product = await _database.getProductById(item.productId);
+      final product = await _database.getProductById(int.parse(item.productId));
       if (product == null || product.isDeleted) {
         throw Exception('Product ${item.productId} not found');
       }
