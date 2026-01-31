@@ -72,7 +72,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void _showProductDetails(Product product) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ProductFormScreen(productId: product.id),
+        builder: (context) => ProductFormScreen(productId: product.id.toString()),
       ),
     ).then((result) {
       if (result == true) {

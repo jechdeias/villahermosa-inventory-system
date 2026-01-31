@@ -7913,6 +7913,16 @@ class $DeliveriesTable extends Deliveries
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
   static const VerificationMeta _subStatusMeta = const VerificationMeta(
     'subStatus',
   );
@@ -8144,6 +8154,30 @@ class $DeliveriesTable extends Deliveries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<String> priority = GeneratedColumn<String>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('normal'),
+  );
+  static const VerificationMeta _attemptCountMeta = const VerificationMeta(
+    'attemptCount',
+  );
+  @override
+  late final GeneratedColumn<int> attemptCount = GeneratedColumn<int>(
+    'attempt_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _nextAttemptDateMeta = const VerificationMeta(
     'nextAttemptDate',
   );
@@ -8170,6 +8204,18 @@ class $DeliveriesTable extends Deliveries
       'CHECK ("is_deleted" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
   );
   static const VerificationMeta _remoteIdMeta = const VerificationMeta(
     'remoteId',
@@ -8217,6 +8263,7 @@ class $DeliveriesTable extends Deliveries
     scheduledDate,
     actualStartTime,
     actualCompletionTime,
+    status,
     subStatus,
     route,
     routeOrder,
@@ -8238,8 +8285,11 @@ class $DeliveriesTable extends Deliveries
     issueType,
     issueDescription,
     resolution,
+    priority,
+    attemptCount,
     nextAttemptDate,
     isDeleted,
+    syncStatus,
     remoteId,
     createdAt,
     updatedAt,
@@ -8340,6 +8390,12 @@ class $DeliveriesTable extends Deliveries
           data['actual_completion_time']!,
           _actualCompletionTimeMeta,
         ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
       );
     }
     if (data.containsKey('sub_status')) {
@@ -8524,6 +8580,21 @@ class $DeliveriesTable extends Deliveries
         resolution.isAcceptableOrUnknown(data['resolution']!, _resolutionMeta),
       );
     }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('attempt_count')) {
+      context.handle(
+        _attemptCountMeta,
+        attemptCount.isAcceptableOrUnknown(
+          data['attempt_count']!,
+          _attemptCountMeta,
+        ),
+      );
+    }
     if (data.containsKey('next_attempt_date')) {
       context.handle(
         _nextAttemptDateMeta,
@@ -8537,6 +8608,12 @@ class $DeliveriesTable extends Deliveries
       context.handle(
         _isDeletedMeta,
         isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
     if (data.containsKey('remote_id')) {
@@ -8602,6 +8679,10 @@ class $DeliveriesTable extends Deliveries
         DriftSqlType.dateTime,
         data['${effectivePrefix}actual_completion_time'],
       ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
       subStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sub_status'],
@@ -8686,6 +8767,14 @@ class $DeliveriesTable extends Deliveries
         DriftSqlType.string,
         data['${effectivePrefix}resolution'],
       ),
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}priority'],
+      )!,
+      attemptCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempt_count'],
+      )!,
       nextAttemptDate: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}next_attempt_date'],
@@ -8693,6 +8782,10 @@ class $DeliveriesTable extends Deliveries
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_deleted'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
       )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -8725,6 +8818,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
   final DateTime scheduledDate;
   final DateTime? actualStartTime;
   final DateTime? actualCompletionTime;
+  final String status;
   final String? subStatus;
   final String route;
   final int routeOrder;
@@ -8746,8 +8840,11 @@ class Delivery extends DataClass implements Insertable<Delivery> {
   final String? issueType;
   final String? issueDescription;
   final String? resolution;
+  final String priority;
+  final int attemptCount;
   final DateTime? nextAttemptDate;
   final bool isDeleted;
+  final String syncStatus;
   final String? remoteId;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -8761,6 +8858,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     required this.scheduledDate,
     this.actualStartTime,
     this.actualCompletionTime,
+    required this.status,
     this.subStatus,
     required this.route,
     required this.routeOrder,
@@ -8782,8 +8880,11 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     this.issueType,
     this.issueDescription,
     this.resolution,
+    required this.priority,
+    required this.attemptCount,
     this.nextAttemptDate,
     required this.isDeleted,
+    required this.syncStatus,
     this.remoteId,
     required this.createdAt,
     required this.updatedAt,
@@ -8804,6 +8905,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     if (!nullToAbsent || actualCompletionTime != null) {
       map['actual_completion_time'] = Variable<DateTime>(actualCompletionTime);
     }
+    map['status'] = Variable<String>(status);
     if (!nullToAbsent || subStatus != null) {
       map['sub_status'] = Variable<String>(subStatus);
     }
@@ -8857,10 +8959,13 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     if (!nullToAbsent || resolution != null) {
       map['resolution'] = Variable<String>(resolution);
     }
+    map['priority'] = Variable<String>(priority);
+    map['attempt_count'] = Variable<int>(attemptCount);
     if (!nullToAbsent || nextAttemptDate != null) {
       map['next_attempt_date'] = Variable<DateTime>(nextAttemptDate);
     }
     map['is_deleted'] = Variable<bool>(isDeleted);
+    map['sync_status'] = Variable<String>(syncStatus);
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
@@ -8884,6 +8989,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       actualCompletionTime: actualCompletionTime == null && nullToAbsent
           ? const Value.absent()
           : Value(actualCompletionTime),
+      status: Value(status),
       subStatus: subStatus == null && nullToAbsent
           ? const Value.absent()
           : Value(subStatus),
@@ -8937,10 +9043,13 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       resolution: resolution == null && nullToAbsent
           ? const Value.absent()
           : Value(resolution),
+      priority: Value(priority),
+      attemptCount: Value(attemptCount),
       nextAttemptDate: nextAttemptDate == null && nullToAbsent
           ? const Value.absent()
           : Value(nextAttemptDate),
       isDeleted: Value(isDeleted),
+      syncStatus: Value(syncStatus),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
@@ -8972,6 +9081,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       actualCompletionTime: serializer.fromJson<DateTime?>(
         json['actualCompletionTime'],
       ),
+      status: serializer.fromJson<String>(json['status']),
       subStatus: serializer.fromJson<String?>(json['subStatus']),
       route: serializer.fromJson<String>(json['route']),
       routeOrder: serializer.fromJson<int>(json['routeOrder']),
@@ -8999,8 +9109,11 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       issueType: serializer.fromJson<String?>(json['issueType']),
       issueDescription: serializer.fromJson<String?>(json['issueDescription']),
       resolution: serializer.fromJson<String?>(json['resolution']),
+      priority: serializer.fromJson<String>(json['priority']),
+      attemptCount: serializer.fromJson<int>(json['attemptCount']),
       nextAttemptDate: serializer.fromJson<DateTime?>(json['nextAttemptDate']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -9023,6 +9136,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       'actualCompletionTime': serializer.toJson<DateTime?>(
         actualCompletionTime,
       ),
+      'status': serializer.toJson<String>(status),
       'subStatus': serializer.toJson<String?>(subStatus),
       'route': serializer.toJson<String>(route),
       'routeOrder': serializer.toJson<int>(routeOrder),
@@ -9044,8 +9158,11 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       'issueType': serializer.toJson<String?>(issueType),
       'issueDescription': serializer.toJson<String?>(issueDescription),
       'resolution': serializer.toJson<String?>(resolution),
+      'priority': serializer.toJson<String>(priority),
+      'attemptCount': serializer.toJson<int>(attemptCount),
       'nextAttemptDate': serializer.toJson<DateTime?>(nextAttemptDate),
       'isDeleted': serializer.toJson<bool>(isDeleted),
+      'syncStatus': serializer.toJson<String>(syncStatus),
       'remoteId': serializer.toJson<String?>(remoteId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -9062,6 +9179,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     DateTime? scheduledDate,
     Value<DateTime?> actualStartTime = const Value.absent(),
     Value<DateTime?> actualCompletionTime = const Value.absent(),
+    String? status,
     Value<String?> subStatus = const Value.absent(),
     String? route,
     int? routeOrder,
@@ -9083,8 +9201,11 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     Value<String?> issueType = const Value.absent(),
     Value<String?> issueDescription = const Value.absent(),
     Value<String?> resolution = const Value.absent(),
+    String? priority,
+    int? attemptCount,
     Value<DateTime?> nextAttemptDate = const Value.absent(),
     bool? isDeleted,
+    String? syncStatus,
     Value<String?> remoteId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -9103,6 +9224,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     actualCompletionTime: actualCompletionTime.present
         ? actualCompletionTime.value
         : this.actualCompletionTime,
+    status: status ?? this.status,
     subStatus: subStatus.present ? subStatus.value : this.subStatus,
     route: route ?? this.route,
     routeOrder: routeOrder ?? this.routeOrder,
@@ -9144,10 +9266,13 @@ class Delivery extends DataClass implements Insertable<Delivery> {
         ? issueDescription.value
         : this.issueDescription,
     resolution: resolution.present ? resolution.value : this.resolution,
+    priority: priority ?? this.priority,
+    attemptCount: attemptCount ?? this.attemptCount,
     nextAttemptDate: nextAttemptDate.present
         ? nextAttemptDate.value
         : this.nextAttemptDate,
     isDeleted: isDeleted ?? this.isDeleted,
+    syncStatus: syncStatus ?? this.syncStatus,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -9177,6 +9302,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       actualCompletionTime: data.actualCompletionTime.present
           ? data.actualCompletionTime.value
           : this.actualCompletionTime,
+      status: data.status.present ? data.status.value : this.status,
       subStatus: data.subStatus.present ? data.subStatus.value : this.subStatus,
       route: data.route.present ? data.route.value : this.route,
       routeOrder: data.routeOrder.present
@@ -9234,10 +9360,17 @@ class Delivery extends DataClass implements Insertable<Delivery> {
       resolution: data.resolution.present
           ? data.resolution.value
           : this.resolution,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      attemptCount: data.attemptCount.present
+          ? data.attemptCount.value
+          : this.attemptCount,
       nextAttemptDate: data.nextAttemptDate.present
           ? data.nextAttemptDate.value
           : this.nextAttemptDate,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -9256,6 +9389,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
           ..write('scheduledDate: $scheduledDate, ')
           ..write('actualStartTime: $actualStartTime, ')
           ..write('actualCompletionTime: $actualCompletionTime, ')
+          ..write('status: $status, ')
           ..write('subStatus: $subStatus, ')
           ..write('route: $route, ')
           ..write('routeOrder: $routeOrder, ')
@@ -9277,8 +9411,11 @@ class Delivery extends DataClass implements Insertable<Delivery> {
           ..write('issueType: $issueType, ')
           ..write('issueDescription: $issueDescription, ')
           ..write('resolution: $resolution, ')
+          ..write('priority: $priority, ')
+          ..write('attemptCount: $attemptCount, ')
           ..write('nextAttemptDate: $nextAttemptDate, ')
           ..write('isDeleted: $isDeleted, ')
+          ..write('syncStatus: $syncStatus, ')
           ..write('remoteId: $remoteId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -9297,6 +9434,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     scheduledDate,
     actualStartTime,
     actualCompletionTime,
+    status,
     subStatus,
     route,
     routeOrder,
@@ -9318,8 +9456,11 @@ class Delivery extends DataClass implements Insertable<Delivery> {
     issueType,
     issueDescription,
     resolution,
+    priority,
+    attemptCount,
     nextAttemptDate,
     isDeleted,
+    syncStatus,
     remoteId,
     createdAt,
     updatedAt,
@@ -9337,6 +9478,7 @@ class Delivery extends DataClass implements Insertable<Delivery> {
           other.scheduledDate == this.scheduledDate &&
           other.actualStartTime == this.actualStartTime &&
           other.actualCompletionTime == this.actualCompletionTime &&
+          other.status == this.status &&
           other.subStatus == this.subStatus &&
           other.route == this.route &&
           other.routeOrder == this.routeOrder &&
@@ -9358,8 +9500,11 @@ class Delivery extends DataClass implements Insertable<Delivery> {
           other.issueType == this.issueType &&
           other.issueDescription == this.issueDescription &&
           other.resolution == this.resolution &&
+          other.priority == this.priority &&
+          other.attemptCount == this.attemptCount &&
           other.nextAttemptDate == this.nextAttemptDate &&
           other.isDeleted == this.isDeleted &&
+          other.syncStatus == this.syncStatus &&
           other.remoteId == this.remoteId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -9375,6 +9520,7 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
   final Value<DateTime> scheduledDate;
   final Value<DateTime?> actualStartTime;
   final Value<DateTime?> actualCompletionTime;
+  final Value<String> status;
   final Value<String?> subStatus;
   final Value<String> route;
   final Value<int> routeOrder;
@@ -9396,8 +9542,11 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
   final Value<String?> issueType;
   final Value<String?> issueDescription;
   final Value<String?> resolution;
+  final Value<String> priority;
+  final Value<int> attemptCount;
   final Value<DateTime?> nextAttemptDate;
   final Value<bool> isDeleted;
+  final Value<String> syncStatus;
   final Value<String?> remoteId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -9412,6 +9561,7 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     this.scheduledDate = const Value.absent(),
     this.actualStartTime = const Value.absent(),
     this.actualCompletionTime = const Value.absent(),
+    this.status = const Value.absent(),
     this.subStatus = const Value.absent(),
     this.route = const Value.absent(),
     this.routeOrder = const Value.absent(),
@@ -9433,8 +9583,11 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     this.issueType = const Value.absent(),
     this.issueDescription = const Value.absent(),
     this.resolution = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.attemptCount = const Value.absent(),
     this.nextAttemptDate = const Value.absent(),
     this.isDeleted = const Value.absent(),
+    this.syncStatus = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -9450,6 +9603,7 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     required DateTime scheduledDate,
     this.actualStartTime = const Value.absent(),
     this.actualCompletionTime = const Value.absent(),
+    this.status = const Value.absent(),
     this.subStatus = const Value.absent(),
     required String route,
     required int routeOrder,
@@ -9471,8 +9625,11 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     this.issueType = const Value.absent(),
     this.issueDescription = const Value.absent(),
     this.resolution = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.attemptCount = const Value.absent(),
     this.nextAttemptDate = const Value.absent(),
     this.isDeleted = const Value.absent(),
+    this.syncStatus = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -9498,6 +9655,7 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     Expression<DateTime>? scheduledDate,
     Expression<DateTime>? actualStartTime,
     Expression<DateTime>? actualCompletionTime,
+    Expression<String>? status,
     Expression<String>? subStatus,
     Expression<String>? route,
     Expression<int>? routeOrder,
@@ -9519,8 +9677,11 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     Expression<String>? issueType,
     Expression<String>? issueDescription,
     Expression<String>? resolution,
+    Expression<String>? priority,
+    Expression<int>? attemptCount,
     Expression<DateTime>? nextAttemptDate,
     Expression<bool>? isDeleted,
+    Expression<String>? syncStatus,
     Expression<String>? remoteId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -9540,6 +9701,7 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
       if (actualStartTime != null) 'actual_start_time': actualStartTime,
       if (actualCompletionTime != null)
         'actual_completion_time': actualCompletionTime,
+      if (status != null) 'status': status,
       if (subStatus != null) 'sub_status': subStatus,
       if (route != null) 'route': route,
       if (routeOrder != null) 'route_order': routeOrder,
@@ -9563,8 +9725,11 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
       if (issueType != null) 'issue_type': issueType,
       if (issueDescription != null) 'issue_description': issueDescription,
       if (resolution != null) 'resolution': resolution,
+      if (priority != null) 'priority': priority,
+      if (attemptCount != null) 'attempt_count': attemptCount,
       if (nextAttemptDate != null) 'next_attempt_date': nextAttemptDate,
       if (isDeleted != null) 'is_deleted': isDeleted,
+      if (syncStatus != null) 'sync_status': syncStatus,
       if (remoteId != null) 'remote_id': remoteId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -9582,6 +9747,7 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     Value<DateTime>? scheduledDate,
     Value<DateTime?>? actualStartTime,
     Value<DateTime?>? actualCompletionTime,
+    Value<String>? status,
     Value<String?>? subStatus,
     Value<String>? route,
     Value<int>? routeOrder,
@@ -9603,8 +9769,11 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     Value<String?>? issueType,
     Value<String?>? issueDescription,
     Value<String?>? resolution,
+    Value<String>? priority,
+    Value<int>? attemptCount,
     Value<DateTime?>? nextAttemptDate,
     Value<bool>? isDeleted,
+    Value<String>? syncStatus,
     Value<String?>? remoteId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -9622,6 +9791,7 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
       scheduledDate: scheduledDate ?? this.scheduledDate,
       actualStartTime: actualStartTime ?? this.actualStartTime,
       actualCompletionTime: actualCompletionTime ?? this.actualCompletionTime,
+      status: status ?? this.status,
       subStatus: subStatus ?? this.subStatus,
       route: route ?? this.route,
       routeOrder: routeOrder ?? this.routeOrder,
@@ -9643,8 +9813,11 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
       issueType: issueType ?? this.issueType,
       issueDescription: issueDescription ?? this.issueDescription,
       resolution: resolution ?? this.resolution,
+      priority: priority ?? this.priority,
+      attemptCount: attemptCount ?? this.attemptCount,
       nextAttemptDate: nextAttemptDate ?? this.nextAttemptDate,
       isDeleted: isDeleted ?? this.isDeleted,
+      syncStatus: syncStatus ?? this.syncStatus,
       remoteId: remoteId ?? this.remoteId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -9689,6 +9862,9 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
       map['actual_completion_time'] = Variable<DateTime>(
         actualCompletionTime.value,
       );
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
     }
     if (subStatus.present) {
       map['sub_status'] = Variable<String>(subStatus.value);
@@ -9755,11 +9931,20 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
     if (resolution.present) {
       map['resolution'] = Variable<String>(resolution.value);
     }
+    if (priority.present) {
+      map['priority'] = Variable<String>(priority.value);
+    }
+    if (attemptCount.present) {
+      map['attempt_count'] = Variable<int>(attemptCount.value);
+    }
     if (nextAttemptDate.present) {
       map['next_attempt_date'] = Variable<DateTime>(nextAttemptDate.value);
     }
     if (isDeleted.present) {
       map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
     }
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
@@ -9788,6 +9973,7 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
           ..write('scheduledDate: $scheduledDate, ')
           ..write('actualStartTime: $actualStartTime, ')
           ..write('actualCompletionTime: $actualCompletionTime, ')
+          ..write('status: $status, ')
           ..write('subStatus: $subStatus, ')
           ..write('route: $route, ')
           ..write('routeOrder: $routeOrder, ')
@@ -9809,8 +9995,11 @@ class DeliveriesCompanion extends UpdateCompanion<Delivery> {
           ..write('issueType: $issueType, ')
           ..write('issueDescription: $issueDescription, ')
           ..write('resolution: $resolution, ')
+          ..write('priority: $priority, ')
+          ..write('attemptCount: $attemptCount, ')
           ..write('nextAttemptDate: $nextAttemptDate, ')
           ..write('isDeleted: $isDeleted, ')
+          ..write('syncStatus: $syncStatus, ')
           ..write('remoteId: $remoteId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -13314,6 +13503,7 @@ typedef $$DeliveriesTableCreateCompanionBuilder =
       required DateTime scheduledDate,
       Value<DateTime?> actualStartTime,
       Value<DateTime?> actualCompletionTime,
+      Value<String> status,
       Value<String?> subStatus,
       required String route,
       required int routeOrder,
@@ -13335,8 +13525,11 @@ typedef $$DeliveriesTableCreateCompanionBuilder =
       Value<String?> issueType,
       Value<String?> issueDescription,
       Value<String?> resolution,
+      Value<String> priority,
+      Value<int> attemptCount,
       Value<DateTime?> nextAttemptDate,
       Value<bool> isDeleted,
+      Value<String> syncStatus,
       Value<String?> remoteId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -13353,6 +13546,7 @@ typedef $$DeliveriesTableUpdateCompanionBuilder =
       Value<DateTime> scheduledDate,
       Value<DateTime?> actualStartTime,
       Value<DateTime?> actualCompletionTime,
+      Value<String> status,
       Value<String?> subStatus,
       Value<String> route,
       Value<int> routeOrder,
@@ -13374,8 +13568,11 @@ typedef $$DeliveriesTableUpdateCompanionBuilder =
       Value<String?> issueType,
       Value<String?> issueDescription,
       Value<String?> resolution,
+      Value<String> priority,
+      Value<int> attemptCount,
       Value<DateTime?> nextAttemptDate,
       Value<bool> isDeleted,
+      Value<String> syncStatus,
       Value<String?> remoteId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -13433,6 +13630,11 @@ class $$DeliveriesTableFilterComposer
 
   ColumnFilters<DateTime> get actualCompletionTime => $composableBuilder(
     column: $table.actualCompletionTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13541,6 +13743,16 @@ class $$DeliveriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get nextAttemptDate => $composableBuilder(
     column: $table.nextAttemptDate,
     builder: (column) => ColumnFilters(column),
@@ -13548,6 +13760,11 @@ class $$DeliveriesTableFilterComposer
 
   ColumnFilters<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13618,6 +13835,11 @@ class $$DeliveriesTableOrderingComposer
 
   ColumnOrderings<DateTime> get actualCompletionTime => $composableBuilder(
     column: $table.actualCompletionTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -13726,6 +13948,16 @@ class $$DeliveriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get nextAttemptDate => $composableBuilder(
     column: $table.nextAttemptDate,
     builder: (column) => ColumnOrderings(column),
@@ -13733,6 +13965,11 @@ class $$DeliveriesTableOrderingComposer
 
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -13801,6 +14038,9 @@ class $$DeliveriesTableAnnotationComposer
     column: $table.actualCompletionTime,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
   GeneratedColumn<String> get subStatus =>
       $composableBuilder(column: $table.subStatus, builder: (column) => column);
@@ -13901,6 +14141,14 @@ class $$DeliveriesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get nextAttemptDate => $composableBuilder(
     column: $table.nextAttemptDate,
     builder: (column) => column,
@@ -13908,6 +14156,11 @@ class $$DeliveriesTableAnnotationComposer
 
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get remoteId =>
       $composableBuilder(column: $table.remoteId, builder: (column) => column);
@@ -13956,6 +14209,7 @@ class $$DeliveriesTableTableManager
                 Value<DateTime> scheduledDate = const Value.absent(),
                 Value<DateTime?> actualStartTime = const Value.absent(),
                 Value<DateTime?> actualCompletionTime = const Value.absent(),
+                Value<String> status = const Value.absent(),
                 Value<String?> subStatus = const Value.absent(),
                 Value<String> route = const Value.absent(),
                 Value<int> routeOrder = const Value.absent(),
@@ -13977,8 +14231,11 @@ class $$DeliveriesTableTableManager
                 Value<String?> issueType = const Value.absent(),
                 Value<String?> issueDescription = const Value.absent(),
                 Value<String?> resolution = const Value.absent(),
+                Value<String> priority = const Value.absent(),
+                Value<int> attemptCount = const Value.absent(),
                 Value<DateTime?> nextAttemptDate = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -13993,6 +14250,7 @@ class $$DeliveriesTableTableManager
                 scheduledDate: scheduledDate,
                 actualStartTime: actualStartTime,
                 actualCompletionTime: actualCompletionTime,
+                status: status,
                 subStatus: subStatus,
                 route: route,
                 routeOrder: routeOrder,
@@ -14014,8 +14272,11 @@ class $$DeliveriesTableTableManager
                 issueType: issueType,
                 issueDescription: issueDescription,
                 resolution: resolution,
+                priority: priority,
+                attemptCount: attemptCount,
                 nextAttemptDate: nextAttemptDate,
                 isDeleted: isDeleted,
+                syncStatus: syncStatus,
                 remoteId: remoteId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -14032,6 +14293,7 @@ class $$DeliveriesTableTableManager
                 required DateTime scheduledDate,
                 Value<DateTime?> actualStartTime = const Value.absent(),
                 Value<DateTime?> actualCompletionTime = const Value.absent(),
+                Value<String> status = const Value.absent(),
                 Value<String?> subStatus = const Value.absent(),
                 required String route,
                 required int routeOrder,
@@ -14053,8 +14315,11 @@ class $$DeliveriesTableTableManager
                 Value<String?> issueType = const Value.absent(),
                 Value<String?> issueDescription = const Value.absent(),
                 Value<String?> resolution = const Value.absent(),
+                Value<String> priority = const Value.absent(),
+                Value<int> attemptCount = const Value.absent(),
                 Value<DateTime?> nextAttemptDate = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -14069,6 +14334,7 @@ class $$DeliveriesTableTableManager
                 scheduledDate: scheduledDate,
                 actualStartTime: actualStartTime,
                 actualCompletionTime: actualCompletionTime,
+                status: status,
                 subStatus: subStatus,
                 route: route,
                 routeOrder: routeOrder,
@@ -14090,8 +14356,11 @@ class $$DeliveriesTableTableManager
                 issueType: issueType,
                 issueDescription: issueDescription,
                 resolution: resolution,
+                priority: priority,
+                attemptCount: attemptCount,
                 nextAttemptDate: nextAttemptDate,
                 isDeleted: isDeleted,
+                syncStatus: syncStatus,
                 remoteId: remoteId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

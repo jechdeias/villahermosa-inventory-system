@@ -20,7 +20,7 @@ class Deliveries extends Table {
   DateTimeColumn get actualCompletionTime => dateTime().nullable()(); // When delivery completed
   
   // Status tracking
-  TextColumn get status => text().withDefault(const Constant('pending')); // pending | assigned | in_progress | completed | failed | cancelled
+  TextColumn get status => text().withDefault(const Constant('pending'))(); // pending | assigned | in_progress | completed | failed | cancelled
   TextColumn get subStatus => text().nullable()(); // More detailed status (e.g., "customer_not_found", "payment_issue")
   
   // Route information
@@ -54,15 +54,15 @@ class Deliveries extends Table {
   TextColumn get resolution => text().nullable()(); // How the issue was resolved
   
   // Metadata
-  TextColumn get priority => text().withDefault(const Constant('normal')); // low | normal | high | urgent
-  IntColumn get attemptCount => integer().withDefault(const Constant(0)); // Number of delivery attempts
+  TextColumn get priority => text().withDefault(const Constant('normal'))(); // low | normal | high | urgent
+  IntColumn get attemptCount => integer().withDefault(const Constant(0))(); // Number of delivery attempts
   DateTimeColumn get nextAttemptDate => dateTime().nullable()(); // For failed deliveries
   
   // Soft delete for sync safety
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   
   // Sync tracking
-  TextColumn get syncStatus => text().withDefault(const Constant('pending')); // pending | synced | conflict
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))(); // pending | synced | conflict
   TextColumn get remoteId => text().nullable()(); // Supabase UUID
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();

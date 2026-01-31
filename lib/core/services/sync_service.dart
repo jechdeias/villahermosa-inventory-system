@@ -13,7 +13,12 @@ enum ConflictResolution {
   localWins,
   remoteWins,
   manual,
-  lastWriteWins
+  lastWriteWins,
+  adminWins,
+  warehouseWins,
+  customerWins,
+  deliveryWins,
+  followsParent
 }
 
 class SyncService {
@@ -36,9 +41,9 @@ class SyncService {
       // Step 4: Update sync status
       await _updateSyncStatus();
       
-      return SyncResult.success;
+      return SyncResult.success(syncedCounts: {});
     } catch (e) {
-      return SyncResult.failure(e.toString());
+      return SyncResult.failure(e.toString(), syncedCounts: {});
     }
   }
   

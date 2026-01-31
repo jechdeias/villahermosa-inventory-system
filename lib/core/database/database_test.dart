@@ -24,7 +24,7 @@ void main() {
       final userId = '550e8400-e29b-41d4-a716-446655440000';
       database.createUser(
         UsersCompanion.insert(
-          id: userId,
+          uuid: userId,
           name: 'Test User',
           email: 'test@example.com',
           role: 'admin',
@@ -45,7 +45,7 @@ void main() {
       // Create multiple users
       database.createUser(
         UsersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440001',
+          uuid: '550e8400-e29b-41d4-a716-446655440001',
           name: 'Alice',
           email: 'alice@example.com',
           role: 'warehouse',
@@ -54,7 +54,7 @@ void main() {
 
       database.createUser(
         UsersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440002',
+          uuid: '550e8400-e29b-41d4-a716-446655440002',
           name: 'Bob',
           email: 'bob@example.com',
           role: 'delivery',
@@ -74,7 +74,7 @@ void main() {
       final userId = '550e8400-e29b-41d4-a716-446655440003';
       database.createUser(
         UsersCompanion.insert(
-          id: userId,
+          uuid: userId,
           name: 'John Doe',
           email: 'john@example.com',
           role: 'admin',
@@ -102,7 +102,7 @@ void main() {
       // Create users with different sync statuses
       database.createUser(
         UsersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440004',
+          uuid: '550e8400-e29b-41d4-a716-446655440004',
           name: 'Pending User',
           email: 'pending@example.com',
           role: 'admin',
@@ -112,7 +112,7 @@ void main() {
 
       database.createUser(
         UsersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440005',
+          uuid: '550e8400-e29b-41d4-a716-446655440005',
           name: 'Synced User',
           email: 'synced@example.com',
           role: 'admin',

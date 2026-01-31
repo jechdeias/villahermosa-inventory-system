@@ -7,6 +7,6 @@ description: - Admin/Warehouse pages
 
 - Admin: full access to inventory, reports, users.
 - Warehouse: stock, orders, delivery prep.
-- Sales Rep: order entry, customer list.
+- Delivery person: order entry, customer list.
 - Customer: order placement, delivery confirmation.
 - Users must only see features relevant to their role.

@@ -24,7 +24,7 @@ void main() {
       final customerId = '550e8400-e29b-41d4-a716-446655440100';
       database.createCustomer(
         CustomersCompanion.insert(
-          id: customerId,
+          uuid: customerId,
           name: 'John Customer',
           email: 'customer@example.com',
           phone: const Value('+1234567890'),
@@ -49,7 +49,7 @@ void main() {
       // Create multiple customers
       database.createCustomer(
         CustomersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440101',
+          uuid: '550e8400-e29b-41d4-a716-446655440101',
           name: 'Alice Customer',
           email: 'alice@example.com',
           customerType: const Value('individual'),
@@ -58,7 +58,7 @@ void main() {
 
       database.createCustomer(
         CustomersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440102',
+          uuid: '550e8400-e29b-41d4-a716-446655440102',
           name: 'Bob Business',
           email: 'bob@business.com',
           businessName: const Value('Bob Enterprises'),
@@ -78,7 +78,7 @@ void main() {
       // Create customers
       database.createCustomer(
         CustomersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440103',
+          uuid: '550e8400-e29b-41d4-a716-446655440103',
           name: 'Alice Smith',
           email: 'alice@example.com',
         ),
@@ -86,7 +86,7 @@ void main() {
 
       database.createCustomer(
         CustomersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440104',
+          uuid: '550e8400-e29b-41d4-a716-446655440104',
           name: 'Bob Johnson',
           email: 'bob@example.com',
         ),
@@ -104,7 +104,7 @@ void main() {
       final customerId = '550e8400-e29b-41d4-a716-446655440105';
       database.createCustomer(
         CustomersCompanion.insert(
-          id: customerId,
+          uuid: customerId,
           name: 'John Customer',
           email: 'john@example.com',
           customerType: const Value('individual'),
@@ -135,7 +135,7 @@ void main() {
       final customerId = '550e8400-e29b-41d4-a716-446655440106';
       database.createCustomer(
         CustomersCompanion.insert(
-          id: customerId,
+          uuid: customerId,
           name: 'To Be Deleted',
           email: 'delete@example.com',
         ),
@@ -159,7 +159,7 @@ void main() {
       // Create customers with different sync statuses
       database.createCustomer(
         CustomersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440107',
+          uuid: '550e8400-e29b-41d4-a716-446655440107',
           name: 'Pending Customer',
           email: 'pending@example.com',
           syncStatus: const Value('pending'),
@@ -168,7 +168,7 @@ void main() {
 
       database.createCustomer(
         CustomersCompanion.insert(
-          id: '550e8400-e29b-41d4-a716-446655440108',
+          uuid: '550e8400-e29b-41d4-a716-446655440108',
           name: 'Synced Customer',
           email: 'synced@example.com',
           syncStatus: const Value('synced'),
@@ -189,7 +189,7 @@ void main() {
       
       database.createCustomer(
         CustomersCompanion.insert(
-          id: customerId,
+          uuid: customerId,
           name: 'Sync Test Customer',
           email: 'sync@example.com',
           syncStatus: const Value('pending'),
