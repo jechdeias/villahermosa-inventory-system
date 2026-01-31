@@ -1,10 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../database/app_database.dart';
+import '../database/app_database.dart' as db;
 
 /// Authentication Service
 /// Handles user authentication using Supabase and local database
 class AuthService {
-  final AppDatabase _database;
+  final db.AppDatabase _database;
 
   AuthService(this._database);
 
@@ -91,7 +91,7 @@ class AuthService {
   }
 
   /// Get user data from local database
-  Future<User?> getCurrentUserData() async {
+  Future<db.User?> getCurrentUserData() async {
     if (currentUser == null) {
       return null;
     }

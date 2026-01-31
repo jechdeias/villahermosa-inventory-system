@@ -94,11 +94,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo or Title
-                  Icon(
-                    Icons.inventory_2,
-                    size: 80,
-                    color: Colors.grey[800],
+                  // Company Logo
+                  Image.asset(
+                    'assets/images/logo/villahermosa_logo.png',
+                    height: 80,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback to icon if logo not found
+                      return Icon(
+                        Icons.inventory_2,
+                        size: 80,
+                        color: Colors.grey[800],
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                   

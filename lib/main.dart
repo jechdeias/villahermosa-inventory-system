@@ -131,7 +131,19 @@ class AdminDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/logo/villahermosa_logo.png',
+              height: 32,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.admin_panel_settings, size: 32);
+              },
+            ),
+            const SizedBox(width: 12),
+            const Text('Admin Dashboard'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -171,7 +183,19 @@ class WarehouseDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Warehouse Dashboard'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/logo/villahermosa_logo.png',
+              height: 32,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.inventory, size: 32);
+              },
+            ),
+            const SizedBox(width: 12),
+            const Text('Warehouse Dashboard'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
