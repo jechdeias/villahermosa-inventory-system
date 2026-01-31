@@ -1,8 +1,11 @@
 import 'package:drift/drift.dart';
+import 'products_table.dart';
+import '../app_database.dart';
 
 @DataClassName('StockMovement')
 class StockMovements extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get uuid => text()(); // UUID for sync
   IntColumn get remoteId => integer().nullable()();
   
   IntColumn get productId => integer()();
@@ -19,28 +22,11 @@ class StockMovements extends Table {
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
   
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   
   // Foreign keys
   @override
   List<Set<Column>> get uniqueKeys => [
     {remoteId}, // remote_id should be unique when not null
-  ];
-  
-  @override
-  List<ForeignKey> get foreignKeys => [
-    ForeignKey(
-      targetTable: Products,
-      targetColumns: [id],
-      childColumns: [productId],
-      onUpdate: KeyAction.restrict,
-      onDelete: KeyAction.restrict,
-    ),
-    ForeignKey(
-      targetTable: Users,
-      targetColumns: [id],
-      childColumns: [createdBy],
-      onUpdate: KeyAction.restrict,
-      onDelete: KeyAction.restrict,
-    ),
   ];
 }

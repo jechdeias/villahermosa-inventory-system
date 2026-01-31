@@ -76,13 +76,13 @@ class AppDatabase extends _$AppDatabase {
     return await (select(users)..where((t) => t.email.equals(email))).getSingleOrNull();
   }
 
-  Future<bool> updateUser(String id, UsersCompanion user) async {
-    return await (update(users)..where((t) => t.id.equals(id)))
+  Future<bool> updateUser(String uuid, UsersCompanion user) async {
+    return await (update(users)..where((t) => t.uuid.equals(uuid)))
         .write(user.copyWith(updatedAt: Value(DateTime.now()))) > 0;
   }
 
-  Future<bool> softDeleteUser(String id) async {
-    return await (update(users)..where((t) => t.id.equals(id)))
+  Future<bool> softDeleteUser(String uuid) async {
+    return await (update(users)..where((t) => t.uuid.equals(uuid)))
         .write(UsersCompanion(
           isDeleted: const Value(true),
           updatedAt: Value(DateTime.now()),
@@ -94,8 +94,8 @@ class AppDatabase extends _$AppDatabase {
     return await (select(users)..where((t) => t.syncStatus.equals('pending'))).get();
   }
 
-  Future<bool> markUserAsSynced(String id, String remoteId) async {
-    return await (update(users)..where((t) => t.id.equals(id)))
+  Future<bool> markUserAsSynced(String uuid, String remoteId) async {
+    return await (update(users)..where((t) => t.uuid.equals(uuid)))
         .write(UsersCompanion(
           syncStatus: const Value('synced'),
           remoteId: Value(remoteId),
@@ -115,8 +115,8 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  Future<Customer?> getCustomerById(String id) async {
-    return await (select(customers)..where((t) => t.id.equals(id))).getSingleOrNull();
+  Future<Customer?> getCustomerById(String uuid) async {
+    return await (select(customers)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
   }
 
   Future<Customer?> getCustomerByEmail(String email) async {
@@ -132,13 +132,13 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  Future<bool> updateCustomer(String id, CustomersCompanion customer) async {
-    return await (update(customers)..where((t) => t.id.equals(id)))
+  Future<bool> updateCustomer(String uuid, CustomersCompanion customer) async {
+    return await (update(customers)..where((t) => t.uuid.equals(uuid)))
         .write(customer.copyWith(updatedAt: Value(DateTime.now()))) > 0;
   }
 
-  Future<bool> softDeleteCustomer(String id) async {
-    return await (update(customers)..where((t) => t.id.equals(id)))
+  Future<bool> softDeleteCustomer(String uuid) async {
+    return await (update(customers)..where((t) => t.uuid.equals(uuid)))
         .write(CustomersCompanion(
           isDeleted: const Value(true),
           updatedAt: Value(DateTime.now()),
@@ -280,6 +280,28 @@ class AppDatabase extends _$AppDatabase {
           remoteId: Value(remoteId),
           updatedAt: Value(DateTime.now()),
         )) > 0;
+  }
+
+  // Order operations
+  Future<Order?> getOrderById(String id) async {
+    return await (select(orders)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<List<OrderItem>> getOrderItemsByOrderId(String orderId) async {
+    return await (select(orderItems)
+          ..where((t) => t.orderId.equals(orderId) & t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+        .get();
+  }
+
+  // Delivery operations  
+  Future<Delivery?> getDeliveryById(String id) async {
+    return await (select(deliveries)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  // Product operations with integer ID support
+  Future<Product?> getProductByIntId(int id) async {
+    return await (select(products)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 }
 

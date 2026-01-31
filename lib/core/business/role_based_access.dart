@@ -15,11 +15,11 @@ class RoleBasedAccess {
   RoleBasedAccess._() : _database = AppDatabase();
   
   /// Check if user has permission to perform action
-  Future<bool> hasPermission({
+  Future<bool> checkPermission({
     required int userId,
     required String action,
     required String resource,
-    int? resourceId,
+    String? resourceId,
   }) async {
     final user = await _database.getUserById(userId);
     if (user == null || user.isDeleted) {
@@ -51,7 +51,7 @@ class RoleBasedAccess {
     int userId, 
     String action, 
     String resource, 
-    int? resourceId,
+    String? resourceId,
   ) async {
     switch (resource) {
       case 'orders':
@@ -136,7 +136,7 @@ class RoleBasedAccess {
     int userId, 
     String action, 
     String resource, 
-    int? resourceId,
+    String? resourceId,
   ) async {
     switch (resource) {
       case 'deliveries':
@@ -155,7 +155,7 @@ class RoleBasedAccess {
   Future<bool> _hasDeliveryDeliveryPermission(
     int userId, 
     String action, 
-    int? resourceId,
+    String? resourceId,
   ) async {
     switch (action) {
       case 'view':
@@ -171,7 +171,7 @@ class RoleBasedAccess {
         // Can only update own deliveries
         if (resourceId != null) {
           final delivery = await _database.getDeliveryById(resourceId);
-          return delivery?.deliveryPersonnelId == userId;
+          return delivery?.deliveryPersonnelId == userId.toString();
         }
         return false;
       case 'create':
@@ -186,7 +186,7 @@ class RoleBasedAccess {
   Future<bool> _hasDeliveryOrderPermission(
     int userId, 
     String action, 
-    int? resourceId,
+    String? resourceId,
   ) async {
     switch (action) {
       case 'view':
@@ -198,7 +198,7 @@ class RoleBasedAccess {
           // Check if order has delivery assigned to this user
           final deliveries = await _database.customSelect(
             'SELECT id FROM deliveries WHERE order_id = ? AND delivery_personnel_id = ?',
-            [resourceId, userId],
+            variables: [Variable.withString(resourceId), Variable.withString(userId.toString())],
           ).get();
           
           return deliveries.isNotEmpty;
@@ -232,7 +232,7 @@ class RoleBasedAccess {
     int userId, 
     String action, 
     String resource, 
-    int? resourceId,
+    String? resourceId,
   ) async {
     switch (resource) {
       case 'orders':
@@ -249,14 +249,14 @@ class RoleBasedAccess {
   Future<bool> _hasCustomerOrderPermission(
     int userId, 
     String action, 
-    int? resourceId,
+    String? resourceId,
   ) async {
     switch (action) {
       case 'view':
         // Can view own orders
         if (resourceId != null) {
           final order = await _database.getOrderById(resourceId);
-          return order?.customerId == userId;
+          return order?.customerId == userId.toString();
         }
         return false;
       case 'create':
@@ -265,7 +265,7 @@ class RoleBasedAccess {
         // Can update own pending orders
         if (resourceId != null) {
           final order = await _database.getOrderById(resourceId);
-          return order?.customerId == userId && 
+          return order?.customerId == userId.toString() && 
                  (order?.status == 'pending' || order?.status == 'confirmed');
         }
         return false;
@@ -273,7 +273,7 @@ class RoleBasedAccess {
         // Can cancel own pending orders
         if (resourceId != null) {
           final order = await _database.getOrderById(resourceId);
-          return order?.customerId == userId && 
+          return order?.customerId == userId.toString() && 
                  (order?.status == 'pending' || order?.status == 'confirmed');
         }
         return false;
@@ -285,19 +285,19 @@ class RoleBasedAccess {
   Future<bool> _hasCustomerCustomerPermission(
     int userId, 
     String action, 
-    int? resourceId,
+    String? resourceId,
   ) async {
     switch (action) {
       case 'view':
         // Can view own profile
         if (resourceId != null) {
-          return resourceId == userId;
+          return resourceId == userId.toString();
         }
         return false;
       case 'update':
         // Can update own profile
         if (resourceId != null) {
-          return resourceId == userId;
+          return resourceId == userId.toString();
         }
         return false;
       default:
@@ -341,13 +341,13 @@ class RoleBasedAccess {
           INNER JOIN deliveries d ON o.id = d.order_id
           WHERE d.delivery_personnel_id = ? AND o.is_deleted = 0
           ORDER BY o.created_at DESC
-        ''', [userId]).map((row) => Order.fromData(row.data, _database)).get();
+        ''', variables: [Variable.withInt(userId)]).map((row) => Order.fromData(row.data, _database)).get();
         
       case 'customer':
         // Customer can see own orders
         return await _database.customSelect(
           'SELECT * FROM orders WHERE customer_id = ? AND is_deleted = 0 ORDER BY created_at DESC',
-          [userId],
+          variables: [Variable.withInt(userId)],
         ).map((row) => Order.fromData(row.data, _database)).get();
         
       default:
@@ -378,7 +378,7 @@ class RoleBasedAccess {
         // Delivery can see own deliveries
         return await _database.customSelect(
           'SELECT * FROM deliveries WHERE delivery_personnel_id = ? AND is_deleted = 0 ORDER BY created_at DESC',
-          [userId],
+          variables: [Variable.withInt(userId)],
         ).map((row) => Delivery.fromData(row.data, _database)).get();
         
       case 'customer':
@@ -388,7 +388,7 @@ class RoleBasedAccess {
           INNER JOIN orders o ON d.order_id = o.id
           WHERE o.customer_id = ? AND d.is_deleted = 0
           ORDER BY d.created_at DESC
-        ''', [userId]).map((row) => Delivery.fromData(row.data, _database)).get();
+        ''', variables: [Variable.withInt(userId)]).map((row) => Delivery.fromData(row.data, _database)).get();
         
       default:
         return [];
@@ -414,7 +414,7 @@ class RoleBasedAccess {
         // Customers can see active products only
         return await _database.customSelect(
           'SELECT * FROM products WHERE is_deleted = 0 AND status = ? ORDER BY name ASC',
-          ['active'],
+          variables: [Variable.withString('active')],
         ).map((row) => Product.fromData(row.data, _database)).get();
         
       default:
@@ -441,7 +441,7 @@ class RoleBasedAccess {
         // Can see own profile only
         return await _database.customSelect(
           'SELECT * FROM customers WHERE id = ? AND is_deleted = 0',
-          [userId],
+          variables: [Variable.withInt(userId)],
         ).map((row) => Customer.fromData(row.data, _database)).get();
         
       default:

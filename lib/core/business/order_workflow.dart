@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../sync/sync_manager.dart';
+import '../utils/type_validator.dart';
 
 /// Order Workflow - Core Business Logic
 /// Implements the complete order lifecycle with proper stock management
@@ -18,17 +19,22 @@ class OrderWorkflow {
   /// CUSTOMER: Create Order (offline OK)
   /// Stock is NOT deducted at this stage
   Future<Order> createOrder({
-    required int customerId,
+    required String customerId,
     required List<OrderItemData> items,
     required String deliveryAddress,
     String? customerNotes,
   }) async {
     print('🛒 Customer creating order...');
     
+    // Validate input types
+    final validatedCustomerId = TypeValidator.ensureUuid(customerId);
+    
     // Validate customer exists and is active
-    final customer = await _database.getCustomerById(customerId);
-    if (customer == null || customer.isDeleted) {
-      throw Exception('Customer not found or inactive');
+    final customer = await _database.getCustomerById(validatedCustomerId);
+    TypeValidator.ensureExists(customer, 'Customer', validatedCustomerId);
+    
+    if (customer!.isDeleted) {
+      throw Exception('Customer is inactive');
     }
     
     // Calculate totals
@@ -40,10 +46,11 @@ class OrderWorkflow {
     final orderNumber = await _generateOrderNumber();
     
     // Create order in PENDING status
-    final order = await _database.into(_database.orders).insert(
+    final orderId = _generateUuid();
+    await _database.into(_database.orders).insert(
       OrdersCompanion.insert(
-        uuid: Value(_generateUuid()),
-        customerId: Value(customerId),
+        id: orderId,
+        customerId: customerId,
         orderNumber: orderNumber,
         status: const Value('pending'),
         deliveryAddress: deliveryAddress,
@@ -62,32 +69,37 @@ class OrderWorkflow {
     
     // Create order items with current product info snapshot
     for (final item in items) {
-      final product = await _database.getProductById(item.productId);
-      if (product == null || product.isDeleted) {
-        throw Exception('Product ${item.productId} not found');
+      // Validate product ID
+      final validatedProductId = TypeValidator.ensureIntId(item.productId);
+      final validatedQuantity = TypeValidator.validateStockQuantity(item.quantity);
+      
+      final product = await _database.getProductByIntId(validatedProductId);
+      TypeValidator.ensureExists(product, 'Product', validatedProductId);
+      
+      if (product!.isDeleted) {
+        throw Exception('Product ${validatedProductId} not found or inactive');
       }
       
       // Check availability (but don't reserve yet)
-      if (product.currentStock < item.quantity) {
-        throw Exception('Insufficient stock for ${product.name}. Available: ${product.currentStock}, Requested: ${item.quantity}');
+      if (product.currentStock < validatedQuantity) {
+        throw Exception('Insufficient stock for ${product.name}. Available: ${product.currentStock}, Requested: ${validatedQuantity}');
       }
       
       await _database.into(_database.orderItems).insert(
         OrderItemsCompanion.insert(
-          uuid: Value(_generateUuid()),
-          orderId: Value(order),
-          productId: Value(item.productId),
-          productSku: Value(product.sku),
-          productName: Value(product.name),
-          productCategory: Value(product.category),
-          quantity: Value(item.quantity),
+          id: _generateUuid(),
+          orderId: orderId,
+          productId: validatedProductId.toString(),
+          productSku: product.sku,
+          productName: product.name,
+          quantity: validatedQuantity,
           deliveredQuantity: const Value(0),
-          unitPrice: Value(item.unitPrice),
-          subtotal: Value(item.subtotal),
+          unitPrice: item.unitPrice,
+          subtotal: item.subtotal,
           discountAmount: Value(item.discountAmount),
-          totalAmount: Value(item.totalAmount),
-          availableStock: Value(product.currentStock),
-          stockStatus: Value(product.currentStock >= item.quantity ? 'available' : 'backorder'),
+          totalAmount: item.totalAmount,
+          availableStock: product.currentStock,
+          stockStatus: Value(product.currentStock >= validatedQuantity ? 'available' : 'backorder'),
           status: const Value('pending'),
           notes: Value(item.notes),
           syncStatus: const Value('pending'),
@@ -102,12 +114,12 @@ class OrderWorkflow {
     // Trigger sync
     await _syncManager.performFullSync();
     
-    return await _database.getOrderById(order);
+    return (await _database.getOrderById(orderId))!;
   }
   
   /// WAREHOUSE: Confirm Order and Reserve Stock
   Future<void> confirmOrderAvailability({
-    required int orderId,
+    required String orderId,
     required int warehouseUserId,
   }) async {
     print('📦 Warehouse confirming order availability...');
@@ -172,7 +184,7 @@ class OrderWorkflow {
   
   /// WAREHOUSE: Pack Order
   Future<void> packOrder({
-    required int orderId,
+    required String orderId,
     required int packerUserId,
   }) async {
     print('📦 Warehouse packing order...');
@@ -220,7 +232,7 @@ class OrderWorkflow {
   
   /// DELIVERY: Accept Delivery Assignment
   Future<void> acceptDelivery({
-    required int orderId,
+    required String orderId,
     required int deliveryPersonnelId,
     required String deliveryPersonnelName,
     required String deliveryPersonnelPhone,
@@ -241,16 +253,18 @@ class OrderWorkflow {
     
     await _database.into(_database.deliveries).insert(
       DeliveriesCompanion.insert(
-        uuid: Value(_generateUuid()),
-        orderId: Value(orderId),
-        deliveryPersonnelId: Value(deliveryPersonnelId),
-        deliveryPersonnelName: Value(deliveryPersonnelName),
-        deliveryPersonnelPhone: Value(deliveryPersonnelPhone),
+        id: _generateUuid(),
+        orderId: orderId,
+        deliveryPersonnelId: deliveryPersonnelId.toString(),
+        deliveryPersonnelName: deliveryPersonnelName,
+        deliveryPersonnelPhone: deliveryPersonnelPhone,
         deliveryNumber: deliveryNumber,
-        scheduledDate: Value(DateTime.now()),
+        scheduledDate: DateTime.now(),
+        route: 'Standard Route',
+        routeOrder: 1,
+        startLocation: 'Warehouse',
+        endLocation: order.deliveryAddress,
         status: const Value('assigned'),
-        startLocation: Value('Warehouse'),
-        endLocation: Value(order.deliveryAddress),
         priority: Value(order.priority),
         attemptCount: const Value(0),
         syncStatus: const Value('pending'),
@@ -278,7 +292,7 @@ class OrderWorkflow {
   
   /// DELIVERY: Start Delivery
   Future<void> startDelivery({
-    required int deliveryId,
+    required String deliveryId,
   }) async {
     print('🚚 Starting delivery...');
     
@@ -320,7 +334,7 @@ class OrderWorkflow {
   
   /// DELIVERY: Confirm Delivery (CRITICAL - Stock Deduction Point)
   Future<void> confirmDelivery({
-    required int deliveryId,
+    required String deliveryId,
     required String recipientName,
     required String recipientRelation,
     String? deliveryNotes,
@@ -369,18 +383,18 @@ class OrderWorkflow {
       );
       
       // Log stock movement
-      await _database.into(_database.stockMovements).insert(
+      await _database.createStockMovement(
         StockMovementsCompanion.insert(
-          uuid: Value(_generateUuid()),
-          productId: Value(item.productId),
-          movementType: const Value('stock_out'),
-          quantity: Value(-item.quantity), // Negative for stock out
+          id: _generateUuid(),
+          productId: item.productId.toString(),
+          movementType: 'stock_out',
+          quantity: -item.quantity, // Negative for stock out
           referenceType: const Value('delivery'),
-          referenceId: Value(delivery.uuid),
-          reason: Value('Order ${order.orderNumber} delivered'),
-          notes: Value('Delivered to ${delivery.deliveryAddress}'),
-          userId: Value(delivery.deliveryPersonnelId),
-          userName: Value(delivery.deliveryPersonnelName),
+          referenceId: Value(delivery.id),
+          reason: 'Order ${order.orderNumber} delivered',
+          notes: Value('Delivered to ${delivery.endLocation}'),
+          userId: delivery.deliveryPersonnelId,
+          userName: delivery.deliveryPersonnelName,
           fromLocation: Value(product.location),
           toLocation: Value(delivery.endLocation),
           unitCost: Value(product.costPrice),
@@ -445,7 +459,7 @@ class OrderWorkflow {
   Future<List<Order>> getPendingOrders() async {
     return await _database.customSelect(
       'SELECT * FROM orders WHERE status = ? AND is_deleted = 0 ORDER BY created_at ASC',
-      ['pending'],
+      variables: [Variable.withString('pending')],
     ).map((row) => Order.fromData(row.data, _database)).get();
   }
   
@@ -453,7 +467,7 @@ class OrderWorkflow {
   Future<List<Order>> getOrdersReadyForDelivery() async {
     return await _database.customSelect(
       'SELECT * FROM orders WHERE status = ? AND is_deleted = 0 ORDER BY created_at ASC',
-      ['packed'],
+      variables: [Variable.withString('packed')],
     ).map((row) => Order.fromData(row.data, _database)).get();
   }
   
@@ -461,7 +475,7 @@ class OrderWorkflow {
   Future<List<Delivery>> getActiveDeliveries() async {
     return await _database.customSelect(
       'SELECT * FROM deliveries WHERE status IN (?, ?) AND is_deleted = 0 ORDER BY created_at ASC',
-      ['assigned', 'in_progress'],
+      variables: [Variable.withString('assigned'), Variable.withString('in_progress')],
     ).map((row) => Delivery.fromData(row.data, _database)).get();
   }
   

@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../database/app_database.dart';
 
 /// Core Sync Manager - Thesis-worthy offline-first sync logic
@@ -101,19 +101,19 @@ class SyncManager {
     print('🔄 Updating sync status...');
     
     // Mark all pending records as synced
-    await _database.customUpdateOnly(
-      const CustomersCompanion(syncStatus: Value('synced')),
-      where: (tbl) => tbl.syncStatus.equals('pending'),
+    await _database.customUpdate(
+      'UPDATE customers SET sync_status = ? WHERE sync_status = ?',
+      variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
     
-    await _database.customUpdateOnly(
-      const ProductsCompanion(syncStatus: Value('synced')),
-      where: (tbl) => tbl.syncStatus.equals('pending'),
+    await _database.customUpdate(
+      'UPDATE products SET sync_status = ? WHERE sync_status = ?',
+      variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
     
-    await _database.customUpdateOnly(
-      const StockMovementsCompanion(syncStatus: Value('synced')),
-      where: (tbl) => tbl.syncStatus.equals('pending'),
+    await _database.customUpdate(
+      'UPDATE stock_movements SET sync_status = ? WHERE sync_status = ?',
+      variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
     
     print('✅ Sync status updated');
@@ -148,13 +148,14 @@ class SyncManager {
               .single();
           
           // Update local record with remote ID
-          await _database.customUpdateOnly(
-            UsersCompanion(
-              remoteId: Value(response['id']),
-              syncStatus: const Value('synced'),
-              updatedAt: Value(DateTime.now()),
-            ),
-            where: (tbl) => tbl.id.equals(user.id),
+          await _database.customUpdate(
+            'UPDATE users SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
+            variables: [
+              Variable.withInt(response['id']),
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.now()),
+              Variable.withInt(user.id),
+            ],
           );
         } else {
           // Update existing record
@@ -165,21 +166,25 @@ class SyncManager {
           await Supabase.instance.client
               .from('users')
               .update(userData)
-              .eq('id', user.remoteId);
+              .eq('id', user.remoteId.toString());
           
-          await _database.customUpdateOnly(
-            UsersCompanion(
-              syncStatus: const Value('synced'),
-              updatedAt: Value(DateTime.now()),
-            ),
-            where: (tbl) => tbl.id.equals(user.id),
+          await _database.customUpdate(
+            'UPDATE users SET sync_status = ?, updated_at = ? WHERE id = ?',
+            variables: [
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.now()),
+              Variable.withInt(user.id),
+            ],
           );
         }
       } catch (e) {
         print('❌ Error syncing user ${user.id}: $e');
-        await _database.customUpdateOnly(
-          const UsersCompanion(syncStatus: Value('conflict')),
-          where: (tbl) => tbl.id.equals(user.id),
+        await _database.customUpdate(
+          'UPDATE users SET sync_status = ? WHERE id = ?',
+          variables: [
+            Variable.withString('conflict'),
+            Variable.withInt(user.id),
+          ],
         );
       }
     }
@@ -223,13 +228,14 @@ class SyncManager {
               .select('id')
               .single();
           
-          await _database.customUpdateOnly(
-            ProductsCompanion(
-              remoteId: Value(response['id']),
-              syncStatus: const Value('synced'),
-              updatedAt: Value(DateTime.now()),
-            ),
-            where: (tbl) => tbl.id.equals(product.id),
+          await _database.customUpdate(
+            'UPDATE products SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
+            variables: [
+              Variable.withInt(response['id']),
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.now()),
+              Variable.withInt(product.id),
+            ],
           );
         } else {
           // Update existing record
@@ -240,21 +246,25 @@ class SyncManager {
           await Supabase.instance.client
               .from('products')
               .update(productData)
-              .eq('id', product.remoteId);
+              .eq('id', product.remoteId.toString());
           
-          await _database.customUpdateOnly(
-            ProductsCompanion(
-              syncStatus: const Value('synced'),
-              updatedAt: Value(DateTime.now()),
-            ),
-            where: (tbl) => tbl.id.equals(product.id),
+          await _database.customUpdate(
+            'UPDATE products SET sync_status = ?, updated_at = ? WHERE id = ?',
+            variables: [
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.now()),
+              Variable.withInt(product.id),
+            ],
           );
         }
       } catch (e) {
         print('❌ Error syncing product ${product.id}: $e');
-        await _database.customUpdateOnly(
-          const ProductsCompanion(syncStatus: Value('conflict')),
-          where: (tbl) => tbl.id.equals(product.id),
+        await _database.customUpdate(
+          'UPDATE products SET sync_status = ? WHERE id = ?',
+          variables: [
+            Variable.withString('conflict'),
+            Variable.withInt(product.id),
+          ],
         );
       }
     }
@@ -294,13 +304,14 @@ class SyncManager {
               .select('id')
               .single();
           
-          await _database.customUpdateOnly(
-            CustomersCompanion(
-              remoteId: Value(response['id']),
-              syncStatus: const Value('synced'),
-              updatedAt: Value(DateTime.now()),
-            ),
-            where: (tbl) => tbl.id.equals(customer.id),
+          await _database.customUpdate(
+            'UPDATE customers SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
+            variables: [
+              Variable.withInt(response['id']),
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.now()),
+              Variable.withInt(customer.id),
+            ],
           );
         } else {
           // Update existing record
@@ -311,21 +322,25 @@ class SyncManager {
           await Supabase.instance.client
               .from('customers')
               .update(customerData)
-              .eq('id', customer.remoteId);
+              .eq('id', customer.remoteId.toString());
           
-          await _database.customUpdateOnly(
-            CustomersCompanion(
-              syncStatus: const Value('synced'),
-              updatedAt: Value(DateTime.now()),
-            ),
-            where: (tbl) => tbl.id.equals(customer.id),
+          await _database.customUpdate(
+            'UPDATE customers SET sync_status = ?, updated_at = ? WHERE id = ?',
+            variables: [
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.now()),
+              Variable.withInt(customer.id),
+            ],
           );
         }
       } catch (e) {
         print('❌ Error syncing customer ${customer.id}: $e');
-        await _database.customUpdateOnly(
-          const CustomersCompanion(syncStatus: Value('conflict')),
-          where: (tbl) => tbl.id.equals(customer.id),
+        await _database.customUpdate(
+          'UPDATE customers SET sync_status = ? WHERE id = ?',
+          variables: [
+            Variable.withString('conflict'),
+            Variable.withInt(customer.id),
+          ],
         );
       }
     }
@@ -338,7 +353,7 @@ class SyncManager {
     for (final movement in pendingMovements) {
       try {
         final movementData = {
-          'uuid': movement.uuid,
+          'id': movement.id,
           'product_id': movement.productId,
           'movement_type': movement.movementType,
           'quantity': movement.quantity,
@@ -356,8 +371,8 @@ class SyncManager {
           'approved_by': movement.approvedBy,
           'approved_at': movement.approvedAt?.toIso8601String(),
           'is_deleted': movement.isDeleted,
-          'sync_status': 'synced',
-          'local_id': movement.id,
+          'sync_status': movement.syncStatus,
+          'remote_id': movement.remoteId,
           'created_at': movement.createdAt.toIso8601String(),
           'updated_at': movement.updatedAt.toIso8601String(),
         };
@@ -370,13 +385,14 @@ class SyncManager {
               .select('id')
               .single();
           
-          await _database.customUpdateOnly(
-            StockMovementsCompanion(
-              remoteId: Value(response['id']),
-              syncStatus: const Value('synced'),
-              updatedAt: Value(DateTime.now()),
-            ),
-            where: (tbl) => tbl.id.equals(movement.id),
+          await _database.customUpdate(
+            'UPDATE stock_movements SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
+            variables: [
+              Variable.withInt(response['id']),
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.now()),
+              Variable.withString(movement.id),
+            ],
           );
         } else {
           // Update existing record
@@ -387,21 +403,25 @@ class SyncManager {
           await Supabase.instance.client
               .from('stock_movements')
               .update(movementData)
-              .eq('id', movement.remoteId);
+              .eq('id', movement.remoteId.toString());
           
-          await _database.customUpdateOnly(
-            StockMovementsCompanion(
-              syncStatus: const Value('synced'),
-              updatedAt: Value(DateTime.now()),
-            ),
-            where: (tbl) => tbl.id.equals(movement.id),
+          await _database.customUpdate(
+            'UPDATE stock_movements SET sync_status = ?, updated_at = ? WHERE id = ?',
+            variables: [
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.now()),
+              Variable.withString(movement.id),
+            ],
           );
         }
       } catch (e) {
         print('❌ Error syncing stock movement ${movement.id}: $e');
-        await _database.customUpdateOnly(
-          const StockMovementsCompanion(syncStatus: Value('conflict')),
-          where: (tbl) => tbl.id.equals(movement.id),
+        await _database.customUpdate(
+          'UPDATE stock_movements SET sync_status = ? WHERE id = ?',
+          variables: [
+            Variable.withString('conflict'),
+            Variable.withString(movement.id),
+          ],
         );
       }
     }
@@ -418,39 +438,40 @@ class SyncManager {
       // Check if record exists locally
       final existingRecord = await _database.customSelect(
         'SELECT id FROM users WHERE remote_id = ?',
-        [userData['id']],
+        variables: [Variable.withString(userData['id'])],
       ).getSingleOrNull();
       
       if (existingRecord != null) {
         // Update existing record
-        await _database.customUpdateOnly(
-          UsersCompanion(
-            name: Value(userData['name']),
-            email: Value(userData['email']),
-            role: Value(userData['role']),
-            phone: Value(userData['phone']),
-            address: Value(userData['address']),
-            isDeleted: Value(userData['is_deleted']),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.parse(userData['updated_at'])),
-          ),
-          where: (tbl) => tbl.remoteId.equals(userData['id']),
+        await _database.customUpdate(
+          'UPDATE users SET name = ?, email = ?, role = ?, phone = ?, address = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
+          variables: [
+            Variable.withString(userData['name']),
+            Variable.withString(userData['email']),
+            Variable.withString(userData['role']),
+            Variable.withString(userData['phone']),
+            Variable.withString(userData['address']),
+            Variable.withBool(userData['is_deleted']),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(userData['updated_at'])),
+            Variable.withString(userData['id']),
+          ],
         );
       } else {
         // Insert new record
         await _database.into(_database.users).insert(
           UsersCompanion.insert(
-            uuid: Value(userData['uuid']),
-            name: Value(userData['name']),
-            email: Value(userData['email']),
-            role: Value(userData['role']),
-            phone: Value(userData['phone']),
-            address: Value(userData['address']),
-            isDeleted: Value(userData['is_deleted']),
-            remoteId: Value(userData['id']),
+            uuid: userData['uuid'] as String,
+            name: userData['name'] as String,
+            email: userData['email'] as String,
+            role: userData['role'] as String,
+            phone: Value(userData['phone'] as String?),
+            address: Value(userData['address'] as String?),
+            isDeleted: Value(userData['is_deleted'] as bool),
+            remoteId: Value(userData['id'].toString()),
             syncStatus: const Value('synced'),
-            createdAt: Value(DateTime.parse(userData['created_at'])),
-            updatedAt: Value(DateTime.parse(userData['updated_at'])),
+            createdAt: Value(DateTime.parse(userData['created_at'] as String)),
+            updatedAt: Value(DateTime.parse(userData['updated_at'] as String)),
           ),
         );
       }
@@ -467,57 +488,57 @@ class SyncManager {
     for (final productData in response) {
       final existingRecord = await _database.customSelect(
         'SELECT id FROM products WHERE remote_id = ?',
-        [productData['id']],
+        variables: [Variable.withString(productData['id'])],
       ).getSingleOrNull();
       
       if (existingRecord != null) {
-        await _database.customUpdateOnly(
-          ProductsCompanion(
-            sku: Value(productData['sku']),
-            name: Value(productData['name']),
-            description: Value(productData['description']),
-            category: Value(productData['category']),
-            brand: Value(productData['brand']),
-            currentStock: Value(productData['current_stock']),
-            minStock: Value(productData['min_stock']),
-            maxStock: Value(productData['max_stock']),
-            unit: Value(productData['unit']),
-            unitPrice: Value(productData['unit_price']),
-            costPrice: Value(productData['cost_price']),
-            status: Value(productData['status']),
-            barcode: Value(productData['barcode']),
-            location: Value(productData['location']),
-            supplier: Value(productData['supplier']),
-            isDeleted: Value(productData['is_deleted']),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.parse(productData['updated_at'])),
-          ),
-          where: (tbl) => tbl.remoteId.equals(productData['id']),
-        );
+        await _database.customUpdate('UPDATE products SET sku = ?, name = ?, description = ?, category = ?, brand = ?, current_stock = ?, min_stock = ?, max_stock = ?, unit = ?, unit_price = ?, cost_price = ?, status = ?, barcode = ?, location = ?, supplier = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
+          variables: [
+            Variable.withString(productData['sku'] as String),
+            Variable.withString(productData['name'] as String),
+            Variable.withString(productData['description'] ?? ''),
+            Variable.withString(productData['category'] as String),
+            Variable.withString(productData['brand'] ?? ''),
+            Variable.withInt(productData['current_stock'] as int),
+            Variable.withInt(productData['min_stock'] as int),
+            Variable.withInt(productData['max_stock'] as int),
+            Variable.withString(productData['unit'] as String),
+            Variable.withReal(productData['unit_price'] as double),
+            Variable.withReal(productData['cost_price'] as double),
+            Variable.withString(productData['status'] as String),
+            Variable.withString(productData['barcode'] ?? ''),
+            Variable.withString(productData['location'] as String),
+            Variable.withString(productData['supplier'] ?? ''),
+            Variable.withBool(productData['is_deleted'] as bool),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(productData['updated_at'] as String)),
+            Variable.withString(productData['id'] as String),
+          ]);
       } else {
+        // Insert new record
         await _database.into(_database.products).insert(
           ProductsCompanion.insert(
-            uuid: Value(productData['uuid']),
-            sku: Value(productData['sku']),
-            name: Value(productData['name']),
-            description: Value(productData['description']),
-            category: Value(productData['category']),
-            brand: Value(productData['brand']),
-            currentStock: Value(productData['current_stock']),
-            minStock: Value(productData['min_stock']),
-            maxStock: Value(productData['max_stock']),
-            unit: Value(productData['unit']),
-            unitPrice: Value(productData['unit_price']),
-            costPrice: Value(productData['cost_price']),
-            status: Value(productData['status']),
-            barcode: Value(productData['barcode']),
-            location: Value(productData['location']),
-            supplier: Value(productData['supplier']),
-            isDeleted: Value(productData['is_deleted']),
-            remoteId: Value(productData['id']),
+            uuid: productData['uuid'] as String,
+            sku: productData['sku'] as String,
+            name: productData['name'] as String,
+            description: Value(productData['description'] as String?),
+            category: productData['category'] as String,
+            brand: Value(productData['brand'] as String?),
+            currentStock: Value(productData['current_stock'] as int),
+            minStock: Value(productData['min_stock'] as int),
+            maxStock: Value(productData['max_stock'] as int),
+            unit: productData['unit'] as String,
+            unitPrice: productData['unit_price'] as double,
+            costPrice: productData['cost_price'] as double,
+            status: Value(productData['status'] as String),
+            barcode: Value(productData['barcode'] as String?),
+            location: Value(productData['location'] as String),
+            supplier: Value(productData['supplier'] as String?),
+            isDeleted: Value(productData['is_deleted'] as bool),
+            remoteId: Value(productData['id'].toString()),
             syncStatus: const Value('synced'),
-            createdAt: Value(DateTime.parse(productData['created_at'])),
-            updatedAt: Value(DateTime.parse(productData['updated_at'])),
+            createdAt: Value(DateTime.parse(productData['created_at'] as String)),
+            updatedAt: Value(DateTime.parse(productData['updated_at'] as String)),
           ),
         );
       }
@@ -534,42 +555,43 @@ class SyncManager {
     for (final customerData in response) {
       final existingRecord = await _database.customSelect(
         'SELECT id FROM customers WHERE remote_id = ?',
-        [customerData['id']],
+        variables: [Variable.withString(customerData['id'])],
       ).getSingleOrNull();
       
       if (existingRecord != null) {
-        await _database.customUpdateOnly(
-          CustomersCompanion(
-            name: Value(customerData['name']),
-            email: Value(customerData['email']),
-            phone: Value(customerData['phone']),
-            address: Value(customerData['address']),
-            businessName: Value(customerData['business_name']),
-            taxId: Value(customerData['tax_id']),
-            customerType: Value(customerData['customer_type']),
-            creditLimit: Value(customerData['credit_limit']),
-            paymentTerms: Value(customerData['payment_terms']),
-            status: Value(customerData['status']),
-            preferredContactMethod: Value(customerData['preferred_contact_method']),
-            isDeleted: Value(customerData['is_deleted']),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.parse(customerData['updated_at'])),
-          ),
-          where: (tbl) => tbl.remoteId.equals(customerData['id']),
+        await _database.customUpdate(
+          'UPDATE customers SET name = ?, email = ?, phone = ?, address = ?, business_name = ?, tax_id = ?, customer_type = ?, credit_limit = ?, payment_terms = ?, status = ?, preferred_contact_method = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
+          variables: [
+            Variable.withString(customerData['name']),
+            Variable.withString(customerData['email']),
+            Variable.withString(customerData['phone']),
+            Variable.withString(customerData['address']),
+            Variable.withString(customerData['business_name']),
+            Variable.withString(customerData['tax_id']),
+            Variable.withString(customerData['customer_type']),
+            Variable.withReal(customerData['credit_limit'] as double),
+            Variable.withString(customerData['payment_terms']),
+            Variable.withString(customerData['status']),
+            Variable.withString(customerData['preferred_contact_method']),
+            Variable.withBool(customerData['is_deleted']),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(customerData['updated_at'])),
+            Variable.withString(customerData['id']),
+          ],
         );
       } else {
         await _database.into(_database.customers).insert(
           CustomersCompanion.insert(
-            uuid: Value(customerData['uuid']),
-            name: Value(customerData['name']),
-            email: Value(customerData['email']),
-            phone: Value(customerData['phone']),
-            address: Value(customerData['address']),
-            businessName: Value(customerData['business_name']),
-            taxId: Value(customerData['tax_id']),
-            customerType: Value(customerData['customer_type']),
-            creditLimit: Value(customerData['credit_limit']),
-            paymentTerms: Value(customerData['payment_terms']),
+            uuid: customerData['uuid'] as String,
+            name: customerData['name'] as String,
+            email: customerData['email'] as String,
+            phone: Value(customerData['phone'] as String?),
+            address: Value(customerData['address'] as String?),
+            businessName: Value(customerData['business_name'] as String?),
+            taxId: Value(customerData['tax_id'] as String?),
+            customerType: Value(customerData['customer_type'] as String),
+            creditLimit: Value(customerData['credit_limit'] as double),
+            paymentTerms: Value(customerData['payment_terms'] as String?),
             status: Value(customerData['status']),
             preferredContactMethod: Value(customerData['preferred_contact_method']),
             isDeleted: Value(customerData['is_deleted']),
@@ -593,60 +615,62 @@ class SyncManager {
     for (final movementData in response) {
       final existingRecord = await _database.customSelect(
         'SELECT id FROM stock_movements WHERE remote_id = ?',
-        [movementData['id']],
+        variables: [Variable.withString(movementData['id'])],
       ).getSingleOrNull();
       
       if (existingRecord != null) {
-        await _database.customUpdateOnly(
-          StockMovementsCompanion(
-            productId: Value(movementData['product_id']),
-            movementType: Value(movementData['movement_type']),
-            quantity: Value(movementData['quantity']),
-            referenceType: Value(movementData['reference_type']),
-            referenceId: Value(movementData['reference_id']),
-            reason: Value(movementData['reason']),
-            notes: Value(movementData['notes']),
-            userId: Value(movementData['user_id']),
-            userName: Value(movementData['user_name']),
-            fromLocation: Value(movementData['from_location']),
-            toLocation: Value(movementData['to_location']),
-            unitCost: Value(movementData['unit_cost']),
-            totalCost: Value(movementData['total_cost']),
-            status: Value(movementData['status']),
-            approvedBy: Value(movementData['approved_by']),
-            approvedAt: movementData['approved_at'] != null 
-                ? Value(DateTime.parse(movementData['approved_at']))
-                : const Value(null),
-            isDeleted: Value(movementData['is_deleted']),
-            syncStatus: const Value('synced'),
-            updatedAt: Value(DateTime.parse(movementData['updated_at'])),
-          ),
-          where: (tbl) => tbl.remoteId.equals(movementData['id']),
+        await _database.customUpdate(
+          'UPDATE stock_movements SET product_id = ?, movement_type = ?, quantity = ?, reference_type = ?, reference_id = ?, reason = ?, notes = ?, user_id = ?, user_name = ?, from_location = ?, to_location = ?, unit_cost = ?, total_cost = ?, status = ?, approved_by = ?, approved_at = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
+          variables: [
+            Variable.withString(movementData['product_id']),
+            Variable.withString(movementData['movement_type']),
+            Variable.withInt(movementData['quantity']),
+            Variable.withString(movementData['reference_type']),
+            Variable.withString(movementData['reference_id']),
+            Variable.withString(movementData['reason']),
+            Variable.withString(movementData['notes']),
+            Variable.withString(movementData['user_id']),
+            Variable.withString(movementData['user_name']),
+            Variable.withString(movementData['from_location']),
+            Variable.withString(movementData['to_location']),
+            Variable.withReal(movementData['unit_cost'] as double),
+            Variable.withReal(movementData['total_cost'] as double),
+            Variable.withString(movementData['status']),
+            Variable.withString(movementData['approved_by']),
+            if (movementData['approved_at'] != null) 
+              Variable.withDateTime(DateTime.parse(movementData['approved_at']))
+            else 
+              Variable.withDateTime(DateTime.now()), // Default value for null
+            Variable.withBool(movementData['is_deleted']),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(movementData['updated_at'])),
+            Variable.withString(movementData['id']),
+          ],
         );
       } else {
         await _database.into(_database.stockMovements).insert(
           StockMovementsCompanion.insert(
-            uuid: Value(movementData['uuid']),
-            productId: Value(movementData['product_id']),
-            movementType: Value(movementData['movement_type']),
-            quantity: Value(movementData['quantity']),
-            referenceType: Value(movementData['reference_type']),
-            referenceId: Value(movementData['reference_id']),
-            reason: Value(movementData['reason']),
-            notes: Value(movementData['notes']),
-            userId: Value(movementData['user_id']),
-            userName: Value(movementData['user_name']),
-            fromLocation: Value(movementData['from_location']),
-            toLocation: Value(movementData['to_location']),
-            unitCost: Value(movementData['unit_cost']),
-            totalCost: Value(movementData['total_cost']),
-            status: Value(movementData['status']),
-            approvedBy: Value(movementData['approved_by']),
+            id: movementData['id'] as String,
+            productId: movementData['product_id'] as String,
+            movementType: movementData['movement_type'] as String,
+            quantity: movementData['quantity'] as int,
+            referenceType: Value(movementData['reference_type'] as String?),
+            referenceId: Value(movementData['reference_id'] as String?),
+            reason: movementData['reason'] as String,
+            notes: Value(movementData['notes'] as String?),
+            userId: movementData['user_id'] as String,
+            userName: movementData['user_name'] as String,
+            fromLocation: Value(movementData['from_location'] as String?),
+            toLocation: Value(movementData['to_location'] as String?),
+            unitCost: Value(movementData['unit_cost'] as double?),
+            totalCost: Value(movementData['total_cost'] as double?),
+            status: Value(movementData['status'] as String),
+            approvedBy: Value(movementData['approved_by'] as String?),
             approvedAt: movementData['approved_at'] != null 
                 ? Value(DateTime.parse(movementData['approved_at']))
                 : const Value(null),
-            isDeleted: Value(movementData['is_deleted']),
-            remoteId: Value(movementData['id']),
+            isDeleted: Value(movementData['is_deleted'] as bool),
+            remoteId: Value(movementData['id'] as String?),
             syncStatus: const Value('synced'),
             createdAt: Value(DateTime.parse(movementData['created_at'])),
             updatedAt: Value(DateTime.parse(movementData['updated_at'])),

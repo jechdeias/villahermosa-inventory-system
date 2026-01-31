@@ -31,13 +31,13 @@ class SecureOrderService {
     String? customerNotes,
   }) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: customerId,
       action: 'create',
       resource: 'orders',
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Customer cannot create orders',
         userId: customerId,
@@ -49,7 +49,7 @@ class SecureOrderService {
     // Validate customer role
     final customer = await _database.customSelect(
       'SELECT role FROM users WHERE id = ? AND is_deleted = 0',
-      [customerId],
+      variables: [Variable.withInt(customerId)],
     ).getSingleOrNull();
     
     if (customer == null || customer.data['role'] != 'customer') {
@@ -70,27 +70,26 @@ class SecureOrderService {
     required int warehouseUserId,
   }) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: warehouseUserId,
       action: 'confirm',
       resource: 'orders',
-      resourceId: orderId,
+      resourceId: orderId.toString(),
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Warehouse staff cannot confirm orders',
         userId: warehouseUserId,
         action: 'confirm',
         resource: 'orders',
-        resourceId: orderId,
       );
     }
     
     // Validate warehouse role
     final warehouseUser = await _database.customSelect(
       'SELECT role FROM users WHERE id = ? AND is_deleted = 0',
-      [warehouseUserId],
+      variables: [Variable.withInt(warehouseUserId)],
     ).getSingleOrNull();
     
     if (warehouseUser == null || warehouseUser.data['role'] != 'warehouse') {
@@ -109,27 +108,26 @@ class SecureOrderService {
     required int packerUserId,
   }) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: packerUserId,
       action: 'pack',
       resource: 'orders',
-      resourceId: orderId,
+      resourceId: orderId.toString(),
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Warehouse staff cannot pack orders',
         userId: packerUserId,
         action: 'pack',
         resource: 'orders',
-        resourceId: orderId,
       );
     }
     
     // Validate warehouse role
     final warehouseUser = await _database.customSelect(
       'SELECT role FROM users WHERE id = ? AND is_deleted = 0',
-      [packerUserId],
+      variables: [Variable.withInt(packerUserId)],
     ).getSingleOrNull();
     
     if (warehouseUser == null || warehouseUser.data['role'] != 'warehouse') {
@@ -150,13 +148,13 @@ class SecureOrderService {
     required String deliveryPersonnelPhone,
   }) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: deliveryPersonnelId,
       action: 'accept',
       resource: 'deliveries',
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Delivery personnel cannot accept deliveries',
         userId: deliveryPersonnelId,
@@ -168,7 +166,7 @@ class SecureOrderService {
     // Validate delivery role
     final deliveryUser = await _database.customSelect(
       'SELECT role FROM users WHERE id = ? AND is_deleted = 0',
-      [deliveryPersonnelId],
+      variables: [Variable.withInt(deliveryPersonnelId)],
     ).getSingleOrNull();
     
     if (deliveryUser == null || deliveryUser.data['role'] != 'delivery') {
@@ -189,27 +187,26 @@ class SecureOrderService {
     required int deliveryPersonnelId,
   }) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: deliveryPersonnelId,
       action: 'start',
       resource: 'deliveries',
-      resourceId: deliveryId,
+      resourceId: deliveryId.toString(),
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Delivery personnel cannot start deliveries',
         userId: deliveryPersonnelId,
         action: 'start',
         resource: 'deliveries',
-        resourceId: deliveryId,
       );
     }
     
     // Validate delivery role
     final deliveryUser = await _database.customSelect(
       'SELECT role FROM users WHERE id = ? AND is_deleted = 0',
-      [deliveryPersonnelId],
+      variables: [Variable.withInt(deliveryPersonnelId)],
     ).getSingleOrNull();
     
     if (deliveryUser == null || deliveryUser.data['role'] != 'delivery') {
@@ -231,27 +228,26 @@ class SecureOrderService {
     String? proofOfDeliveryUrl,
   }) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: deliveryPersonnelId,
       action: 'complete',
       resource: 'deliveries',
-      resourceId: deliveryId,
+      resourceId: deliveryId.toString(),
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Delivery personnel cannot complete deliveries',
         userId: deliveryPersonnelId,
         action: 'complete',
         resource: 'deliveries',
-        resourceId: deliveryId,
       );
     }
     
     // Validate delivery role
     final deliveryUser = await _database.customSelect(
       'SELECT role FROM users WHERE id = ? AND is_deleted = 0',
-      [deliveryPersonnelId],
+      variables: [Variable.withInt(deliveryPersonnelId)],
     ).getSingleOrNull();
     
     if (deliveryUser == null || deliveryUser.data['role'] != 'delivery') {
@@ -273,7 +269,7 @@ class SecureOrderService {
   Future<List<Map<String, dynamic>>> getAccessibleOrders(int userId) async {
     final user = await _database.customSelect(
       'SELECT role FROM users WHERE id = ? AND is_deleted = 0',
-      [userId],
+      variables: [Variable.withInt(userId)],
     ).getSingleOrNull();
     
     if (user == null) {
@@ -298,7 +294,7 @@ class SecureOrderService {
           WHERE o.is_deleted = 0
           GROUP BY o.id
           ORDER BY o.created_at DESC
-        ''').get();
+        ''').get().then((rows) => rows.map((row) => row.data).toList());
         
       case 'warehouse':
         // Warehouse can see all orders
@@ -315,7 +311,7 @@ class SecureOrderService {
           WHERE o.is_deleted = 0
           GROUP BY o.id
           ORDER BY o.created_at DESC
-        ''').get();
+        ''').get().then((rows) => rows.map((row) => row.data).toList());
         
       case 'delivery':
         // Delivery can see orders assigned to them
@@ -335,7 +331,7 @@ class SecureOrderService {
           WHERE d.delivery_personnel_id = ? AND o.is_deleted = 0
           GROUP BY o.id
           ORDER BY o.created_at DESC
-        ''', [userId]).get();
+        ''', variables: [Variable.withInt(userId)]).get().then((rows) => rows.map((row) => row.data).toList());
         
       case 'customer':
         // Customer can see own orders
@@ -349,7 +345,7 @@ class SecureOrderService {
           WHERE o.customer_id = ? AND o.is_deleted = 0
           GROUP BY o.id
           ORDER BY o.created_at DESC
-        ''', [userId]).get();
+        ''', variables: [Variable.withInt(userId)]).get().then((rows) => rows.map((row) => row.data).toList());
         
       default:
         return [];
@@ -359,13 +355,13 @@ class SecureOrderService {
   /// Get pending orders for warehouse staff
   Future<List<Map<String, dynamic>>> getPendingOrdersForWarehouse(int userId) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: userId,
       action: 'view',
       resource: 'orders',
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Cannot view pending orders',
         userId: userId,
@@ -388,19 +384,19 @@ class SecureOrderService {
       WHERE o.status = 'pending' AND o.is_deleted = 0
       GROUP BY o.id
       ORDER BY o.created_at ASC
-    ''').get();
+    ''').get().then((rows) => rows.map((row) => row.data).toList());
   }
   
   /// Get orders ready for delivery
   Future<List<Map<String, dynamic>>> getOrdersReadyForDelivery(int userId) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: userId,
       action: 'view',
       resource: 'deliveries',
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Cannot view orders ready for delivery',
         userId: userId,
@@ -423,19 +419,19 @@ class SecureOrderService {
       WHERE o.status = 'packed' AND o.is_deleted = 0
       GROUP BY o.id
       ORDER BY o.created_at ASC
-    ''').get();
+    ''').get().then((rows) => rows.map((row) => row.data).toList());
   }
   
   /// Get active deliveries for delivery personnel
   Future<List<Map<String, dynamic>>> getActiveDeliveriesForDelivery(int userId) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: userId,
       action: 'view',
       resource: 'deliveries',
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Cannot view active deliveries',
         userId: userId,
@@ -462,26 +458,25 @@ class SecureOrderService {
         AND d.is_deleted = 0
       GROUP BY d.id
       ORDER BY d.scheduled_date ASC
-    ''', [userId]).get();
+    ''', variables: [Variable.withInt(userId)]).get().then((rows) => rows.map((row) => row.data).toList());
   }
   
   /// Get order details with permission check
   Future<Map<String, dynamic>?> getOrderDetails(int userId, int orderId) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: userId,
       action: 'view',
       resource: 'orders',
-      resourceId: orderId,
+      resourceId: orderId.toString(),
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Cannot view order details',
         userId: userId,
         action: 'view',
         resource: 'orders',
-        resourceId: orderId,
       );
     }
     
@@ -495,7 +490,7 @@ class SecureOrderService {
       FROM orders o
       LEFT JOIN customers c ON o.customer_id = c.id
       WHERE o.id = ? AND o.is_deleted = 0
-    ''', [orderId]).getSingleOrNull();
+    ''', variables: [Variable.withInt(orderId)]).getSingleOrNull();
     
     if (order == null) return null;
     
@@ -509,7 +504,7 @@ class SecureOrderService {
       LEFT JOIN products p ON oi.product_id = p.id
       WHERE oi.order_id = ? AND oi.is_deleted = 0
       ORDER BY oi.created_at ASC
-    ''', [orderId]).get();
+    ''', variables: [Variable.withInt(orderId)]).get();
     
     final orderData = order.data;
     orderData['items'] = items.map((item) => item.data).toList();
@@ -524,27 +519,26 @@ class SecureOrderService {
     String? reason,
   }) async {
     // Check permission
-    final hasPermission = await _rbac.hasPermission(
+    final checkPermission = await _rbac.checkPermission(
       userId: userId,
       action: 'cancel',
       resource: 'orders',
-      resourceId: orderId,
+      resourceId: orderId.toString(),
     );
     
-    if (!hasPermission) {
+    if (!checkPermission) {
       throw PermissionDeniedException(
         'Cannot cancel order',
         userId: userId,
         action: 'cancel',
         resource: 'orders',
-        resourceId: orderId,
       );
     }
     
     // Check if order can be cancelled
     final order = await _database.customSelect(
       'SELECT status FROM orders WHERE id = ? AND is_deleted = 0',
-      [orderId],
+      variables: [Variable.withInt(orderId)],
     ).getSingleOrNull();
     
     if (order == null) {
@@ -557,25 +551,12 @@ class SecureOrderService {
     }
     
     // Update order status
-    await _database.customUpdateOnly(
-      OrdersCompanion(
-        status: const Value('cancelled'),
-        internalNotes: Value(reason),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
-      ),
-      where: (tbl) => tbl.id.equals(orderId),
-    );
+    await _database.customUpdate('UPDATE orders SET status = ?, internal_notes = ?, updated_at = ?, sync_status = ? WHERE id = ?',
+      variables: [Variable.withString('cancelled'), Variable.withString(reason ?? ''), Variable.withDateTime(DateTime.now()), Variable.withString('pending'), Variable.withInt(orderId)]);
     
     // Update order items status
-    await _database.customUpdateOnly(
-      const OrderItemsCompanion(
-        status: Value('cancelled'),
-        updatedAt: Value(null),
-        syncStatus: Value('pending'),
-      ),
-      where: (tbl) => tbl.orderId.equals(orderId),
-    );
+    await _database.customUpdate('UPDATE order_items SET status = ?, updated_at = ?, sync_status = ? WHERE order_id = ?',
+      variables: [Variable.withString('cancelled'), Variable.withDateTime(DateTime.now()), Variable.withString('pending'), Variable.withInt(orderId)]);
     
     // Trigger sync
     await _syncManager.performFullSync();
