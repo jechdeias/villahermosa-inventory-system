@@ -197,13 +197,15 @@ void main() {
       );
 
       // Mark as synced
-      final synced = await database.markCustomerAsSynced(customerId, remoteId);
+      final customer = await database.getCustomerByEmail('sync@example.com');
+      expect(customer, isNotNull);
+      final synced = await database.markCustomerAsSynced(customer!.id, remoteId);
       expect(synced, isTrue);
 
       // Verify the sync status
-      final customer = await database.getCustomerById(customerId);
-      expect(customer!.syncStatus, equals('synced'));
-      expect(customer.remoteId, equals(remoteId));
+      final syncedCustomer = await database.getCustomerByEmail('sync@example.com');
+      expect(syncedCustomer!.syncStatus, equals('synced'));
+      expect(syncedCustomer.remoteId, equals(remoteId));
     });
   });
 }
