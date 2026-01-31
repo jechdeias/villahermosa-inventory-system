@@ -228,6 +228,19 @@ class SyncEngine {
     }
   }
   
+  /// Helper method to get updatedAt from dynamic record
+  DateTime _getRecordUpdatedAt(dynamic record) {
+    if (record is User) return record.updatedAt;
+    if (record is Customer) return record.updatedAt;
+    if (record is Product) return record.updatedAt;
+    if (record is StockMovement) return record.updatedAt;
+    if (record is Order) return record.updatedAt;
+    if (record is OrderItem) return record.updatedAt;
+    if (record is Delivery) return record.updatedAt;
+    // Default fallback
+    return DateTime.now();
+  }
+
   /// Handle conflict resolution
   Future<void> _handleConflict(
     dynamic record,
@@ -258,7 +271,9 @@ class SyncEngine {
         
       case SyncConflictResolution.lastWriteWins:
         // Compare timestamps
-        if (record.updatedAt.isAfter(DateTime.parse(remoteData['updated_at']))) {
+        final localUpdatedAt = _getRecordUpdatedAt(record);
+        final remoteUpdatedAt = DateTime.parse(remoteData['updated_at']);
+        if (localUpdatedAt.isAfter(remoteUpdatedAt)) {
           // Local is newer
           final data = _recordToMap(record);
           await Supabase.instance.client
