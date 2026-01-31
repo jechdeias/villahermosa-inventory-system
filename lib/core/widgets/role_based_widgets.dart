@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../constants/user_roles.dart';
 import '../auth/auth_service.dart';
@@ -85,7 +86,7 @@ class PermissionGuard extends StatelessWidget {
     super.debugFillProperties(properties);
     properties.add(StringProperty('screen', screen));
     properties.add(EnumProperty<UserAction>('action', action));
-    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole, defaultValue: null));
   }
 }
 
@@ -124,8 +125,8 @@ class AnyRoleGuard extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<UserRole>('roles', roles));
-    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+    properties.add(IterableProperty<UserRole>('roles', roles, defaultValue: const <UserRole>{}));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole, defaultValue: null));
   }
 }
 
@@ -162,8 +163,8 @@ class RoleHide extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<UserRole>('hiddenRoles', hiddenRoles));
-    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+    properties.add(IterableProperty<UserRole>('hiddenRoles', hiddenRoles, defaultValue: const <UserRole>{}));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole, defaultValue: null));
   }
 }
 
@@ -218,7 +219,7 @@ class PermissionButton extends StatelessWidget {
     properties.add(ObjectFlagProperty<VoidCallback>.has('onPressed', onPressed));
     properties.add(StringProperty('screen', screen));
     properties.add(EnumProperty<UserAction>('action', action));
-    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole, defaultValue: null));
     properties.add(DiagnosticsProperty<ButtonStyle?>('style', style));
     properties.add(DiagnosticsProperty<bool>('showDisabled', showDisabled));
   }
@@ -276,6 +277,6 @@ class PermissionListTile extends StatelessWidget {
     properties.add(ObjectFlagProperty<VoidCallback?>.has('onTap', onTap));
     properties.add(StringProperty('screen', screen));
     properties.add(EnumProperty<UserAction>('action', action));
-    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole));
+    properties.add(EnumProperty<UserRole?>('currentUserRole', currentUserRole, defaultValue: null));
   }
 }
