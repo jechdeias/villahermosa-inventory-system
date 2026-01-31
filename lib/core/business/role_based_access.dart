@@ -338,19 +338,17 @@ class RoleBasedAccess {
         
       case 'delivery':
         // Delivery can see orders assigned to them
-        return await _database.customSelect('''
-          SELECT o.* FROM orders o
-          INNER JOIN deliveries d ON o.id = d.order_id
-          WHERE d.delivery_personnel_id = ? AND o.is_deleted = 0
-          ORDER BY o.created_at DESC
-        ''', variables: [Variable.withInt(userId)]).map((row) => Order.fromData(row.data, _database)).get();
+        return await (_database.select(_database.orders)
+              ..where((tbl) => tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
+            .get();
         
       case 'customer':
         // Customer can see own orders
-        return await _database.customSelect(
-          'SELECT * FROM orders WHERE customer_id = ? AND is_deleted = 0 ORDER BY created_at DESC',
-          variables: [Variable.withInt(userId)],
-        ).map((row) => Order.fromData(row.data, _database)).get();
+        return await (_database.select(_database.orders)
+              ..where((tbl) => tbl.customerId.equals(userId.toString()) & tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
+            .get();
         
       default:
         return [];
@@ -366,15 +364,17 @@ class RoleBasedAccess {
     switch (user.role) {
       case 'admin':
         // Admin can see all deliveries
-        return await _database.customSelect(
-          'SELECT * FROM deliveries WHERE is_deleted = 0 ORDER BY created_at DESC',
-        ).map((row) => Delivery.fromData(row.data, _database)).get();
+        return await (_database.select(_database.deliveries)
+              ..where((tbl) => tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
+            .get();
         
       case 'warehouse':
         // Warehouse can see all deliveries
-        return await _database.customSelect(
-          'SELECT * FROM deliveries WHERE is_deleted = 0 ORDER BY created_at DESC',
-        ).map((row) => Delivery.fromData(row.data, _database)).get();
+        return await (_database.select(_database.deliveries)
+              ..where((tbl) => tbl.isDeleted.equals(false))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
+            .get();
         
       case 'delivery':
         // Delivery can see own deliveries
