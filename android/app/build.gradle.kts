@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.villahermosa_inventory_system"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
+    buildToolsVersion = "28.0.3"
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
