@@ -180,39 +180,43 @@ class SyncEngineImpl extends SyncEngine {
     
     switch (tableName) {
       case 'users':
-        await database.customUpdateOnly(
-          const UsersCompanion(
-            syncStatus: Value('conflict'),
-            updatedAt: Value(null),
-          ),
-          where: (tbl) => tbl.id.equals(record.id),
+        await database.customUpdate(
+          'UPDATE users SET sync_status = ?, updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withString('conflict'),
+            Variable.withDateTime(DateTime.now()),
+            Variable.withString(record.id),
+          ],
         );
         break;
       case 'products':
-        await database.customUpdateOnly(
-          const ProductsCompanion(
-            syncStatus: Value('conflict'),
-            updatedAt: Value(null),
-          ),
-          where: (tbl) => tbl.id.equals(record.id),
+        await database.customUpdate(
+          'UPDATE products SET sync_status = ?, updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withString('conflict'),
+            Variable.withDateTime(DateTime.now()),
+            Variable.withString(record.id),
+          ],
         );
         break;
       case 'customers':
-        await database.customUpdateOnly(
-          const CustomersCompanion(
-            syncStatus: Value('conflict'),
-            updatedAt: Value(null),
-          ),
-          where: (tbl) => tbl.id.equals(record.id),
+        await database.customUpdate(
+          'UPDATE customers SET sync_status = ?, updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withString('conflict'),
+            Variable.withDateTime(DateTime.now()),
+            Variable.withString(record.id),
+          ],
         );
         break;
       case 'stock_movements':
-        await database.customUpdateOnly(
-          const StockMovementsCompanion(
-            syncStatus: Value('conflict'),
-            updatedAt: Value(null),
-          ),
-          where: (tbl) => tbl.id.equals(record.id),
+        await database.customUpdate(
+          'UPDATE stock_movements SET sync_status = ?, updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withString('conflict'),
+            Variable.withDateTime(DateTime.now()),
+            Variable.withString(record.id),
+          ],
         );
         break;
     }
