@@ -282,6 +282,48 @@ class AppDatabase extends _$AppDatabase {
         )) > 0;
   }
 
+  // Sync-related queries for Orders
+  Future<List<Order>> getPendingSyncOrders() async {
+    return await (select(orders)..where((t) => t.syncStatus.equals('pending'))).get();
+  }
+
+  Future<bool> markOrderAsSynced(String id, String remoteId) async {
+    return await (update(orders)..where((t) => t.id.equals(id)))
+        .write(OrdersCompanion(
+          syncStatus: const Value('synced'),
+          remoteId: Value(remoteId),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
+  // Sync-related queries for OrderItems
+  Future<List<OrderItem>> getPendingSyncOrderItems() async {
+    return await (select(orderItems)..where((t) => t.syncStatus.equals('pending'))).get();
+  }
+
+  Future<bool> markOrderItemAsSynced(String id, String remoteId) async {
+    return await (update(orderItems)..where((t) => t.id.equals(id)))
+        .write(OrderItemsCompanion(
+          syncStatus: const Value('synced'),
+          remoteId: Value(remoteId),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
+  // Sync-related queries for Deliveries
+  Future<List<Delivery>> getPendingSyncDeliveries() async {
+    return await (select(deliveries)..where((t) => t.syncStatus.equals('pending'))).get();
+  }
+
+  Future<bool> markDeliveryAsSynced(String id, String remoteId) async {
+    return await (update(deliveries)..where((t) => t.id.equals(id)))
+        .write(DeliveriesCompanion(
+          syncStatus: const Value('synced'),
+          remoteId: Value(remoteId),
+          updatedAt: Value(DateTime.now()),
+        )) > 0;
+  }
+
   // Order operations
   Future<Order?> getOrderById(String id) async {
     return await (select(orders)..where((t) => t.id.equals(id))).getSingleOrNull();

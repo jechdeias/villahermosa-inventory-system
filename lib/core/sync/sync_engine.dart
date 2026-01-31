@@ -331,13 +331,39 @@ class SyncEngine {
   }
   
   Future<List<Order>> _pushOrders() async {
-    // Implementation needed
-    return [];
+    final pendingOrders = await _database.getPendingSyncOrders();
+    
+    for (final order in pendingOrders) {
+      try {
+        final data = _recordToMap(order);
+        await Supabase.instance.client
+            .from('orders')
+            .insert(data);
+        await _markRecordAsSynced(order, order.id);
+      } catch (e) {
+        print('Failed to sync order ${order.id}: $e');
+      }
+    }
+    
+    return pendingOrders;
   }
   
   Future<List<OrderItem>> _pushOrderItems() async {
-    // Implementation needed
-    return [];
+    final pendingOrderItems = await _database.getPendingSyncOrderItems();
+    
+    for (final orderItem in pendingOrderItems) {
+      try {
+        final data = _recordToMap(orderItem);
+        await Supabase.instance.client
+            .from('order_items')
+            .insert(data);
+        await _markRecordAsSynced(orderItem, orderItem.id);
+      } catch (e) {
+        print('Failed to sync order item ${orderItem.id}: $e');
+      }
+    }
+    
+    return pendingOrderItems;
   }
   
   Future<List<StockMovement>> _pushStockMovements() async {
@@ -345,8 +371,21 @@ class SyncEngine {
   }
   
   Future<List<Delivery>> _pushDeliveries() async {
-    // Implementation needed
-    return [];
+    final pendingDeliveries = await _database.getPendingSyncDeliveries();
+    
+    for (final delivery in pendingDeliveries) {
+      try {
+        final data = _recordToMap(delivery);
+        await Supabase.instance.client
+            .from('deliveries')
+            .insert(data);
+        await _markRecordAsSynced(delivery, delivery.id);
+      } catch (e) {
+        print('Failed to sync delivery ${delivery.id}: $e');
+      }
+    }
+    
+    return pendingDeliveries;
   }
   
   /// Table-specific pull methods
