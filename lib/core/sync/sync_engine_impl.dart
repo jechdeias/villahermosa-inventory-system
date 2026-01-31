@@ -72,7 +72,7 @@ class SyncEngineImpl extends SyncEngine {
     
     if (record is StockMovement) {
       return {
-        'uuid': record.uuid,
+        'id': record.id,
         'product_id': record.productId,
         'movement_type': record.movementType,
         'quantity': record.quantity,
