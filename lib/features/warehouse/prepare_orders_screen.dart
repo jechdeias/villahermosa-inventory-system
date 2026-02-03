@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../shared/theme/warehouse_theme.dart';
+import '../../features/qr/qr_service_locator.dart';
 
 class PrepareOrdersScreen extends StatefulWidget {
   const PrepareOrdersScreen({super.key});
@@ -131,7 +132,9 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.qr_code_scanner),
-              onPressed: () {},
+              onPressed: () async {
+                await QrServiceLocator.instance.scanQrCode(context);
+              },
               tooltip: 'Scan Items',
             ),
           ],
@@ -480,8 +483,8 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
                     ),
                     const SizedBox(width: 8),
                     IconButton(
-                      onPressed: () {
-                        _quickPick(item);
+                      onPressed: () async {
+                        await QrServiceLocator.instance.scanQrCode(context);
                       },
                       icon: const Icon(Icons.qr_code_scanner),
                       tooltip: 'Quick Scan',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../constants/user_roles.dart';
 
 /// Service to manage role-based navigation
@@ -122,7 +123,7 @@ class RoleBasedNavigationRail extends StatelessWidget {
     super.debugFillProperties(properties);
     properties.add(IntProperty('selectedIndex', selectedIndex));
     properties.add(ObjectFlagProperty<Function(int p1)>.has('onDestinationSelected', onDestinationSelected));
-    properties.add(EnumProperty<UserRole?>('userRole', userRole));
+    properties.add(EnumProperty<UserRole?>('userRole', userRole, defaultValue: null));
   }
 }
 
@@ -225,7 +226,7 @@ class RoleBasedBottomNavigationBar extends StatelessWidget {
     super.debugFillProperties(properties);
     properties.add(IntProperty('currentIndex', currentIndex));
     properties.add(ObjectFlagProperty<Function(int p1)>.has('onTap', onTap));
-    properties.add(EnumProperty<UserRole?>('userRole', userRole));
+    properties.add(EnumProperty<UserRole?>('userRole', userRole, defaultValue: null));
   }
 }
 

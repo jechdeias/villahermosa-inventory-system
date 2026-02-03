@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import '../../shared/theme/app_theme.dart';
 
 class CustomerFormScreen extends StatefulWidget { // null for new customer, ID for editing

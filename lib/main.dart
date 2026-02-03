@@ -3,11 +3,27 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/database/app_database.dart';
 import 'core/auth/auth_service.dart';
 import 'core/services/navigation_service.dart';
+import 'features/qr/qr_service_locator.dart';
 import 'core/business/role_based_access.dart';
 import 'core/navigation/role_based_navigation.dart';
 import 'core/constants/user_roles.dart';
 import 'core/widgets/role_based_widgets.dart';
 import 'features/auth/login_screen.dart';
+import 'routes/app_routes.dart';
+
+// Feature Screens
+import 'features/admin/screens/dashboard_screen.dart';
+import 'features/admin/screens/users_screen.dart';
+import 'features/customer/screens/dashboard_screen.dart';
+import 'features/customer/screens/profile_screen.dart';
+import 'features/delivery/screens/dashboard_screen.dart';
+import 'features/delivery/screens/route_screen.dart';
+import 'features/warehouse/screens/dashboard_screen.dart';
+import 'features/warehouse/screens/inventory_screen.dart';
+
+// Legacy Customer Screens (do not extend)
+import 'features/customers/customer_form_screen.dart';
+import 'features/customers/customer_list_screen_mock.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,16 +70,40 @@ class VillahermosaInventoryApp extends StatelessWidget {
 
   Widget _getRouteWidget(String? route) {
     switch (route) {
-      case '/login':
+      // Auth Routes
+      case AppRoutes.login:
         return LoginScreen(database: AppDatabase());
-      case '/admin/dashboard':
-        return const AdminDashboard();
-      case '/warehouse/dashboard':
-        return const WarehouseDashboard();
-      case '/delivery/dashboard':
-        return const DeliveryDashboard();
-      case '/customer/dashboard':
-        return const CustomerDashboard();
+        
+      // Admin Routes
+      case AppRoutes.adminDashboard:
+        return const AdminDashboardScreen();
+      case AppRoutes.adminUsers:
+        return const AdminUsersScreen();
+        
+      // Customer Routes
+      case AppRoutes.customerDashboard:
+        return const CustomerDashboardScreen();
+      case AppRoutes.customerProfile:
+        return const CustomerProfileScreen();
+        
+      // Delivery Routes
+      case AppRoutes.deliveryDashboard:
+        return const DeliveryDashboardScreen();
+      case AppRoutes.deliveryRoute:
+        return const DeliveryRouteScreen();
+        
+      // Warehouse Routes
+      case AppRoutes.warehouseDashboard:
+        return const WarehouseDashboardScreen();
+      case AppRoutes.warehouseInventory:
+        return const WarehouseInventoryScreen();
+        
+      // Legacy Routes (do not extend)
+      case AppRoutes.customerList:
+        return const CustomerListScreenMock();
+      case AppRoutes.customerForm:
+        return const CustomerFormScreen();
+        
       default:
         return LoginScreen(database: AppDatabase());
     }
@@ -945,8 +985,8 @@ class DeliveryDashboard extends StatelessWidget {
                       title: 'Scan QR',
                       subtitle: 'Scan delivery QR codes',
                       color: Colors.purple,
-                      onTap: () {
-                        // TODO: Open QR scanner
+                      onTap: () async {
+                        await QrServiceLocator.instance.scanQrCode(context);
                       },
                     ),
                   ],
