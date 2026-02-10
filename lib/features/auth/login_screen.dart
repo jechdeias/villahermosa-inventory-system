@@ -1,18 +1,17 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../../core/auth/auth_service.dart';
-import '../../core/services/navigation_service.dart';
+import 'package:flutter/material.dart';
+
 import '../../core/database/app_database.dart';
-import '../../core/business/role_based_access.dart';
+import 'data/auth_repository.dart';
+import 'viewmodels/auth_viewmodel.dart';
 
 /// Login Screen
 /// Handles user authentication and role-based navigation
 class LoginScreen extends StatefulWidget {
   
   const LoginScreen({
-    Key? key,
-    required this.database,
-  }) : super(key: key);
+    required this.database, super.key,
+  });
   final AppDatabase database;
 
   @override
@@ -27,33 +26,54 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  bool _isLoading = false;
   bool _obscurePassword = true;
-  String? _errorMessage;
 
-  late AuthService _authService;
-  late NavigationService _navigationService;
+  late AuthViewModel _authViewModel;
 
   @override
   void initState() {
     super.initState();
-    _authService = AuthService(widget.database);
-    _navigationService = NavigationService(_authService, RoleBasedAccess(widget.database));
+    final authRepository = AuthRepository(widget.database);
+    _authViewModel = AuthViewModel(authRepository);
     
-    // Check if user is already authenticated
-    _checkAuthStatus();
+    // Seed admin user if needed and check auth status
+    _initializeAuth();
   }
 
-  Future<void> _checkAuthStatus() async {
-    if (_authService.isAuthenticated) {
+  Future<void> _initializeAuth() async {
+    await _authViewModel.seedAdminUserIfNeeded();
+    
+    if (_authViewModel.isAuthenticated) {
       // User is already logged in, navigate to dashboard
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigationService.navigateToDashboard(context);
+        _navigateBasedOnRole(_authViewModel.currentUser!);
       });
     }
+  }
+
+  void _navigateBasedOnRole(User user) {
+    String route;
+    switch (user.role) {
+      case 'admin':
+        route = '/admin/dashboard';
+        break;
+      case 'warehouse':
+        route = '/warehouse/dashboard';
+        break;
+      case 'customer':
+        route = '/customer/dashboard';
+        break;
+      case 'delivery':
+        route = '/delivery/dashboard';
+        break;
+      default:
+        route = '/admin/dashboard'; // fallback
+    }
+    
+    Navigator.pushReplacementNamed(context, route);
   }
 
   Future<void> _login() async {
@@ -61,29 +81,18 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
     try {
-      // Use existing auth service for authentication
-      await _authService.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      await _authViewModel.login(
+        _usernameController.text.trim(),
+        _passwordController.text,
       );
 
-      // Login successful, navigate to appropriate dashboard
-      await _navigationService.navigateToDashboard(context);
-      
+      if (_authViewModel.isAuthenticated) {
+        _navigateBasedOnRole(_authViewModel.currentUser!);
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      // Error is handled in AuthViewModel, just trigger rebuild
+      setState(() {});
     }
   }
 
@@ -93,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(24),
             child: Form(
               key: _formKey,
               child: Column(
@@ -136,13 +145,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 48),
 
-                  // Email Field
+                  // Username Field
                   TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
+                    controller: _usernameController,
+                    keyboardType: TextInputType.text,
                     decoration: InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: const Icon(Icons.email),
+                      labelText: 'Username',
+                      prefixIcon: const Icon(Icons.person),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -151,10 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                        return 'Please enter a valid email';
+                        return 'Please enter your username';
                       }
                       return null;
                     },
@@ -197,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 24),
 
                   // Error Message
-                  if (_errorMessage != null)
+                  if (_authViewModel.errorMessage != null)
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -206,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        _errorMessage!,
+                        _authViewModel.errorMessage!,
                         style: TextStyle(
                           color: Colors.red[800],
                           fontSize: 14,
@@ -217,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Login Button
                   ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
+                    onPressed: _authViewModel.isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[800],
                       foregroundColor: Colors.white,
@@ -226,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: _isLoading
+                    child: _authViewModel.isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
@@ -239,98 +245,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Sign In',
                             style: TextStyle(fontSize: 16),
                           ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Demo Navigation (for testing)
-                  const Text(
-                    'Demo Navigation (Testing)',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/admin/dashboard');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueGrey[700],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: const Text('Admin', style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/customer/dashboard');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[700],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: const Text('Customer', style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/warehouse/dashboard');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange[700],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: const Text('Warehouse', style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/delivery/dashboard');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple[700],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: const Text('Delivery', style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/customers/list');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[700],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: const Text('Legacy', style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Expanded(child: SizedBox()), // Spacer
-                    ],
                   ),
                   const SizedBox(height: 24),
 
@@ -380,23 +294,13 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              try {
-                await _authService.resetPassword(emailController.text.trim());
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Password reset email sent'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to send reset email: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Password reset functionality not yet implemented'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             },
             child: const Text('Send'),
           ),
@@ -407,7 +311,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
