@@ -10,12 +10,9 @@ class AuthInput extends StatelessWidget {
   const AuthInput({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // TODO: Implement auth input layout
-    return const TextField(
-      decoration: InputDecoration(
-        hintText: 'Auth Input - TODO',
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const TextField(
+    decoration: InputDecoration(
+      hintText: 'Auth Input - TODO',
+    ),
+  );
 }
