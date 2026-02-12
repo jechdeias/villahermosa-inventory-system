@@ -2,6 +2,11 @@
 cmake_minimum_required(VERSION 3.14)
 project(villahermosa_inventory_system LANGUAGES CXX)
 
+# Use Visual Studio 2019 generator if available
+if(NOT DEFINED CMAKE_GENERATOR)
+  set(CMAKE_GENERATOR "Visual Studio 16 2019" CACHE STRING "Generator" FORCE)
+endif()
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "villahermosa_inventory_system")
