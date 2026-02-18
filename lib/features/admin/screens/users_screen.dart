@@ -92,7 +92,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    user.name,
+                                    '${user.firstName} ${user.lastName}',
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,

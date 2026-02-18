@@ -76,9 +76,9 @@ class _SignupScreenState extends State<SignupScreen> {
       }
 
       // Create new user using AuthRepository
-      final name = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
       final signupSuccess = await authRepository.signup(
-        name,
+        _firstNameController.text.trim(),
+        _lastNameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
         _selectedRole,

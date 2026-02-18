@@ -289,7 +289,8 @@ class SyncManager {
       try {
         final userData = {
           'id': user.id,
-          'name': user.name,
+          'firstName': user.firstName,
+          'lastName': user.lastName,
           'role': user.role,
           'is_active': user.isActive,
           'is_deleted': user.isDeleted,

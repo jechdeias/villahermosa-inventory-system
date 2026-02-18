@@ -47,10 +47,9 @@ class AppDatabase extends _$AppDatabase {
     await into(users).insert(user);
   }
 
-  Future<List<User>> getAllUsers() async => (select(users)..orderBy([(t) => OrderingTerm(expression: t.firstName)]).get());
-  
-  /// Helper method to get full name for sorting
-  String _getFullName(User user) => '${user.firstName} ${user.lastName}';
+  Future<List<User>> getAllUsers() async {
+    return (select(users)..orderBy([(t) => OrderingTerm(expression: t.firstName)])).get();
+  }
 
   Future<User?> getUserById(int id) async => (select(users)..where((t) => t.id.equals(id))).getSingleOrNull();
 

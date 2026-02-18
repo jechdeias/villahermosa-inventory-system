@@ -77,10 +77,11 @@ void main() {
       // Arrange
       const email = 'test@example.com';
       const password = 'testpassword123';
-      const name = 'Test User';
+      const firstName = 'Test';
+      const lastName = 'User';
       const role = 'admin';
 
-      await authRepository.signup(name, email, password, role);
+      await authRepository.signup(firstName, lastName, email, password, role);
 
       // Act & Assert
       expect(
@@ -99,7 +100,8 @@ void main() {
       
       final admin = users.first;
       expect(admin.email, equals('admin@villahermosa.com'));
-      expect(admin.name, equals('System Administrator'));
+      expect(admin.firstName, equals('System'));
+      expect(admin.lastName, equals('Administrator'));
       expect(admin.role, equals('admin'));
       expect(admin.passwordHash, isNotNull);
       expect(admin.passwordHash.length, equals(64)); // SHA256 hex length

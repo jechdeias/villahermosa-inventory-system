@@ -113,8 +113,9 @@ class AuthRepository {
       // Create default admin user
       final adminUser = UsersCompanion.insert(
         uuid: const Uuid().v4(),
+        firstName: 'System',
+        lastName: 'Administrator',
         passwordHash: _hashPassword('admin123'),
-        name: 'System Administrator',
         email: 'admin@villahermosa.com',
         role: 'admin',
         isActive: const Value(true),
