@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
         emailHint: 'Enter your email', // Updated hint
         passwordLabel: 'Password',
         passwordHint: 'Enter your password',
-        primaryButtonText: 'Sign In',
+        primaryButtonText: 'Log In',
         promptText: "Don't have an account?",
         linkText: 'Sign up',
         
