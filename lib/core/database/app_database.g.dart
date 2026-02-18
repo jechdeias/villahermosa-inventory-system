@@ -21,10 +21,23 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  static const VerificationMeta _firstNameMeta = const VerificationMeta(
+    'firstName',
+  );
   @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
+  late final GeneratedColumn<String> firstName = GeneratedColumn<String>(
+    'first_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastNameMeta = const VerificationMeta(
+    'lastName',
+  );
+  @override
+  late final GeneratedColumn<String> lastName = GeneratedColumn<String>(
+    'last_name',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -170,7 +183,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    name,
+    firstName,
+    lastName,
     email,
     passwordHash,
     role,
@@ -199,13 +213,21 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('name')) {
+    if (data.containsKey('first_name')) {
       context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+        _firstNameMeta,
+        firstName.isAcceptableOrUnknown(data['first_name']!, _firstNameMeta),
       );
     } else if (isInserting) {
-      context.missing(_nameMeta);
+      context.missing(_firstNameMeta);
+    }
+    if (data.containsKey('last_name')) {
+      context.handle(
+        _lastNameMeta,
+        lastName.isAcceptableOrUnknown(data['last_name']!, _lastNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lastNameMeta);
     }
     if (data.containsKey('email')) {
       context.handle(
@@ -303,9 +325,13 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
-      name: attachedDatabase.typeMapping.read(
+      firstName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}name'],
+        data['${effectivePrefix}first_name'],
+      )!,
+      lastName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_name'],
       )!,
       email: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -368,8 +394,11 @@ class User extends DataClass implements Insertable<User> {
   /// Auto increment primary key for the user record.
   final int id;
 
-  /// User's name for identification purposes.
-  final String name;
+  /// User's first name for identification purposes.
+  final String firstName;
+
+  /// User's last name for identification purposes.
+  final String lastName;
 
   /// User's email address for authentication and identification.
   final String email;
@@ -414,7 +443,8 @@ class User extends DataClass implements Insertable<User> {
   final String uuid;
   const User({
     required this.id,
-    required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.email,
     required this.passwordHash,
     required this.role,
@@ -432,7 +462,8 @@ class User extends DataClass implements Insertable<User> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
+    map['first_name'] = Variable<String>(firstName);
+    map['last_name'] = Variable<String>(lastName);
     map['email'] = Variable<String>(email);
     map['password_hash'] = Variable<String>(passwordHash);
     map['role'] = Variable<String>(role);
@@ -457,7 +488,8 @@ class User extends DataClass implements Insertable<User> {
   UsersCompanion toCompanion(bool nullToAbsent) {
     return UsersCompanion(
       id: Value(id),
-      name: Value(name),
+      firstName: Value(firstName),
+      lastName: Value(lastName),
       email: Value(email),
       passwordHash: Value(passwordHash),
       role: Value(role),
@@ -486,7 +518,8 @@ class User extends DataClass implements Insertable<User> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return User(
       id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
+      firstName: serializer.fromJson<String>(json['firstName']),
+      lastName: serializer.fromJson<String>(json['lastName']),
       email: serializer.fromJson<String>(json['email']),
       passwordHash: serializer.fromJson<String>(json['passwordHash']),
       role: serializer.fromJson<String>(json['role']),
@@ -506,7 +539,8 @@ class User extends DataClass implements Insertable<User> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
+      'firstName': serializer.toJson<String>(firstName),
+      'lastName': serializer.toJson<String>(lastName),
       'email': serializer.toJson<String>(email),
       'passwordHash': serializer.toJson<String>(passwordHash),
       'role': serializer.toJson<String>(role),
@@ -524,7 +558,8 @@ class User extends DataClass implements Insertable<User> {
 
   User copyWith({
     int? id,
-    String? name,
+    String? firstName,
+    String? lastName,
     String? email,
     String? passwordHash,
     String? role,
@@ -539,7 +574,8 @@ class User extends DataClass implements Insertable<User> {
     String? uuid,
   }) => User(
     id: id ?? this.id,
-    name: name ?? this.name,
+    firstName: firstName ?? this.firstName,
+    lastName: lastName ?? this.lastName,
     email: email ?? this.email,
     passwordHash: passwordHash ?? this.passwordHash,
     role: role ?? this.role,
@@ -556,7 +592,8 @@ class User extends DataClass implements Insertable<User> {
   User copyWithCompanion(UsersCompanion data) {
     return User(
       id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
+      firstName: data.firstName.present ? data.firstName.value : this.firstName,
+      lastName: data.lastName.present ? data.lastName.value : this.lastName,
       email: data.email.present ? data.email.value : this.email,
       passwordHash: data.passwordHash.present
           ? data.passwordHash.value
@@ -580,7 +617,8 @@ class User extends DataClass implements Insertable<User> {
   String toString() {
     return (StringBuffer('User(')
           ..write('id: $id, ')
-          ..write('name: $name, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
           ..write('email: $email, ')
           ..write('passwordHash: $passwordHash, ')
           ..write('role: $role, ')
@@ -600,7 +638,8 @@ class User extends DataClass implements Insertable<User> {
   @override
   int get hashCode => Object.hash(
     id,
-    name,
+    firstName,
+    lastName,
     email,
     passwordHash,
     role,
@@ -619,7 +658,8 @@ class User extends DataClass implements Insertable<User> {
       identical(this, other) ||
       (other is User &&
           other.id == this.id &&
-          other.name == this.name &&
+          other.firstName == this.firstName &&
+          other.lastName == this.lastName &&
           other.email == this.email &&
           other.passwordHash == this.passwordHash &&
           other.role == this.role &&
@@ -636,7 +676,8 @@ class User extends DataClass implements Insertable<User> {
 
 class UsersCompanion extends UpdateCompanion<User> {
   final Value<int> id;
-  final Value<String> name;
+  final Value<String> firstName;
+  final Value<String> lastName;
   final Value<String> email;
   final Value<String> passwordHash;
   final Value<String> role;
@@ -651,7 +692,8 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> uuid;
   const UsersCompanion({
     this.id = const Value.absent(),
-    this.name = const Value.absent(),
+    this.firstName = const Value.absent(),
+    this.lastName = const Value.absent(),
     this.email = const Value.absent(),
     this.passwordHash = const Value.absent(),
     this.role = const Value.absent(),
@@ -667,7 +709,8 @@ class UsersCompanion extends UpdateCompanion<User> {
   });
   UsersCompanion.insert({
     this.id = const Value.absent(),
-    required String name,
+    required String firstName,
+    required String lastName,
     required String email,
     required String passwordHash,
     required String role,
@@ -680,14 +723,16 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.syncStatus = const Value.absent(),
     this.remoteId = const Value.absent(),
     required String uuid,
-  }) : name = Value(name),
+  }) : firstName = Value(firstName),
+       lastName = Value(lastName),
        email = Value(email),
        passwordHash = Value(passwordHash),
        role = Value(role),
        uuid = Value(uuid);
   static Insertable<User> custom({
     Expression<int>? id,
-    Expression<String>? name,
+    Expression<String>? firstName,
+    Expression<String>? lastName,
     Expression<String>? email,
     Expression<String>? passwordHash,
     Expression<String>? role,
@@ -703,7 +748,8 @@ class UsersCompanion extends UpdateCompanion<User> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (name != null) 'name': name,
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
       if (email != null) 'email': email,
       if (passwordHash != null) 'password_hash': passwordHash,
       if (role != null) 'role': role,
@@ -721,7 +767,8 @@ class UsersCompanion extends UpdateCompanion<User> {
 
   UsersCompanion copyWith({
     Value<int>? id,
-    Value<String>? name,
+    Value<String>? firstName,
+    Value<String>? lastName,
     Value<String>? email,
     Value<String>? passwordHash,
     Value<String>? role,
@@ -737,7 +784,8 @@ class UsersCompanion extends UpdateCompanion<User> {
   }) {
     return UsersCompanion(
       id: id ?? this.id,
-      name: name ?? this.name,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       passwordHash: passwordHash ?? this.passwordHash,
       role: role ?? this.role,
@@ -759,8 +807,11 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
+    if (firstName.present) {
+      map['first_name'] = Variable<String>(firstName.value);
+    }
+    if (lastName.present) {
+      map['last_name'] = Variable<String>(lastName.value);
     }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
@@ -805,7 +856,8 @@ class UsersCompanion extends UpdateCompanion<User> {
   String toString() {
     return (StringBuffer('UsersCompanion(')
           ..write('id: $id, ')
-          ..write('name: $name, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
           ..write('email: $email, ')
           ..write('passwordHash: $passwordHash, ')
           ..write('role: $role, ')
@@ -8490,7 +8542,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 typedef $$UsersTableCreateCompanionBuilder =
     UsersCompanion Function({
       Value<int> id,
-      required String name,
+      required String firstName,
+      required String lastName,
       required String email,
       required String passwordHash,
       required String role,
@@ -8507,7 +8560,8 @@ typedef $$UsersTableCreateCompanionBuilder =
 typedef $$UsersTableUpdateCompanionBuilder =
     UsersCompanion Function({
       Value<int> id,
-      Value<String> name,
+      Value<String> firstName,
+      Value<String> lastName,
       Value<String> email,
       Value<String> passwordHash,
       Value<String> role,
@@ -8535,8 +8589,13 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
+  ColumnFilters<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastName => $composableBuilder(
+    column: $table.lastName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8615,8 +8674,13 @@ class $$UsersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
+  ColumnOrderings<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastName => $composableBuilder(
+    column: $table.lastName,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -8693,8 +8757,11 @@ class $$UsersTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get firstName =>
+      $composableBuilder(column: $table.firstName, builder: (column) => column);
+
+  GeneratedColumn<String> get lastName =>
+      $composableBuilder(column: $table.lastName, builder: (column) => column);
 
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
@@ -8766,7 +8833,8 @@ class $$UsersTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
+                Value<String> firstName = const Value.absent(),
+                Value<String> lastName = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> passwordHash = const Value.absent(),
                 Value<String> role = const Value.absent(),
@@ -8781,7 +8849,8 @@ class $$UsersTableTableManager
                 Value<String> uuid = const Value.absent(),
               }) => UsersCompanion(
                 id: id,
-                name: name,
+                firstName: firstName,
+                lastName: lastName,
                 email: email,
                 passwordHash: passwordHash,
                 role: role,
@@ -8798,7 +8867,8 @@ class $$UsersTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required String name,
+                required String firstName,
+                required String lastName,
                 required String email,
                 required String passwordHash,
                 required String role,
@@ -8813,7 +8883,8 @@ class $$UsersTableTableManager
                 required String uuid,
               }) => UsersCompanion.insert(
                 id: id,
-                name: name,
+                firstName: firstName,
+                lastName: lastName,
                 email: email,
                 passwordHash: passwordHash,
                 role: role,

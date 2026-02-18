@@ -619,7 +619,8 @@ class SyncManager {
         await _database.into(_database.users).insert(
           UsersCompanion.insert(
             uuid: userData['id'].toString(), // Use remote ID as UUID
-            name: userData['name'] as String,
+            firstName: userData['firstName'] as String? ?? '',
+            lastName: userData['lastName'] as String? ?? '',
             passwordHash: '', // Will be set during user registration/login
             email: userData['email'] as String,
             role: userData['role'] as String,

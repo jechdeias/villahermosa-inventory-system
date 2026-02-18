@@ -504,7 +504,8 @@ class SyncEngine {
     if (record is User) {
       return {
         'id': record.id,
-        'name': record.name,
+        'firstName': record.firstName,
+        'lastName': record.lastName,
         'email': record.email,
         'role': record.role,
         'is_active': record.isActive,

@@ -26,7 +26,7 @@ class AuthRepository {
   /// 
   /// Returns true if signup succeeds, false if user already exists or error occurs.
   /// Uses SHA256 hashing for secure password storage.
-  Future<bool> signup(String name, String email, String password, String role) async {
+  Future<bool> signup(String firstName, String lastName, String email, String password, String role) async {
     try {
       // Check if user already exists
       final existingUser = await _database.getUserByEmail(email);
@@ -38,7 +38,8 @@ class AuthRepository {
       final newUser = UsersCompanion.insert(
         uuid: const Uuid().v4(),
         passwordHash: _hashPassword(password),
-        name: name,
+        firstName: firstName,
+        lastName: lastName,
         email: email,
         role: role,
         isActive: const Value(true),

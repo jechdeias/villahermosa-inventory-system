@@ -26,7 +26,8 @@ void main() {
       await database.createUser(
         UsersCompanion.insert(
           uuid: Uuid().v4(),
-          name: 'Test User Name',
+          firstName: 'Test',
+          lastName: 'User',
           passwordHash: 'hashedpassword',
           email: 'testuser@example.com',
           role: 'admin',
@@ -37,8 +38,9 @@ void main() {
       final user = await database.getUserByEmail('testuser@example.com');
       
       expect(user, isNotNull);
-      expect(user!.name, equals('Test User Name'));
-      expect(user.email, equals('testuser@example.com'));
+      expect(user?.firstName, equals('Test'));
+      expect(user?.lastName, equals('User'));
+      expect(user?.email, equals('testuser@example.com'));
     });
 
     test('Get all users', () async {
@@ -46,7 +48,8 @@ void main() {
       await database.createUser(
         UsersCompanion.insert(
           uuid: Uuid().v4(),
-          name: 'Alice Name',
+          firstName: 'Alice',
+          lastName: 'Name',
           passwordHash: 'hashedpassword',
           email: 'alice@example.com',
           role: 'warehouse',
@@ -56,7 +59,8 @@ void main() {
       await database.createUser(
         UsersCompanion.insert(
           uuid: Uuid().v4(),
-          name: 'Bob Name',
+          firstName: 'Bob',
+          lastName: 'Name',
           passwordHash: 'hashedpassword',
           email: 'bob@example.com',
           role: 'delivery',
@@ -74,7 +78,8 @@ void main() {
       await database.createUser(
         UsersCompanion.insert(
           uuid: Uuid().v4(),
-          name: 'John Doe Name',
+          firstName: 'John',
+          lastName: 'Doe',
           passwordHash: 'hashedpassword',
           email: 'john@example.com',
           role: 'admin',
@@ -88,7 +93,8 @@ void main() {
       final updated = await database.updateUser(
         existingUser!.uuid,
         const UsersCompanion(
-          name: Value('John Smith Name'),
+          firstName: Value('John'),
+          lastName: Value('Smith'),
           role: Value('warehouse'),
         ),
       );
@@ -97,7 +103,8 @@ void main() {
 
       // Verify the update
       final user = await database.getUserByEmail('john@example.com');
-      expect(user!.name, equals('John Smith Name'));
+      expect(user!.firstName, equals('John'));
+      expect(user!.lastName, equals('Smith'));
       expect(user.role, equals('warehouse'));
     });
 
@@ -106,7 +113,8 @@ void main() {
       await database.createUser(
         UsersCompanion.insert(
           uuid: Uuid().v4(),
-          name: 'Pending User Name',
+          firstName: 'Pending',
+          lastName: 'User Name',
           passwordHash: 'hashedpassword',
           email: 'pending@example.com',
           role: 'admin',
@@ -117,7 +125,8 @@ void main() {
       await database.createUser(
         UsersCompanion.insert(
           uuid: Uuid().v4(),
-          name: 'Synced User Name',
+          firstName: 'Synced',
+          lastName: 'User Name',
           passwordHash: 'hashedpassword',
           email: 'synced@example.com',
           role: 'admin',
@@ -129,7 +138,8 @@ void main() {
       final pendingUsers = await database.getPendingSyncUsers();
       
       expect(pendingUsers.length, equals(1));
-      expect(pendingUsers[0].name, equals('Pending User Name'));
+      expect(pendingUsers[0].firstName, equals('Pending'));
+      expect(pendingUsers[0].lastName, equals('User Name'));
     });
   });
 }

@@ -120,7 +120,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text('Name: ${user.name}'),
+                            Text('Name: ${user.firstName} ${user.lastName}'),
                             Text('Email: ${user.email}'),
                             Text('Created: ${user.createdAt.toString().split('.')[0]}'),
                             Row(
