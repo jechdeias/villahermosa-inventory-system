@@ -76,6 +76,28 @@ class AppDatabase extends _$AppDatabase {
           updatedAt: Value(DateTime.now()),
         )) > 0;
 
+  // User management methods
+  Future<void> approveUser(String userId, String assignedRole) async {
+    await (update(users)..where((u) => u.uuid.equals(userId))).write(
+      UsersCompanion(
+        role: Value(assignedRole),
+        isActive: const Value(true),
+        syncStatus: const Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> deactivateUser(String userId) async {
+    await (update(users)..where((u) => u.uuid.equals(userId))).write(
+      UsersCompanion(
+        isActive: const Value(false),
+        syncStatus: const Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   // Product methods
   Future<void> createProduct(ProductsCompanion product) async {
     await into(products).insert(product);

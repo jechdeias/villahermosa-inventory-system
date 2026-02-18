@@ -19,7 +19,7 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
-      create: (_) => AdminViewModel(),
+      create: (_) => AdminViewModel(database),
       child: AdminDashboardView(database: database, syncManager: syncManager),
     );
 

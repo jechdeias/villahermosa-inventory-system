@@ -1,98 +1,98 @@
+import 'package:flutter/material.dart';
+import '../../../core/database/app_database.dart';
+
 /// Admin View Model
 /// 
-/// UI contract for admin dashboard state management.
-/// This view model will handle admin-specific business logic and state.
-/// 
-/// TODO: Implement actual business logic in method bodies.
-library;
-import 'package:flutter/material.dart';
-
+/// Handles administrative operations including user management
 class AdminViewModel extends ChangeNotifier {
-  // State placeholders
+  
+  final AppDatabase _database;
+  List<User> _allUsers = [];
+  List<User> _pendingUsers = [];
+  List<User> _activeUsers = [];
   bool _isLoading = false;
-  String? _error;
-  
+  String? _errorMessage;
+
+  AdminViewModel(this._database);
+
   // Getters
+  List<User> get allUsers => _allUsers;
+  List<User> get pendingUsers => _pendingUsers;
+  List<User> get activeUsers => _activeUsers;
   bool get isLoading => _isLoading;
-  String? get error => _error;
-  
-  // User Management Methods
-  Future<void> loadUsers() async {
-    // TODO: Implement user loading logic
+  String? get errorMessage => _errorMessage;
+
+  /// Load all users and categorize them
+  Future<void> loadAllUsers() async {
     _setLoading(true);
+    _clearError();
+
     try {
-      // TODO: Fetch users from service
+      final users = await _database.getAllUsers();
+      
+      _allUsers = users;
+      _pendingUsers = users.where((user) => user.role == 'pending').toList();
+      _activeUsers = users.where((user) => user.role != 'pending').toList();
     } catch (e) {
-      _setError(e.toString());
+      _setError('Failed to load users: $e');
     } finally {
       _setLoading(false);
     }
   }
-  
-  Future<void> createUser(Map<String, dynamic> userData) async {
-    // TODO: Implement user creation logic
-    _setLoading(true);
+
+  /// Approve a pending user with assigned role
+  Future<void> approveUser(String userId, String assignedRole) async {
     try {
-      // TODO: Create user via service
+      await _database.approveUser(userId, assignedRole);
+      await loadAllUsers(); // Refresh the list
+      _clearError();
     } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
+      _setError('Failed to approve user: $e');
     }
   }
-  
-  Future<void> updateUser(String userId, Map<String, dynamic> userData) async {
-    // TODO: Implement user update logic
-    _setLoading(true);
+
+  /// Deactivate a user
+  Future<void> deactivateUser(String userId) async {
     try {
-      // TODO: Update user via service
+      await _database.deactivateUser(userId);
+      await loadAllUsers(); // Refresh the list
+      _clearError();
     } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
+      _setError('Failed to deactivate user: $e');
     }
   }
-  
-  Future<void> deleteUser(String userId) async {
-    // TODO: Implement user deletion logic
-    _setLoading(true);
-    try {
-      // TODO: Delete user via service
-    } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
+
+  /// Get role color for UI
+  Color getRoleColor(String role) {
+    switch (role.toLowerCase()) {
+      case 'admin':
+        return const Color(0xFF6366F1); // deep purple
+      case 'warehouse':
+        return const Color(0xFF2196F3); // blue
+      case 'customer':
+        return const Color(0xFF4CAF50); // green
+      case 'delivery':
+        return const Color(0xFFFF9800); // orange
+      default:
+        return Colors.grey;
     }
   }
-  
-  // System Overview Methods
-  Future<void> loadSystemOverview() async {
-    // TODO: Implement system overview loading logic
-    _setLoading(true);
-    try {
-      // TODO: Fetch system data from service
-    } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
-  
-  // Private helper methods
+
+  /// Set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
-    _error = null;
     notifyListeners();
   }
-  
+
+  /// Set error message
   void _setError(String error) {
-    _error = error;
-    _isLoading = false;
+    _errorMessage = error;
     notifyListeners();
   }
-  
-  void clearError() {
-    _error = null;
+
+  /// Clear error message
+  void _clearError() {
+    _errorMessage = null;
     notifyListeners();
   }
 }
