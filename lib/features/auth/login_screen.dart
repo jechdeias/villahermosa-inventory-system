@@ -2,11 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/database/app_database.dart';
-import '../auth/data/auth_repository.dart';
-import '../auth/viewmodels/auth_viewmodel.dart';
+import '../../core/auth/auth_service.dart';
+import '../../core/business/role_based_access.dart';
+import 'viewmodels/auth_viewmodel.dart';
 import '../auth/widgets/responsive_auth_screen.dart';
 import '../auth/widgets/auth_card.dart';
-import '../../core/constants/user_roles.dart';
+import '../../core/services/navigation_service.dart';
 
 /// Login Screen
 /// Handles user authentication and role-based navigation
@@ -29,7 +30,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController(); // Changed from email to identifier
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
@@ -38,15 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _authViewModel = AuthViewModel(AuthRepository(widget.database));
+    _authViewModel = AuthViewModel(AuthService.instance);
     
     // Check if user is already authenticated
     if (_authViewModel.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Navigate to appropriate dashboard based on role
-        Navigator.of(context).pushReplacementNamed(
-          '/admin/dashboard',
-        );
+        _navigateToDashboard();
       });
     }
   }
@@ -57,25 +55,32 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      await _authViewModel.login(
-        _emailController.text.trim(),
+      _authViewModel.clearError();
+      
+      final success = await _authViewModel.login(
+        _identifierController.text.trim(), // Can be email or username
         _passwordController.text,
       );
 
-      if (_authViewModel.isAuthenticated) {
-        // Debug print for successful login
+      if (success && mounted) {
         debugPrint('LOGIN SUCCESS');
-        
-        // Navigate based on user role
-        _navigateBasedOnRole(_authViewModel.currentUser!);
+        _navigateToDashboard();
       }
     } catch (e) {
       // Error is handled in AuthViewModel
     }
   }
 
-  void _navigateBasedOnRole(User user) {
-    RoleBasedNavigation.navigate(context, user.role);
+  Future<void> _navigateToDashboard() async {
+    final navigationService = NavigationService(
+      AuthService.instance,
+      RoleBasedAccess(widget.database),
+      widget.database,
+    );
+    final initialRoute = await navigationService.getInitialRoute();
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed(initialRoute);
+    }
   }
 
   @override
@@ -86,8 +91,8 @@ class _LoginScreenState extends State<LoginScreen> {
         logoIcon: '📦',
         title: 'Villahermosa\nSales and Marketing',
         subtitle: 'Inventory Management System',
-        emailLabel: 'Email',
-        emailHint: 'Enter your email',
+        emailLabel: 'Email or Username', // Updated label
+        emailHint: 'Enter your email or username', // Updated hint
         passwordLabel: 'Password',
         passwordHint: 'Enter your password',
         primaryButtonText: 'Sign In',
@@ -95,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
         linkText: 'Sign up',
         
         // Form controllers
-        emailController: _emailController,
+        emailController: _identifierController, // Using identifier controller
         passwordController: _passwordController,
         
         // Form state
@@ -118,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

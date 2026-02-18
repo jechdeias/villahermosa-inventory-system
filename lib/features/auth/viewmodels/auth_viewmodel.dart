@@ -1,19 +1,15 @@
 import 'package:flutter/foundation.dart';
-
-import '../data/auth_repository.dart';
+import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 
 /// ViewModel managing authentication state and operations.
 /// 
-/// Handles user login, loading states, and error management
+/// Handles user login, signup, loading states, and error management
 /// while providing reactive state updates to the UI.
 class AuthViewModel extends ChangeNotifier {
 
-  AuthViewModel(this._authRepository);
-  final AuthRepository _authRepository;
-
-  /// Current authenticated user, null if not logged in.
-  User? _currentUser;
+  AuthViewModel(this._authService);
+  final AuthService _authService;
 
   /// Loading state for async operations.
   bool _isLoading = false;
@@ -22,51 +18,108 @@ class AuthViewModel extends ChangeNotifier {
   String? _errorMessage;
 
   // Getters for reactive state
-  User? get currentUser => _currentUser;
+  User? get currentUser => _authService.getCurrentUser();
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get isAuthenticated => _currentUser != null;
+  bool get isAuthenticated => _authService.isAuthenticated;
 
-  /// Authenticates a user with email and password.
+  /// Authenticates a user with email/username and password.
   /// 
   /// Updates loading state and error message accordingly.
-  /// Sets currentUser on successful authentication.
-  Future<void> login(String email, String password) async {
+  /// Uses AuthService for authentication.
+  Future<bool> login(String identifier, String password) async {
     _setLoading(true);
     _clearError();
 
     try {
-      final user = await _authRepository.login(email, password);
+      // Basic validation
+      if (identifier.isEmpty || password.isEmpty) {
+        _setError('Email/username and password are required');
+        return false;
+      }
+
+      final user = await _authService.login(identifier, password);
       
       if (user != null) {
-        _currentUser = user;
         _clearError();
+        return true;
       } else {
-        _setError('Invalid email or password');
+        _setError('Invalid credentials');
+        return false;
       }
     } catch (e) {
       _setError('Login failed: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Signs up a new user.
+  /// 
+  /// Returns true if signup was successful, false otherwise.
+  Future<bool> signUp({
+    required String name,
+    required String username,
+    required String email,
+    required String password,
+    required String role,
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      // Basic validation
+      if (name.isEmpty || username.isEmpty || email.isEmpty || password.isEmpty) {
+        _setError('All fields are required');
+        return false;
+      }
+
+      if (password.length < 6) {
+        _setError('Password must be at least 6 characters');
+        return false;
+      }
+
+      if (!email.contains('@')) {
+        _setError('Please enter a valid email');
+        return false;
+      }
+
+      final success = await _authService.signUp(
+        name: name,
+        username: username,
+        email: email,
+        password: password,
+        role: role,
+      );
+
+      if (!success) {
+        _setError('Email or username already exists');
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      _setError('Signup failed: ${e.toString()}');
+      return false;
     } finally {
       _setLoading(false);
     }
   }
 
   /// Logs out the current user.
-  void logout() {
-    _currentUser = null;
-    _clearError();
-    notifyListeners();
+  Future<void> logout() async {
+    try {
+      await _authService.logout();
+      _clearError();
+    } catch (e) {
+      _setError('Logout failed: ${e.toString()}');
+    }
   }
 
-  /// Seeds admin user if no users exist.
-  /// 
-  /// Should be called during app initialization.
-  Future<void> seedAdminUserIfNeeded() async {
-    try {
-      await _authRepository.seedAdminUserIfEmpty();
-    } catch (e) {
-      _setError('Failed to seed admin user: ${e.toString()}');
-    }
+  /// Clears error message for UI display.
+  void clearError() {
+    _clearError();
   }
 
   /// Sets loading state and notifies listeners.
@@ -86,4 +139,8 @@ class AuthViewModel extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+
+  /// Create singleton instance
+  static AuthViewModel? _instance;
+  static AuthViewModel get instance => _instance ??= AuthViewModel(AuthService.instance);
 }

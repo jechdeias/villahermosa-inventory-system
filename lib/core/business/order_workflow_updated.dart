@@ -328,7 +328,4 @@ class OrderWorkflowUpdated {
       ORDER BY sm.movement_type, sm.reference_type
     ''', variables: variables).get().then((rows) => rows.map((row) => row.data).toList());
   }
-  
-  /// Utility method to generate UUID
-  String _generateUuid() => DateTime.now().millisecondsSinceEpoch.toString();
 }

@@ -512,12 +512,6 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
     });
   }
 
-  void _quickPick(Map<String, dynamic> item) {
-    // TODO: Implement QR code scanning
-    final required = item['required'] as int;
-    _updatePickedQuantity(item['id'], required);
-  }
-
   void _completeOrder() {
     showDialog(
       context: context,
