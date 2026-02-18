@@ -68,7 +68,7 @@ class StockMovementService {
     
     await _database.into(_database.stockMovements).insert(
       StockMovementsCompanion.insert(
-        id: _generateUuid(),
+        uuid: _generateUuid(),
         productId: productId.toString(),
         movementType: 'stock_in',
         quantity: quantity, // Positive for stock in
@@ -127,7 +127,7 @@ class StockMovementService {
     
     await _database.into(_database.stockMovements).insert(
       StockMovementsCompanion.insert(
-        id: _generateUuid(),
+        uuid: _generateUuid(),
         productId: productId.toString(),
         movementType: 'stock_out',
         quantity: -quantity, // Negative for stock out
@@ -187,7 +187,7 @@ class StockMovementService {
     
     await _database.into(_database.stockMovements).insert(
       StockMovementsCompanion.insert(
-        id: _generateUuid(),
+        uuid: _generateUuid(),
         productId: productId.toString(),
         movementType: 'adjustment',
         quantity: quantity, // Can be positive or negative
@@ -242,7 +242,7 @@ class StockMovementService {
     
     await _database.into(_database.stockMovements).insert(
       StockMovementsCompanion.insert(
-        id: _generateUuid(),
+        uuid: _generateUuid(),
         productId: productId.toString(),
         movementType: 'stock_in', // Returns are stock IN
         quantity: quantity, // Positive for stock in

@@ -5,7 +5,6 @@ import '../../../core/constants/user_roles.dart';
 import '../data/auth_repository.dart';
 import '../widgets/responsive_auth_screen.dart';
 import '../widgets/signup_card.dart';
-import '../../../core/navigation/role_based_navigation.dart';
 
 class SignupScreen extends StatefulWidget {
   

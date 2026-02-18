@@ -195,22 +195,19 @@ class SyncManager {
     for (final product in pendingProducts) {
       try {
         final productData = {
+          'id': product.id,
           'uuid': product.uuid,
           'sku': product.sku,
           'name': product.name,
-          'description': product.description,
           'category': product.category,
-          'brand': product.brand,
-          'current_stock': product.currentStock,
-          'min_stock': product.minStock,
-          'max_stock': product.maxStock,
-          'unit': product.unit,
           'unit_price': product.unitPrice,
           'cost_price': product.costPrice,
+          'unit': product.unit,
+          'current_stock': product.currentStock,
+          'min_stock': product.minStock,
           'status': product.status,
-          'barcode': product.barcode,
           'location': product.location,
-          'supplier': product.supplier,
+          'is_active': product.isActive,
           'is_deleted': product.isDeleted,
           'sync_status': 'synced',
           'local_id': product.id,
@@ -275,18 +272,21 @@ class SyncManager {
     for (final customer in pendingCustomers) {
       try {
         final customerData = {
+          'id': customer.id,
           'uuid': customer.uuid,
           'name': customer.name,
+          'business_name': customer.businessName,
           'email': customer.email,
           'phone': customer.phone,
           'address': customer.address,
-          'business_name': customer.businessName,
-          'tax_id': customer.taxId,
-          'customer_type': customer.customerType,
+          'municipality': customer.municipality,
+          'province': customer.province,
+          'store_type': customer.storeType,
           'credit_limit': customer.creditLimit,
-          'payment_terms': customer.paymentTerms,
+          'customer_type': customer.customerType,
           'status': customer.status,
-          'preferred_contact_method': customer.preferredContactMethod,
+          'contact_number': customer.contactNumber,
+          'is_active': customer.isActive,
           'is_deleted': customer.isDeleted,
           'sync_status': 'synced',
           'local_id': customer.id,
@@ -352,6 +352,7 @@ class SyncManager {
       try {
         final movementData = {
           'id': movement.id,
+          'uuid': movement.uuid,
           'product_id': movement.productId,
           'movement_type': movement.movementType,
           'quantity': movement.quantity,
@@ -366,11 +367,10 @@ class SyncManager {
           'unit_cost': movement.unitCost,
           'total_cost': movement.totalCost,
           'status': movement.status,
-          'approved_by': movement.approvedBy,
-          'approved_at': movement.approvedAt?.toIso8601String(),
+          'is_active': movement.isActive,
           'is_deleted': movement.isDeleted,
-          'sync_status': movement.syncStatus,
-          'remote_id': movement.remoteId,
+          'sync_status': 'synced',
+          'local_id': movement.id,
           'created_at': movement.createdAt.toIso8601String(),
           'updated_at': movement.updatedAt.toIso8601String(),
         };
@@ -389,7 +389,7 @@ class SyncManager {
               Variable.withInt(response['id']),
               Variable.withString('synced'),
               Variable.withDateTime(DateTime.now()),
-              Variable.withString(movement.id),
+              Variable.withString(movement.id.toString()),
             ],
           );
         } else {
@@ -408,7 +408,7 @@ class SyncManager {
             variables: [
               Variable.withString('synced'),
               Variable.withDateTime(DateTime.now()),
-              Variable.withString(movement.id),
+              Variable.withString(movement.id.toString()),
             ],
           );
         }
@@ -418,7 +418,7 @@ class SyncManager {
           'UPDATE stock_movements SET sync_status = ? WHERE id = ?',
           variables: [
             Variable.withString('conflict'),
-            Variable.withString(movement.id),
+            Variable.withString(movement.id.toString()),
           ],
         );
       }
@@ -487,23 +487,19 @@ class SyncManager {
       ).getSingleOrNull();
       
       if (existingRecord != null) {
-        await _database.customUpdate('UPDATE products SET sku = ?, name = ?, description = ?, category = ?, brand = ?, current_stock = ?, min_stock = ?, max_stock = ?, unit = ?, unit_price = ?, cost_price = ?, status = ?, barcode = ?, location = ?, supplier = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
+        await _database.customUpdate('UPDATE products SET sku = ?, name = ?, category = ?, unit_price = ?, cost_price = ?, unit = ?, current_stock = ?, min_stock = ?, status = ?, location = ?, is_active = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
           variables: [
             Variable.withString(productData['sku'] as String),
             Variable.withString(productData['name'] as String),
-            Variable.withString(productData['description'] ?? ''),
             Variable.withString(productData['category'] as String),
-            Variable.withString(productData['brand'] ?? ''),
-            Variable.withInt(productData['current_stock'] as int),
-            Variable.withInt(productData['min_stock'] as int),
-            Variable.withInt(productData['max_stock'] as int),
-            Variable.withString(productData['unit'] as String),
             Variable.withReal(productData['unit_price'] as double),
             Variable.withReal(productData['cost_price'] as double),
+            Variable.withString(productData['unit'] as String),
+            Variable.withInt(productData['current_stock'] as int),
+            Variable.withInt(productData['min_stock'] as int),
             Variable.withString(productData['status'] as String),
-            Variable.withString(productData['barcode'] ?? ''),
             Variable.withString(productData['location'] as String),
-            Variable.withString(productData['supplier'] ?? ''),
+            Variable.withBool(productData['is_active'] as bool? ?? true),
             Variable.withBool(productData['is_deleted'] as bool),
             Variable.withString('synced'),
             Variable.withDateTime(DateTime.parse(productData['updated_at'] as String)),
@@ -516,19 +512,15 @@ class SyncManager {
             uuid: productData['uuid'] as String,
             sku: productData['sku'] as String,
             name: productData['name'] as String,
-            description: Value(productData['description'] as String?),
             category: productData['category'] as String,
-            brand: Value(productData['brand'] as String?),
-            currentStock: Value(productData['current_stock'] as int),
-            minStock: Value(productData['min_stock'] as int),
-            maxStock: Value(productData['max_stock'] as int),
-            unit: productData['unit'] as String,
             unitPrice: productData['unit_price'] as double,
             costPrice: productData['cost_price'] as double,
+            unit: productData['unit'] as String,
+            currentStock: productData['current_stock'] as int,
+            minStock: productData['min_stock'] as int,
             status: Value(productData['status'] as String),
-            barcode: Value(productData['barcode'] as String?),
             location: Value(productData['location'] as String),
-            supplier: Value(productData['supplier'] as String?),
+            isActive: Value(productData['is_active'] as bool? ?? true),
             isDeleted: Value(productData['is_deleted'] as bool),
             remoteId: Value(productData['id'].toString()),
             syncStatus: const Value('synced'),
@@ -555,19 +547,21 @@ class SyncManager {
       
       if (existingRecord != null) {
         await _database.customUpdate(
-          'UPDATE customers SET name = ?, email = ?, phone = ?, address = ?, business_name = ?, tax_id = ?, customer_type = ?, credit_limit = ?, payment_terms = ?, status = ?, preferred_contact_method = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
+          'UPDATE customers SET name = ?, email = ?, phone = ?, address = ?, business_name = ?, municipality = ?, province = ?, store_type = ?, credit_limit = ?, customer_type = ?, status = ?, contact_number = ?, is_active = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
           variables: [
             Variable.withString(customerData['name']),
             Variable.withString(customerData['email']),
             Variable.withString(customerData['phone']),
             Variable.withString(customerData['address']),
             Variable.withString(customerData['business_name']),
-            Variable.withString(customerData['tax_id']),
-            Variable.withString(customerData['customer_type']),
+            Variable.withString(customerData['municipality']),
+            Variable.withString(customerData['province']),
+            Variable.withString(customerData['store_type']),
             Variable.withReal(customerData['credit_limit'] as double),
-            Variable.withString(customerData['payment_terms']),
+            Variable.withString(customerData['customer_type']),
             Variable.withString(customerData['status']),
-            Variable.withString(customerData['preferred_contact_method']),
+            Variable.withString(customerData['contact_number']),
+            Variable.withBool(customerData['is_active'] as bool? ?? true),
             Variable.withBool(customerData['is_deleted']),
             Variable.withString('synced'),
             Variable.withDateTime(DateTime.parse(customerData['updated_at'])),
@@ -579,21 +573,23 @@ class SyncManager {
           CustomersCompanion.insert(
             uuid: customerData['uuid'] as String,
             name: customerData['name'] as String,
-            email: customerData['email'] as String,
+            businessName: Value(customerData['business_name'] as String?),
+            email: Value(customerData['email'] as String?),
             phone: Value(customerData['phone'] as String?),
             address: Value(customerData['address'] as String?),
-            businessName: Value(customerData['business_name'] as String?),
-            taxId: Value(customerData['tax_id'] as String?),
-            customerType: Value(customerData['customer_type'] as String),
+            municipality: customerData['municipality'] as String,
+            province: customerData['province'] as String,
+            storeType: customerData['store_type'] as String,
             creditLimit: Value(customerData['credit_limit'] as double),
-            paymentTerms: Value(customerData['payment_terms'] as String?),
-            status: Value(customerData['status']),
-            preferredContactMethod: Value(customerData['preferred_contact_method']),
-            isDeleted: Value(customerData['is_deleted']),
-            remoteId: Value(customerData['id']),
+            customerType: Value(customerData['customer_type'] as String),
+            status: Value(customerData['status'] as String),
+            contactNumber: customerData['contact_number'] as String,
+            isActive: Value(customerData['is_active'] as bool? ?? true),
+            isDeleted: Value(customerData['is_deleted'] as bool),
+            remoteId: Value(customerData['id'].toString()),
             syncStatus: const Value('synced'),
-            createdAt: Value(DateTime.parse(customerData['created_at'])),
-            updatedAt: Value(DateTime.parse(customerData['updated_at'])),
+            createdAt: Value(DateTime.parse(customerData['created_at'] as String)),
+            updatedAt: Value(DateTime.parse(customerData['updated_at'] as String)),
           ),
         );
       }
@@ -615,7 +611,7 @@ class SyncManager {
       
       if (existingRecord != null) {
         await _database.customUpdate(
-          'UPDATE stock_movements SET product_id = ?, movement_type = ?, quantity = ?, reference_type = ?, reference_id = ?, reason = ?, notes = ?, user_id = ?, user_name = ?, from_location = ?, to_location = ?, unit_cost = ?, total_cost = ?, status = ?, approved_by = ?, approved_at = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
+          'UPDATE stock_movements SET product_id = ?, movement_type = ?, quantity = ?, reference_type = ?, reference_id = ?, reason = ?, notes = ?, user_id = ?, user_name = ?, from_location = ?, to_location = ?, unit_cost = ?, total_cost = ?, status = ?, is_active = ?, is_deleted = ?, sync_status = ?, updated_at = ? WHERE remote_id = ?',
           variables: [
             Variable.withString(movementData['product_id']),
             Variable.withString(movementData['movement_type']),
@@ -631,11 +627,7 @@ class SyncManager {
             Variable.withReal(movementData['unit_cost'] as double),
             Variable.withReal(movementData['total_cost'] as double),
             Variable.withString(movementData['status']),
-            Variable.withString(movementData['approved_by']),
-            if (movementData['approved_at'] != null) 
-              Variable.withDateTime(DateTime.parse(movementData['approved_at']))
-            else 
-              Variable.withDateTime(DateTime.now()), // Default value for null
+            Variable.withBool(movementData['is_active'] as bool? ?? true),
             Variable.withBool(movementData['is_deleted']),
             Variable.withString('synced'),
             Variable.withDateTime(DateTime.parse(movementData['updated_at'])),
@@ -645,7 +637,7 @@ class SyncManager {
       } else {
         await _database.into(_database.stockMovements).insert(
           StockMovementsCompanion.insert(
-            id: movementData['id'] as String,
+            uuid: movementData['uuid'] as String,
             productId: movementData['product_id'] as String,
             movementType: movementData['movement_type'] as String,
             quantity: movementData['quantity'] as int,
@@ -660,10 +652,7 @@ class SyncManager {
             unitCost: Value(movementData['unit_cost'] as double?),
             totalCost: Value(movementData['total_cost'] as double?),
             status: Value(movementData['status'] as String),
-            approvedBy: Value(movementData['approved_by'] as String?),
-            approvedAt: movementData['approved_at'] != null 
-                ? Value(DateTime.parse(movementData['approved_at']))
-                : const Value(null),
+            isActive: Value(movementData['is_active'] as bool? ?? true),
             isDeleted: Value(movementData['is_deleted'] as bool),
             remoteId: Value(movementData['id'] as String?),
             syncStatus: const Value('synced'),

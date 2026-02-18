@@ -134,7 +134,7 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
             IconButton(
               icon: const Icon(Icons.qr_code_scanner),
               onPressed: () async {
-                await QrServiceLocator.instance.scanQrCode(context);
+                await QrServiceLocator.instance.scanQrCode();
               },
               tooltip: 'Scan Items',
             ),
@@ -155,7 +155,7 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: _selectedOrder,
+                    initialValue: _selectedOrder,
                     decoration: const InputDecoration(
                       labelText: 'Order Number',
                       prefixIcon: Icon(Icons.receipt),
@@ -479,7 +479,7 @@ class _PrepareOrdersScreenState extends State<PrepareOrdersScreen> {
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: () async {
-                        await QrServiceLocator.instance.scanQrCode(context);
+                        await QrServiceLocator.instance.scanQrCode();
                       },
                       icon: const Icon(Icons.qr_code_scanner),
                       tooltip: 'Quick Scan',

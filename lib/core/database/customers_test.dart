@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -27,9 +27,13 @@ void main() {
         CustomersCompanion.insert(
           uuid: customerId,
           name: 'John Customer',
-          email: 'customer@example.com',
+          email: const Value('customer@example.com'),
           phone: const Value('+1234567890'),
           address: const Value('123 Main St'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -41,7 +45,7 @@ void main() {
       expect(customer.email, equals('customer@example.com'));
       expect(customer.phone, equals('+1234567890'));
       expect(customer.address, equals('123 Main St'));
-      expect(customer.customerType, equals('individual'));
+      expect(customer.customerType, equals('regular'));
       expect(customer.status, equals('active'));
       expect(customer.syncStatus, equals('pending'));
     });
@@ -52,8 +56,12 @@ void main() {
         CustomersCompanion.insert(
           uuid: '550e8400-e29b-41d4-a716-446655440101',
           name: 'Alice Customer',
-          email: 'alice@example.com',
+          email: const Value('alice@example.com'),
           customerType: const Value('individual'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -61,9 +69,13 @@ void main() {
         CustomersCompanion.insert(
           uuid: '550e8400-e29b-41d4-a716-446655440102',
           name: 'Bob Business',
-          email: 'bob@business.com',
+          email: const Value('bob@business.com'),
           businessName: const Value('Bob Enterprises'),
           customerType: const Value('business'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Wholesale',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -81,7 +93,11 @@ void main() {
         CustomersCompanion.insert(
           uuid: '550e8400-e29b-41d4-a716-446655440103',
           name: 'Alice Smith',
-          email: 'alice@example.com',
+          email: const Value('alice@example.com'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -89,7 +105,11 @@ void main() {
         CustomersCompanion.insert(
           uuid: '550e8400-e29b-41d4-a716-446655440104',
           name: 'Bob Johnson',
-          email: 'bob@example.com',
+          email: const Value('bob@example.com'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -107,8 +127,12 @@ void main() {
         CustomersCompanion.insert(
           uuid: customerId,
           name: 'John Customer',
-          email: 'john@example.com',
+          email: const Value('john@example.com'),
           customerType: const Value('individual'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -138,7 +162,11 @@ void main() {
         CustomersCompanion.insert(
           uuid: customerId,
           name: 'To Be Deleted',
-          email: 'delete@example.com',
+          email: const Value('delete@example.com'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -148,12 +176,11 @@ void main() {
 
       // Customer should not appear in getAllCustomers
       final customers = await database.getAllCustomers();
-      expect(customers.where((c) => c.id == customerId), isEmpty);
+      expect(customers.where((c) => c.uuid == customerId), isEmpty);
 
-      // But should still be retrievable by ID
+      // And should not be retrievable by ID (since it's soft deleted)
       final customer = await database.getCustomerById(customerId);
-      expect(customer, isNotNull);
-      expect(customer!.isDeleted, isTrue);
+      expect(customer, isNull);
     });
 
     test('Get pending sync customers', () async {
@@ -162,8 +189,12 @@ void main() {
         CustomersCompanion.insert(
           uuid: '550e8400-e29b-41d4-a716-446655440107',
           name: 'Pending Customer',
-          email: 'pending@example.com',
+          email: const Value('pending@example.com'),
           syncStatus: const Value('pending'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -171,8 +202,12 @@ void main() {
         CustomersCompanion.insert(
           uuid: '550e8400-e29b-41d4-a716-446655440108',
           name: 'Synced Customer',
-          email: 'synced@example.com',
+          email: const Value('synced@example.com'),
           syncStatus: const Value('synced'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
@@ -192,15 +227,19 @@ void main() {
         CustomersCompanion.insert(
           uuid: customerId,
           name: 'Sync Test Customer',
-          email: 'sync@example.com',
+          email: const Value('sync@example.com'),
           syncStatus: const Value('pending'),
+          municipality: 'Sample City',
+          province: 'Sample Province',
+          storeType: 'Retail',
+          contactNumber: '+1234567890',
         ),
       );
 
       // Mark as synced
       final customer = await database.getCustomerByEmail('sync@example.com');
       expect(customer, isNotNull);
-      final synced = await database.markCustomerAsSynced(customer!.id, remoteId);
+      final synced = await database.markCustomerAsSynced(customer!.uuid, remoteId);
       expect(synced, isTrue);
 
       // Verify the sync status

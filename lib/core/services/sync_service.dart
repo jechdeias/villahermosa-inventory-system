@@ -110,7 +110,7 @@ class SyncService {
   // Table-specific push methods
   Future<List<User>> _pushUsers() async => _database.getPendingSyncUsers();
   
-  Future<List<Category>> _pushCategories() async {
+  Future<List<dynamic>> _pushCategories() async {
     // Implementation needed
     return [];
   }

@@ -169,7 +169,7 @@ class _IncomingOrdersScreenState extends State<IncomingOrdersScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedStatus,
+                          initialValue: _selectedStatus,
                           decoration: const InputDecoration(
                             labelText: 'Status',
                             prefixIcon: Icon(Icons.flag),
@@ -188,7 +188,7 @@ class _IncomingOrdersScreenState extends State<IncomingOrdersScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedRoute,
+                          initialValue: _selectedRoute,
                           decoration: const InputDecoration(
                             labelText: 'Route',
                             prefixIcon: Icon(Icons.route),

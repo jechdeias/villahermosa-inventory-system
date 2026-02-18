@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../routes/app_routes.dart';
 import '../viewmodels/warehouse_viewmodel.dart';
 
 class WarehouseDashboardScreen extends StatelessWidget {
@@ -122,28 +121,32 @@ class WarehouseDashboardView extends StatelessWidget {
                   'View and manage product inventory',
                   Icons.inventory_2_outlined,
                   Colors.blue,
-                  () => Navigator.pushNamed(context, AppRoutes.warehouseInventory),
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Warehouse Inventory - Coming Soon'))))
+                  ),
                 ),
                 _buildActionCard(
                   'Order Processing',
                   'Process and prepare customer orders',
                   Icons.shopping_cart_outlined,
                   Colors.green,
-                  () => Navigator.pushNamed(context, AppRoutes.deliveryDashboard),
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Delivery Dashboard - Coming Soon'))))
+                  ),
                 ),
                 _buildActionCard(
                   'Stock Movements',
                   'Track stock in and out movements',
                   Icons.swap_vert_outlined,
                   Colors.orange,
-                  () => Navigator.pushNamed(context, AppRoutes.deliveryDashboard),
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Delivery Dashboard - Coming Soon'))))
+                  ),
                 ),
                 _buildActionCard(
                   'Customer Orders',
                   'View customer order history',
                   Icons.people_outline,
                   Colors.purple,
-                  () => Navigator.pushNamed(context, AppRoutes.customerDashboard),
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Customer Dashboard - Coming Soon'))))
+                  ),
                 ),
               ],
             ),
@@ -244,9 +247,9 @@ class WarehouseDashboardView extends StatelessWidget {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) => Container(
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -299,7 +302,7 @@ class WarehouseDashboardView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -346,7 +349,7 @@ class WarehouseDashboardView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(icon, color: color, size: 18),

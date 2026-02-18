@@ -49,7 +49,7 @@ class OrderWorkflow {
     final orderId = _generateUuid();
     await _database.into(_database.orders).insert(
       OrdersCompanion.insert(
-        id: orderId,
+        uuid: orderId,
         customerId: customerId,
         orderNumber: orderNumber,
         status: const Value('pending'),
@@ -73,8 +73,8 @@ class OrderWorkflow {
       final validatedProductId = TypeValidator.ensureIntId(item.productId);
       final validatedQuantity = TypeValidator.validateStockQuantity(item.quantity);
       
-      final product = await _database.getProductByIntId(validatedProductId);
-      TypeValidator.ensureExists(product, 'Product', validatedProductId);
+      final product = await _database.getProductById(validatedProductId);
+      TypeValidator.ensureExists(product, 'Product', validatedProductId.toString());
       
       if (product!.isDeleted) {
         throw Exception('Product $validatedProductId not found or inactive');
@@ -87,7 +87,7 @@ class OrderWorkflow {
       
       await _database.into(_database.orderItems).insert(
         OrderItemsCompanion.insert(
-          id: _generateUuid(),
+          uuid: _generateUuid(),
           orderId: orderId,
           productId: validatedProductId.toString(),
           productSku: product.sku,
@@ -109,7 +109,7 @@ class OrderWorkflow {
       );
     }
     
-    print('✅ Order created successfully: $orderNumber');
+    print('Order created successfully: $orderNumber');
     
     // Trigger sync
     await _syncManager.performFullSync();
@@ -173,7 +173,7 @@ class OrderWorkflow {
           Variable.withDateTime(DateTime.now()),
           Variable.withDateTime(DateTime.now()),
           Variable.withString('pending'),
-          Variable.withString(item.id),
+          Variable.withString(item.uuid),
         ],
       );
     }
@@ -223,7 +223,7 @@ class OrderWorkflow {
           Variable.withString('packed'),
           Variable.withDateTime(DateTime.now()),
           Variable.withString('pending'),
-          Variable.withString(item.id),
+          Variable.withString(item.uuid),
         ],
       );
     }
@@ -257,20 +257,15 @@ class OrderWorkflow {
     
     await _database.into(_database.deliveries).insert(
       DeliveriesCompanion.insert(
-        id: _generateUuid(),
+        uuid: _generateUuid(),
         orderId: orderId,
+        deliveryNumber: deliveryNumber,
         deliveryPersonnelId: deliveryPersonnelId.toString(),
         deliveryPersonnelName: deliveryPersonnelName,
         deliveryPersonnelPhone: deliveryPersonnelPhone,
-        deliveryNumber: deliveryNumber,
-        scheduledDate: DateTime.now(),
-        route: 'Standard Route',
-        routeOrder: 1,
-        startLocation: 'Warehouse',
-        endLocation: order.deliveryAddress,
+        expectedStartTime: DateTime.now(),
+        expectedCompletionTime: DateTime.now().add(const Duration(hours: 4)),
         status: const Value('assigned'),
-        priority: Value(order.priority),
-        attemptCount: const Value(0),
         syncStatus: const Value('pending'),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
@@ -299,7 +294,7 @@ class OrderWorkflow {
   Future<void> startDelivery({
     required String deliveryId,
   }) async {
-    print('🚚 Starting delivery...');
+    print('Starting delivery...');
     
     final delivery = await _database.getDeliveryById(deliveryId);
     if (delivery == null || delivery.isDeleted) {
@@ -393,18 +388,18 @@ class OrderWorkflow {
       // Log stock movement
       await _database.createStockMovement(
         StockMovementsCompanion.insert(
-          id: _generateUuid(),
+          uuid: _generateUuid(),
           productId: item.productId.toString(),
           movementType: 'stock_out',
           quantity: -item.quantity, // Negative for stock out
           referenceType: const Value('delivery'),
-          referenceId: Value(delivery.id),
+          referenceId: Value(delivery.uuid),
           reason: 'Order ${order.orderNumber} delivered',
-          notes: Value('Delivered to ${delivery.endLocation}'),
+          notes: Value('Delivered to customer'),
           userId: delivery.deliveryPersonnelId,
           userName: delivery.deliveryPersonnelName,
-          fromLocation: Value(product.location),
-          toLocation: Value(delivery.endLocation),
+          fromLocation: Value(product.location ?? 'Warehouse'),
+          toLocation: Value('Customer'),
           unitCost: Value(product.costPrice),
           totalCost: Value(product.costPrice * item.quantity),
           status: const Value('completed'),
@@ -422,7 +417,7 @@ class OrderWorkflow {
           Variable.withString('delivered'),
           Variable.withDateTime(DateTime.now()),
           Variable.withString('pending'),
-          Variable.withString(item.id),
+          Variable.withString(item.uuid),
         ],
       );
     }

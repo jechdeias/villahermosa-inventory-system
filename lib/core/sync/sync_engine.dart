@@ -315,7 +315,8 @@ class SyncEngine {
   /// Table-specific push methods
   Future<List<User>> _pushUsers() async => _database.getPendingSyncUsers();
   
-  Future<List<Category>> _pushCategories() async {
+  Future<List<dynamic>> _pushCategories() async {
+    print('Pushing categories to Supabase...');
     // Implementation needed
     return [];
   }
@@ -333,7 +334,7 @@ class SyncEngine {
         await Supabase.instance.client
             .from('orders')
             .insert(data);
-        await _markRecordAsSynced(order, order.id);
+        await _markRecordAsSynced(order, order.id.toString());
       } catch (e) {
         print('Failed to sync order ${order.id}: $e');
       }
@@ -351,7 +352,7 @@ class SyncEngine {
         await Supabase.instance.client
             .from('order_items')
             .insert(data);
-        await _markRecordAsSynced(orderItem, orderItem.id);
+        await _markRecordAsSynced(orderItem, orderItem.id.toString());
       } catch (e) {
         print('Failed to sync order item ${orderItem.id}: $e');
       }
@@ -371,7 +372,7 @@ class SyncEngine {
         await Supabase.instance.client
             .from('deliveries')
             .insert(data);
-        await _markRecordAsSynced(delivery, delivery.id);
+        await _markRecordAsSynced(delivery, delivery.id.toString());
       } catch (e) {
         print('Failed to sync delivery ${delivery.id}: $e');
       }

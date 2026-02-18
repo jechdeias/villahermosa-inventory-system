@@ -3,7 +3,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../lib/core/database/app_database.dart';
+import 'package:villahermosa_inventory_system/core/database/app_database.dart';
 
 void main() {
   // Initialize Flutter binding for tests
