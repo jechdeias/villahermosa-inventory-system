@@ -313,7 +313,23 @@ class SyncEngine {
   }
   
   /// Table-specific push methods
-  Future<List<User>> _pushUsers() async => _database.getPendingSyncUsers();
+  Future<List<User>> _pushUsers() async {
+    final pendingUsers = await _database.getPendingSyncUsers();
+    
+    for (final user in pendingUsers) {
+      try {
+        final data = _recordToMap(user);
+        await Supabase.instance.client
+            .from('users')
+            .upsert(data);
+        await _markRecordAsSynced(user, user.id.toString());
+      } catch (e) {
+        print('Failed to sync user ${user.id}: $e');
+      }
+    }
+    
+    return pendingUsers;
+  }
   
   Future<List<dynamic>> _pushCategories() async {
     print('Pushing categories to Supabase...');
@@ -321,9 +337,41 @@ class SyncEngine {
     return [];
   }
   
-  Future<List<Product>> _pushProducts() async => _database.getPendingSyncProducts();
+  Future<List<Product>> _pushProducts() async {
+    final pendingProducts = await _database.getPendingSyncProducts();
+    
+    for (final product in pendingProducts) {
+      try {
+        final data = _recordToMap(product);
+        await Supabase.instance.client
+            .from('products')
+            .upsert(data);
+        await _markRecordAsSynced(product, product.id.toString());
+      } catch (e) {
+        print('Failed to sync product ${product.id}: $e');
+      }
+    }
+    
+    return pendingProducts;
+  }
   
-  Future<List<Customer>> _pushCustomers() async => _database.getPendingSyncCustomers();
+  Future<List<Customer>> _pushCustomers() async {
+    final pendingCustomers = await _database.getPendingSyncCustomers();
+    
+    for (final customer in pendingCustomers) {
+      try {
+        final data = _recordToMap(customer);
+        await Supabase.instance.client
+            .from('customers')
+            .upsert(data);
+        await _markRecordAsSynced(customer, customer.id.toString());
+      } catch (e) {
+        print('Failed to sync customer ${customer.id}: $e');
+      }
+    }
+    
+    return pendingCustomers;
+  }
   
   Future<List<Order>> _pushOrders() async {
     final pendingOrders = await _database.getPendingSyncOrders();
@@ -361,7 +409,23 @@ class SyncEngine {
     return pendingOrderItems;
   }
   
-  Future<List<StockMovement>> _pushStockMovements() async => _database.getPendingSyncStockMovements();
+  Future<List<StockMovement>> _pushStockMovements() async {
+    final pendingStockMovements = await _database.getPendingSyncStockMovements();
+    
+    for (final stockMovement in pendingStockMovements) {
+      try {
+        final data = _recordToMap(stockMovement);
+        await Supabase.instance.client
+            .from('stock_movements')
+            .upsert(data);
+        await _markRecordAsSynced(stockMovement, stockMovement.id.toString());
+      } catch (e) {
+        print('Failed to sync stock movement ${stockMovement.id}: $e');
+      }
+    }
+    
+    return pendingStockMovements;
+  }
   
   Future<List<Delivery>> _pushDeliveries() async {
     final pendingDeliveries = await _database.getPendingSyncDeliveries();
@@ -398,11 +462,25 @@ class SyncEngine {
   }
   
   Future<void> _pullProducts(DateTime lastSyncTime) async {
-    // Implementation needed
+    final response = await Supabase.instance.client
+        .from('products')
+        .select()
+        .gte('updated_at', lastSyncTime.toIso8601String());
+    
+    for (final productData in response) {
+      await _updateLocalRecord('products', productData);
+    }
   }
   
   Future<void> _pullCustomers(DateTime lastSyncTime) async {
-    // Implementation needed
+    final response = await Supabase.instance.client
+        .from('customers')
+        .select()
+        .gte('updated_at', lastSyncTime.toIso8601String());
+    
+    for (final customerData in response) {
+      await _updateLocalRecord('customers', customerData);
+    }
   }
   
   Future<void> _pullOrders(DateTime lastSyncTime) async {
@@ -423,13 +501,134 @@ class SyncEngine {
   
   /// Utility methods
   Map<String, dynamic> _recordToMap(dynamic record) {
-    // Convert record to Map for Supabase
-    // Implementation depends on record type
+    if (record is User) {
+      return {
+        'id': record.id,
+        'name': record.name,
+        'email': record.email,
+        'role': record.role,
+        'is_active': record.isActive,
+        'is_deleted': record.isDeleted,
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+      };
+    }
+    
+    if (record is Product) {
+      return {
+        'id': record.id,
+        'sku': record.sku,
+        'name': record.name,
+        'category': record.category,
+        'unit_price': record.unitPrice,
+        'cost_price': record.costPrice,
+        'current_stock': record.currentStock,
+        'min_stock': record.minStock,
+        'unit': record.unit,
+        'status': record.status,
+        'location': record.location,
+        'is_active': record.isActive,
+        'is_deleted': record.isDeleted,
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+      };
+    }
+    
+    if (record is Customer) {
+      return {
+        'id': record.id,
+        'name': record.name,
+        'business_name': record.businessName,
+        'email': record.email,
+        'phone': record.phone,
+        'address': record.address,
+        'municipality': record.municipality,
+        'province': record.province,
+        'credit_limit': record.creditLimit,
+        'is_active': record.isActive,
+        'is_deleted': record.isDeleted,
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+      };
+    }
+    
+    if (record is StockMovement) {
+      return {
+        'id': record.id,
+        'product_id': record.productId,
+        'movement_type': record.movementType,
+        'quantity': record.quantity,
+        'reason': record.reason,
+        'user_id': record.userId,
+        'is_active': record.isActive,
+        'is_deleted': record.isDeleted,
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+      };
+    }
+    
+    if (record is Order) {
+      return {
+        'id': record.id,
+        'uuid': record.uuid,
+        'customer_id': record.customerId,
+        'order_number': record.orderNumber,
+        'status': record.status,
+        'delivery_address': record.deliveryAddress,
+        'customer_notes': record.customerNotes,
+        'total_amount': record.totalAmount,
+        'is_active': record.isActive,
+        'is_deleted': record.isDeleted,
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+      };
+    }
+    
+    if (record is OrderItem) {
+      return {
+        'id': record.id,
+        'order_id': record.orderId,
+        'product_id': record.productId,
+        'quantity': record.quantity,
+        'unit_price': record.unitPrice,
+        'is_active': record.isActive,
+        'is_deleted': record.isDeleted,
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+      };
+    }
+    
+    if (record is Delivery) {
+      return {
+        'id': record.id,
+        'order_id': record.orderId,
+        'status': record.status,
+        'delivery_notes': record.deliveryNotes,
+        'is_active': record.isActive,
+        'is_deleted': record.isDeleted,
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+      };
+    }
+    
     return {};
   }
   
   String _getTableName(dynamic record) {
-    // Get table name from record type
+    if (record is User) return 'users';
+    if (record is Product) return 'products';
+    if (record is Customer) return 'customers';
+    if (record is StockMovement) return 'stock_movements';
+    if (record is Order) return 'orders';
+    if (record is OrderItem) return 'order_items';
+    if (record is Delivery) return 'deliveries';
     return '';
   }
   
@@ -439,7 +638,18 @@ class SyncEngine {
   }
   
   Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
-    // Update local record sync status
+    final tableName = _getTableName(record);
+    if (tableName.isEmpty) return;
+    
+    // Update sync status to 'synced' using custom update
+    await _database.customUpdate(
+      'UPDATE $tableName SET sync_status = ?, updated_at = ? WHERE id = ?',
+      variables: [
+        Variable.withString('synced'),
+        Variable.withDateTime(DateTime.now()),
+        Variable.withInt(record.id),
+      ],
+    );
   }
   
   Future<void> _markRecordAsConflicted(dynamic record) async {
@@ -447,7 +657,51 @@ class SyncEngine {
   }
   
   Future<void> _updateLocalRecord(String tableName, Map<String, dynamic> data) async {
-    // Update local record with remote data
+    try {
+      // Check if record exists
+      final existing = await _database.customSelect(
+        'SELECT id FROM $tableName WHERE id = ?',
+        variables: [Variable.withInt(data['id'])],
+      ).getSingleOrNull();
+      
+      if (existing != null) {
+        // Update existing record
+        await _database.customUpdate(
+          '''UPDATE $tableName SET 
+              name = ?, email = ?, phone = ?, address = ?, 
+              sync_status = ?, updated_at = ? 
+              WHERE id = ?''',
+          variables: [
+            Variable.withString(data['name'] ?? ''),
+            Variable.withString(data['email'] ?? ''),
+            Variable.withString(data['phone'] ?? ''),
+            Variable.withString(data['address'] ?? ''),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(data['updated_at'])),
+            Variable.withInt(data['id']),
+          ],
+        );
+      } else {
+        // Insert new record
+        await _database.customInsert(
+          '''INSERT INTO $tableName 
+              (id, name, email, phone, address, sync_status, created_at, updated_at) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+          variables: [
+            Variable.withInt(data['id']),
+            Variable.withString(data['name'] ?? ''),
+            Variable.withString(data['email'] ?? ''),
+            Variable.withString(data['phone'] ?? ''),
+            Variable.withString(data['address'] ?? ''),
+            Variable.withString('synced'),
+            Variable.withDateTime(DateTime.parse(data['created_at'])),
+            Variable.withDateTime(DateTime.parse(data['updated_at'])),
+          ],
+        );
+      }
+    } catch (e) {
+      print('Error updating local record in $tableName: $e');
+    }
   }
   
   Future<DateTime> _getLastSyncTimestamp() async {
