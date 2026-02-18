@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
 import '../sync/sync_manager.dart';
 import '../utils/type_validator.dart';
@@ -32,7 +33,7 @@ class OrderWorkflow {
     String? paymentMethod,
     String? proofOfDeliveryUrl,
   }) async {
-    print('✅ Confirming delivery with proper stock movement logic...');
+    debugPrint('✅ Confirming delivery with proper stock movement logic...');
     
     final delivery = await _database.customSelect(
       'SELECT * FROM deliveries WHERE id = ? AND is_deleted = 0',
@@ -141,7 +142,7 @@ class OrderWorkflow {
       ],
     );
     
-    print('Delivery confirmed with proper stock movements recorded');
+    debugPrint('Delivery confirmed with proper stock movements recorded');
     
     // Trigger sync
     await _syncManager.performFullSync();
@@ -154,7 +155,7 @@ class OrderWorkflow {
     required String userName,
     String? reason,
   }) async {
-    print('🔄 Cancelling order and returning stock to inventory...');
+    debugPrint('🔄 Cancelling order and returning stock to inventory...');
     
     final order = await _database.customSelect(
       'SELECT * FROM orders WHERE id = ? AND is_deleted = 0',
@@ -225,7 +226,7 @@ class OrderWorkflow {
       ],
     );
     
-    print('✅ Order cancelled and stock returned to inventory');
+    debugPrint('✅ Order cancelled and stock returned to inventory');
     
     // Trigger sync
     await _syncManager.performFullSync();
@@ -239,7 +240,7 @@ class OrderWorkflow {
     required String deliveryAddress,
     String? customerNotes,
   }) async {
-    print('🛒 Customer creating order...');
+    debugPrint('🛒 Customer creating order...');
     
     // Validate input types
     final validatedCustomerId = TypeValidator.ensureUuid(customerId);
@@ -319,7 +320,7 @@ class OrderWorkflow {
       );
     }
     
-    print('Order created successfully: $orderNumber');
+    debugPrint('Order created successfully: $orderNumber');
     
     // Trigger sync
     await _syncManager.performFullSync();
@@ -332,7 +333,7 @@ class OrderWorkflow {
     required String orderId,
     required int warehouseUserId,
   }) async {
-    print('📦 Warehouse confirming order availability...');
+    debugPrint('📦 Warehouse confirming order availability...');
     
     // Validate order exists and is in PENDING status
     final order = await _database.getOrderById(orderId);
@@ -371,7 +372,7 @@ class OrderWorkflow {
       ],
     );
     
-    print('✅ Order availability confirmed and stock reserved');
+    debugPrint('✅ Order availability confirmed and stock reserved');
     
     // Trigger sync
     await _syncManager.performFullSync();
@@ -382,7 +383,7 @@ class OrderWorkflow {
     required String orderId,
     required int packerUserId,
   }) async {
-    print('📦 Packing order...');
+    debugPrint('📦 Packing order...');
     
     // Validate order exists and is confirmed
     final order = await _database.getOrderById(orderId);
@@ -422,7 +423,7 @@ class OrderWorkflow {
       );
     }
     
-    print('✅ Order packed successfully');
+    debugPrint('✅ Order packed successfully');
     
     // Trigger sync
     await _syncManager.performFullSync();
