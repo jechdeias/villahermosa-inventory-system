@@ -7,21 +7,23 @@ import '../../features/warehouse/screens/dashboard_screen.dart';
 import '../auth/auth_service.dart';
 import '../business/role_based_access.dart';
 import '../database/app_database.dart';
+import '../sync/sync_manager.dart';
 
 /// Navigation Service
 /// Handles role-based navigation and routing
 class NavigationService {
 
-  NavigationService(this._authService, this._roleBasedAccess, this._database);
+  NavigationService(this._authService, this._roleBasedAccess, this._database, this._syncManager);
   final AuthService _authService;
   final RoleBasedAccess _roleBasedAccess;
   final AppDatabase _database;
+  final SyncManager _syncManager;
 
   /// Get dashboard widget based on user role
   Widget getDashboardForRole(String role) {
     switch (role) {
       case 'admin':
-        return AdminDashboardScreen(database: _database);
+        return AdminDashboardScreen(database: _database, syncManager: _syncManager);
       case 'warehouse':
         return const WarehouseDashboardScreen();
       case 'delivery':

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/database/app_database.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/business/role_based_access.dart';
+import '../../core/sync/sync_manager.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import '../auth/widgets/responsive_auth_screen.dart';
 import '../auth/widgets/auth_card.dart';
@@ -76,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthService.instance,
       RoleBasedAccess(widget.database),
       widget.database,
+      SyncManager.instance,
     );
     final initialRoute = await navigationService.getInitialRoute();
     if (mounted) {
