@@ -14,22 +14,17 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final AuthViewModel _authViewModel = AuthViewModel.instance;
   
-  String _selectedRole = 'customer';
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-
-  final List<String> _roles = ['admin', 'warehouse', 'delivery', 'customer'];
 
   @override
   void dispose() {
     _nameController.dispose();
-    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -102,27 +97,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Username Field
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      hintText: 'Choose a username',
-                      prefixIcon: Icon(Icons.alternate_email),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a username';
-                      }
-                      if (value.length < 3) {
-                        return 'Username must be at least 3 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
                   // Email Field
                   TextFormField(
                     controller: _emailController,
@@ -141,29 +115,6 @@ class _SignupScreenState extends State<SignupScreen> {
                         return 'Please enter a valid email';
                       }
                       return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Role Dropdown
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedRole,
-                    decoration: const InputDecoration(
-                      labelText: 'Role',
-                      hintText: 'Select your role',
-                      prefixIcon: Icon(Icons.work_outline),
-                      border: OutlineInputBorder(),
-                    ),
-                    items: _roles.map((role) {
-                      return DropdownMenuItem(
-                        value: role,
-                        child: Text(role.capitalize()),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedRole = value!;
-                      });
                     },
                   ),
                   const SizedBox(height: 16),
@@ -323,29 +274,22 @@ class _SignupScreenState extends State<SignupScreen> {
       
       final success = await _authViewModel.signUp(
         name: _nameController.text.trim(),
-        username: _usernameController.text.trim(),
+        username: _nameController.text.trim(), // Use name as username for now
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        role: _selectedRole,
+        role: 'pending', // Default to pending
       );
 
       if (success && mounted) {
         // Show success message and navigate to login
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Account created successfully! Please sign in.'),
-            backgroundColor: Colors.green,
+            content: Text('Account created successfully! Please wait for admin approval.'),
+            backgroundColor: AppTheme.warningColor,
           ),
         );
         Navigator.pop(context);
       }
     }
-  }
-}
-
-// Extension to capitalize role names
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }

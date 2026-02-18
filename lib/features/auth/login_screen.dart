@@ -93,8 +93,8 @@ class _LoginScreenState extends State<LoginScreen> {
         logoIcon: '📦',
         title: 'Villahermosa\nSales and Marketing',
         subtitle: 'Inventory Management System',
-        emailLabel: 'Email or Username', // Updated label
-        emailHint: 'Enter your email or username', // Updated hint
+        emailLabel: 'Email', // Updated label
+        emailHint: 'Enter your email', // Updated hint
         passwordLabel: 'Password',
         passwordHint: 'Enter your password',
         primaryButtonText: 'Sign In',

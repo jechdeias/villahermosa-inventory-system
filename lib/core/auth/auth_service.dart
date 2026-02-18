@@ -71,14 +71,13 @@ class AuthService {
     }
   }
 
-  /// Login user with email or username
+  /// Login user with email only
   Future<User?> login(String identifier, String password) async {
     try {
-      // Find user by email or username
+      // Find user by email only
       final result = await _database.customSelect(
-        'SELECT * FROM users WHERE (email = ? OR name = ?) AND is_deleted = 0 AND is_active = 1',
+        'SELECT * FROM users WHERE email = ? AND is_deleted = 0 AND is_active = 1',
         variables: [
-          Variable.withString(identifier),
           Variable.withString(identifier),
         ],
       ).getSingleOrNull();

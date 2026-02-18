@@ -4,6 +4,7 @@ import '../../features/admin/screens/dashboard_screen.dart';
 import '../../features/customer/screens/dashboard_screen.dart';
 import '../../features/delivery/screens/dashboard_screen.dart';
 import '../../features/warehouse/screens/dashboard_screen.dart';
+import '../../features/auth/account_pending_screen.dart';
 import '../auth/auth_service.dart';
 import '../business/role_based_access.dart';
 import '../database/app_database.dart';
@@ -30,6 +31,8 @@ class NavigationService {
         return const DeliveryDashboardScreen();
       case 'customer':
         return const CustomerDashboardScreen();
+      case 'pending':
+        return const AccountPendingScreen();
       default:
         return const CustomerDashboardScreen(); // Default fallback
     }
@@ -88,12 +91,16 @@ class NavigationService {
     try {
       final route = await getInitialRoute();
       
+      if (!context.mounted) return;
+      
       Navigator.of(context).pushNamedAndRemoveUntil(
         route,
         (route) => false,
       );
     } catch (e) {
       // Fallback to customer dashboard
+      if (!context.mounted) return;
+      
       Navigator.of(context).pushNamedAndRemoveUntil(
         '/customer/dashboard',
         (route) => false,
