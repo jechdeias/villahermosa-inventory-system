@@ -85,6 +85,49 @@ class SyncManager {
     }
   }
   
+  /// Pull remote changes to local database
+  Future<Map<String, dynamic>> pull() async {
+    try {
+      print('Starting pull operation...');
+      
+      // Get initial record counts
+      final initialCounts = await _getTotalRecordCounts();
+      
+      // Use existing _pullRemoteChanges method
+      // Note: _syncEngine provides the database connection and sync infrastructure
+      await _pullRemoteChanges();
+      
+      // Get final record counts
+      final finalCounts = await _getTotalRecordCounts();
+      
+      // Calculate records pulled
+      int recordsPulled = 0;
+      finalCounts.forEach((table, count) {
+        recordsPulled += count - (initialCounts[table] ?? 0);
+      });
+      
+      // Log sync engine details for debugging
+      print('Sync engine database: ${_syncEngine.database.runtimeType}');
+      
+      print('Pull completed successfully. Records pulled: $recordsPulled');
+      
+      return {
+        'success': true,
+        'recordsPulled': recordsPulled,
+        'error': null,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    } catch (e) {
+      print('Pull failed: $e');
+      return {
+        'success': false,
+        'recordsPulled': 0,
+        'error': e.toString(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    }
+  }
+  
   /// Get counts of pending records for each table
   Future<Map<String, int>> _getPendingRecordCounts() async {
     final counts = <String, int>{};
@@ -116,6 +159,42 @@ class SyncManager {
       
     } catch (e) {
       print('Error getting pending record counts: $e');
+    }
+    
+    return counts;
+  }
+  
+  /// Get counts of total records for each table (for pull operations)
+  Future<Map<String, int>> _getTotalRecordCounts() async {
+    final counts = <String, int>{};
+    
+    try {
+      // Count total users
+      final usersResult = await _database.customSelect(
+        'SELECT COUNT(*) as count FROM users WHERE is_deleted = 0'
+      ).getSingleOrNull();
+      counts['users'] = usersResult?.data['count'] as int? ?? 0;
+      
+      // Count total products
+      final productsResult = await _database.customSelect(
+        'SELECT COUNT(*) as count FROM products WHERE is_deleted = 0'
+      ).getSingleOrNull();
+      counts['products'] = productsResult?.data['count'] as int? ?? 0;
+      
+      // Count total customers
+      final customersResult = await _database.customSelect(
+        'SELECT COUNT(*) as count FROM customers WHERE is_deleted = 0'
+      ).getSingleOrNull();
+      counts['customers'] = customersResult?.data['count'] as int? ?? 0;
+      
+      // Count total stock movements
+      final stockMovementsResult = await _database.customSelect(
+        'SELECT COUNT(*) as count FROM stock_movements WHERE is_deleted = 0'
+      ).getSingleOrNull();
+      counts['stock_movements'] = stockMovementsResult?.data['count'] as int? ?? 0;
+      
+    } catch (e) {
+      print('Error getting total record counts: $e');
     }
     
     return counts;
