@@ -1,14 +1,18 @@
 import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../database/app_database.dart';
+import 'sync_engine.dart';
 
 /// Core Sync Manager - Thesis-worthy offline-first sync logic
 class SyncManager {
   
-  SyncManager(this._database);
+  SyncManager(this._database, this._syncEngine);
   
-  SyncManager._() : _database = AppDatabase();
+  SyncManager._() : 
+    _database = AppDatabase(),
+    _syncEngine = SyncEngine(AppDatabase());
   final AppDatabase _database;
+  final SyncEngine _syncEngine;
   
   static SyncManager? _instance;
   static SyncManager get instance => _instance ??= SyncManager._();
@@ -36,6 +40,85 @@ class SyncManager {
       print('Sync failed: $e');
       return SyncResult.failure(e.toString());
     }
+  }
+  
+  /// Push pending local changes to remote
+  Future<Map<String, dynamic>> push() async {
+    try {
+      print('Starting push operation...');
+      
+      // Get initial record counts
+      final initialCounts = await _getPendingRecordCounts();
+      
+      // Use existing _pushLocalChanges method
+      // Note: _syncEngine is available for future advanced push operations
+      await _pushLocalChanges();
+      
+      // Get final record counts
+      final finalCounts = await _getPendingRecordCounts();
+      
+      // Calculate records pushed
+      int recordsPushed = 0;
+      initialCounts.forEach((table, count) {
+        recordsPushed += count - (finalCounts[table] ?? 0);
+      });
+      
+      // Log sync engine availability for debugging
+      print('Sync engine available: true');
+      
+      print('Push completed successfully. Records pushed: $recordsPushed');
+      
+      return {
+        'success': true,
+        'recordsPushed': recordsPushed,
+        'error': null,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    } catch (e) {
+      print('Push failed: $e');
+      return {
+        'success': false,
+        'recordsPushed': 0,
+        'error': e.toString(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    }
+  }
+  
+  /// Get counts of pending records for each table
+  Future<Map<String, int>> _getPendingRecordCounts() async {
+    final counts = <String, int>{};
+    
+    try {
+      // Count pending users
+      final usersResult = await _database.customSelect(
+        'SELECT COUNT(*) as count FROM users WHERE sync_status = \'pending\' AND is_deleted = 0'
+      ).getSingleOrNull();
+      counts['users'] = usersResult?.data['count'] as int? ?? 0;
+      
+      // Count pending products
+      final productsResult = await _database.customSelect(
+        'SELECT COUNT(*) as count FROM products WHERE sync_status = \'pending\' AND is_deleted = 0'
+      ).getSingleOrNull();
+      counts['products'] = productsResult?.data['count'] as int? ?? 0;
+      
+      // Count pending customers
+      final customersResult = await _database.customSelect(
+        'SELECT COUNT(*) as count FROM customers WHERE sync_status = \'pending\' AND is_deleted = 0'
+      ).getSingleOrNull();
+      counts['customers'] = customersResult?.data['count'] as int? ?? 0;
+      
+      // Count pending stock movements
+      final stockMovementsResult = await _database.customSelect(
+        'SELECT COUNT(*) as count FROM stock_movements WHERE sync_status = \'pending\' AND is_deleted = 0'
+      ).getSingleOrNull();
+      counts['stock_movements'] = stockMovementsResult?.data['count'] as int? ?? 0;
+      
+    } catch (e) {
+      print('Error getting pending record counts: $e');
+    }
+    
+    return counts;
   }
   
   /// Push pending local records to Supabase
