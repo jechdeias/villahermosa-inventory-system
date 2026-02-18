@@ -153,17 +153,18 @@ class _AuthCardState extends State<AuthCard> {
                         'assets/images/logo/vm_logo.png',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          // Fallback to icon if logo not found
+                          // Fallback to text if logo not found
                           return Container(
                             decoration: BoxDecoration(
                               color: AuthTheme.primaryTextColor,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Center(
+                            child: const Center(
                               child: Text(
-                                widget.logoIcon,
-                                style: const TextStyle(
-                                  fontSize: 32,
+                                'VM',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
