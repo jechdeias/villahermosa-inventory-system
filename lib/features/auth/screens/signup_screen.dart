@@ -121,9 +121,9 @@ class _SignupScreenState extends State<SignupScreen> {
       showBackgroundPattern: true,
       child: SignupCard(
         // Configurable text content
-        logoIcon: '📦',
-        title: 'Create Account',
-        subtitle: 'Join our platform today',
+        logoIcon: 'assets/images/logo/vm_logo.png',
+        title: 'Villahermosa Inventory System',
+        subtitle: 'Professional Inventory Management',
         firstNameLabel: 'First Name',
         firstNameHint: 'Enter your first name',
         lastNameLabel: 'Last Name',
