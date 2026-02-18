@@ -189,7 +189,7 @@ class OrderWorkflowUpdated {
         userName: userName,
         orderId: orderId.toString(),
         orderNumber: orderData['order_number'] as String,
-        returnReason: ReturnReason.cancelled_order,
+        returnReason: ReturnReason.cancelledOrder,
         notes: reason,
         unitCost: itemData['unit_price'] as double?,
         fromLocation: 'Reserved',

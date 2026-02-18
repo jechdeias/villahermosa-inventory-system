@@ -380,6 +380,20 @@ class StockMovementService {
   String _generateUuid() => DateTime.now().millisecondsSinceEpoch.toString();
 }
 
+/// Reasons for stock returns
+enum ReturnReason {
+  cancelledOrder('cancelled_order'),
+  damagedGoods('damaged_goods'),
+  wrongItem('wrong_item'),
+  customerReturn('customer_return'),
+  expired('expired');
+
+  const ReturnReason(this.value);
+  final String value;
+
+  String get name => value;
+}
+
 /// Types of stock adjustments
 enum AdjustmentType {
   damage,
@@ -387,3 +401,4 @@ enum AdjustmentType {
   correction,
   expiration,
   theft,
+}
