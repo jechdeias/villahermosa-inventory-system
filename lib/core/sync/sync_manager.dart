@@ -17,10 +17,17 @@ class SyncManager {
   static SyncManager? _instance;
   static SyncManager get instance => _instance ??= SyncManager._();
   
+  /// Logs sync operations for debugging
+  void debugPrint(String message) {
+    // In production, consider using proper logging framework
+    // For now, using print for development debugging
+    print(message);
+  }
+  
   /// Main sync orchestrator - core thesis logic
   Future<SyncResult> performFullSync() async {
     try {
-      print('Starting full sync process...');
+      debugPrint('Starting full sync process...');
       
       // Step 1: Push pending local records
       await _pushLocalChanges();
@@ -34,10 +41,10 @@ class SyncManager {
       // Step 4: Update sync status
       await _updateSyncStatus();
       
-      print('Full sync completed successfully');
+      debugPrint('Full sync completed successfully');
       return SyncResult.success();
     } catch (e) {
-      print('Sync failed: $e');
+      debugPrint('Sync failed: $e');
       return SyncResult.failure(e.toString());
     }
   }
@@ -45,7 +52,7 @@ class SyncManager {
   /// Push pending local changes to remote
   Future<Map<String, dynamic>> push() async {
     try {
-      print('Starting push operation...');
+      debugPrint('Starting push operation...');
       
       // Get initial record counts
       final initialCounts = await _getPendingRecordCounts();
@@ -64,9 +71,9 @@ class SyncManager {
       });
       
       // Log sync engine availability for debugging
-      print('Sync engine available: true');
+      debugPrint('Sync engine available: true');
       
-      print('Push completed successfully. Records pushed: $recordsPushed');
+      debugPrint('Push completed successfully. Records pushed: $recordsPushed');
       
       return {
         'success': true,
@@ -75,7 +82,7 @@ class SyncManager {
         'timestamp': DateTime.now().toIso8601String(),
       };
     } catch (e) {
-      print('Push failed: $e');
+      debugPrint('Push failed: $e');
       return {
         'success': false,
         'recordsPushed': 0,
@@ -88,7 +95,7 @@ class SyncManager {
   /// Pull remote changes to local database
   Future<Map<String, dynamic>> pull() async {
     try {
-      print('Starting pull operation...');
+      debugPrint('Starting pull operation...');
       
       // Get initial record counts
       final initialCounts = await _getTotalRecordCounts();
@@ -107,9 +114,9 @@ class SyncManager {
       });
       
       // Log sync engine details for debugging
-      print('Sync engine database: ${_syncEngine.database.runtimeType}');
+      debugPrint('Sync engine available: ${_syncEngine.database.runtimeType}');
       
-      print('Pull completed successfully. Records pulled: $recordsPulled');
+      debugPrint('Pull completed successfully. Records pulled: $recordsPulled');
       
       return {
         'success': true,
@@ -118,7 +125,7 @@ class SyncManager {
         'timestamp': DateTime.now().toIso8601String(),
       };
     } catch (e) {
-      print('Pull failed: $e');
+      debugPrint('Pull failed: $e');
       return {
         'success': false,
         'recordsPulled': 0,
@@ -158,7 +165,7 @@ class SyncManager {
       counts['stock_movements'] = stockMovementsResult?.data['count'] as int? ?? 0;
       
     } catch (e) {
-      print('Error getting pending record counts: $e');
+      debugPrint('Error getting pending record counts: $e');
     }
     
     return counts;
@@ -194,7 +201,7 @@ class SyncManager {
       counts['stock_movements'] = stockMovementsResult?.data['count'] as int? ?? 0;
       
     } catch (e) {
-      print('Error getting total record counts: $e');
+      debugPrint('Error getting total record counts: $e');
     }
     
     return counts;
@@ -202,7 +209,7 @@ class SyncManager {
   
   /// Push pending local records to Supabase
   Future<void> _pushLocalChanges() async {
-    print('Pushing local changes to Supabase...');
+    debugPrint('Pushing local changes to Supabase...');
     
     // Sync in priority order
     await _syncUsers();
@@ -210,12 +217,12 @@ class SyncManager {
     await _syncCustomers();
     await _syncStockMovements();
     
-    print('Local changes pushed successfully');
+    debugPrint('Local changes pushed successfully');
   }
   
   /// Pull remote updates from Supabase
   Future<void> _pullRemoteChanges() async {
-    print('Pulling remote changes from Supabase...');
+    debugPrint('Pulling remote changes from Supabase...');
     
     final lastSyncTime = await _getLastSyncTimestamp();
     
@@ -225,12 +232,12 @@ class SyncManager {
     await _pullStockMovements(lastSyncTime);
     
     await _updateLastSyncTimestamp();
-    print('Remote changes pulled successfully');
+    debugPrint('Remote changes pulled successfully');
   }
   
   /// Resolve conflicts based on business rules
   Future<void> _resolveConflicts() async {
-    print('Resolving sync conflicts...');
+    debugPrint('Resolving sync conflicts...');
     
     // Get all conflicted records
     final conflictedUsers = await _database.getPendingSyncUsers();
@@ -255,12 +262,12 @@ class SyncManager {
       await _resolveStockMovementConflict(movement);
     }
     
-    print('Conflicts resolved');
+    debugPrint('Conflicts resolved');
   }
   
   /// Update sync status for all records
   Future<void> _updateSyncStatus() async {
-    print('Updating sync status...');
+    debugPrint('Updating sync status...');
     
     // Mark all pending records as synced
     await _database.customUpdate(
@@ -278,7 +285,7 @@ class SyncManager {
       variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
     
-    print('Sync status updated');
+    debugPrint('Sync status updated');
   }
   
   /// Sync Users table - Admin wins conflict resolution
@@ -339,7 +346,7 @@ class SyncManager {
           );
         }
       } catch (e) {
-        print('Error syncing user ${user.id}: $e');
+        debugPrint('Error syncing user ${user.id}: $e');
         await _database.customUpdate(
           'UPDATE users SET sync_status = ? WHERE id = ?',
           variables: [
@@ -416,7 +423,7 @@ class SyncManager {
           );
         }
       } catch (e) {
-        print('Error syncing product ${product.id}: $e');
+        debugPrint('Error syncing product ${product.id}: $e');
         await _database.customUpdate(
           'UPDATE products SET sync_status = ? WHERE id = ?',
           variables: [
@@ -495,7 +502,7 @@ class SyncManager {
           );
         }
       } catch (e) {
-        print('Error syncing customer ${customer.id}: $e');
+        debugPrint('Error syncing customer ${customer.id}: $e');
         await _database.customUpdate(
           'UPDATE customers SET sync_status = ? WHERE id = ?',
           variables: [

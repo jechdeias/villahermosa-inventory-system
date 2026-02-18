@@ -23,10 +23,17 @@ class SyncEngine {
   /// Protected access to database for implementations
   AppDatabase get database => _database;
   
+  /// Logs sync operations for debugging
+  void debugPrint(String message) {
+    // In production, consider using proper logging framework
+    // For now, using print for development debugging
+    print(message);
+  }
+  
   /// Main sync orchestrator - thesis-worthy core logic
   Future<SyncResult> performFullSync() async {
     try {
-      print('Starting full sync process...');
+      debugPrint('Starting full sync process...');
       
       // Step 1: Push pending local changes
       await _pushLocalChanges();
@@ -40,7 +47,7 @@ class SyncEngine {
       // Step 4: Update sync status
       await _updateSyncStatus();
       
-      print('Full sync completed successfully');
+      debugPrint('Full sync completed successfully');
       return SyncResult.success();
     } catch (e) {
       print('Sync failed: $e');
@@ -50,7 +57,7 @@ class SyncEngine {
   
   /// Push pending local records to Supabase
   Future<void> _pushLocalChanges() async {
-    print('Pushing local changes to Supabase...');
+    debugPrint('Pushing pending local changes to Supabase...');
     
     // Sync in priority order
     await _syncTable('users', _pushUsers, SyncConflictResolution.remoteWins);
@@ -67,7 +74,7 @@ class SyncEngine {
   
   /// Pull remote updates from Supabase
   Future<void> _pullRemoteChanges() async {
-    print('Pulling remote changes from Supabase...');
+    debugPrint('Pulling remote changes from Supabase...');
     
     final lastSyncTime = await _getLastSyncTimestamp();
     
@@ -87,7 +94,7 @@ class SyncEngine {
   
   /// Resolve conflicts based on business rules
   Future<void> _resolveConflicts() async {
-    print('Resolving sync conflicts...');
+    debugPrint('Resolving sync conflicts...');
     
     // Get all conflicted records
     final conflictedUsers = await _database.getPendingSyncUsers();
@@ -112,12 +119,12 @@ class SyncEngine {
       await _resolveStockMovementConflict(movement);
     }
     
-    print('Conflicts resolved');
+    debugPrint('Conflicts resolved');
   }
   
   /// Update sync status for all records
   Future<void> _updateSyncStatus() async {
-    print('Updating sync status...');
+    debugPrint('Updating sync status...');
     
     // Mark all pending records as synced
     await _database.customUpdate(
@@ -135,7 +142,7 @@ class SyncEngine {
       variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
     
-    print('Sync status updated');
+    debugPrint('Sync status updated');
   }
   
   /// Generic table sync method
@@ -145,7 +152,7 @@ class SyncEngine {
     SyncConflictResolution conflictRule,
   ) async {
     try {
-      print('Syncing table: $tableName');
+      debugPrint('Syncing table: $tableName');
       
       final pendingRecords = await pushFunction();
       
@@ -153,9 +160,9 @@ class SyncEngine {
         await _syncRecord(record, conflictRule);
       }
       
-      print('Table $tableName synced successfully');
+      debugPrint('Table $tableName synced successfully');
     } catch (e) {
-      print('Error syncing $tableName: $e');
+      debugPrint('Error syncing $tableName: $e');
       // Continue with other tables
     }
   }
@@ -174,7 +181,7 @@ class SyncEngine {
         await _updateRemoteRecord(record, tableName, remoteId, rule);
       }
     } catch (e) {
-      print('Error syncing record: $e');
+      debugPrint('Error syncing record: $e');
       // Mark as conflicted
       await _markRecordAsConflicted(record);
     }

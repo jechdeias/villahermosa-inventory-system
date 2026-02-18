@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
@@ -128,7 +129,7 @@ class AuthRepository {
       await _database.createUser(adminUser);
     } catch (e) {
       // Log error but don't throw to prevent app startup issues
-      print('Error seeding admin user: $e');
+      debugPrint('Error seeding admin user: $e');
     }
   }
 

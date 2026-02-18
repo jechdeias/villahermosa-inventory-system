@@ -1,10 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:villahermosa_inventory_system/core/database/app_database.dart';
 import 'package:villahermosa_inventory_system/features/auth/data/auth_repository.dart';
-import 'package:villahermosa_inventory_system/core/auth/auth_service.dart';
 
 void main() {
   group('Authentication Tests', () {

@@ -387,15 +387,3 @@ enum AdjustmentType {
   correction,
   expiration,
   theft,
-  transfer,
-}
-
-/// Reasons for stock returns
-enum ReturnReason {
-  cancelled_order,
-  damaged_goods,
-  wrong_item,
-  customer_return,
-  expired,
-  quality_issue,
-}
