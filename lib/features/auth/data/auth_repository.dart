@@ -97,19 +97,24 @@ class AuthRepository {
   /// 
   /// This ensures the system has at least one administrator account
   /// for initial setup and access.
-  /// 
+  ///
   /// Admin credentials for testing:
   /// Email: admin@villahermosa.com
   /// Password: admin123
   Future<void> seedAdminUserIfEmpty() async {
     try {
+      debugPrint('🌱 Checking if admin user seeding is needed...');
+      
       // Check if any users exist
       final existingUsers = await _database.getAllUsers();
       
       if (existingUsers.isNotEmpty) {
+        debugPrint('✅ Users already exist, skipping admin seeding');
         // Users already exist, no need to seed
         return;
       }
+      
+      debugPrint('📝 Creating default admin user...');
       
       // Create default admin user
       final adminUser = UsersCompanion.insert(
@@ -127,9 +132,10 @@ class AuthRepository {
       );
       
       await _database.createUser(adminUser);
+      debugPrint('✅ Admin user created successfully: admin@villahermosa.com');
     } catch (e) {
       // Log error but don't throw to prevent app startup issues
-      debugPrint('Error seeding admin user: $e');
+      debugPrint('💥 Error seeding admin user: $e');
     }
   }
 

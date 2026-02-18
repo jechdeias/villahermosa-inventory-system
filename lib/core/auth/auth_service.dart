@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
 
 /// Authentication Service
@@ -81,6 +82,8 @@ class AuthService {
   /// Login user with email only
   Future<User?> login(String identifier, String password) async {
     try {
+      debugPrint('🔐 Attempting login for: $identifier');
+      
       // Find user by email only
       final result = await _database.customSelect(
         'SELECT * FROM users WHERE email = ? AND is_deleted = 0 AND is_active = 1',
@@ -90,27 +93,38 @@ class AuthService {
       ).getSingleOrNull();
 
       if (result == null) {
+        debugPrint('❌ User not found: $identifier');
         return null; // User not found
       }
 
       final userData = result.data;
       final storedHash = userData['password_hash'] as String;
       final inputHash = _hashPassword(password);
+      
+      debugPrint('🔑 Stored hash: $storedHash');
+      debugPrint('🔑 Input hash: $inputHash');
 
       if (storedHash != inputHash) {
+        debugPrint('❌ Password mismatch for: $identifier');
         return null; // Password mismatch
       }
 
       // Get full user object
       final user = await _database.getUserByEmail(identifier);
-      if (user == null) return null;
+      if (user == null) {
+        debugPrint('❌ Could not retrieve user object for: $identifier');
+        return null;
+      }
 
+      debugPrint('✅ Login successful for: $identifier');
+      
       // Set current user session
       _currentUser = user;
       _isAuthenticated = true;
 
       return user;
     } catch (e) {
+      debugPrint('💥 Login error: $e');
       return null;
     }
   }

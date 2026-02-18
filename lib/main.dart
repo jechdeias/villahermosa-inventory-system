@@ -8,6 +8,7 @@ import 'features/auth/auth_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/signup_screen.dart';
 import 'core/auth/auth_service.dart';
+import 'features/auth/data/auth_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,10 @@ void main() async {
   
   // Initialize AuthService with shared database
   AuthService.initializeWithDatabase(database);
+  
+  // Seed admin user if database is empty
+  final authRepository = AuthRepository(database);
+  await authRepository.seedAdminUserIfEmpty();
   
   runApp(VillahermosaInventoryApp(database: database));
 }
