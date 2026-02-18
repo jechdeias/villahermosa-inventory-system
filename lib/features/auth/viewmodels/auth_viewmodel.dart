@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:drift/drift.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 
@@ -8,8 +9,11 @@ import '../../../core/database/app_database.dart';
 /// while providing reactive state updates to the UI.
 class AuthViewModel extends ChangeNotifier {
 
-  AuthViewModel(this._authService);
   final AuthService _authService;
+  final AppDatabase? _database;
+
+  AuthViewModel(this._authService, [AppDatabase? database]) 
+    : _database = database;
 
   /// Loading state for async operations.
   bool _isLoading = false;
@@ -59,44 +63,47 @@ class AuthViewModel extends ChangeNotifier {
   /// 
   /// Returns true if signup was successful, false otherwise.
   Future<bool> signUp({
-    required String name,
-    required String username,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
-    required String role,
+    String? role, // Optional parameter
   }) async {
     _setLoading(true);
     _clearError();
 
     try {
-      // Basic validation
-      if (name.isEmpty || username.isEmpty || email.isEmpty || password.isEmpty) {
-        _setError('All fields are required');
-        return false;
+      // Check if email or username already exists
+      final existingUser = _database?.customSelect(
+        'SELECT id FROM users WHERE email = ? AND is_deleted = 0',
+        variables: [
+          Variable.withString(email),
+        ],
+      ).getSingleOrNull();
+
+      if (existingUser != null) {
+        return false; // User already exists
       }
 
-      if (password.length < 6) {
-        _setError('Password must be at least 6 characters');
-        return false;
-      }
+      // Hash password (simple hash for now)
+      final hashedPassword = _hashPassword(password);
 
-      if (!email.contains('@')) {
-        _setError('Please enter a valid email');
-        return false;
-      }
-
-      final success = await _authService.signUp(
-        name: name,
-        username: username,
-        email: email,
-        password: password,
-        role: role,
+      // Create new user
+      await _database?.createUser(
+        UsersCompanion.insert(
+          uuid: DateTime.now().millisecondsSinceEpoch.toString(),
+          firstName: firstName, // Use firstName field
+          lastName: lastName, // Use lastName field
+          email: email,
+          passwordHash: hashedPassword,
+          role: role ?? 'pending', // Default to pending
+          isActive: const Value(true),
+          isDeleted: const Value(false),
+          syncStatus: const Value('pending'),
+          createdAt: Value(DateTime.now()),
+          updatedAt: Value(DateTime.now()),
+        ),
       );
-
-      if (!success) {
-        _setError('Email or username already exists');
-        return false;
-      }
 
       return true;
     } catch (e) {
@@ -132,6 +139,12 @@ class AuthViewModel extends ChangeNotifier {
   void _setError(String error) {
     _errorMessage = error;
     notifyListeners();
+  }
+
+  /// Simple password hash (placeholder - replace with proper crypto)
+  String _hashPassword(String password) {
+    // Simple hash for demonstration - replace with proper crypto in production
+    return password.split('').map((char) => char.codeUnitAt(0).toString()).join('');
   }
 
   /// Clears error message and notifies listeners.

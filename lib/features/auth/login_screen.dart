@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _authViewModel = AuthViewModel(AuthService.instance);
+    _authViewModel = AuthViewModel(AuthService.instance, widget.database);
     
     // Check if user is already authenticated
     if (_authViewModel.isAuthenticated) {

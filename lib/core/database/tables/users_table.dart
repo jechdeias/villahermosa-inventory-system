@@ -9,8 +9,11 @@ class Users extends Table {
   /// Auto increment primary key for the user record.
   IntColumn get id => integer().autoIncrement()();
   
-  /// User's name for identification purposes.
-  TextColumn get name => text()();
+  /// User's first name for identification purposes.
+  TextColumn get firstName => text()();
+  
+  /// User's last name for identification purposes.
+  TextColumn get lastName => text()();
   
   /// User's email address for authentication and identification.
   TextColumn get email => text().unique()();

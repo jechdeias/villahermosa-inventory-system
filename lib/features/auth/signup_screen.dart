@@ -13,7 +13,8 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -24,7 +25,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -79,18 +81,36 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Name Field
+                  // First Name Field
                   TextFormField(
-                    controller: _nameController,
+                    controller: _firstNameController,
                     decoration: const InputDecoration(
-                      labelText: 'Full Name',
-                      hintText: 'Enter your full name',
+                      labelText: 'First Name',
+                      hintText: 'Enter your first name',
                       prefixIcon: Icon(Icons.person_outline),
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your full name';
+                        return 'Please enter your first name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Last Name Field
+                  TextFormField(
+                    controller: _lastNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Last Name',
+                      hintText: 'Enter your last name',
+                      prefixIcon: Icon(Icons.person_outline),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your last name';
                       }
                       return null;
                     },
@@ -273,8 +293,8 @@ class _SignupScreenState extends State<SignupScreen> {
       _authViewModel.clearError();
       
       final success = await _authViewModel.signUp(
-        name: _nameController.text.trim(),
-        username: _nameController.text.trim(), // Use name as username for now
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
         role: 'pending', // Default to pending

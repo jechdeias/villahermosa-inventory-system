@@ -24,21 +24,25 @@ class AuthService {
     return _currentUser?.role ?? 'customer';
   }
 
-  /// Sign up new user
+  /// Signs up a new user.
+  /// 
+  /// Returns true if signup was successful, false otherwise.
   Future<bool> signUp({
-    required String name,
-    required String username,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
-    required String role,
+    String? role, // Optional parameter
   }) async {
+    _setLoading(true);
+    _clearError();
+
     try {
-      // Check if email or username already exists
+      // Check if email already exists
       final existingUser = await _database.customSelect(
-        'SELECT id FROM users WHERE (email = ? OR name = ?) AND is_deleted = 0',
+        'SELECT id FROM users WHERE email = ? AND is_deleted = 0',
         variables: [
           Variable.withString(email),
-          Variable.withString(username),
         ],
       ).getSingleOrNull();
 
@@ -53,10 +57,11 @@ class AuthService {
       await _database.createUser(
         UsersCompanion.insert(
           uuid: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: username,
+          firstName: firstName, // Use firstName field
+          lastName: lastName, // Use lastName field
           email: email,
           passwordHash: hashedPassword,
-          role: role,
+          role: role ?? 'pending', // Default to pending
           isActive: const Value(true),
           isDeleted: const Value(false),
           syncStatus: const Value('pending'),
@@ -131,5 +136,17 @@ class AuthService {
   /// Initialize with shared database instance (call from main.dart)
   static void initializeWithDatabase(AppDatabase database) {
     _instance = AuthService(database);
+  }
+
+  /// Sets loading state (for AuthViewModel compatibility)
+  void _setLoading(bool loading) {
+    // This method is for AuthViewModel compatibility
+    // In a real implementation, this would update UI state
+  }
+
+  /// Clears error state (for AuthViewModel compatibility)
+  void _clearError() {
+    // This method is for AuthViewModel compatibility
+    // In a real implementation, this would clear UI error state
   }
 }
