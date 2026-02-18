@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
       showBackgroundPattern: true,
       child: AuthCard(
         // Configurable text content
-        logoIcon: '📦',
+        logoIcon: '📦', // This is fallback if image fails to load
         title: 'Villahermosa\nSales and Marketing',
         subtitle: 'Inventory Management System',
         emailLabel: 'Email', // Updated label

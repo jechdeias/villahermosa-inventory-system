@@ -56,11 +56,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo/Title
-                  Icon(
-                    Icons.person_add_outlined,
-                    size: 80,
-                    color: AppTheme.primaryColor,
+                  // Logo
+                  Image.asset(
+                    'assets/images/logo/vm_logo.png',
+                    height: 80,
+                    width: 80,
                   ),
                   const SizedBox(height: 16),
                   Text(
