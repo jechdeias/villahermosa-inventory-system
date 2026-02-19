@@ -261,6 +261,28 @@ class AppDatabase extends _$AppDatabase {
   Future<List<OrderItem>> getPendingSyncOrderItems() async => (select(orderItems)..where((t) => t.syncStatus.equals('pending'))).get();
 
   Future<List<Delivery>> getPendingSyncDeliveries() async => (select(deliveries)..where((t) => t.syncStatus.equals('pending'))).get();
+
+  Future<void> resetUserPassword(String uuid, String newPasswordHash) async {
+    await (update(users)..where((u) => u.uuid.equals(uuid))).write(
+      UsersCompanion(
+        passwordHash: Value(newPasswordHash),
+        forcePasswordChange: Value(true),
+        syncStatus: Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> updateUserPassword(String uuid, String newPasswordHash) async {
+    await (update(users)..where((u) => u.uuid.equals(uuid))).write(
+      UsersCompanion(
+        passwordHash: Value(newPasswordHash),
+        forcePasswordChange: Value(false),
+        syncStatus: Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
 }
 
 LazyDatabase _openConnection() => LazyDatabase(() async {

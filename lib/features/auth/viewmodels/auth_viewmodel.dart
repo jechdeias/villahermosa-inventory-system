@@ -49,6 +49,13 @@ class AuthViewModel extends ChangeNotifier {
       
       if (user != null) {
         _clearError();
+        
+        // Check if user needs to change password
+        if (user.forcePasswordChange) {
+          // Don't proceed to dashboard, let navigation handle redirect
+          return true;
+        }
+        
         return true;
       } else {
         _setError('Invalid credentials');

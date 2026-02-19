@@ -6,6 +6,7 @@ class AppRoutes {
   static const String signup = '/signup';
   static const String emailVerification = '/email-verification';
   static const String forgotPassword = '/forgot-password';
+  static const String changePassword = '/change-password';
   
   // Dashboard routes
   static const String adminDashboard = '/admin/dashboard';

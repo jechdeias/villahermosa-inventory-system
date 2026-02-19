@@ -180,6 +180,20 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
+  static const VerificationMeta _forcePasswordChangeMeta =
+      const VerificationMeta('forcePasswordChange');
+  @override
+  late final GeneratedColumn<bool> forcePasswordChange = GeneratedColumn<bool>(
+    'force_password_change',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("force_password_change" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -197,6 +211,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     syncStatus,
     remoteId,
     uuid,
+    forcePasswordChange,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -312,6 +327,15 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     } else if (isInserting) {
       context.missing(_uuidMeta);
     }
+    if (data.containsKey('force_password_change')) {
+      context.handle(
+        _forcePasswordChangeMeta,
+        forcePasswordChange.isAcceptableOrUnknown(
+          data['force_password_change']!,
+          _forcePasswordChangeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -381,6 +405,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
       )!,
+      forcePasswordChange: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}force_password_change'],
+      )!,
     );
   }
 
@@ -441,6 +469,10 @@ class User extends DataClass implements Insertable<User> {
 
   /// UUID for cross-system synchronization.
   final String uuid;
+
+  /// Flag to force user to change password on next login.
+  /// Set to true when admin resets user password.
+  final bool forcePasswordChange;
   const User({
     required this.id,
     required this.firstName,
@@ -457,6 +489,7 @@ class User extends DataClass implements Insertable<User> {
     required this.syncStatus,
     this.remoteId,
     required this.uuid,
+    required this.forcePasswordChange,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -482,6 +515,7 @@ class User extends DataClass implements Insertable<User> {
       map['remote_id'] = Variable<String>(remoteId);
     }
     map['uuid'] = Variable<String>(uuid);
+    map['force_password_change'] = Variable<bool>(forcePasswordChange);
     return map;
   }
 
@@ -508,6 +542,7 @@ class User extends DataClass implements Insertable<User> {
           ? const Value.absent()
           : Value(remoteId),
       uuid: Value(uuid),
+      forcePasswordChange: Value(forcePasswordChange),
     );
   }
 
@@ -532,6 +567,9 @@ class User extends DataClass implements Insertable<User> {
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       uuid: serializer.fromJson<String>(json['uuid']),
+      forcePasswordChange: serializer.fromJson<bool>(
+        json['forcePasswordChange'],
+      ),
     );
   }
   @override
@@ -553,6 +591,7 @@ class User extends DataClass implements Insertable<User> {
       'syncStatus': serializer.toJson<String>(syncStatus),
       'remoteId': serializer.toJson<String?>(remoteId),
       'uuid': serializer.toJson<String>(uuid),
+      'forcePasswordChange': serializer.toJson<bool>(forcePasswordChange),
     };
   }
 
@@ -572,6 +611,7 @@ class User extends DataClass implements Insertable<User> {
     String? syncStatus,
     Value<String?> remoteId = const Value.absent(),
     String? uuid,
+    bool? forcePasswordChange,
   }) => User(
     id: id ?? this.id,
     firstName: firstName ?? this.firstName,
@@ -588,6 +628,7 @@ class User extends DataClass implements Insertable<User> {
     syncStatus: syncStatus ?? this.syncStatus,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     uuid: uuid ?? this.uuid,
+    forcePasswordChange: forcePasswordChange ?? this.forcePasswordChange,
   );
   User copyWithCompanion(UsersCompanion data) {
     return User(
@@ -610,6 +651,9 @@ class User extends DataClass implements Insertable<User> {
           : this.syncStatus,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      forcePasswordChange: data.forcePasswordChange.present
+          ? data.forcePasswordChange.value
+          : this.forcePasswordChange,
     );
   }
 
@@ -630,7 +674,8 @@ class User extends DataClass implements Insertable<User> {
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('remoteId: $remoteId, ')
-          ..write('uuid: $uuid')
+          ..write('uuid: $uuid, ')
+          ..write('forcePasswordChange: $forcePasswordChange')
           ..write(')'))
         .toString();
   }
@@ -652,6 +697,7 @@ class User extends DataClass implements Insertable<User> {
     syncStatus,
     remoteId,
     uuid,
+    forcePasswordChange,
   );
   @override
   bool operator ==(Object other) =>
@@ -671,7 +717,8 @@ class User extends DataClass implements Insertable<User> {
           other.isDeleted == this.isDeleted &&
           other.syncStatus == this.syncStatus &&
           other.remoteId == this.remoteId &&
-          other.uuid == this.uuid);
+          other.uuid == this.uuid &&
+          other.forcePasswordChange == this.forcePasswordChange);
 }
 
 class UsersCompanion extends UpdateCompanion<User> {
@@ -690,6 +737,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> syncStatus;
   final Value<String?> remoteId;
   final Value<String> uuid;
+  final Value<bool> forcePasswordChange;
   const UsersCompanion({
     this.id = const Value.absent(),
     this.firstName = const Value.absent(),
@@ -706,6 +754,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.syncStatus = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.uuid = const Value.absent(),
+    this.forcePasswordChange = const Value.absent(),
   });
   UsersCompanion.insert({
     this.id = const Value.absent(),
@@ -723,6 +772,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.syncStatus = const Value.absent(),
     this.remoteId = const Value.absent(),
     required String uuid,
+    this.forcePasswordChange = const Value.absent(),
   }) : firstName = Value(firstName),
        lastName = Value(lastName),
        email = Value(email),
@@ -745,6 +795,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? syncStatus,
     Expression<String>? remoteId,
     Expression<String>? uuid,
+    Expression<bool>? forcePasswordChange,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -762,6 +813,8 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (syncStatus != null) 'sync_status': syncStatus,
       if (remoteId != null) 'remote_id': remoteId,
       if (uuid != null) 'uuid': uuid,
+      if (forcePasswordChange != null)
+        'force_password_change': forcePasswordChange,
     });
   }
 
@@ -781,6 +834,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Value<String>? syncStatus,
     Value<String?>? remoteId,
     Value<String>? uuid,
+    Value<bool>? forcePasswordChange,
   }) {
     return UsersCompanion(
       id: id ?? this.id,
@@ -798,6 +852,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       syncStatus: syncStatus ?? this.syncStatus,
       remoteId: remoteId ?? this.remoteId,
       uuid: uuid ?? this.uuid,
+      forcePasswordChange: forcePasswordChange ?? this.forcePasswordChange,
     );
   }
 
@@ -849,6 +904,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
     }
+    if (forcePasswordChange.present) {
+      map['force_password_change'] = Variable<bool>(forcePasswordChange.value);
+    }
     return map;
   }
 
@@ -869,7 +927,8 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('remoteId: $remoteId, ')
-          ..write('uuid: $uuid')
+          ..write('uuid: $uuid, ')
+          ..write('forcePasswordChange: $forcePasswordChange')
           ..write(')'))
         .toString();
   }
@@ -8556,6 +8615,7 @@ typedef $$UsersTableCreateCompanionBuilder =
       Value<String> syncStatus,
       Value<String?> remoteId,
       required String uuid,
+      Value<bool> forcePasswordChange,
     });
 typedef $$UsersTableUpdateCompanionBuilder =
     UsersCompanion Function({
@@ -8574,6 +8634,7 @@ typedef $$UsersTableUpdateCompanionBuilder =
       Value<String> syncStatus,
       Value<String?> remoteId,
       Value<String> uuid,
+      Value<bool> forcePasswordChange,
     });
 
 class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
@@ -8656,6 +8717,11 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
 
   ColumnFilters<String> get uuid => $composableBuilder(
     column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get forcePasswordChange => $composableBuilder(
+    column: $table.forcePasswordChange,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -8743,6 +8809,11 @@ class $$UsersTableOrderingComposer
     column: $table.uuid,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get forcePasswordChange => $composableBuilder(
+    column: $table.forcePasswordChange,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UsersTableAnnotationComposer
@@ -8802,6 +8873,11 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<bool> get forcePasswordChange => $composableBuilder(
+    column: $table.forcePasswordChange,
+    builder: (column) => column,
+  );
 }
 
 class $$UsersTableTableManager
@@ -8847,6 +8923,7 @@ class $$UsersTableTableManager
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<String> uuid = const Value.absent(),
+                Value<bool> forcePasswordChange = const Value.absent(),
               }) => UsersCompanion(
                 id: id,
                 firstName: firstName,
@@ -8863,6 +8940,7 @@ class $$UsersTableTableManager
                 syncStatus: syncStatus,
                 remoteId: remoteId,
                 uuid: uuid,
+                forcePasswordChange: forcePasswordChange,
               ),
           createCompanionCallback:
               ({
@@ -8881,6 +8959,7 @@ class $$UsersTableTableManager
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 required String uuid,
+                Value<bool> forcePasswordChange = const Value.absent(),
               }) => UsersCompanion.insert(
                 id: id,
                 firstName: firstName,
@@ -8897,6 +8976,7 @@ class $$UsersTableTableManager
                 syncStatus: syncStatus,
                 remoteId: remoteId,
                 uuid: uuid,
+                forcePasswordChange: forcePasswordChange,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

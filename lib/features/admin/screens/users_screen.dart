@@ -5,6 +5,8 @@
 library;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 import '../../../core/database/app_database.dart';
 import '../viewmodels/admin_viewmodel.dart';
 import '../../../shared/theme/app_theme.dart';
@@ -252,6 +254,15 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                               ),
                               child: const Text('Deactivate'),
                             ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () => _showResetPasswordDialog(user),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Reset Password'),
+                            ),
                           ],
                         ],
                       ),
@@ -376,8 +387,64 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 }
 
-/// Dialog for creating new staff accounts
-class CreateStaffDialog extends StatefulWidget {
+void _showResetPasswordDialog(User user) {
+    final _tempPasswordController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: Text('Reset Password for ${user.firstName}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _tempPasswordController,
+              decoration: const InputDecoration(
+                labelText: 'Temporary Password',
+                hintText: 'Minimum 8 characters',
+              ),
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (_tempPasswordController.text.length < 8) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(
+                    content: Text('Password must be at least 8 characters'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
+              final hash = sha256.convert(
+                utf8.encode(_tempPasswordController.text)
+              ).toString();
+              await widget.database.resetUserPassword(user.uuid, hash);
+              Navigator.pop(dialogContext);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Password reset. User must change on next login.'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Dialog for creating new staff accounts
+  class CreateStaffDialog extends StatefulWidget {
   final AppDatabase database;
 
   const CreateStaffDialog({super.key, required this.database});

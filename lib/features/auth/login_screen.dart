@@ -65,6 +65,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (success && mounted) {
         debugPrint('LOGIN SUCCESS');
+        
+        // Check if user needs to change password
+        final currentUser = _authViewModel.currentUser;
+        if (currentUser?.forcePasswordChange == true) {
+          Navigator.of(context).pushReplacementNamed('/change-password');
+          return;
+        }
+        
         _navigateToDashboard();
       }
     } catch (e) {

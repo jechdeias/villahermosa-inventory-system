@@ -56,4 +56,8 @@ class Users extends Table {
   
   /// UUID for cross-system synchronization.
   TextColumn get uuid => text().unique()();
+  
+  /// Flag to force user to change password on next login.
+  /// Set to true when admin resets user password.
+  BoolColumn get forcePasswordChange => boolean().withDefault(const Constant(false))();
 }
