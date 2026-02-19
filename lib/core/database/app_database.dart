@@ -28,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(DatabaseConnection super.connection);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -36,8 +36,8 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (m, from, to) async {
-      if (from < 2) {
-        // Recreate all tables for schema version 2
+      if (from < 3) {
+        // Recreate all tables for schema version 3
         for (final table in allTables) {
           await m.deleteTable(table.actualTableName);
         }

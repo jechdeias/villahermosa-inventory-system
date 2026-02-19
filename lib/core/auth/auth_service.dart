@@ -85,30 +85,14 @@ class AuthService {
       debugPrint('🔐 Attempting login for: $identifier');
       
       // Find user by email only
-      final result = await _database.customSelect(
-        'SELECT * FROM users WHERE email = ? AND is_deleted = 0 AND is_active = 1',
-        variables: [
-          Variable.withString(identifier),
-        ],
-      ).getSingleOrNull();
-
-      if (result == null) {
+      final user = await _database.getUserByEmail(identifier);
+      
+      if (user == null) {
         debugPrint('❌ User not found: $identifier');
-        return null; // User not found
-      }
-
-      final userData = result.data;
-      if (userData == null) {
-        debugPrint('❌ User data is null for: $identifier');
         return null;
       }
       
-      final storedHash = userData['password_hash'] as String?;
-      if (storedHash == null) {
-        debugPrint('❌ Password hash is null for: $identifier');
-        return null;
-      }
-      
+      final storedHash = user.passwordHash;
       final inputHash = _hashPassword(password);
       
       debugPrint('🔑 Stored hash: $storedHash');
@@ -117,13 +101,6 @@ class AuthService {
       if (storedHash != inputHash) {
         debugPrint('❌ Password mismatch for: $identifier');
         return null; // Password mismatch
-      }
-
-      // Get full user object
-      final user = await _database.getUserByEmail(identifier);
-      if (user == null) {
-        debugPrint('❌ Could not retrieve user object for: $identifier');
-        return null;
       }
       
       debugPrint('✅ Login successful for: $identifier');
