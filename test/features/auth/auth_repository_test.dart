@@ -29,10 +29,9 @@ void main() {
       const password = 'testpassword123';
       const firstName = 'Test';
       const lastName = 'User';
-      const role = 'admin';
 
       // Act
-      final result = await authRepository.signup(firstName, lastName, email, password, role);
+      final result = await authRepository.signup(firstName, lastName, email, password);
 
       // Assert
       expect(result, isTrue);
@@ -43,7 +42,7 @@ void main() {
       expect(user?.email, equals(email));
       expect(user?.firstName, equals(firstName));
       expect(user?.lastName, equals(lastName));
-      expect(user?.role, equals(role));
+      expect(user?.role, equals('customer'));
       expect(user?.passwordHash, isNotNull);
       expect(user?.passwordHash, isNot(equals(password))); // Should be hashed
       expect(user?.passwordHash.length, equals(64)); // SHA256 hex length
@@ -55,9 +54,8 @@ void main() {
       const password = 'testpassword123';
       const firstName = 'Test';
       const lastName = 'User';
-      const role = 'admin';
 
-      await authRepository.signup(firstName, lastName, email, password, role);
+      await authRepository.signup(firstName, lastName, email, password);
 
       // Act & Assert - Correct password
       final user = await authRepository.login(email, password);
@@ -77,9 +75,8 @@ void main() {
       const password = 'testpassword123';
       const firstName = 'Test';
       const lastName = 'User';
-      const role = 'admin';
 
-      await authRepository.signup(firstName, lastName, email, password, role);
+      await authRepository.signup(firstName, lastName, email, password);
 
       // Act & Assert
       expect(

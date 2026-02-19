@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
+import '../data/auth_repository.dart';
 
 /// ViewModel managing authentication state and operations.
 /// 
@@ -12,10 +13,10 @@ import '../../../core/database/app_database.dart';
 class AuthViewModel extends ChangeNotifier {
 
   final AuthService _authService;
-  final AppDatabase? _database;
+  final AuthRepository _authRepository;
 
   AuthViewModel(this._authService, [AppDatabase? database]) 
-    : _database = database;
+    : _authRepository = AuthRepository(database ?? AppDatabase());
 
   /// Loading state for async operations.
   bool _isLoading = false;
@@ -61,7 +62,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  /// Signs up a new user.
+  /// Signs up a new customer account.
   /// 
   /// Returns true if signup was successful, false otherwise.
   Future<bool> signUp({
@@ -69,45 +70,12 @@ class AuthViewModel extends ChangeNotifier {
     required String lastName,
     required String email,
     required String password,
-    String? role, // Optional parameter
   }) async {
     _setLoading(true);
     _clearError();
 
     try {
-      // Check if email or username already exists
-      final existingUser = _database?.customSelect(
-        'SELECT id FROM users WHERE email = ? AND is_deleted = 0',
-        variables: [
-          Variable.withString(email),
-        ],
-      ).getSingleOrNull();
-
-      if (existingUser != null) {
-        return false; // User already exists
-      }
-
-      // Hash password (simple hash for now)
-      final hashedPassword = _hashPassword(password);
-
-      // Create new user
-      await _database?.createUser(
-        UsersCompanion.insert(
-          uuid: DateTime.now().millisecondsSinceEpoch.toString(),
-          firstName: firstName, // Use firstName field
-          lastName: lastName, // Use lastName field
-          email: email,
-          passwordHash: hashedPassword,
-          role: role ?? 'pending', // Default to pending
-          isActive: const Value(true),
-          isDeleted: const Value(false),
-          syncStatus: const Value('pending'),
-          createdAt: Value(DateTime.now()),
-          updatedAt: Value(DateTime.now()),
-        ),
-      );
-
-      return true;
+      return await _authRepository.signup(firstName, lastName, email, password);
     } catch (e) {
       _setError('Signup failed: ${e.toString()}');
       return false;
@@ -158,5 +126,5 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Create singleton instance
   static AuthViewModel? _instance;
-  static AuthViewModel get instance => _instance ??= AuthViewModel(AuthService.instance);
+  static AuthViewModel get instance => _instance ??= AuthViewModel(AuthService.instance, null);
 }

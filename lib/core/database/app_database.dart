@@ -51,7 +51,18 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<List<User>> getAllUsers() async {
-    return (select(users)..orderBy([(t) => OrderingTerm(expression: t.firstName)])).get();
+    final allUsers = await (select(users)..orderBy([(t) => OrderingTerm(expression: t.firstName)])).get();
+    
+    // Debug: Print all users and their roles
+    print('=== DEBUG: All Users in Database ===');
+    for (final user in allUsers) {
+      print('User: ${user.firstName} ${user.lastName}, Role: ${user.role}, Active: ${user.isActive}, Deleted: ${user.isDeleted}');
+    }
+    print('Total users found: ${allUsers.length}');
+    print('====================================');
+    
+    // Filter out deleted users
+    return allUsers.where((user) => !user.isDeleted).toList();
   }
 
   Future<User?> getUserById(int id) async => (select(users)..where((t) => t.id.equals(id))).getSingleOrNull();
@@ -91,6 +102,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deactivateUser(String userId) async {
     await (update(users)..where((u) => u.uuid.equals(userId))).write(
       UsersCompanion(
+        isActive: const Value(false),
+        syncStatus: const Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Rejects a user account
+  Future<void> rejectUser(String userId) async {
+    await (update(users)..where((u) => u.uuid.equals(userId))).write(
+      UsersCompanion(
+        role: const Value('rejected'),
         isActive: const Value(false),
         syncStatus: const Value('pending'),
         updatedAt: Value(DateTime.now()),

@@ -297,15 +297,14 @@ class _SignupScreenState extends State<SignupScreen> {
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        role: 'pending', // Default to pending
       );
 
       if (success && mounted) {
         // Show success message and navigate to login
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Account created successfully! Please wait for admin approval.'),
-            backgroundColor: AppTheme.warningColor,
+            content: Text('Account created successfully! You can now log in.'),
+            backgroundColor: AppTheme.primaryColor,
           ),
         );
         Navigator.pop(context);

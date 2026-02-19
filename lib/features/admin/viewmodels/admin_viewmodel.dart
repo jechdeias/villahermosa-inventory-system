@@ -33,6 +33,19 @@ class AdminViewModel extends ChangeNotifier {
       _allUsers = users;
       _pendingUsers = users.where((user) => user.role == 'pending').toList();
       _activeUsers = users.where((user) => user.role != 'pending').toList();
+      
+      // Debug: Print categorization
+      print('=== DEBUG: User Categorization ===');
+      print('Total users: ${users.length}');
+      print('Pending users: ${_pendingUsers.length}');
+      print('Active users: ${_activeUsers.length}');
+      for (final user in _pendingUsers) {
+        print('PENDING: ${user.firstName} ${user.lastName} (${user.role})');
+      }
+      for (final user in _activeUsers) {
+        print('ACTIVE: ${user.firstName} ${user.lastName} (${user.role})');
+      }
+      print('================================');
     } catch (e) {
       _setError('Failed to load users: $e');
     } finally {
@@ -40,14 +53,25 @@ class AdminViewModel extends ChangeNotifier {
     }
   }
 
-  /// Approve a pending user with assigned role
-  Future<void> approveUser(String userId, String assignedRole) async {
+  /// Approves a pending user with assigned role
+  Future<void> approveUser(String userUuid, String role) async {
     try {
-      await _database.approveUser(userId, assignedRole);
-      await loadAllUsers(); // Refresh the list
+      await _database.approveUser(userUuid, role);
       _clearError();
+      await loadAllUsers();
     } catch (e) {
       _setError('Failed to approve user: $e');
+    }
+  }
+
+  /// Rejects a user account
+  Future<void> rejectUser(String userUuid) async {
+    try {
+      await _database.rejectUser(userUuid);
+      _clearError();
+      await loadAllUsers();
+    } catch (e) {
+      _setError('Failed to reject user: $e');
     }
   }
 
@@ -94,5 +118,10 @@ class AdminViewModel extends ChangeNotifier {
   void _clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Public method to clear error message
+  void clearError() {
+    _clearError();
   }
 }

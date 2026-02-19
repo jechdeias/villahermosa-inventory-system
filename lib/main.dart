@@ -9,6 +9,7 @@ import 'features/auth/auth_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/signup_screen.dart';
 import 'features/admin/screens/dashboard_screen.dart';
+import 'features/admin/screens/users_screen.dart';
 import 'features/warehouse/screens/dashboard_screen.dart';
 import 'features/customer/screens/dashboard_screen.dart';
 import 'features/delivery/screens/dashboard_screen.dart';
@@ -25,6 +26,9 @@ void main() async {
   );
   
   final database = AppDatabase();
+  
+  // Initialize SyncManager with shared database
+  SyncManager.initialize(database);
   
   // Initialize AuthService with shared database
   AuthService.initializeWithDatabase(database);
@@ -62,6 +66,7 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/login': (context) => LoginScreen(database: database),
       '/signup': (context) => const SignupScreen(),
       '/admin/dashboard': (context) => AdminDashboardScreen(database: database, syncManager: SyncManager.instance),
+      '/admin/users': (context) => AdminUsersScreen(database: database),
       '/warehouse/dashboard': (context) => const WarehouseDashboardScreen(),
       '/customer/dashboard': (context) => const CustomerDashboardScreen(),
       '/delivery/dashboard': (context) => const DeliveryDashboardScreen(),

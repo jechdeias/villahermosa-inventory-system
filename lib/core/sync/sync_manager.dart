@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../database/app_database.dart';
 import 'sync_engine.dart';
 
@@ -8,20 +9,39 @@ class SyncManager {
   
   SyncManager(this._database, this._syncEngine);
   
-  SyncManager._() : 
-    _database = AppDatabase(),
-    _syncEngine = SyncEngine(AppDatabase());
   final AppDatabase _database;
   final SyncEngine _syncEngine;
   
   static SyncManager? _instance;
-  static SyncManager get instance => _instance ??= SyncManager._();
+  static SyncManager get instance {
+    if (_instance == null) {
+      throw Exception('SyncManager not initialized. Call initialize() first.');
+    }
+    return _instance!;
+  }
+  
+  static void initialize(AppDatabase database) {
+    _instance ??= SyncManager(database, SyncEngine(database));
+    // Initialize connectivity listener for automatic sync on reconnection
+    _instance!._initConnectivityListener();
+  }
   
   /// Logs sync operations for debugging
   void debugPrint(String message) {
     // In production, consider using proper logging framework
     // For now, using print for development debugging
     print(message);
+  }
+
+  /// Initialize connectivity listener for automatic sync on reconnection
+  void _initConnectivityListener() {
+    Connectivity().onConnectivityChanged.listen((results) {
+      final isOnline = !results.contains(ConnectivityResult.none);
+      if (isOnline) {
+        debugPrint('🌐 Connection restored - triggering sync...');
+        syncPendingData(); // sync all pending records
+      }
+    });
   }
   
   /// Main sync orchestrator - core thesis logic
@@ -835,6 +855,20 @@ class SyncManager {
     }
   }
   
+  /// Sync all pending records when connection is restored
+  Future<void> syncPendingData() async {
+    try {
+      debugPrint('🔄 Syncing all pending records...');
+      
+      // Use existing push method to sync all pending records
+      await _pushLocalChanges();
+      
+      debugPrint('✅ Pending records sync completed');
+    } catch (e) {
+      debugPrint('❌ Pending records sync failed: $e');
+    }
+  }
+
   /// Conflict resolution methods
   Future<void> _resolveUserConflict(User user) async {
     // Admin wins for user conflicts

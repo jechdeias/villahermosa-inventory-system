@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/database/app_database.dart';
 import '../viewmodels/admin_viewmodel.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../../../features/auth/data/auth_repository.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   
@@ -97,17 +98,17 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             final activeUsers = _adminViewModel.activeUsers;
 
             if (pendingUsers.isEmpty && activeUsers.isEmpty) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.people_outline, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
                       'No users found',
                       style: TextStyle(fontSize: 20, color: Colors.grey[600]),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       'Users will appear here once they register',
                       style: TextStyle(fontSize: 14, color: Colors.grey[500]),
@@ -117,175 +118,56 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               );
             }
 
-            return SingleChildScrollView(
+            return ListView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Pending Users Section
-                  if (pendingUsers.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        Icon(Icons.pending_actions, color: AppTheme.warningColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Pending Approvals (${pendingUsers.length})',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.warningColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ...pendingUsers.map((user) => _buildPendingUserCard(user)).toList(),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // No Pending Users Message
-                  if (pendingUsers.isEmpty && activeUsers.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.green[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green[200]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.green[600]),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'No pending approvals',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Active Users Section
-                  if (activeUsers.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        Icon(Icons.people, color: AppTheme.primaryColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Active Users (${activeUsers.length})',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ...activeUsers.map((user) => _buildActiveUserCard(user)).toList(),
-                  ],
+              children: [
+                if (pendingUsers.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _buildSectionHeader('Pending Approval', AppTheme.warningColor, Icons.pending),
+                  const SizedBox(height: 12),
+                  ...pendingUsers.map((user) => _buildUserCard(user, true)).toList(),
                 ],
-              ),
+                if (activeUsers.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Active Users', AppTheme.primaryColor, Icons.check_circle),
+                  const SizedBox(height: 12),
+                  ...activeUsers.map((user) => _buildUserCard(user, false)).toList(),
+                ],
+              ],
             );
           },
         ),
       ),
-    );
-  }
-
-  Widget _buildPendingUserCard(User user) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppTheme.warningColor.withOpacity(0.3)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppTheme.warningColor.withOpacity(0.2),
-                    child: Icon(Icons.person, color: AppTheme.warningColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${user.firstName} ${user.lastName}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          user.email,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        Text(
-                          'Registered: ${user.createdAt.toString().split('.')[0]}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _showRejectConfirmation(user),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.red),
-                        foregroundColor: Colors.red,
-                      ),
-                      child: const Text('Reject'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _showRoleAssignmentDialog(user),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Approve'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showCreateStaffDialog,
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.person_add),
+        label: const Text('Create Staff Account'),
       ),
     );
   }
 
-  Widget _buildActiveUserCard(User user) {
+  Widget _buildSectionHeader(String title, Color color, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: color),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserCard(User user, bool isPending) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -294,8 +176,15 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: _adminViewModel.getRoleColor(user.role).withOpacity(0.2),
-                  child: Icon(Icons.person, color: _adminViewModel.getRoleColor(user.role)),
+                  backgroundColor: isPending ? AppTheme.warningColor : AppTheme.primaryColor,
+                  child: Text(
+                    user.firstName[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -309,6 +198,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 4),
                       Text(
                         user.email,
                         style: TextStyle(
@@ -316,68 +206,58 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           color: Colors.grey[600],
                         ),
                       ),
-                      Text(
-                        'Created: ${user.createdAt.toString().split('.')[0]}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getRoleColor(user.role),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              user.role.toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          if (isPending) ...[
+                            ElevatedButton(
+                              onPressed: () => _showApprovalDialog(user),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Approve'),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () => _showRejectionDialog(user),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Reject'),
+                            ),
+                          ] else ...[
+                            ElevatedButton(
+                              onPressed: () => _showDeactivationDialog(user),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Deactivate'),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _adminViewModel.getRoleColor(user.role),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    user.role.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  user.isActive ? Icons.check_circle : Icons.cancel,
-                  color: user.isActive ? Colors.green : Colors.red,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  user.isActive ? 'Active' : 'Inactive',
-                  style: TextStyle(
-                    color: user.isActive ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                if (user.isActive)
-                  OutlinedButton(
-                    onPressed: () => _showDeactivateConfirmation(user),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.orange),
-                      foregroundColor: Colors.orange,
-                    ),
-                    child: const Text('Deactivate'),
-                  ),
-                if (!user.isActive)
-                  OutlinedButton(
-                    onPressed: () => _reactivateUser(user),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.green),
-                      foregroundColor: Colors.green,
-                    ),
-                    child: const Text('Reactivate'),
-                  ),
               ],
             ),
           ],
@@ -386,40 +266,35 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     );
   }
 
-  void _showRoleAssignmentDialog(User user) {
-    String selectedRole = 'customer';
+  Color _getRoleColor(String role) {
+    switch (role.toLowerCase()) {
+      case 'admin':
+        return Colors.purple;
+      case 'warehouse':
+        return Colors.blue;
+      case 'delivery':
+        return Colors.green;
+      case 'customer':
+        return AppTheme.primaryColor;
+      default:
+        return Colors.grey;
+    }
+  }
 
+  void _showCreateStaffDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => CreateStaffDialog(database: widget.database),
+    );
+  }
+
+  void _showApprovalDialog(User user) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Approve ${user.firstName} ${user.lastName}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Select role:'),
-            const SizedBox(height: 12),
-            RadioGroup<String>(
-              value: selectedRole,
-              onChanged: (value) { if (value != null) selectedRole = value; },
-              children: [
-                const Radio<String>(
-                    value: 'warehouse',
-                  ),
-                  const Text('Warehouse Staff'),
-                const SizedBox(width: 8),
-                const Radio<String>(
-                    value: 'customer',
-                  ),
-                  const Text('Customer'),
-                const SizedBox(width: 8),
-                const Radio<String>(
-                    value: 'delivery',
-                  ),
-                  const Text('Delivery Driver'),
-              ],
-            ),
-          ],
+        title: const Text('Approve User'),
+        content: Text(
+          'Are you sure you want to approve ${user.firstName} ${user.lastName}?',
         ),
         actions: [
           TextButton(
@@ -429,7 +304,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _adminViewModel.approveUser(user.uuid, selectedRole);
+              _adminViewModel.approveUser(user.uuid, user.role);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
@@ -442,7 +317,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     );
   }
 
-  void _showRejectConfirmation(User user) {
+  void _showRejectionDialog(User user) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -458,9 +333,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // Soft delete the user
-              widget.database.softDeleteUser(user.uuid);
-              _adminViewModel.loadAllUsers();
+              _adminViewModel.rejectUser(user.uuid);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -473,7 +346,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     );
   }
 
-  void _showDeactivateConfirmation(User user) {
+  void _showDeactivationDialog(User user) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -501,8 +374,191 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       ),
     );
   }
+}
 
-  void _reactivateUser(User user) {
-    _adminViewModel.approveUser(user.uuid, user.role);
+/// Dialog for creating new staff accounts
+class CreateStaffDialog extends StatefulWidget {
+  final AppDatabase database;
+
+  const CreateStaffDialog({super.key, required this.database});
+
+  @override
+  State<CreateStaffDialog> createState() => _CreateStaffDialogState();
+}
+
+class _CreateStaffDialogState extends State<CreateStaffDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  String _selectedRole = 'warehouse';
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Create Staff Account'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _firstNameController,
+                decoration: const InputDecoration(
+                  labelText: 'First Name',
+                  prefixIcon: Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter first name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Last Name',
+                  prefixIcon: Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter last name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Please enter valid email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Temporary Password',
+                  prefixIcon: Icon(Icons.lock),
+                ),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedRole,
+                decoration: const InputDecoration(
+                  labelText: 'Staff Role',
+                  prefixIcon: Icon(Icons.work),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'warehouse',
+                    child: Text('Warehouse Staff'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'delivery',
+                    child: Text('Delivery Driver'),
+                  ),
+                ],
+                onChanged: (String? value) {
+                  setState(() {
+                    _selectedRole = value ?? 'warehouse';
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _createStaffAccount,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Create Account'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _createStaffAccount() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      final authRepository = AuthRepository(widget.database);
+      final success = await authRepository.createStaffAccount(
+        _firstNameController.text.trim(),
+        _lastNameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+        _selectedRole,
+      );
+
+      if (success && mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Staff account created successfully! Awaiting approval.'),
+            backgroundColor: AppTheme.warningColor,
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to create staff account'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

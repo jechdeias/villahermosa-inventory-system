@@ -10,6 +10,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../viewmodels/admin_viewmodel.dart';
+import '../../../features/auth/data/auth_repository.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   
@@ -155,7 +156,7 @@ class AdminDashboardView extends StatelessWidget {
                                         'Manage Users',
                                         Icons.people_outline,
                                         AppTheme.primaryGradientStart,
-                                        () => _showComingSoon(context, 'Manage Users'),
+                                        () => Navigator.pushNamed(context, '/admin/users'),
                                       ),
                                       _buildActionButton(
                                         'View Inventory',
@@ -175,6 +176,16 @@ class AdminDashboardView extends StatelessWidget {
                                         AppTheme.statCardGreen,
                                         () => _performSync(context),
                                       ),
+                                      
+                                      // Debug-only test user creation
+                                      if (kDebugMode) ...[
+                                        _buildActionButton(
+                                          'Create Test Users (Debug)',
+                                          Icons.bug_report_outlined,
+                                          AppTheme.statCardPurple,
+                                          () => _createTestUsers(context),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
@@ -209,7 +220,7 @@ class AdminDashboardView extends StatelessWidget {
               ),
               
               // Error display
-              if (adminViewModel.error != null) ...[
+              if (adminViewModel.errorMessage != null) ...[
                 const SizedBox(height: 20),
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -224,7 +235,7 @@ class AdminDashboardView extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Error: ${adminViewModel.error}',
+                          'Error: ${adminViewModel.errorMessage}',
                           style: const TextStyle(color: AppTheme.errorColor),
                         ),
                       ),
@@ -476,6 +487,27 @@ class AdminDashboardView extends StatelessWidget {
   Future<int> _getTotalUsers() async {
     final result = await database.customSelect('SELECT COUNT(*) as count FROM users WHERE is_deleted = 0').getSingle();
     return result.read<int>('count');
+  }
+
+  void _createTestUsers(BuildContext context) async {
+    try {
+      final authRepository = AuthRepository(database);
+      await authRepository.createTestUsers();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Test users created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating test users: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<List<StockMovement>> _getRecentStockMovements() async {

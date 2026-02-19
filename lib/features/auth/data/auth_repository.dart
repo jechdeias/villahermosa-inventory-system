@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase/supabase.dart' hide User;
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/config/supabase_config.dart';
 
 class AuthException implements Exception {
   final String message;
@@ -23,17 +25,28 @@ class AuthRepository {
   AuthRepository(this._database);
   final AppDatabase _database;
 
-  /// Creates a new user account.
+  /// Creates a new customer account.
   /// 
   /// Returns true if signup succeeds, false if user already exists or error occurs.
   /// Uses SHA256 hashing for secure password storage.
-  Future<bool> signup(String firstName, String lastName, String email, String password, String role) async {
+  /// 
+  /// All public signups create customer accounts with auto-approval.
+  Future<bool> signup(String firstName, String lastName, String email, String password) async {
     try {
+      debugPrint('📝 Customer signup attempt: $firstName $lastName, $email');
+      
       // Check if user already exists
       final existingUser = await _database.getUserByEmail(email);
       if (existingUser != null) {
+        debugPrint('❌ Signup failed: User already exists - $email');
         return false; // User already exists
       }
+
+      // All public signups are customers with auto-approval
+      const String finalRole = 'customer';
+      const bool isActive = true;
+      
+      debugPrint('👤 Creating customer account with auto-approval: $email');
 
       // Create new user
       final newUser = UsersCompanion.insert(
@@ -42,8 +55,8 @@ class AuthRepository {
         firstName: firstName,
         lastName: lastName,
         email: email,
-        role: role,
-        isActive: const Value(true),
+        role: finalRole,
+        isActive: Value(isActive),
         isDeleted: const Value(false),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
@@ -51,8 +64,136 @@ class AuthRepository {
       );
 
       await _database.createUser(newUser);
+      debugPrint('✅ Local SQLite save successful: role=$finalRole, active=$isActive');
+      
+      // Verify local save immediately
+      final savedUser = await _database.getUserByEmail(email);
+      if (savedUser != null) {
+        debugPrint('🔍 Verification - Local user found: ${savedUser.email}');
+        debugPrint('🔍 Verification - Role stored: ${savedUser.role}');
+        debugPrint('🔍 Verification - isActive: ${savedUser.isActive}');
+        debugPrint('🔍 Verification - syncStatus: ${savedUser.syncStatus}');
+        debugPrint('🔍 Verification - UUID: ${savedUser.uuid}');
+      } else {
+        debugPrint('❌ Verification failed: User not found in local DB after save');
+      }
+      
+      // Trigger sync to Supabase
+      debugPrint('☁️ Triggering Supabase sync for new customer...');
+      final syncResult = await _syncUserToSupabase(savedUser!);
+      debugPrint('☁️ Supabase sync result: $syncResult');
+      
       return true;
     } catch (e) {
+      debugPrint('❌ Error creating customer: $e');
+      return false;
+    }
+  }
+
+  /// Creates a new staff account (admin only).
+  /// 
+  /// Returns true if staff account was created successfully, false otherwise.
+  /// Staff accounts require admin approval (isActive=false).
+  Future<bool> createStaffAccount(String firstName, String lastName, String email, String password, String role) async {
+    try {
+      debugPrint('👷 Staff account creation: $firstName $lastName, $email, role: $role');
+      
+      // Validate role is staff-only
+      if (!['warehouse', 'delivery'].contains(role)) {
+        debugPrint('❌ Invalid staff role: $role. Only warehouse and delivery allowed.');
+        return false;
+      }
+      
+      // Check if user already exists
+      final existingUser = await _database.getUserByEmail(email);
+      if (existingUser != null) {
+        debugPrint('❌ Staff creation failed: User already exists - $email');
+        return false;
+      }
+
+      // Staff accounts require admin approval
+      const bool isActive = false;
+      
+      debugPrint('👷 Creating staff account with pending approval: $email ($role)');
+
+      // Create new staff user
+      final newStaffUser = UsersCompanion.insert(
+        uuid: const Uuid().v4(),
+        passwordHash: _hashPassword(password),
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        role: role,
+        isActive: Value(isActive),
+        isDeleted: const Value(false),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value('pending'),
+      );
+
+      await _database.createUser(newStaffUser);
+      debugPrint('✅ Local SQLite save successful: role=$role, active=$isActive');
+      
+      // Verify local save immediately
+      final savedUser = await _database.getUserByEmail(email);
+      if (savedUser != null) {
+        debugPrint('🔍 Staff Verification - Local user found: ${savedUser.email}');
+        debugPrint('🔍 Staff Verification - Role stored: ${savedUser.role}');
+        debugPrint('🔍 Staff Verification - isActive: ${savedUser.isActive}');
+        debugPrint('🔍 Staff Verification - syncStatus: ${savedUser.syncStatus}');
+        debugPrint('🔍 Staff Verification - UUID: ${savedUser.uuid}');
+      } else {
+        debugPrint('❌ Staff Verification failed: User not found in local DB after save');
+      }
+      
+      // Trigger sync to Supabase
+      debugPrint('☁️ Triggering Supabase sync for new staff...');
+      final syncResult = await _syncUserToSupabase(savedUser!);
+      debugPrint('☁️ Supabase sync result: $syncResult');
+      
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error creating staff account: $e');
+      return false;
+    }
+  }
+
+  /// Sync user to Supabase
+  Future<bool> _syncUserToSupabase(User user) async {
+    try {
+      // Create service client for sync operations
+      final serviceClient = SupabaseClient(
+        SupabaseConfig.url,
+        SupabaseConfig.serviceKey,
+        headers: {'X-Client-Info': 'service_role'},
+      );
+      
+      final userData = {
+        'uuid': user.uuid,
+        'first_name': user.firstName,
+        'last_name': user.lastName,
+        'email': user.email,
+        'password_hash': user.passwordHash, // ← Add missing password hash
+        'role': user.role,          // ← confirm this is included
+        'is_active': user.isActive, // ← confirm this is included
+        'is_deleted': user.isDeleted, // ← Add missing is_deleted field
+        'sync_status': 'synced',
+        'created_at': user.createdAt.toIso8601String(),
+        'updated_at': user.updatedAt.toIso8601String(),
+      };
+      
+      debugPrint('☁️ Syncing to Supabase with data: $userData');
+      
+      final result = await serviceClient
+          .from('users')
+          .upsert(userData)
+          .select()
+          .maybeSingle();
+          
+      debugPrint('☁️ Supabase upsert result: $result');
+      return result != null;
+    } catch (e) {
+      debugPrint('❌ Supabase sync error: $e');
       return false;
     }
   }
@@ -136,6 +277,90 @@ class AuthRepository {
     } catch (e) {
       // Log error but don't throw to prevent app startup issues
       debugPrint('💥 Error seeding admin user: $e');
+    }
+  }
+
+  /// Creates test users for development and testing purposes
+  /// 
+  /// This method creates sample users with different roles to test
+  /// admin user management interface.
+  Future<void> createTestUsers() async {
+    try {
+      debugPrint('🧪 Creating test users...');
+      
+      // Create pending user
+      final pendingUser = UsersCompanion.insert(
+        uuid: const Uuid().v4(),
+        firstName: 'John',
+        lastName: 'Doe',
+        passwordHash: _hashPassword('password123'),
+        email: 'john.doe@example.com',
+        role: 'pending', // This user needs approval
+        isActive: const Value(true),
+        isDeleted: const Value(false),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value('pending'),
+      );
+      
+      // Create warehouse user
+      final warehouseUser = UsersCompanion.insert(
+        uuid: const Uuid().v4(),
+        firstName: 'Jane',
+        lastName: 'Smith',
+        passwordHash: _hashPassword('password123'),
+        email: 'jane.smith@example.com',
+        role: 'warehouse',
+        isActive: const Value(true),
+        isDeleted: const Value(false),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value('pending'),
+      );
+      
+      // Create customer user
+      final customerUser = UsersCompanion.insert(
+        uuid: const Uuid().v4(),
+        firstName: 'Bob',
+        lastName: 'Wilson',
+        passwordHash: _hashPassword('password123'),
+        email: 'bob.wilson@example.com',
+        role: 'customer',
+        isActive: const Value(true),
+        isDeleted: const Value(false),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value('pending'),
+      );
+      
+      // Create delivery user
+      final deliveryUser = UsersCompanion.insert(
+        uuid: const Uuid().v4(),
+        firstName: 'Mike',
+        lastName: 'Johnson',
+        passwordHash: _hashPassword('password123'),
+        email: 'mike.johnson@example.com',
+        role: 'delivery',
+        isActive: const Value(true),
+        isDeleted: const Value(false),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value('pending'),
+      );
+      
+      await _database.createUser(pendingUser);
+      await _database.createUser(warehouseUser);
+      await _database.createUser(customerUser);
+      await _database.createUser(deliveryUser);
+      
+      debugPrint('✅ Test users created successfully');
+      debugPrint('📋 Test accounts created:');
+      debugPrint('   - john.doe@example.com (pending) - password123');
+      debugPrint('   - jane.smith@example.com (warehouse) - password123');
+      debugPrint('   - bob.wilson@example.com (customer) - password123');
+      debugPrint('   - mike.johnson@example.com (delivery) - password123');
+    } catch (e) {
+      debugPrint('❌ Error creating test users: $e');
     }
   }
 
