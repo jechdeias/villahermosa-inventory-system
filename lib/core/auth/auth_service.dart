@@ -98,7 +98,17 @@ class AuthService {
       }
 
       final userData = result.data;
-      final storedHash = userData['password_hash'] as String;
+      if (userData == null) {
+        debugPrint('❌ User data is null for: $identifier');
+        return null;
+      }
+      
+      final storedHash = userData['password_hash'] as String?;
+      if (storedHash == null) {
+        debugPrint('❌ Password hash is null for: $identifier');
+        return null;
+      }
+      
       final inputHash = _hashPassword(password);
       
       debugPrint('🔑 Stored hash: $storedHash');
@@ -115,7 +125,7 @@ class AuthService {
         debugPrint('❌ Could not retrieve user object for: $identifier');
         return null;
       }
-
+      
       debugPrint('✅ Login successful for: $identifier');
       
       // Set current user session

@@ -25,7 +25,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   void initState() {
     super.initState();
-    _currentUser = AuthService.instance.currentUser;
+    _currentUser = AuthService.instance.getCurrentUser();
   }
 
   @override
@@ -103,7 +103,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.grey[700]),
+        icon: Icon(Icons.arrow_back, color: Colors.grey[700]),
         onPressed: () => Navigator.pop(context),
       ),
     ),

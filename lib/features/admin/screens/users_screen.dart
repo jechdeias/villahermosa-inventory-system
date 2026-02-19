@@ -385,9 +385,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       ),
     );
   }
-}
 
-void _showResetPasswordDialog(User user) {
+  void _showResetPasswordDialog(User user) {
     final _tempPasswordController = TextEditingController();
     
     showDialog(
@@ -442,9 +441,10 @@ void _showResetPasswordDialog(User user) {
       ),
     );
   }
+}
 
-  /// Dialog for creating new staff accounts
-  class CreateStaffDialog extends StatefulWidget {
+/// Dialog for creating new staff accounts
+class CreateStaffDialog extends StatefulWidget {
   final AppDatabase database;
 
   const CreateStaffDialog({super.key, required this.database});
