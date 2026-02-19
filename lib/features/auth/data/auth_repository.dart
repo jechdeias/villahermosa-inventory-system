@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase/supabase.dart' hide User;
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
@@ -90,6 +91,19 @@ class AuthRepository {
         debugPrint('☁️ Online - triggering Supabase sync for new customer...');
         final syncResult = await _syncUserToSupabase(savedUser!);
         debugPrint('☁️ Supabase sync result: $syncResult');
+        
+        // Send verification email via Supabase Auth
+        try {
+          await Supabase.instance.client.auth.signUp(
+            email: email,
+            password: password,
+            emailRedirectTo: 'io.supabase.villahermosa://login-callback',
+          );
+          debugPrint('✅ Verification email sent to: $email');
+        } catch (e) {
+          debugPrint('⚠️ Failed to send verification email: $e');
+          // Don't fail signup - user is created locally
+        }
       } else {
         debugPrint('📴 Offline - user saved locally with pending status, will sync later');
       }

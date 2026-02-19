@@ -9,6 +9,8 @@ import 'core/sync/sync_manager.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/signup_screen.dart';
+import 'features/auth/email_verification_screen.dart';
+import 'features/auth/forgot_password_screen.dart';
 import 'features/admin/screens/dashboard_screen.dart';
 import 'features/admin/screens/users_screen.dart';
 import 'features/warehouse/screens/dashboard_screen.dart';
@@ -83,6 +85,8 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/warehouse/dashboard': (context) => const WarehouseDashboardScreen(),
       '/customer/dashboard': (context) => const CustomerDashboardScreen(),
       '/delivery/dashboard': (context) => const DeliveryDashboardScreen(),
+      '/email-verification': (context) => const EmailVerificationScreen(),
+      '/forgot-password': (context) => const ForgotPasswordScreen(),
     },
     initialRoute: '/',
   );

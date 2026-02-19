@@ -100,6 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
         primaryButtonText: 'Log In',
         promptText: "Don't have an account?",
         linkText: 'Sign up',
+        forgotPasswordLink: 'Forgot Password?',
         
         // Form controllers
         emailController: _identifierController, // Using identifier controller
@@ -119,6 +120,9 @@ class _LoginScreenState extends State<LoginScreen> {
           setState(() {
             _obscurePassword = !_obscurePassword;
           });
+        },
+        onForgotPasswordPressed: () {
+          Navigator.pushNamed(context, '/forgot-password');
         },
       ),
     );

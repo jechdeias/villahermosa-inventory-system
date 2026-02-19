@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../../../core/theme/auth_theme.dart';
 
 /// Reusable authentication card widget
@@ -21,11 +22,13 @@ class AuthCard extends StatefulWidget {
     this.linkText = 'Sign up',
     this.isPasswordVisible = false,
     this.suffixIcon,
+    this.forgotPasswordLink,
     
     // Callbacks
     required this.onPrimaryButtonPressed,
     this.onLinkPressed,
     this.onPasswordVisibilityToggle,
+    this.onForgotPasswordPressed,
     
     // Form controllers
     this.emailController,
@@ -49,11 +52,13 @@ class AuthCard extends StatefulWidget {
   final String linkText;
   final bool isPasswordVisible;
   final Widget? suffixIcon;
+  final String? forgotPasswordLink;
   
   // Callbacks
   final VoidCallback onPrimaryButtonPressed;
   final VoidCallback? onLinkPressed;
   final VoidCallback? onPasswordVisibilityToggle;
+  final VoidCallback? onForgotPasswordPressed;
   
   // Form controllers
   final TextEditingController? emailController;
@@ -202,6 +207,15 @@ class _AuthCardState extends State<AuthCard> {
                 TextFormField(
                   controller: widget.emailController,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  inputFormatters: [
+                    TextInputFormatter.withFunction(
+                      (oldValue, newValue) => newValue.copyWith(
+                        text: newValue.text.toLowerCase(),
+                      ),
+                    ),
+                  ],
                   decoration: AuthTheme.getInputDecoration(
                     hintText: widget.emailHint,
                     prefixIcon: Icons.email_outlined,
@@ -228,6 +242,8 @@ class _AuthCardState extends State<AuthCard> {
                 TextFormField(
                   controller: widget.passwordController,
                   obscureText: !_passwordVisible,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => widget.onPrimaryButtonPressed(),
                   decoration: AuthTheme.getInputDecoration(
                     hintText: widget.passwordHint,
                     prefixIcon: Icons.lock_outlined,
@@ -306,6 +322,16 @@ class _AuthCardState extends State<AuthCard> {
                           style: AuthTheme.linkTextStyle,
                         ),
                       ),
+                      if (widget.forgotPasswordLink != null) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: widget.onForgotPasswordPressed,
+                          child: Text(
+                            widget.forgotPasswordLink!,
+                            style: AuthTheme.linkTextStyle,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
