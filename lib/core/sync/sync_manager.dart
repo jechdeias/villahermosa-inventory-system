@@ -1,7 +1,9 @@
 import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:supabase/supabase.dart' hide User;
 import '../database/app_database.dart';
+import '../config/supabase_config.dart';
 import 'sync_engine.dart';
 
 /// Core Sync Manager - Thesis-worthy offline-first sync logic
@@ -291,6 +293,11 @@ class SyncManager {
     
     // Mark all pending records as synced
     await _database.customUpdate(
+      'UPDATE users SET sync_status = ? WHERE sync_status = ?',
+      variables: [Variable.withString('synced'), Variable.withString('pending')],
+    );
+    
+    await _database.customUpdate(
       'UPDATE customers SET sync_status = ? WHERE sync_status = ?',
       variables: [Variable.withString('synced'), Variable.withString('pending')],
     );
@@ -308,72 +315,71 @@ class SyncManager {
     debugPrint('Sync status updated');
   }
   
+  /// Reset conflict users back to pending so they can be synced
+  Future<void> resetConflictUsersToPending() async {
+    try {
+      debugPrint('🔄 Resetting conflict users to pending...');
+      
+      await _database.customUpdate(
+        'UPDATE users SET sync_status = ? WHERE sync_status = ?',
+        variables: [Variable.withString('pending'), Variable.withString('conflict')],
+      );
+      
+      debugPrint('✅ Conflict users reset to pending');
+    } catch (e) {
+      debugPrint('❌ Failed to reset conflict users: $e');
+    }
+  }
+
   /// Sync Users table - Admin wins conflict resolution
   Future<void> _syncUsers() async {
     final pendingUsers = await _database.getPendingSyncUsers();
+    debugPrint('📋 Pending users to sync: ${pendingUsers.length}');
+    
+    if (pendingUsers.isEmpty) return;
+
+    // Use service client like AuthRepository for sync operations
+    final serviceClient = SupabaseClient(
+      SupabaseConfig.url,
+      SupabaseConfig.serviceKey,
+      headers: {'X-Client-Info': 'service_role'},
+    );
     
     for (final user in pendingUsers) {
       try {
-        final userData = {
-          'id': user.id,
-          'firstName': user.firstName,
-          'lastName': user.lastName,
-          'role': user.role,
-          'is_active': user.isActive,
-          'is_deleted': user.isDeleted,
-          'sync_status': 'synced',
-          'local_id': user.id,
-          'created_at': user.createdAt.toIso8601String(),
-          'updated_at': user.updatedAt.toIso8601String(),
-        };
+        debugPrint('🔄 Syncing user: ${user.email}');
         
-        if (user.remoteId == null) {
-          // Insert new record
-          final response = await Supabase.instance.client
-              .from('users')
-              .insert(userData)
-              .select('id')
-              .single();
-          
-          // Update local record with remote ID
-          await _database.customUpdate(
-            'UPDATE users SET remote_id = ?, sync_status = ?, updated_at = ? WHERE id = ?',
-            variables: [
-              Variable.withInt(response['id']),
-              Variable.withString('synced'),
-              Variable.withDateTime(DateTime.now()),
-              Variable.withInt(user.id),
-            ],
-          );
+        final result = await serviceClient
+            .from('users')
+            .upsert({
+              'uuid': user.uuid,
+              'first_name': user.firstName,    // ← Use snake_case for Supabase
+              'last_name': user.lastName,      // ← Use snake_case for Supabase
+              'email': user.email,            // ← Add missing email
+              'password_hash': user.passwordHash, // ← Add missing password hash
+              'role': user.role,
+              'is_active': user.isActive,
+              'is_deleted': user.isDeleted,
+              'sync_status': 'synced',
+              'created_at': user.createdAt.toIso8601String(),
+              'updated_at': user.updatedAt.toIso8601String(),
+            }, onConflict: 'uuid')
+            .select();
+            
+        debugPrint('☁️ Supabase upsert result: $result');
+        
+        // Check if upsert was successful (result will be a list with the upserted record)
+        if (result.isNotEmpty) {
+          final remoteId = result.first['id'].toString();
+          // Mark local record as synced
+          await _database.markUserAsSynced(user.uuid, remoteId);
+          debugPrint('✅ User synced successfully: ${user.email}');
         } else {
-          // Update existing record
-          userData.remove('id');
-          userData.remove('local_id');
-          userData.remove('remote_id');
-          
-          await Supabase.instance.client
-              .from('users')
-              .update(userData)
-              .eq('id', user.remoteId.toString());
-          
-          await _database.customUpdate(
-            'UPDATE users SET sync_status = ?, updated_at = ? WHERE id = ?',
-            variables: [
-              Variable.withString('synced'),
-              Variable.withDateTime(DateTime.now()),
-              Variable.withInt(user.id),
-            ],
-          );
+          debugPrint('❌ Failed to sync user: ${user.email}');
         }
+        
       } catch (e) {
-        debugPrint('Error syncing user ${user.id}: $e');
-        await _database.customUpdate(
-          'UPDATE users SET sync_status = ? WHERE id = ?',
-          variables: [
-            Variable.withString('conflict'),
-            Variable.withInt(user.id),
-          ],
-        );
+        debugPrint('Error syncing user ${user.email}: $e');
       }
     }
   }
@@ -859,10 +865,9 @@ class SyncManager {
   Future<void> syncPendingData() async {
     try {
       debugPrint('🔄 Syncing all pending records...');
-      
+      debugPrint('📞 Calling _pushLocalChanges()...');
       // Use existing push method to sync all pending records
       await _pushLocalChanges();
-      
       debugPrint('✅ Pending records sync completed');
     } catch (e) {
       debugPrint('❌ Pending records sync failed: $e');

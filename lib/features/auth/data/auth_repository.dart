@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase/supabase.dart' hide User;
@@ -48,7 +49,13 @@ class AuthRepository {
       
       debugPrint('👤 Creating customer account with auto-approval: $email');
 
-      // Create new user
+      // Check connectivity before setting sync status
+      final connectivityResults = await Connectivity().checkConnectivity();
+      final isOnline = !connectivityResults.contains(ConnectivityResult.none);
+      
+      debugPrint('🌐 Connectivity check: isOnline=$isOnline');
+      
+      // Create new user with appropriate sync status
       final newUser = UsersCompanion.insert(
         uuid: const Uuid().v4(),
         passwordHash: _hashPassword(password),
@@ -60,11 +67,11 @@ class AuthRepository {
         isDeleted: const Value(false),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
+        syncStatus: Value(isOnline ? 'synced' : 'pending'),
       );
 
       await _database.createUser(newUser);
-      debugPrint('✅ Local SQLite save successful: role=$finalRole, active=$isActive');
+      debugPrint('✅ Local SQLite save successful: role=$finalRole, active=$isActive, syncStatus=${isOnline ? 'synced' : 'pending'}');
       
       // Verify local save immediately
       final savedUser = await _database.getUserByEmail(email);
@@ -78,10 +85,14 @@ class AuthRepository {
         debugPrint('❌ Verification failed: User not found in local DB after save');
       }
       
-      // Trigger sync to Supabase
-      debugPrint('☁️ Triggering Supabase sync for new customer...');
-      final syncResult = await _syncUserToSupabase(savedUser!);
-      debugPrint('☁️ Supabase sync result: $syncResult');
+      // Only attempt Supabase sync if online
+      if (isOnline) {
+        debugPrint('☁️ Online - triggering Supabase sync for new customer...');
+        final syncResult = await _syncUserToSupabase(savedUser!);
+        debugPrint('☁️ Supabase sync result: $syncResult');
+      } else {
+        debugPrint('📴 Offline - user saved locally with pending status, will sync later');
+      }
       
       return true;
     } catch (e) {
@@ -116,7 +127,13 @@ class AuthRepository {
       
       debugPrint('👷 Creating staff account with pending approval: $email ($role)');
 
-      // Create new staff user
+      // Check connectivity before setting sync status
+      final connectivityResults = await Connectivity().checkConnectivity();
+      final isOnline = !connectivityResults.contains(ConnectivityResult.none);
+      
+      debugPrint('🌐 Staff connectivity check: isOnline=$isOnline');
+      
+      // Create new staff user with appropriate sync status
       final newStaffUser = UsersCompanion.insert(
         uuid: const Uuid().v4(),
         passwordHash: _hashPassword(password),
@@ -128,11 +145,11 @@ class AuthRepository {
         isDeleted: const Value(false),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
-        syncStatus: const Value('pending'),
+        syncStatus: Value(isOnline ? 'synced' : 'pending'),
       );
 
       await _database.createUser(newStaffUser);
-      debugPrint('✅ Local SQLite save successful: role=$role, active=$isActive');
+      debugPrint('✅ Local SQLite save successful: role=$role, active=$isActive, syncStatus=${isOnline ? 'synced' : 'pending'}');
       
       // Verify local save immediately
       final savedUser = await _database.getUserByEmail(email);
@@ -146,10 +163,14 @@ class AuthRepository {
         debugPrint('❌ Staff Verification failed: User not found in local DB after save');
       }
       
-      // Trigger sync to Supabase
-      debugPrint('☁️ Triggering Supabase sync for new staff...');
-      final syncResult = await _syncUserToSupabase(savedUser!);
-      debugPrint('☁️ Supabase sync result: $syncResult');
+      // Only attempt Supabase sync if online
+      if (isOnline) {
+        debugPrint('☁️ Online - triggering Supabase sync for new staff...');
+        final syncResult = await _syncUserToSupabase(savedUser!);
+        debugPrint('☁️ Supabase sync result: $syncResult');
+      } else {
+        debugPrint('📴 Offline - staff user saved locally with pending status, will sync later');
+      }
       
       return true;
     } catch (e) {
@@ -170,13 +191,13 @@ class AuthRepository {
       
       final userData = {
         'uuid': user.uuid,
-        'first_name': user.firstName,
-        'last_name': user.lastName,
+        'firstName': user.firstName,    // ← Fix: Use camelCase for Supabase
+        'lastName': user.lastName,      // ← Fix: Use camelCase for Supabase
         'email': user.email,
-        'password_hash': user.passwordHash, // ← Add missing password hash
-        'role': user.role,          // ← confirm this is included
-        'is_active': user.isActive, // ← confirm this is included
-        'is_deleted': user.isDeleted, // ← Add missing is_deleted field
+        'password_hash': user.passwordHash,
+        'role': user.role,
+        'is_active': user.isActive,
+        'is_deleted': user.isDeleted,
         'sync_status': 'synced',
         'created_at': user.createdAt.toIso8601String(),
         'updated_at': user.updatedAt.toIso8601String(),

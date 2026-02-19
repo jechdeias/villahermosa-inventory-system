@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'core/database/app_database.dart';
 import 'core/config/supabase_config.dart';
@@ -36,6 +37,18 @@ void main() async {
   // Seed admin user if database is empty
   final authRepository = AuthRepository(database);
   await authRepository.seedAdminUserIfEmpty();
+  
+  // Check connectivity and sync pending records on startup
+  try {
+    final connectivityResults = await Connectivity().checkConnectivity();
+    final isOnline = !connectivityResults.contains(ConnectivityResult.none);
+    if (isOnline) {
+      debugPrint('🚀 App started with internet - syncing pending data...');
+      await SyncManager.instance.syncPendingData();
+    }
+  } catch (e) {
+    debugPrint('⚠️ Startup sync check failed: $e');
+  }
   
   runApp(VillahermosaInventoryApp(database: database));
 }
