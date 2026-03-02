@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter/foundation.dart';
 import 'tables/users_table.dart';
 import 'tables/products_table.dart';
 import 'tables/customers_table.dart';
@@ -54,12 +55,12 @@ class AppDatabase extends _$AppDatabase {
     final allUsers = await (select(users)..orderBy([(t) => OrderingTerm(expression: t.firstName)])).get();
     
     // Debug: Print all users and their roles
-    print('=== DEBUG: All Users in Database ===');
+    debugPrint('=== DEBUG: All Users in Database ===');
     for (final user in allUsers) {
-      print('User: ${user.firstName} ${user.lastName}, Role: ${user.role}, Active: ${user.isActive}, Deleted: ${user.isDeleted}');
+      debugPrint('User: ${user.firstName} ${user.lastName}, Role: ${user.role}, Active: ${user.isActive}, Deleted: ${user.isDeleted}');
     }
-    print('Total users found: ${allUsers.length}');
-    print('====================================');
+    debugPrint('Total users found: ${allUsers.length}');
+    debugPrint('====================================');
     
     // Filter out deleted users
     return allUsers.where((user) => !user.isDeleted).toList();

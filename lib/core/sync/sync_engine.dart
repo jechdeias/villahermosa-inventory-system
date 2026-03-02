@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
 
 enum SyncOperation {
@@ -23,13 +24,6 @@ class SyncEngine {
   /// Protected access to database for implementations
   AppDatabase get database => _database;
   
-  /// Logs sync operations for debugging
-  void debugPrint(String message) {
-    // In production, consider using proper logging framework
-    // For now, using print for development debugging
-    print(message);
-  }
-  
   /// Main sync orchestrator - thesis-worthy core logic
   Future<SyncResult> performFullSync() async {
     try {
@@ -50,7 +44,7 @@ class SyncEngine {
       debugPrint('Full sync completed successfully');
       return SyncResult.success();
     } catch (e) {
-      print('Sync failed: $e');
+      debugPrint('Sync failed: $e');
       return SyncResult.failure(e.toString());
     }
   }
@@ -69,7 +63,7 @@ class SyncEngine {
     await _syncTable('stock_movements', _pushStockMovements, SyncConflictResolution.lastWriteWins);
     await _syncTable('deliveries', _pushDeliveries, SyncConflictResolution.localWins);
     
-    print('Local changes pushed successfully');
+    debugPrint('Local changes pushed successfully');
   }
   
   /// Pull remote updates from Supabase
@@ -89,7 +83,7 @@ class SyncEngine {
     await _pullTable('deliveries', _pullDeliveries, lastSyncTime);
     
     await _updateLastSyncTimestamp();
-    print('Remote changes pulled successfully');
+    debugPrint('Remote changes pulled successfully');
   }
   
   /// Resolve conflicts based on business rules
@@ -315,7 +309,7 @@ class SyncEngine {
     try {
       await pullFunction(lastSyncTime);
     } catch (e) {
-      print('Error pulling $tableName: $e');
+      debugPrint('Error pulling $tableName: $e');
     }
   }
   
@@ -331,7 +325,7 @@ class SyncEngine {
             .upsert(data);
         await _markRecordAsSynced(user, user.id.toString());
       } catch (e) {
-        print('Failed to sync user ${user.id}: $e');
+        debugPrint('Failed to sync user ${user.id}: $e');
       }
     }
     
@@ -339,7 +333,7 @@ class SyncEngine {
   }
   
   Future<List<dynamic>> _pushCategories() async {
-    print('Pushing categories to Supabase...');
+    debugPrint('Pushing categories to Supabase...');
     // Implementation needed
     return [];
   }
@@ -355,7 +349,7 @@ class SyncEngine {
             .upsert(data);
         await _markRecordAsSynced(product, product.id.toString());
       } catch (e) {
-        print('Failed to sync product ${product.id}: $e');
+        debugPrint('Failed to sync product ${product.id}: $e');
       }
     }
     
@@ -373,7 +367,7 @@ class SyncEngine {
             .upsert(data);
         await _markRecordAsSynced(customer, customer.id.toString());
       } catch (e) {
-        print('Failed to sync customer ${customer.id}: $e');
+        debugPrint('Failed to sync customer ${customer.id}: $e');
       }
     }
     
@@ -391,7 +385,7 @@ class SyncEngine {
             .insert(data);
         await _markRecordAsSynced(order, order.id.toString());
       } catch (e) {
-        print('Failed to sync order ${order.id}: $e');
+        debugPrint('Failed to sync order ${order.id}: $e');
       }
     }
     
@@ -409,7 +403,7 @@ class SyncEngine {
             .insert(data);
         await _markRecordAsSynced(orderItem, orderItem.id.toString());
       } catch (e) {
-        print('Failed to sync order item ${orderItem.id}: $e');
+        debugPrint('Failed to sync order item ${orderItem.id}: $e');
       }
     }
     
@@ -427,7 +421,7 @@ class SyncEngine {
             .upsert(data);
         await _markRecordAsSynced(stockMovement, stockMovement.id.toString());
       } catch (e) {
-        print('Failed to sync stock movement ${stockMovement.id}: $e');
+        debugPrint('Failed to sync stock movement ${stockMovement.id}: $e');
       }
     }
     
@@ -445,7 +439,7 @@ class SyncEngine {
             .insert(data);
         await _markRecordAsSynced(delivery, delivery.id.toString());
       } catch (e) {
-        print('Failed to sync delivery ${delivery.id}: $e');
+        debugPrint('Failed to sync delivery ${delivery.id}: $e');
       }
     }
     
@@ -708,7 +702,7 @@ class SyncEngine {
         );
       }
     } catch (e) {
-      print('Error updating local record in $tableName: $e');
+      debugPrint('Error updating local record in $tableName: $e');
     }
   }
   

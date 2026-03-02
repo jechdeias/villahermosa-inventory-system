@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:supabase/supabase.dart' hide User;
+import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
 import '../config/supabase_config.dart';
 import 'sync_engine.dart';
@@ -28,13 +28,6 @@ class SyncManager {
     _instance!._initConnectivityListener();
   }
   
-  /// Logs sync operations for debugging
-  void debugPrint(String message) {
-    // In production, consider using proper logging framework
-    // For now, using print for development debugging
-    print(message);
-  }
-
   /// Initialize connectivity listener for automatic sync on reconnection
   void _initConnectivityListener() {
     Connectivity().onConnectivityChanged.listen((results) {
@@ -609,7 +602,7 @@ class SyncManager {
           );
         }
       } catch (e) {
-        print('Error syncing stock movement ${movement.id}: $e');
+        debugPrint('Error syncing stock movement ${movement.id}: $e');
         await _database.customUpdate(
           'UPDATE stock_movements SET sync_status = ? WHERE id = ?',
           variables: [
@@ -877,22 +870,22 @@ class SyncManager {
   /// Conflict resolution methods
   Future<void> _resolveUserConflict(User user) async {
     // Admin wins for user conflicts
-    print('🔧 Resolving user conflict: ${user.id}');
+    debugPrint('🔧 Resolving user conflict: ${user.id}');
   }
   
   Future<void> _resolveProductConflict(Product product) async {
     // Warehouse wins for product conflicts
-    print('🔧 Resolving product conflict: ${product.id}');
+    debugPrint('🔧 Resolving product conflict: ${product.id}');
   }
   
   Future<void> _resolveCustomerConflict(Customer customer) async {
     // Customer wins for own data conflicts
-    print('🔧 Resolving customer conflict: ${customer.id}');
+    debugPrint('🔧 Resolving customer conflict: ${customer.id}');
   }
   
   Future<void> _resolveStockMovementConflict(StockMovement movement) async {
     // Last-write-wins for stock movements
-    print('🔧 Resolving stock movement conflict: ${movement.id}');
+    debugPrint('🔧 Resolving stock movement conflict: ${movement.id}');
   }
   
   /// Utility methods
@@ -903,7 +896,7 @@ class SyncManager {
   
   Future<void> _updateLastSyncTimestamp() async {
     // Update last sync timestamp
-    print('🕐 Updating last sync timestamp');
+    debugPrint('🕐 Updating last sync timestamp');
   }
 }
 

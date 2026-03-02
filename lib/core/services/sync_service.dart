@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
 
 enum SyncStatus {
@@ -63,19 +64,19 @@ class SyncService {
   Future<void> _pullRemoteChanges() async {
     // Implementation would call Supabase client
     // For now, this is a placeholder
-    print('Pulling remote changes from Supabase...');
+    debugPrint('Pulling remote changes from Supabase...');
   }
   
   // Resolve conflicts based on table rules
   Future<void> _resolveConflicts() async {
     // Implementation would handle conflict resolution
-    print('Resolving conflicts...');
+    debugPrint('Resolving conflicts...');
   }
   
   // Update sync status for all records
   Future<void> _updateSyncStatus() async {
     // Implementation would update sync status
-    print('Updating sync status...');
+    debugPrint('Updating sync status...');
   }
   
   // Generic table sync method
@@ -85,7 +86,7 @@ class SyncService {
     ConflictResolution conflictRule,
   ) async {
     try {
-      print('Syncing table: $tableName');
+      debugPrint('Syncing table: $tableName');
       
       // Get pending records
       final pendingRecords = await pushFunction();
@@ -95,16 +96,16 @@ class SyncService {
         await _syncRecord(record, conflictRule);
       }
       
-      print('Completed syncing: $tableName');
+      debugPrint('Completed syncing: $tableName');
     } catch (e) {
-      print('Error syncing $tableName: $e');
+      debugPrint('Error syncing $tableName: $e');
     }
   }
   
   // Sync individual record
   Future<void> _syncRecord(dynamic record, ConflictResolution rule) async {
     // Implementation would sync individual record
-    print('Syncing record with rule: $rule');
+    debugPrint('Syncing record with rule: $rule');
   }
   
   // Table-specific push methods

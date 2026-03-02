@@ -35,17 +35,17 @@ class AdminViewModel extends ChangeNotifier {
       _activeUsers = users.where((user) => user.role != 'pending').toList();
       
       // Debug: Print categorization
-      print('=== DEBUG: User Categorization ===');
-      print('Total users: ${users.length}');
-      print('Pending users: ${_pendingUsers.length}');
-      print('Active users: ${_activeUsers.length}');
+      debugPrint('=== DEBUG: User Categorization ===');
+      debugPrint('Total users: ${users.length}');
+      debugPrint('Pending users: ${_pendingUsers.length}');
+      debugPrint('Active users: ${_activeUsers.length}');
       for (final user in _pendingUsers) {
-        print('PENDING: ${user.firstName} ${user.lastName} (${user.role})');
+        debugPrint('PENDING: ${user.firstName} ${user.lastName} (${user.role})');
       }
       for (final user in _activeUsers) {
-        print('ACTIVE: ${user.firstName} ${user.lastName} (${user.role})');
+        debugPrint('ACTIVE: ${user.firstName} ${user.lastName} (${user.role})');
       }
-      print('================================');
+      debugPrint('================================');
     } catch (e) {
       _setError('Failed to load users: $e');
     } finally {

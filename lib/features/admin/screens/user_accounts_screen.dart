@@ -22,8 +22,6 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<User> _users = [];
   List<User> _filteredUsers = [];
-  bool _isLoading = false;
-  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -34,29 +32,25 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
 
   @override
   void dispose() {
-    _isDisposed = true;
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   Future<void> _loadUsers() async {
-    setState(() => _isLoading = true);
     try {
       final users = await widget.database.getAllUsers();
-      setState(() {
-        _users = users;
-        _filteredUsers = users;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _users = users;
+          _filteredUsers = users;
+        });
+      }
     } catch (e) {
-      if (!_isDisposed) {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading users: $e')),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading users: $e')),
+        );
       }
     }
   }
@@ -273,9 +267,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
             Expanded(
               flex: 2,
               child: Text(
-                user.updatedAt != null
-                    ? _formatDateTime(user.updatedAt)
-                    : 'Never',
+                _formatDateTime(user.updatedAt),
                 style: VillahermosaTextStyles.small,
               ),
             ),
@@ -477,7 +469,6 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
 
 class _AddUserDialog extends StatefulWidget {
   const _AddUserDialog({
-    super.key,
     required this.database,
     required this.onUserAdded,
   });
@@ -497,6 +488,15 @@ class _AddUserDialogState extends State<_AddUserDialog> {
   final _passwordController = TextEditingController();
   String _selectedRole = 'sales_rep';
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -574,7 +574,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _selectedRole,
+                    initialValue: _selectedRole,
                     decoration: _buildInputDecoration('Role'),
                     items: const [
                       DropdownMenuItem(value: 'admin', child: Text('Administrator')),
@@ -648,7 +648,6 @@ class _AddUserDialogState extends State<_AddUserDialog> {
 
   Future<void> _addUser() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
       try {
         final user = UsersCompanion.insert(
           uuid: const Uuid().v4(),
@@ -662,12 +661,11 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         );
 
         await widget.database.createUser(user);
-        widget.onUserAdded();
-        Navigator.pop(context);
-      } catch (e) {
-        if (!_isDisposed) {
-          setState(() => _isLoading = false);
+        if (mounted) {
+          widget.onUserAdded();
+          Navigator.pop(context);
         }
+      } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error adding user: $e')),
@@ -680,7 +678,6 @@ class _AddUserDialogState extends State<_AddUserDialog> {
 
 class _UserDetailsDialog extends StatelessWidget {
   const _UserDetailsDialog({
-    super.key,
     required this.user,
   });
 
@@ -719,9 +716,7 @@ class _UserDetailsDialog extends StatelessWidget {
             _buildDetailRow('Role', user.role),
             _buildDetailRow('Status', user.isActive ? 'Active' : 'Inactive'),
             _buildDetailRow('Last Login', 
-                user.updatedAt != null 
-                    ? '${user.updatedAt!.day}/${user.updatedAt!.month}/${user.updatedAt!.year}'
-                    : 'Never'),
+                '${user.updatedAt.day}/${user.updatedAt.month}/${user.updatedAt.year}'),
             const SizedBox(height: 24),
             Center(
               child: ElevatedButton(

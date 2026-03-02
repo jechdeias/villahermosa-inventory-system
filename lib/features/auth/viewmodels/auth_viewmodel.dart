@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 import '../data/auth_repository.dart';
@@ -115,13 +113,6 @@ class AuthViewModel extends ChangeNotifier {
   void _setError(String error) {
     _errorMessage = error;
     notifyListeners();
-  }
-
-  /// SHA256 password hash (matches AuthRepository)
-  String _hashPassword(String password) {
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
   }
 
   /// Clears error message and notifies listeners.

@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
 import '../sync/sync_manager.dart';
 
@@ -89,7 +90,7 @@ class StockMovementService {
       ),
     );
     
-    print('✅ Stock IN recorded: +$quantity units for ${product.data['name']}');
+    debugPrint('✅ Stock IN recorded: +$quantity units for ${product.data['name']}');
     await _syncManager.performFullSync();
   }
   
@@ -148,7 +149,7 @@ class StockMovementService {
       ),
     );
     
-    print('✅ Stock OUT recorded: -$quantity units for ${product.data['name']} (Order: $orderNumber)');
+    debugPrint('✅ Stock OUT recorded: -$quantity units for ${product.data['name']} (Order: $orderNumber)');
     await _syncManager.performFullSync();
   }
   
@@ -209,7 +210,7 @@ class StockMovementService {
     );
     
     final action = quantity > 0 ? 'added' : 'removed';
-    print('✅ Stock ADJUSTMENT recorded: $action ${quantity.abs()} units for ${product.data['name']} (${adjustmentType.name})');
+    debugPrint('✅ Stock ADJUSTMENT recorded: $action ${quantity.abs()} units for ${product.data['name']} (${adjustmentType.name})');
     await _syncManager.performFullSync();
   }
   
@@ -263,7 +264,7 @@ class StockMovementService {
       ),
     );
     
-    print('✅ Stock RETURN recorded: +$quantity units for ${product.data['name']} (${returnReason.name})');
+    debugPrint('✅ Stock RETURN recorded: +$quantity units for ${product.data['name']} (${returnReason.name})');
     await _syncManager.performFullSync();
   }
   
@@ -351,7 +352,7 @@ class StockMovementService {
   /// Update product current_stock field (for display purposes only)
   /// This should be called periodically to keep the field in sync
   Future<void> updateProductStockQuantities() async {
-    print('🔄 Updating product stock quantities from movements...');
+    debugPrint('🔄 Updating product stock quantities from movements...');
     
     final products = await _database.customSelect(
       'SELECT id FROM products WHERE is_deleted = 0',
@@ -372,7 +373,7 @@ class StockMovementService {
       );
     }
     
-    print('✅ Updated stock quantities for ${products.length} products');
+    debugPrint('✅ Updated stock quantities for ${products.length} products');
     await _syncManager.performFullSync();
   }
   
