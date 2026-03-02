@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
+import '../../../core/widgets/responsive_shell.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../viewmodels/admin_viewmodel.dart';
 import '../../../features/auth/data/auth_repository.dart';
@@ -19,10 +20,16 @@ class AdminDashboardScreen extends StatelessWidget {
   final SyncManager syncManager;
 
   @override
-  Widget build(BuildContext context) => ChangeNotifierProvider(
-      create: (_) => AdminViewModel(database),
-      child: AdminDashboardView(database: database, syncManager: syncManager),
+  Widget build(BuildContext context) {
+    return ResponsiveShell(
+      database: database,
+      selectedRoute: '/admin/dashboard',
+      child: ChangeNotifierProvider(
+        create: (_) => AdminViewModel(database),
+        child: AdminDashboardView(database: database, syncManager: syncManager),
+      ),
     );
+  }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/admin/screens/dashboard_screen.dart';
+import '../../features/admin/screens/user_accounts_screen.dart';
 import '../../features/customer/screens/dashboard_screen.dart';
 import '../../features/delivery/screens/dashboard_screen.dart';
 import '../../features/warehouse/screens/dashboard_screen.dart';
@@ -33,6 +34,8 @@ class NavigationService {
         return const CustomerDashboardScreen();
       case 'pending':
         return const AccountPendingScreen();
+      case 'users':
+        return UserAccountsScreen(database: _database);
       default:
         return const CustomerDashboardScreen(); // Default fallback
     }
