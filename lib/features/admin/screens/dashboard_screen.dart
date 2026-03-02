@@ -497,23 +497,33 @@ class AdminDashboardView extends StatelessWidget {
   }
 
   void _createTestUsers(BuildContext context) async {
+    String? errorMessage;
+    String? successMessage;
+    
     try {
       final authRepository = AuthRepository(database);
       await authRepository.createTestUsers();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Test users created successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      successMessage = 'Test users created successfully!';
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error creating test users: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      errorMessage = 'Error creating test users: $e';
+    }
+    
+    if (context.mounted) {
+      if (successMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(successMessage),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

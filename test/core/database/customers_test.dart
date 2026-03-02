@@ -2,7 +2,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'app_database.dart';
+import 'package:villahermosa_inventory_system/core/database/app_database.dart';
 
 void main() {
   // Initialize Flutter binding for tests

@@ -127,13 +127,13 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   const SizedBox(height: 16),
                   _buildSectionHeader('Pending Approval', AppTheme.warningColor, Icons.pending),
                   const SizedBox(height: 12),
-                  ...pendingUsers.map((user) => _buildUserCard(user, true)).toList(),
+                  ...pendingUsers.map((user) => _buildUserCard(user, true)),
                 ],
                 if (activeUsers.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   _buildSectionHeader('Active Users', AppTheme.primaryColor, Icons.check_circle),
                   const SizedBox(height: 12),
-                  ...activeUsers.map((user) => _buildUserCard(user, false)).toList(),
+                  ...activeUsers.map((user) => _buildUserCard(user, false)),
                 ],
               ],
             );
@@ -387,7 +387,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   void _showResetPasswordDialog(User user) {
-    final _tempPasswordController = TextEditingController();
+    final tempPasswordController = TextEditingController();
     
     showDialog(
       context: context,
@@ -397,7 +397,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: _tempPasswordController,
+              controller: tempPasswordController,
               decoration: const InputDecoration(
                 labelText: 'Temporary Password',
                 hintText: 'Minimum 8 characters',
@@ -413,27 +413,33 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (_tempPasswordController.text.length < 8) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('Password must be at least 8 characters'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+              if (tempPasswordController.text.length < 8) {
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Password must be at least 8 characters'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
                 return;
               }
               
               final hash = sha256.convert(
-                utf8.encode(_tempPasswordController.text)
+                utf8.encode(tempPasswordController.text)
               ).toString();
               await widget.database.resetUserPassword(user.uuid, hash);
-              Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Password reset. User must change on next login.'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Password reset. User must change on next login.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
             },
             child: const Text('Reset'),
           ),
@@ -544,7 +550,7 @@ class _CreateStaffDialogState extends State<CreateStaffDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'Staff Role',
                   prefixIcon: Icon(Icons.work),

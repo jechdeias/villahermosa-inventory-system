@@ -487,7 +487,6 @@ class _AddUserDialogState extends State<_AddUserDialog> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String _selectedRole = 'sales_rep';
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -601,21 +600,12 @@ class _AddUserDialogState extends State<_AddUserDialog> {
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _addUser,
+                  onPressed: _addUser,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: VillahermosaColors.textPrimary,
                     foregroundColor: VillahermosaColors.cardBg,
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text('Add User'),
+                  child: const Text('Add User'),
                 ),
               ],
             ),

@@ -25,7 +25,7 @@ void main() {
       // Create a user
       await database.createUser(
         UsersCompanion.insert(
-          uuid: Uuid().v4(),
+          uuid: const Uuid().v4(),
           firstName: 'Test',
           lastName: 'User',
           passwordHash: 'hashedpassword',
@@ -47,20 +47,20 @@ void main() {
       // Create multiple users
       await database.createUser(
         UsersCompanion.insert(
-          uuid: Uuid().v4(),
+          uuid: const Uuid().v4(),
           firstName: 'Alice',
-          lastName: 'Name',
+          lastName: 'Smith',
           passwordHash: 'hashedpassword',
           email: 'alice@example.com',
-          role: 'warehouse',
+          role: 'customer',
         ),
       );
 
       await database.createUser(
         UsersCompanion.insert(
-          uuid: Uuid().v4(),
+          uuid: const Uuid().v4(),
           firstName: 'Bob',
-          lastName: 'Name',
+          lastName: 'Johnson',
           passwordHash: 'hashedpassword',
           email: 'bob@example.com',
           role: 'delivery',
@@ -77,7 +77,7 @@ void main() {
       // Create a user
       await database.createUser(
         UsersCompanion.insert(
-          uuid: Uuid().v4(),
+          uuid: const Uuid().v4(),
           firstName: 'John',
           lastName: 'Doe',
           passwordHash: 'hashedpassword',
@@ -103,18 +103,18 @@ void main() {
 
       // Verify the update
       final user = await database.getUserByEmail('john@example.com');
-      expect(user!.firstName, equals('John'));
-      expect(user!.lastName, equals('Smith'));
-      expect(user.role, equals('warehouse'));
+      expect(user?.firstName, equals('John'));
+      expect(user?.lastName, equals('Smith'));
+      expect(user?.role, equals('warehouse'));
     });
 
     test('Get pending sync users', () async {
       // Create users with different sync statuses
       await database.createUser(
         UsersCompanion.insert(
-          uuid: Uuid().v4(),
+          uuid: const Uuid().v4(),
           firstName: 'Pending',
-          lastName: 'User Name',
+          lastName: 'User',
           passwordHash: 'hashedpassword',
           email: 'pending@example.com',
           role: 'admin',
@@ -124,9 +124,9 @@ void main() {
 
       await database.createUser(
         UsersCompanion.insert(
-          uuid: Uuid().v4(),
+          uuid: const Uuid().v4(),
           firstName: 'Synced',
-          lastName: 'User Name',
+          lastName: 'User',
           passwordHash: 'hashedpassword',
           email: 'synced@example.com',
           role: 'admin',
@@ -139,7 +139,7 @@ void main() {
       
       expect(pendingUsers.length, equals(1));
       expect(pendingUsers[0].firstName, equals('Pending'));
-      expect(pendingUsers[0].lastName, equals('User Name'));
+      expect(pendingUsers[0].lastName, equals('User'));
     });
   });
 }
