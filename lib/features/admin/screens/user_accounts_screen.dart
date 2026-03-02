@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' as drift;
+import 'package:uuid/uuid.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/villahermosa_theme.dart';
 
@@ -21,6 +23,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   List<User> _users = [];
   List<User> _filteredUsers = [];
   bool _isLoading = false;
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -31,6 +34,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
@@ -46,11 +50,13 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading users: $e')),
-        );
+      if (!_isDisposed) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error loading users: $e')),
+          );
+        }
       }
     }
   }
@@ -645,20 +651,23 @@ class _AddUserDialogState extends State<_AddUserDialog> {
       setState(() => _isLoading = true);
       try {
         final user = UsersCompanion.insert(
+          uuid: const Uuid().v4(),
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
           email: _emailController.text,
           passwordHash: _passwordController.text, // TODO: Hash this password
           role: _selectedRole,
-          isActive: true,
-          syncStatus: 'pending',
+          isActive: const drift.Value(true),
+          syncStatus: const drift.Value('pending'),
         );
 
         await widget.database.createUser(user);
         widget.onUserAdded();
         Navigator.pop(context);
       } catch (e) {
-        setState(() => _isLoading = false);
+        if (!_isDisposed) {
+          setState(() => _isLoading = false);
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error adding user: $e')),
