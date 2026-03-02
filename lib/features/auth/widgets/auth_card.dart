@@ -180,7 +180,7 @@ class _AuthCardState extends State<AuthCard> {
                     ),
                   ),
                 ),
-                const SizedBox(height: AuthTheme.sectionSpacing),
+                const SizedBox(height: 16), // Spacing after logo
                 
                 // Title
                 Text(
@@ -196,7 +196,7 @@ class _AuthCardState extends State<AuthCard> {
                   style: AuthTheme.subtitleStyle,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AuthTheme.sectionSpacing),
+                const SizedBox(height: 32), // Spacing before form
                 
                 // Email Field
                 Text(
@@ -305,35 +305,39 @@ class _AuthCardState extends State<AuthCard> {
                 ),
                 const SizedBox(height: AuthTheme.sectionSpacing),
                 
-                // Sign Up Prompt
-                Center(
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    children: [
-                      Text(
-                        widget.promptText,
-                        style: AuthTheme.promptTextStyle,
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: widget.onLinkPressed,
-                        child: Text(
-                          widget.linkText,
-                          style: AuthTheme.linkTextStyle,
+                // Authentication Links - Separate rows for better UX
+                Column(
+                  children: [
+                    // Sign up link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.promptText,
+                          style: AuthTheme.promptTextStyle,
                         ),
-                      ),
-                      if (widget.forgotPasswordLink != null) ...[
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 4),
                         GestureDetector(
-                          onTap: widget.onForgotPasswordPressed,
+                          onTap: widget.onLinkPressed,
                           child: Text(
-                            widget.forgotPasswordLink!,
-                            style: AuthTheme.linkTextStyle,
+                            widget.linkText,
+                            style: AuthTheme.signUpLinkStyle,
                           ),
                         ),
                       ],
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: AuthTheme.linkSpacing),
+                    // Forgot password link
+                    GestureDetector(
+                      onTap: widget.onForgotPasswordPressed,
+                      child: Center(
+                        child: Text(
+                          'Forgot Password?',
+                          style: AuthTheme.forgotPasswordLinkStyle,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
