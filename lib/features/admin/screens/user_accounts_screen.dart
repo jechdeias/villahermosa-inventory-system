@@ -23,7 +23,7 @@ class UserAccountsScreen extends StatefulWidget {
 class _UserAccountsScreenState extends State<UserAccountsScreen> {
   final TextEditingController _searchController = TextEditingController();
   late Stream<List<User>> _usersStream;
-  List<User> _users = [];
+  List<User> _allUsers = []; // Store all users from stream
   List<User> _filteredUsers = [];
   late Stream<int> _totalUsersStream;
   late Stream<int> _activeUsersStream;
@@ -43,6 +43,16 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     _activeUsersStream = widget.database.getActiveUsersCountStream();
     _adminUsersStream = widget.database.getAdminUsersCountStream();
     _salesRepUsersStream = widget.database.getSalesRepUsersCountStream();
+    
+    // Set up stream listener to update local state
+    _usersStream.listen((users) {
+      if (mounted) {
+        setState(() {
+          _allUsers = users;
+          _filteredUsers = _applySearchFilter(users, _searchController.text);
+        });
+      }
+    });
   }
 
   @override
@@ -52,23 +62,27 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     super.dispose();
   }
 
-  Future<void> _loadUsers() async {
-    // This method is no longer needed - using streams instead
+  void _onSearchChanged() {
+    setState(() {
+      _filteredUsers = _applySearchFilter(_allUsers, _searchController.text);
+    });
   }
 
-  void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredUsers = _users;
-      } else {
-        _filteredUsers = _users.where((user) {
-          final fullName = '${user.firstName} ${user.lastName}'.toLowerCase();
-          final email = user.email.toLowerCase();
-          return fullName.contains(query) || email.contains(query);
-        }).toList();
-      }
-    });
+  List<User> _applySearchFilter(List<User> users, String query) {
+    if (query.isEmpty) {
+      return users;
+    } else {
+      final lowerQuery = query.toLowerCase();
+      return users.where((user) {
+        final fullName = '${user.firstName} ${user.lastName}'.toLowerCase();
+        final email = user.email.toLowerCase();
+        return fullName.contains(lowerQuery) || email.contains(lowerQuery);
+      }).toList();
+    }
+  }
+
+  Future<void> _loadUsers() async {
+    // This method is no longer needed - using streams instead
   }
 
   String _getPermissionsForRole(String? role) {
@@ -503,10 +517,8 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                     }
                     
                     final users = snapshot.data ?? [];
-                    _users = users; // Update local copy for search
-                    _filteredUsers = users; // Reset filtered list
-                    _onSearchChanged(); // Apply current search
-                    
+                    // Don't call setState here - just update the filtered list for display
+                    _filteredUsers = _applySearchFilter(users, _searchController.text);
                     return _buildUserTable();
                   },
                 ),
