@@ -67,7 +67,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Stream<List<User>> getAllUsersStream() => (select(users)
-        ..where((t) => t.isDeleted.equals(false))
+        ..where((t) => t.isDeleted.equals(false) | t.isDeleted.isNull())
         ..orderBy([(t) => OrderingTerm(expression: t.firstName)])
       ).watch();
 
