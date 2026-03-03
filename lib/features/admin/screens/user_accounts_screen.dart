@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'dart:async';
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/villahermosa_theme.dart';
 
@@ -25,10 +26,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   late Stream<List<User>> _usersStream;
   List<User> _allUsers = []; // Store all users from stream
   List<User> _filteredUsers = [];
-  late Stream<int> _totalUsersStream;
-  late Stream<int> _activeUsersStream;
-  late Stream<int> _adminUsersStream;
-  late Stream<int> _salesRepUsersStream;
+  StreamSubscription<List<User>>? _userSubscription;
 
   @override
   void initState() {
@@ -39,13 +37,9 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
 
   void _initializeStreams() {
     _usersStream = widget.database.getAllUsersStream();
-    _totalUsersStream = widget.database.getTotalUsersCountStream();
-    _activeUsersStream = widget.database.getActiveUsersCountStream();
-    _adminUsersStream = widget.database.getAdminUsersCountStream();
-    _salesRepUsersStream = widget.database.getSalesRepUsersCountStream();
     
     // Set up stream listener to update local state
-    _usersStream.listen((users) {
+    _userSubscription = _usersStream.listen((users) {
       if (mounted) {
         setState(() {
           _allUsers = users;
@@ -57,6 +51,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
 
   @override
   void dispose() {
+    _userSubscription?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
@@ -446,58 +441,34 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: StreamBuilder<int>(
-                      stream: _totalUsersStream,
-                      builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        return _buildStatCard(
-                          label: 'Total Users',
-                          value: count.toString(),
-                          icon: Icons.people_outlined,
-                        );
-                      },
+                    child: _buildStatCard(
+                      label: 'Total Users',
+                      value: _allUsers.length.toString(),
+                      icon: Icons.people_outlined,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: StreamBuilder<int>(
-                      stream: _activeUsersStream,
-                      builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        return _buildStatCard(
-                          label: 'Active Users',
-                          value: count.toString(),
-                          icon: Icons.verified_user_outlined,
-                        );
-                      },
+                    child: _buildStatCard(
+                      label: 'Active Users',
+                      value: _allUsers.where((u) => u.isActive).length.toString(),
+                      icon: Icons.verified_user_outlined,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: StreamBuilder<int>(
-                      stream: _adminUsersStream,
-                      builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        return _buildStatCard(
-                          label: 'Administrators',
-                          value: count.toString(),
-                          icon: Icons.admin_panel_settings_outlined,
-                        );
-                      },
+                    child: _buildStatCard(
+                      label: 'Administrators',
+                      value: _allUsers.where((u) => u.role == 'admin').length.toString(),
+                      icon: Icons.admin_panel_settings_outlined,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: StreamBuilder<int>(
-                      stream: _salesRepUsersStream,
-                      builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        return _buildStatCard(
-                          label: 'Sales Reps',
-                          value: count.toString(),
-                          icon: Icons.person_pin_outlined,
-                        );
-                      },
+                    child: _buildStatCard(
+                      label: 'Sales Reps',
+                      value: _allUsers.where((u) => u.role == 'sales_rep').length.toString(),
+                      icon: Icons.person_pin_outlined,
                     ),
                   ),
                 ],
@@ -505,22 +476,8 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
               const SizedBox(height: 24),
               // User Table
               Expanded(
-                child: StreamBuilder<List<User>>(
-                  stream: _usersStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
-                    
-                    final users = snapshot.data ?? [];
-                    // Don't call setState here - just update the filtered list for display
-                    _filteredUsers = _applySearchFilter(users, _searchController.text);
-                    return _buildUserTable();
-                  },
+                child: SingleChildScrollView(
+                  child: _buildUserTable(),
                 ),
               ),
             ],
