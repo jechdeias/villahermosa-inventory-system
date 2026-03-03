@@ -86,7 +86,7 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/admin/users': (context) => ResponsiveShell(
         database: database,
         selectedRoute: '/admin/users',
-        child: UserAccountsScreen(database: database),
+        child: UserAccountsScreen(database: database, syncManager: SyncManager.instance),
       ),
       '/warehouse/dashboard': (context) => WarehouseDashboardScreen(database: database, syncManager: SyncManager.instance),
       '/customer/dashboard': (context) => const CustomerDashboardScreen(),

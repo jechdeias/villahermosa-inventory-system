@@ -35,7 +35,7 @@ class NavigationService {
       case 'pending':
         return const AccountPendingScreen();
       case 'users':
-        return UserAccountsScreen(database: _database);
+        return UserAccountsScreen(database: _database, syncManager: SyncManager.instance);
       default:
         return const CustomerDashboardScreen(); // Default fallback
     }

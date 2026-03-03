@@ -448,13 +448,32 @@ class SyncEngine {
   
   /// Table-specific pull methods
   Future<void> _pullUsers(DateTime lastSyncTime) async {
-    final response = await Supabase.instance.client
-        .from('users')
-        .select()
-        .gte('updated_at', lastSyncTime.toIso8601String());
+    var query = Supabase.instance.client.from('users').select();
+    
+    // Only apply timestamp filter if it's not the first sync (not very old)
+    if (lastSyncTime.isAfter(DateTime(2020))) {
+      query = query.gte('updated_at', lastSyncTime.toIso8601String());
+    }
+    
+    final response = await query;
     
     for (final userData in response) {
-      await _updateLocalRecord('users', userData);
+      // Map Supabase field names to local Drift field names
+      final mappedData = {
+        'id': userData['id'],
+        'first_name': userData['first_name'] ?? userData['firstName'] ?? '',
+        'last_name': userData['last_name'] ?? userData['lastName'] ?? '',
+        'email': userData['email'] ?? '',
+        'role': userData['role'] ?? 'pending',
+        'is_active': userData['is_active'] ?? userData['isActive'] ?? true,
+        'is_deleted': userData['is_deleted'] ?? userData['isDeleted'] ?? false,
+        'password_hash': userData['password_hash'] ?? userData['passwordHash'] ?? '',
+        'sync_status': 'synced',
+        'created_at': userData['created_at'] ?? userData['createdAt'] ?? DateTime.now().toIso8601String(),
+        'updated_at': userData['updated_at'] ?? userData['updatedAt'] ?? DateTime.now().toIso8601String(),
+      };
+      
+      await _updateLocalRecord('users', mappedData);
     }
   }
   
