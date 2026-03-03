@@ -88,7 +88,7 @@ class VillahermosaInventoryApp extends StatelessWidget {
         selectedRoute: '/admin/users',
         child: UserAccountsScreen(database: database),
       ),
-      '/warehouse/dashboard': (context) => const WarehouseDashboardScreen(),
+      '/warehouse/dashboard': (context) => WarehouseDashboardScreen(database: database, syncManager: SyncManager.instance),
       '/customer/dashboard': (context) => const CustomerDashboardScreen(),
       '/delivery/dashboard': (context) => const DeliveryDashboardScreen(),
       '/email-verification': (context) => const EmailVerificationScreen(),

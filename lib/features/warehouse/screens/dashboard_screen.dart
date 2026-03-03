@@ -1,384 +1,529 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../viewmodels/warehouse_viewmodel.dart';
+import 'package:drift/drift.dart' as drift;
+import '../../../core/database/app_database.dart';
+import '../../../core/sync/sync_manager.dart';
+import '../../../core/widgets/responsive_shell.dart';
 
-class WarehouseDashboardScreen extends StatelessWidget {
-  const WarehouseDashboardScreen({super.key});
+/// Warehouse Dashboard Screen
+/// 
+/// Provides warehouse operations overview and management tools.
+class WarehouseDashboardScreen extends StatefulWidget {
+  const WarehouseDashboardScreen({
+    super.key, 
+    required this.database, 
+    required this.syncManager
+  });
+  
+  final AppDatabase database;
+  final SyncManager syncManager;
 
   @override
-  Widget build(BuildContext context) => ChangeNotifierProvider(
-      create: (_) => WarehouseViewModel(),
-      child: const WarehouseDashboardView(),
-    );
+  State<WarehouseDashboardScreen> createState() => _WarehouseDashboardScreenState();
 }
 
-class WarehouseDashboardView extends StatelessWidget {
-  const WarehouseDashboardView({super.key});
+class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
+  int _incomingOrdersCount = 0;
+  int _ordersToPrepareCount = 0;
+  int _lowStockAlertsCount = 0;
+  int _todayRoutesCount = 0;
+  List<StockMovement> _recentActivities = [];
+  bool _isLoading = true;
+
+  // Warehouse navigation items
+  static const List<NavigationItem> _warehouseNavItems = [
+    NavigationItem(
+      route: '/warehouse/dashboard',
+      icon: Icons.dashboard,
+      label: 'Dashboard',
+    ),
+    NavigationItem(
+      route: '/warehouse/incoming-orders',
+      icon: Icons.inventory_2,
+      label: 'Incoming Orders',
+    ),
+    NavigationItem(
+      route: '/warehouse/prepare-orders',
+      icon: Icons.assignment,
+      label: 'Prepare Orders',
+    ),
+    NavigationItem(
+      route: '/warehouse/inventory',
+      icon: Icons.storage,
+      label: 'Inventory Stock',
+    ),
+    NavigationItem(
+      route: '/warehouse/stock-movement',
+      icon: Icons.trending_up,
+      label: 'Stock Movement',
+    ),
+    NavigationItem(
+      route: '/warehouse/loading-dispatch',
+      icon: Icons.local_shipping,
+      label: 'Loading & Dispatch',
+    ),
+    NavigationItem(
+      route: '/warehouse/routes',
+      icon: Icons.location_on,
+      label: 'Routes Today',
+    ),
+    NavigationItem(
+      route: '/warehouse/returns',
+      icon: Icons.refresh,
+      label: 'Returns & Damaged',
+    ),
+    NavigationItem(
+      route: '/warehouse/reports',
+      icon: Icons.bar_chart,
+      label: 'Reports',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    try {
+      final results = await Future.wait(<Future<Object>>[
+        _getIncomingOrdersCount(),
+        _getOrdersToPrepareCount(),
+        _getLowStockAlertsCount(),
+        _getTodayRoutesCount(),
+        _getRecentActivities(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _incomingOrdersCount = results[0] as int;
+          _ordersToPrepareCount = results[1] as int;
+          _lowStockAlertsCount = results[2] as int;
+          _todayRoutesCount = results[3] as int;
+          _recentActivities = results[4] as List<StockMovement>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading dashboard: $e')),
+        );
+      }
+    }
+  }
+
+  Future<int> _getIncomingOrdersCount() async {
+    final result = await widget.database.customSelect(
+      "SELECT COUNT(*) as count FROM orders WHERE status = 'incoming' AND is_deleted = 0"
+    ).getSingle();
+    return result.read<int>('count');
+  }
+
+  Future<int> _getOrdersToPrepareCount() async {
+    final result = await widget.database.customSelect(
+      "SELECT COUNT(*) as count FROM orders WHERE status = 'pending' AND is_deleted = 0"
+    ).getSingle();
+    return result.read<int>('count');
+  }
+
+  Future<int> _getLowStockAlertsCount() async {
+    final result = await widget.database.customSelect(
+      "SELECT COUNT(*) as count FROM products WHERE current_stock <= min_stock AND is_deleted = 0"
+    ).getSingle();
+    return result.read<int>('count');
+  }
+
+  Future<int> _getTodayRoutesCount() async {
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    final todayEnd = todayStart.add(const Duration(days: 1));
+    
+    final result = await widget.database.customSelect(
+      "SELECT COUNT(*) as count FROM deliveries WHERE date >= ? AND date < ? AND is_deleted = 0",
+      variables: [
+        drift.Variable.withString(todayStart.toIso8601String()),
+        drift.Variable.withString(todayEnd.toIso8601String()),
+      ],
+    ).getSingle();
+    return result.read<int>('count');
+  }
+
+  Future<List<StockMovement>> _getRecentActivities() async {
+    return await (widget.database.select(widget.database.stockMovements)
+          ..orderBy([(t) => drift.OrderingTerm(
+            expression: t.createdAt, 
+            mode: drift.OrderingMode.desc
+          )])
+          ..limit(5))
+        .get();
+  }
+
+  Future<void> _handleQuickAction(String action) async {
+    switch (action) {
+      case 'Sync Data':
+        try {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Syncing data...')),
+          );
+          await widget.syncManager.push();
+          await widget.syncManager.pull();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sync completed successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Sync failed: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+        break;
+      default:
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Coming soon')),
+          );
+        }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final warehouseViewModel = context.watch<WarehouseViewModel>();
-    
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.grey[800],
-        elevation: 0,
-        title: const Text(
-          'Warehouse Dashboard',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+    return ResponsiveShell(
+      selectedRoute: '/warehouse/dashboard',
+      database: widget.database,
+      navItems: _warehouseNavItems,
+      syncManager: widget.syncManager,
+      child: _buildWarehouseDashboard(),
+    );
+  }
+
+  Widget _buildWarehouseDashboard() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Page Header
+          _buildPageHeader(),
+          const SizedBox(height: 24),
+          
+          // Stats Cards
+          _buildStatsCards(),
+          const SizedBox(height: 24),
+          
+          // Activity and Actions Row
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 1200) {
+                  // Desktop layout
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 6, child: _buildRecentActivity()),
+                      const SizedBox(width: 24),
+                      Expanded(flex: 4, child: _buildQuickActions()),
+                    ],
+                  );
+                } else {
+                  // Mobile layout
+                  return Column(
+                    children: [
+                      _buildRecentActivity(),
+                      const SizedBox(height: 24),
+                      _buildQuickActions(),
+                    ],
+                  );
+                }
+              },
+            ),
           ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Section
-            const Text(
-              'Welcome back, Warehouse Team',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Manage inventory, track orders, and monitor warehouse operations',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Stats Cards Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Products',
-                    '1,234',
-                    Icons.inventory_2_outlined,
-                    Colors.blue,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    'Low Stock Items',
-                    '23',
-                    Icons.warning_amber_outlined,
-                    Colors.orange,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    'Pending Orders',
-                    '45',
-                    Icons.pending_actions_outlined,
-                    Colors.purple,
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Main Actions Section
-            const Text(
-              'Warehouse Operations',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Action Cards Grid - 2x2 layout matching Figma
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.4,
-              children: [
-                _buildActionCard(
-                  'Inventory Management',
-                  'View and manage product inventory',
-                  Icons.inventory_2_outlined,
-                  Colors.blue,
-                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Warehouse Inventory - Coming Soon'))))
-                  ),
-                ),
-                _buildActionCard(
-                  'Order Processing',
-                  'Process and prepare customer orders',
-                  Icons.shopping_cart_outlined,
-                  Colors.green,
-                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Delivery Dashboard - Coming Soon'))))
-                  ),
-                ),
-                _buildActionCard(
-                  'Stock Movements',
-                  'Track stock in and out movements',
-                  Icons.swap_vert_outlined,
-                  Colors.orange,
-                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Delivery Dashboard - Coming Soon'))))
-                  ),
-                ),
-                _buildActionCard(
-                  'Customer Orders',
-                  'View customer order history',
-                  Icons.people_outline,
-                  Colors.purple,
-                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Customer Dashboard - Coming Soon'))))
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Recent Activity Section
-            const Text(
-              'Recent Activity',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: Colors.grey[300]!),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildActivityItem(
-                      'Stock In: Beer na Beer 330ml',
-                      '50 units added to Warehouse A',
-                      Icons.add_shopping_cart_outlined,
-                      Colors.green,
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Divider(height: 1),
-                    ),
-                    _buildActivityItem(
-                      'Order #1234 Prepared',
-                      'Customer: Juan Santos',
-                      Icons.check_circle_outline,
-                      Colors.blue,
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Divider(height: 1),
-                    ),
-                    _buildActivityItem(
-                      'Low Stock Alert',
-                      'Cobra Energy Drink - Red',
-                      Icons.warning_outlined,
-                      Colors.orange,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Loading indicator
-            if (warehouseViewModel.isLoading)
-              const Center(child: CircularProgressIndicator())
-            
-            // Error display
-            else if (warehouseViewModel.error != null) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red[700]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Error: ${warehouseViewModel.error}',
-                        style: TextStyle(color: Colors.red[700]),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: warehouseViewModel.clearError,
-                      child: const Text('Clear'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) => Container(
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildPageHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Warehouse Dashboard',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1E1E1E),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Villahermosa Marketing - Warehouse Operations',
+          style: TextStyle(
+            fontSize: 14,
+            color: const Color(0xFF6B6B6B),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsCards() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int crossAxisCount = constraints.maxWidth > 800 ? 4 : 2;
+        
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.5,
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+            _buildStatCard(
+              'Incoming Orders',
+              _incomingOrdersCount,
+              Icons.inventory_2,
+              'Orders to receive',
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-                fontWeight: FontWeight.w500,
-              ),
+            _buildStatCard(
+              'Orders to Prepare',
+              _ordersToPrepareCount,
+              Icons.assignment,
+              'Pending picklist',
+            ),
+            _buildStatCard(
+              'Low Stock Alerts',
+              _lowStockAlertsCount,
+              Icons.warning,
+              'Items below threshold',
+            ),
+            _buildStatCard(
+              "Today's Routes",
+              _todayRoutesCount,
+              Icons.local_shipping,
+              'Active delivery routes',
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
+  }
 
-  Widget _buildActionCard(
-    String title,
-    String description,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) => Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
+  Widget _buildStatCard(String label, int value, IconData icon, String description) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon and label row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(height: 16),
               Text(
-                title,
+                label,
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1E1E1E),
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                  height: 1.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              Icon(
+                icon,
+                color: const Color(0xFF1E1E1E),
+                size: 20,
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 12),
+          
+          // Large number
+          Text(
+            value.toString(),
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E1E1E),
+            ),
+          ),
+          
+          // Description
+          Text(
+            description,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF6B6B6B),
+            ),
+          ),
+        ],
       ),
     );
+  }
 
-  Widget _buildActivityItem(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-  ) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+  Widget _buildRecentActivity() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
+          Text(
+            'Recent Activity',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E1E1E),
             ),
-            child: Icon(icon, color: color, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(height: 16),
+          
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: _recentActivities.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No recent activity',
+                      style: TextStyle(color: Color(0xFF6B6B6B)),
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: _recentActivities.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      color: Color(0xFFE0E0E0),
+                      height: 1,
+                    ),
+                    itemBuilder: (context, index) {
+                      final activity = _recentActivities[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                activity.reason,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF1E1E1E),
+                                ),
+                              ),
+                            ),
+                            Text(
+                              (() {
+                                final now = DateTime.now();
+                                final difference = now.difference(activity.createdAt);
+                                
+                                if (difference.inMinutes < 1) {
+                                  return 'Just now';
+                                } else if (difference.inMinutes < 60) {
+                                  return '${difference.inMinutes} minutes ago';
+                                } else if (difference.inHours < 24) {
+                                  return '${difference.inHours} hours ago';
+                                } else {
+                                  return '${difference.inDays} days ago';
+                                }
+                              })(),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B6B6B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quick Actions',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E1E1E),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          Expanded(
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 2.5,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
-                ),
+                _buildActionButton('Stock In'),
+                _buildActionButton('Stock Out'),
+                _buildActionButton('New Order'),
+                _buildActionButton('Print Labels'),
+                _buildActionButton('View Routes'),
+                _buildActionButton('Sync Data'),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildActionButton(String label) {
+    return ElevatedButton(
+      onPressed: () => _handleQuickAction(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF1E1E1E),
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 }

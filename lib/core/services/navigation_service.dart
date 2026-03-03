@@ -27,7 +27,7 @@ class NavigationService {
       case 'admin':
         return AdminDashboardScreen(database: _database, syncManager: _syncManager);
       case 'warehouse':
-        return const WarehouseDashboardScreen();
+        return WarehouseDashboardScreen(database: _database, syncManager: _syncManager);
       case 'delivery':
         return const DeliveryDashboardScreen();
       case 'customer':

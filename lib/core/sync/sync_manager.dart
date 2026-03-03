@@ -13,6 +13,7 @@ class SyncManager {
   
   final AppDatabase _database;
   final SyncEngine _syncEngine;
+  DateTime? _lastSyncTime;
   
   static SyncManager? _instance;
   static SyncManager get instance {
@@ -888,14 +889,18 @@ class SyncManager {
     debugPrint('🔧 Resolving stock movement conflict: ${movement.id}');
   }
   
+  /// Get last sync timestamp
+  DateTime? get lastSyncTime => _lastSyncTime;
+  
   /// Utility methods
   Future<DateTime> _getLastSyncTimestamp() async {
     // Get last sync timestamp from local storage
-    return DateTime.now().subtract(const Duration(days: 1));
+    return _lastSyncTime ?? DateTime.now().subtract(const Duration(days: 1));
   }
   
   Future<void> _updateLastSyncTimestamp() async {
     // Update last sync timestamp
+    _lastSyncTime = DateTime.now();
     debugPrint('🕐 Updating last sync timestamp');
   }
 }

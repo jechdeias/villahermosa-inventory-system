@@ -9,11 +9,15 @@ class ResponsiveShell extends StatefulWidget {
     required this.child,
     required this.database,
     this.selectedRoute = '/',
+    this.navItems,
+    this.syncManager,
   });
 
   final Widget child;
   final String selectedRoute;
   final dynamic database; // AppDatabase
+  final List<NavigationItem>? navItems;
+  final dynamic syncManager; // SyncManager
 
   @override
   State<ResponsiveShell> createState() => _ResponsiveShellState();
@@ -23,7 +27,9 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Navigation items configuration
-  static const List<NavigationItem> _navItems = [
+  List<NavigationItem> get navItems => widget.navItems ?? _defaultNavItems;
+  
+  static const List<NavigationItem> _defaultNavItems = [
     NavigationItem(
       route: '/admin/dashboard',
       icon: Icons.dashboard_outlined,
@@ -90,6 +96,26 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       Navigator.pop(context); // Close mobile menu
     }
     Navigator.pushReplacementNamed(context, route);
+  }
+
+  String _getLastSyncTime() {
+    if (widget.syncManager == null) return 'Never';
+    
+    final lastSync = widget.syncManager.lastSyncTime;
+    if (lastSync == null) return 'Never';
+    
+    final now = DateTime.now();
+    final difference = now.difference(lastSync);
+    
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} min ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hours ago';
+    } else {
+      return '${difference.inDays} days ago';
+    }
   }
 
   void _logout() {
@@ -189,15 +215,42 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                 Expanded(
                   child: ListView.builder(
                     padding: EdgeInsets.zero,
-                    itemCount: _navItems.length,
+                    itemCount: navItems.length,
                     itemBuilder: (context, index) {
-                      final item = _navItems[index];
+                      final item = navItems[index];
                       final isActive = widget.selectedRoute == item.route;
                       
                       return _buildDesktopNavItem(item, isActive);
                     },
                   ),
                 ),
+                // Warehouse Footer (only for warehouse nav)
+                if (widget.syncManager != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Offline Mode',
+                          style: TextStyle(
+                            color: const Color(0xFF9CA3AF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Last sync: ${_getLastSyncTime()}',
+                          style: TextStyle(
+                            color: const Color(0xFF9CA3AF),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 // Logout Button
                 Container(
                   padding: const EdgeInsets.all(24),
@@ -326,7 +379,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
 
   Widget _buildMobileBottomNav() {
     // Show first 5 items in bottom nav
-    final primaryItems = _navItems.take(5).toList();
+    final primaryItems = navItems.take(5).toList();
     
     return Container(
       decoration: BoxDecoration(
@@ -419,7 +472,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
               ],
             ),
             const SizedBox(height: 24),
-            ..._navItems.map((item) {
+            ...navItems.map((item) {
               final isActive = widget.selectedRoute == item.route;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
