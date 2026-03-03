@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/villahermosa_theme.dart';
 
@@ -20,14 +22,27 @@ class UserAccountsScreen extends StatefulWidget {
 
 class _UserAccountsScreenState extends State<UserAccountsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  late Stream<List<User>> _usersStream;
   List<User> _users = [];
   List<User> _filteredUsers = [];
+  late Stream<int> _totalUsersStream;
+  late Stream<int> _activeUsersStream;
+  late Stream<int> _adminUsersStream;
+  late Stream<int> _salesRepUsersStream;
 
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    _initializeStreams();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  void _initializeStreams() {
+    _usersStream = widget.database.getAllUsersStream();
+    _totalUsersStream = widget.database.getTotalUsersCountStream();
+    _activeUsersStream = widget.database.getActiveUsersCountStream();
+    _adminUsersStream = widget.database.getAdminUsersCountStream();
+    _salesRepUsersStream = widget.database.getSalesRepUsersCountStream();
   }
 
   @override
@@ -38,21 +53,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   }
 
   Future<void> _loadUsers() async {
-    try {
-      final users = await widget.database.getAllUsers();
-      if (mounted) {
-        setState(() {
-          _users = users;
-          _filteredUsers = users;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading users: $e')),
-        );
-      }
-    }
+    // This method is no longer needed - using streams instead
   }
 
   void _onSearchChanged() {
@@ -338,16 +339,25 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   }
 
   void _editUser(User user) {
-    // TODO: Implement edit user functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit user functionality coming soon')),
+    showDialog(
+      context: context,
+      builder: (context) => _EditUserDialog(
+        database: widget.database,
+        user: user,
+        onUserUpdated: () {
+          // Stream will automatically refresh the UI
+        },
+      ),
     );
   }
 
   void _resetPassword(User user) {
-    // TODO: Implement password reset functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password reset functionality coming soon')),
+    showDialog(
+      context: context,
+      builder: (context) => _ResetPasswordDialog(
+        database: widget.database,
+        user: user,
+      ),
     );
   }
 
@@ -422,34 +432,58 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildStatCard(
-                      label: 'Total Users',
-                      value: _users.length.toString(),
-                      icon: Icons.people_outlined,
+                    child: StreamBuilder<int>(
+                      stream: _totalUsersStream,
+                      builder: (context, snapshot) {
+                        final count = snapshot.data ?? 0;
+                        return _buildStatCard(
+                          label: 'Total Users',
+                          value: count.toString(),
+                          icon: Icons.people_outlined,
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildStatCard(
-                      label: 'Active Users',
-                      value: _users.where((u) => u.isActive).length.toString(),
-                      icon: Icons.verified_user_outlined,
+                    child: StreamBuilder<int>(
+                      stream: _activeUsersStream,
+                      builder: (context, snapshot) {
+                        final count = snapshot.data ?? 0;
+                        return _buildStatCard(
+                          label: 'Active Users',
+                          value: count.toString(),
+                          icon: Icons.verified_user_outlined,
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildStatCard(
-                      label: 'Administrators',
-                      value: _users.where((u) => u.role == 'admin').length.toString(),
-                      icon: Icons.admin_panel_settings_outlined,
+                    child: StreamBuilder<int>(
+                      stream: _adminUsersStream,
+                      builder: (context, snapshot) {
+                        final count = snapshot.data ?? 0;
+                        return _buildStatCard(
+                          label: 'Administrators',
+                          value: count.toString(),
+                          icon: Icons.admin_panel_settings_outlined,
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildStatCard(
-                      label: 'Sales Reps',
-                      value: _users.where((u) => u.role == 'sales_rep').length.toString(),
-                      icon: Icons.person_pin_outlined,
+                    child: StreamBuilder<int>(
+                      stream: _salesRepUsersStream,
+                      builder: (context, snapshot) {
+                        final count = snapshot.data ?? 0;
+                        return _buildStatCard(
+                          label: 'Sales Reps',
+                          value: count.toString(),
+                          icon: Icons.person_pin_outlined,
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -457,7 +491,25 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
               const SizedBox(height: 24),
               // User Table
               Expanded(
-                child: _buildUserTable(),
+                child: StreamBuilder<List<User>>(
+                  stream: _usersStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+                    
+                    final users = snapshot.data ?? [];
+                    _users = users; // Update local copy for search
+                    _filteredUsers = users; // Reset filtered list
+                    _onSearchChanged(); // Apply current search
+                    
+                    return _buildUserTable();
+                  },
+                ),
               ),
             ],
           ),
@@ -644,10 +696,13 @@ class _AddUserDialogState extends State<_AddUserDialog> {
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
           email: _emailController.text,
-          passwordHash: _passwordController.text, // TODO: Hash this password
+          passwordHash: _hashPassword(_passwordController.text),
           role: _selectedRole,
           isActive: const drift.Value(true),
+          isDeleted: const drift.Value(false),
           syncStatus: const drift.Value('pending'),
+          createdAt: drift.Value(DateTime.now()),
+          updatedAt: drift.Value(DateTime.now()),
         );
 
         await widget.database.createUser(user);
@@ -663,6 +718,13 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         }
       }
     }
+  }
+
+  /// Hash password using SHA-256 algorithm
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
 }
 
@@ -745,5 +807,345 @@ class _UserDetailsDialog extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _EditUserDialog extends StatefulWidget {
+  const _EditUserDialog({
+    required this.database,
+    required this.user,
+    required this.onUserUpdated,
+  });
+
+  final AppDatabase database;
+  final User user;
+  final VoidCallback onUserUpdated;
+
+  @override
+  State<_EditUserDialog> createState() => _EditUserDialogState();
+}
+
+class _EditUserDialogState extends State<_EditUserDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _emailController;
+  late String _selectedRole;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController = TextEditingController(text: widget.user.firstName);
+    _lastNameController = TextEditingController(text: widget.user.lastName);
+    _emailController = TextEditingController(text: widget.user.email);
+    _selectedRole = widget.user.role;
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: VillahermosaColors.cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Container(
+        width: 400,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Edit User',
+              style: VillahermosaTextStyles.h3,
+            ),
+            const SizedBox(height: 24),
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _firstNameController,
+                    decoration: _buildInputDecoration('First Name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter first name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _lastNameController,
+                    decoration: _buildInputDecoration('Last Name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter last name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: _buildInputDecoration('Email'),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedRole,
+                    decoration: _buildInputDecoration('Role'),
+                    items: const [
+                      DropdownMenuItem(value: 'admin', child: Text('Administrator')),
+                      DropdownMenuItem(value: 'warehouse', child: Text('Warehouse Manager')),
+                      DropdownMenuItem(value: 'sales_rep', child: Text('Sales Representative')),
+                      DropdownMenuItem(value: 'delivery', child: Text('Delivery Driver')),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedRole = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: _updateUser,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: VillahermosaColors.textPrimary,
+                    foregroundColor: VillahermosaColors.cardBg,
+                  ),
+                  child: const Text('Update User'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: VillahermosaColors.cardBg,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: VillahermosaColors.borderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: VillahermosaColors.borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: VillahermosaColors.textPrimary, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+  }
+
+  Future<void> _updateUser() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final updatedUser = UsersCompanion(
+          firstName: drift.Value(_firstNameController.text),
+          lastName: drift.Value(_lastNameController.text),
+          email: drift.Value(_emailController.text),
+          role: drift.Value(_selectedRole),
+          syncStatus: const drift.Value('pending'),
+          updatedAt: drift.Value(DateTime.now()),
+        );
+
+        await widget.database.updateUser(widget.user.uuid, updatedUser);
+        if (mounted) {
+          widget.onUserUpdated();
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating user: $e')),
+          );
+        }
+      }
+    }
+  }
+}
+
+class _ResetPasswordDialog extends StatefulWidget {
+  const _ResetPasswordDialog({
+    required this.database,
+    required this.user,
+  });
+
+  final AppDatabase database;
+  final User user;
+
+  @override
+  State<_ResetPasswordDialog> createState() => _ResetPasswordDialogState();
+}
+
+class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: VillahermosaColors.cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Container(
+        width: 400,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Reset Password for ${widget.user.firstName} ${widget.user.lastName}',
+              style: VillahermosaTextStyles.h3,
+            ),
+            const SizedBox(height: 24),
+            Form(
+              key: _formKey,
+              child: TextFormField(
+                controller: _passwordController,
+                decoration: _buildInputDecoration('New Password'),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter new password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: _resetPassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: VillahermosaColors.textPrimary,
+                    foregroundColor: VillahermosaColors.cardBg,
+                  ),
+                  child: const Text('Reset Password'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: VillahermosaColors.cardBg,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: VillahermosaColors.borderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: VillahermosaColors.borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: VillahermosaColors.textPrimary, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+  }
+
+  Future<void> _resetPassword() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final updatedUser = UsersCompanion(
+          passwordHash: drift.Value(_hashPassword(_passwordController.text)),
+          forcePasswordChange: const drift.Value(true),
+          syncStatus: const drift.Value('pending'),
+          updatedAt: drift.Value(DateTime.now()),
+        );
+
+        await widget.database.updateUser(widget.user.uuid, updatedUser);
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Password reset successfully! User must change password on next login.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error resetting password: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  /// Hash password using SHA-256 algorithm
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
 }

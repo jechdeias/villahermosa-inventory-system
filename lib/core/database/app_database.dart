@@ -66,6 +66,11 @@ class AppDatabase extends _$AppDatabase {
     return allUsers.where((user) => !user.isDeleted).toList();
   }
 
+  Stream<List<User>> getAllUsersStream() => (select(users)
+        ..where((t) => t.isDeleted.equals(false))
+        ..orderBy([(t) => OrderingTerm(expression: t.firstName)])
+      ).watch();
+
   Future<User?> getUserById(int id) async => (select(users)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Future<User?> getUserByEmail(String email) async => (select(users)..where((t) => t.email.equals(email) & t.isDeleted.equals(false) & t.isActive.equals(true))).getSingleOrNull();
@@ -80,6 +85,31 @@ class AppDatabase extends _$AppDatabase {
         )) > 0;
 
   Future<List<User>> getPendingSyncUsers() async => (select(users)..where((t) => t.syncStatus.equals('pending'))).get();
+
+  // Stream methods for real-time updates
+  Stream<int> getTotalUsersCountStream() {
+    return customSelect(
+      'SELECT COUNT(*) as count FROM users WHERE is_deleted = 0',
+    ).watch().map((rows) => rows.first.read<int>('count'));
+  }
+
+  Stream<int> getActiveUsersCountStream() {
+    return customSelect(
+      'SELECT COUNT(*) as count FROM users WHERE is_active = 1 AND is_deleted = 0',
+    ).watch().map((rows) => rows.first.read<int>('count'));
+  }
+
+  Stream<int> getAdminUsersCountStream() {
+    return customSelect(
+      'SELECT COUNT(*) as count FROM users WHERE role = "admin" AND is_deleted = 0',
+    ).watch().map((rows) => rows.first.read<int>('count'));
+  }
+
+  Stream<int> getSalesRepUsersCountStream() {
+    return customSelect(
+      'SELECT COUNT(*) as count FROM users WHERE role = "sales_rep" AND is_deleted = 0',
+    ).watch().map((rows) => rows.first.read<int>('count'));
+  }
 
   Future<bool> markUserAsSynced(String uuid, String remoteId) async => await (update(users)..where((t) => t.uuid.equals(uuid)))
         .write(UsersCompanion(
