@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:async';
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/villahermosa_theme.dart';
+import '../../../core/sync/sync_manager.dart';
 
 /// User Accounts & Permissions screen
 /// Manages user access, roles, and security settings
@@ -38,6 +39,9 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   void _initializeStreams() {
     _usersStream = widget.database.getAllUsersStream();
     
+    // Run comprehensive diagnostic
+    _runCompleteDiagnostic();
+    
     // Set up stream listener to update local state
     _userSubscription = _usersStream.listen((users) {
       if (mounted) {
@@ -47,6 +51,66 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         });
       }
     });
+  }
+
+  Future<void> _runCompleteDiagnostic() async {
+    debugPrint('\n=== COMPREHENSIVE USER DATA AUDIT ===');
+    
+    try {
+      // 1. Raw Drift query - show every single row
+      debugPrint('\n1. ALL ROWS IN USERS TABLE:');
+      final allRows = await widget.database.customSelect('SELECT * FROM users').get();
+      for (final row in allRows) {
+        debugPrint('Row: ${row.data}');
+      }
+      debugPrint('Total rows: ${allRows.length}');
+      
+      // 2. Count total rows with no filters
+      debugPrint('\n2. TOTAL ROW COUNT:');
+      final countResult = await widget.database.customSelect('SELECT COUNT(*) as count FROM users').getSingle();
+      debugPrint('Total count: ${countResult.read<int>('count')}');
+      
+      // 3. Check what values is_deleted actually has
+      debugPrint('\n3. DISTINCT is_deleted VALUES:');
+      final deletedValues = await widget.database.customSelect('SELECT DISTINCT is_deleted FROM users').get();
+      for (final row in deletedValues) {
+        debugPrint('is_deleted value: ${row.read<dynamic>('is_deleted')} (type: ${row.read<dynamic>('is_deleted').runtimeType})');
+      }
+      
+      // 4. Check what values is_active actually has
+      debugPrint('\n4. DISTINCT is_active VALUES:');
+      final activeValues = await widget.database.customSelect('SELECT DISTINCT is_active FROM users').get();
+      for (final row in activeValues) {
+        debugPrint('is_active value: ${row.read<dynamic>('is_active')} (type: ${row.read<dynamic>('is_active').runtimeType})');
+      }
+      
+      // 5. Check all distinct roles
+      debugPrint('\n5. DISTINCT role VALUES:');
+      final roleValues = await widget.database.customSelect('SELECT DISTINCT role FROM users').get();
+      for (final row in roleValues) {
+        debugPrint('role value: ${row.read<String>('role')}');
+      }
+      
+      // 6. Check if firstName/lastName or name column exists
+      debugPrint('\n6. TABLE SCHEMA:');
+      final schemaResult = await widget.database.customSelect('PRAGMA table_info(users)').get();
+      for (final row in schemaResult) {
+        debugPrint('Column: ${row.data}');
+      }
+      
+      // 7. Check what the current stream query returns
+      debugPrint('\n7. CURRENT STREAM QUERY RESULTS:');
+      final streamUsers = await widget.database.getAllUsers();
+      debugPrint('Stream query returned ${streamUsers.length} users:');
+      for (final user in streamUsers) {
+        debugPrint('Stream User: ${user.firstName} ${user.lastName}, Email: ${user.email}, Role: ${user.role}, Active: ${user.isActive}, Deleted: ${user.isDeleted}');
+      }
+      
+    } catch (e) {
+      debugPrint('Error in diagnostic: $e');
+    }
+    
+    debugPrint('\n=== END AUDIT ===\n');
   }
 
   @override
@@ -409,6 +473,44 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                       ),
                     ),
                     child: const Text('+ Add User'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      // Debug: Trigger pull from Supabase
+                      final context = this.context; // Store context before async gap
+                      try {
+                        final syncManager = SyncManager.instance;
+                        await syncManager.performFullSync();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Pull from Supabase completed!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Pull failed: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.sync, color: VillahermosaColors.cardBg),
+                    label: const Text('Pull from Supabase'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: VillahermosaColors.textPrimary,
+                      foregroundColor: VillahermosaColors.cardBg,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
                   ),
                 ],
               ),

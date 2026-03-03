@@ -667,39 +667,84 @@ class SyncEngine {
       ).getSingleOrNull();
       
       if (existing != null) {
-        // Update existing record
-        await _database.customUpdate(
-          '''UPDATE $tableName SET 
-              name = ?, email = ?, phone = ?, address = ?, 
-              sync_status = ?, updated_at = ? 
-              WHERE id = ?''',
-          variables: [
-            Variable.withString(data['name'] ?? ''),
-            Variable.withString(data['email'] ?? ''),
-            Variable.withString(data['phone'] ?? ''),
-            Variable.withString(data['address'] ?? ''),
-            Variable.withString('synced'),
-            Variable.withDateTime(DateTime.parse(data['updated_at'])),
-            Variable.withInt(data['id']),
-          ],
-        );
+        // Update existing record - handle different tables
+        if (tableName == 'users') {
+          // Special handling for users table with correct field names
+          await _database.customUpdate(
+            '''UPDATE users SET 
+                first_name = ?, last_name = ?, email = ?, role = ?, 
+                is_active = ?, is_deleted = ?, sync_status = ?, 
+                updated_at = ? 
+                WHERE id = ?''',
+            variables: [
+              Variable.withString(data['first_name'] ?? data['name'] ?? ''),
+              Variable.withString(data['last_name'] ?? ''),
+              Variable.withString(data['email'] ?? ''),
+              Variable.withString(data['role'] ?? ''),
+              Variable.withBool(data['is_active'] ?? true),
+              Variable.withBool(data['is_deleted'] ?? false),
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.parse(data['updated_at'])),
+              Variable.withInt(data['id']),
+            ],
+          );
+        } else {
+          // Generic handling for other tables
+          await _database.customUpdate(
+            '''UPDATE $tableName SET 
+                name = ?, email = ?, phone = ?, address = ?, 
+                sync_status = ?, updated_at = ? 
+                WHERE id = ?''',
+            variables: [
+              Variable.withString(data['name'] ?? ''),
+              Variable.withString(data['email'] ?? ''),
+              Variable.withString(data['phone'] ?? ''),
+              Variable.withString(data['address'] ?? ''),
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.parse(data['updated_at'])),
+              Variable.withInt(data['id']),
+            ],
+          );
+        }
       } else {
-        // Insert new record
-        await _database.customInsert(
-          '''INSERT INTO $tableName 
-              (id, name, email, phone, address, sync_status, created_at, updated_at) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-          variables: [
-            Variable.withInt(data['id']),
-            Variable.withString(data['name'] ?? ''),
-            Variable.withString(data['email'] ?? ''),
-            Variable.withString(data['phone'] ?? ''),
-            Variable.withString(data['address'] ?? ''),
-            Variable.withString('synced'),
-            Variable.withDateTime(DateTime.parse(data['created_at'])),
-            Variable.withDateTime(DateTime.parse(data['updated_at'])),
-          ],
-        );
+        // Insert new record - handle different tables
+        if (tableName == 'users') {
+          // Special handling for users table with correct field names
+          await _database.customInsert(
+            '''INSERT INTO users 
+                    (id, first_name, last_name, email, role, is_active, is_deleted, sync_status, created_at, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            variables: [
+              Variable.withInt(data['id']),
+              Variable.withString(data['first_name'] ?? data['name'] ?? ''),
+              Variable.withString(data['last_name'] ?? ''),
+              Variable.withString(data['email'] ?? ''),
+              Variable.withString(data['role'] ?? ''),
+              Variable.withBool(data['is_active'] ?? true),
+              Variable.withBool(data['is_deleted'] ?? false),
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.parse(data['created_at'])),
+              Variable.withDateTime(DateTime.parse(data['updated_at'])),
+            ],
+          );
+        } else {
+          // Generic handling for other tables
+          await _database.customInsert(
+            '''INSERT INTO $tableName 
+                    (id, name, email, phone, address, sync_status, created_at, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+            variables: [
+              Variable.withInt(data['id']),
+              Variable.withString(data['name'] ?? ''),
+              Variable.withString(data['email'] ?? ''),
+              Variable.withString(data['phone'] ?? ''),
+              Variable.withString(data['address'] ?? ''),
+              Variable.withString('synced'),
+              Variable.withDateTime(DateTime.parse(data['created_at'])),
+              Variable.withDateTime(DateTime.parse(data['updated_at'])),
+            ],
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error updating local record in $tableName: $e');
