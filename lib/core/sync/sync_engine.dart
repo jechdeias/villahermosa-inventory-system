@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
+import '../config/supabase_config.dart';
 
 enum SyncOperation {
   insert,
@@ -72,18 +73,30 @@ class SyncEngine {
     
     final lastSyncTime = await _getLastSyncTimestamp();
     
-    // Pull each table
-    await _pullTable('users', _pullUsers, lastSyncTime);
-    await _pullTable('categories', _pullCategories, lastSyncTime);
-    await _pullTable('products', _pullProducts, lastSyncTime);
-    await _pullTable('customers', _pullCustomers, lastSyncTime);
-    await _pullTable('orders', _pullOrders, lastSyncTime);
-    await _pullTable('order_items', _pullOrderItems, lastSyncTime);
-    await _pullTable('stock_movements', _pullStockMovements, lastSyncTime);
-    await _pullTable('deliveries', _pullDeliveries, lastSyncTime);
+    // Pull each table safely - handle missing tables
+    await _pullTableSafely('users', _pullUsers, lastSyncTime);
+    await _pullTableSafely('products', _pullProducts, lastSyncTime);
+    await _pullTableSafely('customers', _pullCustomers, lastSyncTime);
+    await _pullTableSafely('orders', _pullOrders, lastSyncTime);
+    await _pullTableSafely('order_items', _pullOrderItems, lastSyncTime);
+    await _pullTableSafely('stock_movements', _pullStockMovements, lastSyncTime);
+    await _pullTableSafely('deliveries', _pullDeliveries, lastSyncTime);
     
     await _updateLastSyncTimestamp();
     debugPrint('Remote changes pulled successfully');
+  }
+  
+  /// Pull table safely with error handling
+  Future<void> _pullTableSafely(
+    String tableName, 
+    Future<void> Function(DateTime) pullFn,
+    DateTime lastSyncTime,
+  ) async {
+    try {
+      await pullFn(lastSyncTime);
+    } catch (e) {
+      debugPrint('Skipping $tableName pull - table may not exist yet: $e');
+    }
   }
   
   /// Resolve conflicts based on business rules
@@ -300,32 +313,38 @@ class SyncEngine {
     }
   }
   
-  /// Pull remote changes for a table
-  Future<void> _pullTable(
-    String tableName,
-    Future<void> Function(DateTime) pullFunction,
-    DateTime lastSyncTime,
-  ) async {
-    try {
-      await pullFunction(lastSyncTime);
-    } catch (e) {
-      debugPrint('Error pulling $tableName: $e');
-    }
-  }
-  
   /// Table-specific push methods
   Future<List<User>> _pushUsers() async {
     final pendingUsers = await _database.getPendingSyncUsers();
+    debugPrint('📋 Pending users to sync: ${pendingUsers.length}');
+    
+    if (pendingUsers.isEmpty) return [];
+    
+    // Use service client like AuthRepository for sync operations
+    final serviceClient = SupabaseClient(
+      SupabaseConfig.url,
+      SupabaseConfig.serviceKey,
+      headers: {'X-Client-Info': 'service_role'},
+    );
     
     for (final user in pendingUsers) {
       try {
+        debugPrint('🔄 Syncing user: ${user.email}');
+        
         final data = _recordToMap(user);
-        await Supabase.instance.client
+        final result = await serviceClient
             .from('users')
-            .upsert(data);
-        await _markRecordAsSynced(user, user.id.toString());
+            .upsert(data, onConflict: 'email');
+        
+        if (result != null) {
+          // Mark local record as synced after successful remote upsert
+          await _markRecordAsSynced(user, user.id.toString());
+          debugPrint('✅ User synced: ${user.email}');
+        } else {
+          debugPrint('❌ Failed to sync user: ${user.email}');
+        }
       } catch (e) {
-        debugPrint('Failed to sync user ${user.id}: $e');
+        debugPrint('Failed to sync user ${user.email}: $e');
       }
     }
     
@@ -448,38 +467,50 @@ class SyncEngine {
   
   /// Table-specific pull methods
   Future<void> _pullUsers(DateTime lastSyncTime) async {
+  try {
+    debugPrint('=== PULL USERS START ===');
+    debugPrint('Last sync time: $lastSyncTime');
+    
+    // Check if Supabase client is authenticated
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    debugPrint('Current user: ${currentUser?.email}, authenticated: ${currentUser != null}');
+    
     var query = Supabase.instance.client.from('users').select();
     
     // Only apply timestamp filter if it's not the first sync (not very old)
     if (lastSyncTime.isAfter(DateTime(2020))) {
+      debugPrint('Applying timestamp filter: ${lastSyncTime.toIso8601String()}');
       query = query.gte('updated_at', lastSyncTime.toIso8601String());
+    } else {
+      debugPrint('No timestamp filter - pulling all users');
     }
+    
+    // Log before filter
+    debugPrint('Querying Supabase users table...');
+    debugPrint('Auth token available: ${Supabase.instance.client.auth.currentSession?.accessToken != null}');
     
     final response = await query;
     
-    for (final userData in response) {
-      // Map Supabase field names to local Drift field names
-      final mappedData = {
-        'id': userData['id'],
-        'first_name': userData['first_name'] ?? userData['firstName'] ?? '',
-        'last_name': userData['last_name'] ?? userData['lastName'] ?? '',
-        'email': userData['email'] ?? '',
-        'role': userData['role'] ?? 'pending',
-        'is_active': userData['is_active'] ?? userData['isActive'] ?? true,
-        'is_deleted': userData['is_deleted'] ?? userData['isDeleted'] ?? false,
-        'password_hash': userData['password_hash'] ?? userData['passwordHash'] ?? '',
-        'sync_status': 'synced',
-        'created_at': userData['created_at'] ?? userData['createdAt'] ?? DateTime.now().toIso8601String(),
-        'updated_at': userData['updated_at'] ?? userData['updatedAt'] ?? DateTime.now().toIso8601String(),
-      };
-      
-      await _updateLocalRecord('users', mappedData);
+    debugPrint('Supabase returned ${response.length} users');
+    if (response.isNotEmpty) {
+      debugPrint('First user sample: ${response.first}');
+      debugPrint('Available keys in first user: ${response.first.keys.toList()}');
+    } else {
+      debugPrint('EMPTY RESPONSE - No users returned from supabase');
     }
+    
+    for (final userData in response) {
+      debugPrint('Processing user: ${userData['email']}');
+      await _updateLocalRecord('users', userData);
+      debugPrint('Inserted/updated: ${userData['email']}');
+    }
+    
+    debugPrint('=== PULL USERS END ===');
+  } catch (e, stack) {
+    debugPrint('PULL USERS ERROR: $e');
+    debugPrint('STACK: $stack');
   }
-  
-  Future<void> _pullCategories(DateTime lastSyncTime) async {
-    // Implementation needed
-  }
+}
   
   Future<void> _pullProducts(DateTime lastSyncTime) async {
     final response = await Supabase.instance.client
@@ -679,6 +710,10 @@ class SyncEngine {
   
   Future<void> _updateLocalRecord(String tableName, Map<String, dynamic> data) async {
     try {
+      debugPrint('_updateLocalRecord called for table: $tableName');
+      debugPrint('Data keys: ${data.keys.toList()}');
+      debugPrint('Data values: $data');
+      
       // Check if record exists
       final existing = await _database.customSelect(
         'SELECT id FROM $tableName WHERE id = ?',
@@ -689,6 +724,7 @@ class SyncEngine {
         // Update existing record - handle different tables
         if (tableName == 'users') {
           // Special handling for users table with correct field names
+          debugPrint('Updating existing user record');
           await _database.customUpdate(
             '''UPDATE users SET 
                 first_name = ?, last_name = ?, email = ?, role = ?, 
@@ -729,6 +765,7 @@ class SyncEngine {
         // Insert new record - handle different tables
         if (tableName == 'users') {
           // Special handling for users table with correct field names
+          debugPrint('Inserting new user record');
           await _database.customInsert(
             '''INSERT INTO users 
                     (id, first_name, last_name, email, role, is_active, is_deleted, sync_status, created_at, updated_at) 
@@ -765,8 +802,10 @@ class SyncEngine {
           );
         }
       }
+      debugPrint('_updateLocalRecord completed successfully for $tableName');
     } catch (e) {
       debugPrint('Error updating local record in $tableName: $e');
+      debugPrint('Error stack: ${StackTrace.current}');
     }
   }
   
