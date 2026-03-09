@@ -332,17 +332,34 @@ class SyncEngine {
         debugPrint('🔄 Syncing user: ${user.email}');
         
         final data = _recordToMap(user);
-        final result = await serviceClient
-            .from('users')
-            .upsert(data, onConflict: 'email');
+        debugPrint('User data to sync: $data');
         
-        if (result != null) {
-          // Mark local record as synced after successful remote upsert
-          await _markRecordAsSynced(user, user.id.toString());
-          debugPrint('✅ User synced: ${user.email}');
+        // Try to find existing user by email first
+        final existingUsers = await serviceClient
+            .from('users')
+            .select('id')
+            .eq('email', user.email);
+        
+        if (existingUsers.isNotEmpty) {
+          debugPrint('User ${user.email} already exists in Supabase, updating...');
+          // Update existing user
+          final result = await serviceClient
+              .from('users')
+              .update(data)
+              .eq('email', user.email);
+          debugPrint('Update result: $result');
         } else {
-          debugPrint('❌ Failed to sync user: ${user.email}');
+          debugPrint('User ${user.email} does not exist, inserting...');
+          // Insert new user
+          final result = await serviceClient
+              .from('users')
+              .insert(data);
+          debugPrint('Insert result: $result');
         }
+        
+        // Mark local record as synced after successful remote operation
+        await _markRecordAsSynced(user, user.id.toString());
+        debugPrint('✅ User synced: ${user.email}');
       } catch (e) {
         debugPrint('Failed to sync user ${user.email}: $e');
       }

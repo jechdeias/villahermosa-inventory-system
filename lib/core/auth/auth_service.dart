@@ -106,8 +106,8 @@ class AuthService {
       
       if (localUser == null) return null;
       
-      // STEP 2: Try Supabase Auth in background (online only)
-      _attemptSupabaseAuth(identifier, password);
+      // STEP 2: Try Supabase Auth and wait for session
+      await _attemptSupabaseAuth(identifier, password);
       
       return localUser;
     } catch (e) {
@@ -151,20 +151,29 @@ class AuthService {
     }
   }
 
-  /// Attempt Supabase Auth authentication (non-blocking)
+  /// Attempt Supabase Auth authentication (blocking)
   Future<void> _attemptSupabaseAuth(String email, String password) async {
     try {
+      debugPrint('🔑 Attempting Supabase Auth for: $email');
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
+      
       if (response.session != null) {
         debugPrint('✅ Supabase Auth session established');
+        debugPrint('🎫 Access token: ${response.session!.accessToken.substring(0, 20)}...');
+      } else {
+        debugPrint('❌ Supabase Auth returned null session');
       }
     } catch (e) {
       // Supabase auth failed — app still works offline
       debugPrint('⚠️ Supabase Auth unavailable: $e');
     }
+    
+    // Always log current session state
+    final currentSession = Supabase.instance.client.auth.currentSession;
+    debugPrint('📋 Current session: ${currentSession != null ? "Active" : "None"}');
   }
 
   /// Logout user
