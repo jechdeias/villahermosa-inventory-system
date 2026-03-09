@@ -107,7 +107,9 @@ class AuthService {
       if (localUser == null) return null;
       
       // STEP 2: Try Supabase Auth and wait for session
+      debugPrint('🔑 Local auth succeeded, attempting Supabase Auth...');
       await _attemptSupabaseAuth(identifier, password);
+      debugPrint('📋 Session after auth: ${Supabase.instance.client.auth.currentSession != null ? "Active" : "None"}');
       
       return localUser;
     } catch (e) {

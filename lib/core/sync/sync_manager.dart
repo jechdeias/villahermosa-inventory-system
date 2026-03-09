@@ -113,6 +113,16 @@ class SyncManager {
     try {
       debugPrint('Starting pull operation...');
       
+      // Check authentication session
+      final session = Supabase.instance.client.auth.currentSession;
+      debugPrint('🔐 Pull session status: ${session != null ? "Authenticated" : "Anonymous"}');
+      
+      if (session == null) {
+        debugPrint('⚠️ No auth session - pull may be blocked by RLS');
+      } else {
+        debugPrint('✅ Auth session active - pull should work with RLS');
+      }
+      
       // Get initial record counts
       final initialCounts = await _getTotalRecordCounts();
       

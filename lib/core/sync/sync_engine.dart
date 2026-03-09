@@ -710,6 +710,8 @@ class SyncEngine {
     final tableName = _getTableName(record);
     if (tableName.isEmpty) return;
     
+    debugPrint('📝 Marking record as synced: table=$tableName, id=${record.id}, remoteId=$remoteId');
+    
     // Update sync status to 'synced' using custom update
     await _database.customUpdate(
       'UPDATE $tableName SET sync_status = ?, updated_at = ? WHERE id = ?',
@@ -719,6 +721,8 @@ class SyncEngine {
         Variable.withInt(record.id),
       ],
     );
+    
+    debugPrint('✅ Marked record as synced: table=$tableName, id=${record.id}');
   }
   
   Future<void> _markRecordAsConflicted(dynamic record) async {
