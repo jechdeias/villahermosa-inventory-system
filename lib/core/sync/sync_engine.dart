@@ -314,13 +314,17 @@ class SyncEngine {
   }
   
   /// Table-specific push methods
-  Future<List<User>> _pushUsers() async {
+  Future<List<dynamic>> _pushUsers() async {
+    debugPrint('Pushing users to Supabase...');
+    
     final pendingUsers = await _database.getPendingSyncUsers();
+    if (pendingUsers.isEmpty) {
+      debugPrint('No pending users to push');
+      return [];
+    }
+    
     debugPrint('📋 Pending users to sync: ${pendingUsers.length}');
     
-    if (pendingUsers.isEmpty) return [];
-    
-    // Use service client like AuthRepository for sync operations
     final serviceClient = SupabaseClient(
       SupabaseConfig.url,
       SupabaseConfig.serviceKey,
@@ -332,36 +336,31 @@ class SyncEngine {
         debugPrint('🔄 Syncing user: ${user.email}');
         
         final data = _recordToMap(user);
-        debugPrint('User data to sync: $data');
         
-        // Try to find existing user by email first
-        final existingUsers = await serviceClient
-            .from('users')
-            .select('id')
-            .eq('email', user.email);
-        
-        if (existingUsers.isNotEmpty) {
-          debugPrint('User ${user.email} already exists in Supabase, updating...');
-          // Update existing user
-          final result = await serviceClient
-              .from('users')
-              .update(data)
-              .eq('email', user.email);
-          debugPrint('Update result: $result');
-        } else {
-          debugPrint('User ${user.email} does not exist, inserting...');
-          // Insert new user
-          final result = await serviceClient
+        try {
+          // Try insert first
+          await serviceClient
               .from('users')
               .insert(data);
-          debugPrint('Insert result: $result');
+        } catch (e) {
+          if (e is PostgrestException && e.code == '23505') {
+            // Duplicate — update instead
+            debugPrint('User exists, updating: ${user.email}');
+            await serviceClient
+                .from('users')
+                .update(data)
+                .eq('email', user.email);
+          } else {
+            rethrow;
+          }
         }
         
-        // Mark local record as synced after successful remote operation
+        // Mark as synced WHETHER insert or update succeeded
         await _markUserAsSynced(user.id);
-        debugPrint('✅ User synced: ${user.email}');
+        debugPrint('✅ Synced and marked: ${user.email}');
+        
       } catch (e) {
-        debugPrint('Failed to sync user ${user.email}: $e');
+        debugPrint('❌ Failed to sync user ${user.email}: $e');
       }
     }
     
@@ -484,49 +483,19 @@ class SyncEngine {
   
   /// Table-specific pull methods
   Future<void> _pullUsers(DateTime lastSyncTime) async {
-  try {
-    debugPrint('=== PULL USERS START ===');
-    debugPrint('Last sync time: $lastSyncTime');
-    
-    // Check if Supabase client is authenticated
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    debugPrint('Current user: ${currentUser?.email}, authenticated: ${currentUser != null}');
-    
-    var query = Supabase.instance.client.from('users').select();
-    
-    // Only apply timestamp filter if it's not the first sync (not very old)
-    if (lastSyncTime.isAfter(DateTime(2020))) {
-      debugPrint('Applying timestamp filter: ${lastSyncTime.toIso8601String()}');
-      query = query.gte('updated_at', lastSyncTime.toIso8601String());
-    } else {
-      debugPrint('No timestamp filter - pulling all users');
-    }
-    
-    // Log before filter
-    debugPrint('Querying Supabase users table...');
-    debugPrint('Auth token available: ${Supabase.instance.client.auth.currentSession?.accessToken != null}');
-    
-    final response = await query;
-    
-    debugPrint('Supabase returned ${response.length} users');
-    if (response.isNotEmpty) {
-      debugPrint('First user sample: ${response.first}');
-      debugPrint('Available keys in first user: ${response.first.keys.toList()}');
-    } else {
-      debugPrint('EMPTY RESPONSE - No users returned from supabase');
-    }
-    
-    for (final userData in response) {
-      debugPrint('Processing user: ${userData['email']}');
-      await _updateLocalRecord('users', userData);
-      debugPrint('Inserted/updated: ${userData['email']}');
-    }
-    
-    debugPrint('=== PULL USERS END ===');
-  } catch (e, stack) {
-    debugPrint('PULL USERS ERROR: $e');
-    debugPrint('STACK: $stack');
+  debugPrint('=== PULLING USERS ===');
+  
+  // Pull ALL users without timestamp filter
+  final response = await Supabase.instance.client
+      .from('users')
+      .select();
+  
+  debugPrint('Supabase returned ${response.length} users');
+  
+  for (final userData in response) {
+    await _updateLocalRecord('users', userData);
   }
+  debugPrint('=== PULL USERS COMPLETE ===');
 }
   
   Future<void> _pullProducts(DateTime lastSyncTime) async {

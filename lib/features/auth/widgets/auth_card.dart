@@ -312,9 +312,12 @@ class _AuthCardState extends State<AuthCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          widget.promptText,
-                          style: AuthTheme.promptTextStyle,
+                        Flexible(
+                          child: Text(
+                            widget.promptText,
+                            style: AuthTheme.promptTextStyle,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         const SizedBox(width: 4),
                         GestureDetector(
