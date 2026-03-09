@@ -41,6 +41,19 @@ void main() async {
   // Check and restore Supabase session on startup
   await AuthService.instance.checkSupabaseSession();
   
+  // Add auth state change listener
+  Supabase.instance.client.auth.onAuthStateChange.listen(
+    (data) {
+      final event = data.event;
+      debugPrint('🔐 Auth state changed: $event');
+      if (event == AuthChangeEvent.signedOut) {
+        debugPrint('⚠️ Session expired or signed out');
+      } else if (event == AuthChangeEvent.tokenRefreshed) {
+        debugPrint('✅ Token refreshed successfully');
+      }
+    }
+  );
+  
   // Seed admin user if database is empty
   final authRepository = AuthRepository(database);
   await authRepository.seedAdminUserIfEmpty();

@@ -358,7 +358,7 @@ class SyncEngine {
         }
         
         // Mark local record as synced after successful remote operation
-        await _markRecordAsSynced(user, user.id.toString());
+        await _markUserAsSynced(user.id);
         debugPrint('✅ User synced: ${user.email}');
       } catch (e) {
         debugPrint('Failed to sync user ${user.email}: $e');
@@ -706,24 +706,33 @@ class SyncEngine {
     return false;
   }
   
-  Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
-    final tableName = _getTableName(record);
-    if (tableName.isEmpty) return;
-    
-    debugPrint('📝 Marking record as synced: table=$tableName, id=${record.id}, remoteId=$remoteId');
-    
-    // Update sync status to 'synced' using custom update
-    await _database.customUpdate(
-      'UPDATE $tableName SET sync_status = ?, updated_at = ? WHERE id = ?',
-      variables: [
-        Variable.withString('synced'),
-        Variable.withDateTime(DateTime.now()),
-        Variable.withInt(record.id),
-      ],
-    );
-    
-    debugPrint('✅ Marked record as synced: table=$tableName, id=${record.id}');
-  }
+  /// Mark user as synced (table-specific method)
+Future<void> _markUserAsSynced(int userId) async {
+  await (_database.update(_database.users)
+    ..where((u) => u.id.equals(userId)))
+    .write(UsersCompanion(
+      syncStatus: const Value('synced'),
+      updatedAt: Value(DateTime.now()),
+    ));
+  debugPrint('✅ User $userId marked as synced');
+}
+
+/// Mark record as synced (generic method for other tables)
+Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
+  final tableName = _getTableName(record);
+  if (tableName.isEmpty) return;
+  
+  // Update sync status to 'synced' using custom update
+  await _database.customUpdate(
+    'UPDATE $tableName SET sync_status = ?, updated_at = ? WHERE id = ?',
+    variables: [
+      Variable.withString('synced'),
+      Variable.withDateTime(DateTime.now()),
+      Variable.withInt(record.id),
+    ],
+  );
+  debugPrint('✅ Marked record as synced: table=$tableName, id=${record.id}');
+}
   
   Future<void> _markRecordAsConflicted(dynamic record) async {
     // Mark record as conflicted

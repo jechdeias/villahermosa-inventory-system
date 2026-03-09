@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:crypto/crypto.dart';
+import 'package:bcrypt/bcrypt.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
@@ -54,7 +55,7 @@ class AuthService {
         return false; // User already exists
       }
 
-      // Hash password (simple hash for now)
+      // Hash password with bcrypt (secure)
       final hashedPassword = _hashPassword(password);
 
       // Create new user in local Drift first
@@ -130,12 +131,12 @@ class AuthService {
       }
       
       final storedHash = user.passwordHash;
-      final inputHash = _hashPassword(password);
+      final passwordValid = _verifyPassword(password, storedHash);
       
-      debugPrint('🔑 Stored hash: $storedHash');
-      debugPrint('🔑 Input hash: $inputHash');
+      debugPrint('🔑 Stored hash: ${storedHash.substring(0, 20)}...');
+      debugPrint('🔑 Password valid: $passwordValid');
 
-      if (storedHash != inputHash) {
+      if (!passwordValid) {
         debugPrint('❌ Password mismatch for: $email');
         return null; // Password mismatch
       }
@@ -156,21 +157,23 @@ class AuthService {
   /// Attempt Supabase Auth authentication (blocking)
   Future<void> _attemptSupabaseAuth(String email, String password) async {
     try {
-      debugPrint('🔑 Attempting Supabase Auth for: $email');
+      debugPrint('🔑 Attempting Supabase Auth: $email');
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
       
       if (response.session != null) {
-        debugPrint('✅ Supabase Auth session established');
-        debugPrint('🎫 Access token: ${response.session!.accessToken.substring(0, 20)}...');
+        debugPrint('✅ Supabase Auth established');
+        debugPrint('🎫 Token: ${response.session!.accessToken.substring(0, 30)}...');
       } else {
-        debugPrint('❌ Supabase Auth returned null session');
+        debugPrint('⚠️ No session returned from Supabase Auth');
       }
+    } on AuthException catch (e) {
+      debugPrint('❌ Supabase Auth failed: ${e.message}');
+      debugPrint('❌ Status code: ${e.statusCode}');
     } catch (e) {
-      // Supabase auth failed — app still works offline
-      debugPrint('⚠️ Supabase Auth unavailable: $e');
+      debugPrint('❌ Supabase Auth error: $e');
     }
     
     // Always log current session state
@@ -219,12 +222,52 @@ class AuthService {
     return Supabase.instance.client.auth.currentSession != null;
   }
 
-  /// SHA256 password hash (matches AuthRepository)
-  String _hashPassword(String password) {
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
+  /// SHA256 password hash (for legacy migration only)
+String _sha256Hash(String password) {
+  final bytes = utf8.encode(password);
+  final digest = sha256.convert(bytes);
+  return digest.toString();
+}
+
+/// Bcrypt password hash (secure)
+String _hashPassword(String password) {
+  return BCrypt.hashpw(password, BCrypt.gensalt());
+}
+
+/// Verify password with bcrypt fallback to SHA256 for migration
+bool _verifyPassword(String password, String hash) {
+  // Handle legacy SHA256 hashes during migration
+  try {
+    // Try bcrypt first
+    return BCrypt.checkpw(password, hash);
+  } catch (e) {
+    // Fall back to SHA256 for existing accounts
+    final sha256Hash = _sha256Hash(password);
+    if (sha256Hash == hash) {
+      // Migrate this account to bcrypt silently
+      _migratePasswordToBcrypt(password, hash);
+      return true;
+    }
+    return false;
   }
+}
+
+/// Migrate existing SHA256 passwords to bcrypt
+Future<void> _migratePasswordToBcrypt(String password, String oldHash) async {
+  try {
+    final newHash = _hashPassword(password);
+    await (_database.update(_database.users)
+      ..where((u) => u.passwordHash.equals(oldHash)))
+      .write(UsersCompanion(
+        passwordHash: Value(newHash),
+        syncStatus: const Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ));
+    debugPrint('✅ Password migrated to bcrypt');
+  } catch (e) {
+    debugPrint('⚠️ Password migration failed: $e');
+  }
+}
 
   /// Static instance for singleton pattern
   static AuthService? _instance;

@@ -10,6 +10,9 @@ build/
 .env.local
 .env.production
 
+# Supabase config with sensitive keys
+lib/core/config/supabase_config.dart
+
 # Android
 android/.gradle/
 android/local.properties
