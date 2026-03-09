@@ -336,6 +336,7 @@ class SyncEngine {
         debugPrint('🔄 Syncing user: ${user.email}');
         
         final data = _recordToMap(user);
+        debugPrint('📦 User data mapped: ${data.keys.toList()}');
         
         try {
           // Try insert first
