@@ -38,6 +38,9 @@ void main() async {
   // Initialize AuthService with shared database
   AuthService.initializeWithDatabase(database);
   
+  // Check and restore Supabase session on startup
+  await AuthService.instance.checkSupabaseSession();
+  
   // Seed admin user if database is empty
   final authRepository = AuthRepository(database);
   await authRepository.seedAdminUserIfEmpty();

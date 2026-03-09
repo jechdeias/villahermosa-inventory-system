@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../database/app_database.dart';
 
 /// Authentication Service
@@ -56,7 +57,7 @@ class AuthService {
       // Hash password (simple hash for now)
       final hashedPassword = _hashPassword(password);
 
-      // Create new user
+      // Create new user in local Drift first
       await _database.createUser(
         UsersCompanion.insert(
           uuid: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -73,9 +74,25 @@ class AuthService {
         ),
       );
 
+      // Create Supabase Auth user in background (non-blocking)
+      _attemptSupabaseSignup(email, password);
+
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Attempt to create Supabase Auth user (non-blocking)
+  Future<void> _attemptSupabaseSignup(String email, String password) async {
+    try {
+      await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: password,
+      );
+      debugPrint('✅ Supabase Auth user created');
+    } catch (e) {
+      debugPrint('⚠️ Supabase Auth signup failed: $e');
     }
   }
 
@@ -84,11 +101,29 @@ class AuthService {
     try {
       debugPrint('🔐 Attempting login for: $identifier');
       
+      // STEP 1: Try local Drift auth first (works offline)
+      final localUser = await _localLogin(identifier, password);
+      
+      if (localUser == null) return null;
+      
+      // STEP 2: Try Supabase Auth in background (online only)
+      _attemptSupabaseAuth(identifier, password);
+      
+      return localUser;
+    } catch (e) {
+      debugPrint('💥 Login error: $e');
+      return null;
+    }
+  }
+
+  /// Local Drift authentication (offline-first)
+  Future<User?> _localLogin(String email, String password) async {
+    try {
       // Find user by email only
-      final user = await _database.getUserByEmail(identifier);
+      final user = await _database.getUserByEmail(email);
       
       if (user == null) {
-        debugPrint('❌ User not found: $identifier');
+        debugPrint('❌ User not found: $email');
         return null;
       }
       
@@ -99,11 +134,11 @@ class AuthService {
       debugPrint('🔑 Input hash: $inputHash');
 
       if (storedHash != inputHash) {
-        debugPrint('❌ Password mismatch for: $identifier');
+        debugPrint('❌ Password mismatch for: $email');
         return null; // Password mismatch
       }
       
-      debugPrint('✅ Login successful for: $identifier');
+      debugPrint('✅ Local login successful for: $email');
       
       // Set current user session
       _currentUser = user;
@@ -111,15 +146,66 @@ class AuthService {
 
       return user;
     } catch (e) {
-      debugPrint('💥 Login error: $e');
+      debugPrint('💥 Local login error: $e');
       return null;
+    }
+  }
+
+  /// Attempt Supabase Auth authentication (non-blocking)
+  Future<void> _attemptSupabaseAuth(String email, String password) async {
+    try {
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      if (response.session != null) {
+        debugPrint('✅ Supabase Auth session established');
+      }
+    } catch (e) {
+      // Supabase auth failed — app still works offline
+      debugPrint('⚠️ Supabase Auth unavailable: $e');
     }
   }
 
   /// Logout user
   Future<void> logout() async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+    } catch (e) {
+      debugPrint('Supabase signout failed: $e');
+    }
+    // Always clear local session regardless
+    await _clearLocalSession();
+  }
+
+  /// Clear local session
+  Future<void> _clearLocalSession() async {
     _currentUser = null;
     _isAuthenticated = false;
+  }
+
+  /// Check and restore Supabase session on app startup
+  Future<void> checkSupabaseSession() async {
+    try {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null) {
+        debugPrint('✅ Supabase session restored');
+      } else {
+        debugPrint('ℹ️ No existing Supabase session');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to check Supabase session: $e');
+    }
+  }
+
+  /// Get current Supabase session (for sync operations)
+  String? get supabaseAccessToken {
+    return Supabase.instance.client.auth.currentSession?.accessToken;
+  }
+
+  /// Check if Supabase is authenticated
+  bool get isSupabaseAuthenticated {
+    return Supabase.instance.client.auth.currentSession != null;
   }
 
   /// SHA256 password hash (matches AuthRepository)
