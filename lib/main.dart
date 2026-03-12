@@ -56,6 +56,22 @@ void main() async {
   
   // Seed admin user if database is empty
   final authRepository = AuthRepository(database);
+  
+  // Clear corrupted users with string dates BEFORE any other operations
+  try {
+    debugPrint('🧹 Running cleanup for corrupted user dates...');
+    final deletedCount = await database.customUpdate(
+      'DELETE FROM users WHERE created_at LIKE ? OR updated_at LIKE ?',
+      variables: [
+        Variable.withString('2%'), 
+        Variable.withString('2%')
+      ],
+    );
+    debugPrint('🧹 Cleared $deletedCount users with string dates');
+  } catch (e) {
+    debugPrint('Cleanup error: $e');
+  }
+  
   await authRepository.seedAdminUserIfEmpty();
   
   // Check connectivity and sync pending records on startup
@@ -64,18 +80,6 @@ void main() async {
     final isOnline = !connectivityResults.contains(ConnectivityResult.none);
     if (isOnline) {
       debugPrint('🚀 App started with internet - syncing pending data...');
-      
-      // Clear corrupted users with string dates
-      try {
-        await database.customUpdate(
-          'DELETE FROM users WHERE created_at LIKE ?',
-          variables: [Variable.withString('2%')],
-        );
-        debugPrint('🧹 Cleared users with string dates');
-      } catch (e) {
-        debugPrint('Cleanup error: $e');
-      }
-      
       await SyncManager.instance.syncPendingData();
       
       // Pull after startup push
