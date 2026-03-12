@@ -55,18 +55,6 @@ void main() async {
   
   // Seed admin user if database is empty
   final authRepository = AuthRepository(database);
-  
-  // One-time full reset to clear corrupted datetime data
-  try {
-    await database.customUpdate(
-      'DELETE FROM users',
-      variables: [],
-    );
-    debugPrint('🧹 Wiped all users for clean reseed');
-  } catch (e) {
-    debugPrint('Wipe error: $e');
-  }
-  
   await authRepository.seedAdminUserIfEmpty();
   
   // Check connectivity and sync pending records on startup
