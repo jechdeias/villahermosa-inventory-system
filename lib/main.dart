@@ -56,8 +56,7 @@ void main() async {
   
   // Force-sync admin user to unblock pending sync
   try {
-    final db = AppDatabase();
-    await db.customUpdate(
+    await database.customUpdate(
       'UPDATE users SET sync_status = ? WHERE email = ?',
       variables: [
         Variable.withString('synced'),

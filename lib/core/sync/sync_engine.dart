@@ -69,9 +69,10 @@ class SyncEngine {
   
   /// Pull remote updates from Supabase
   Future<void> _pullRemoteChanges() async {
-    debugPrint('Pulling remote changes from Supabase...');
+    debugPrint('🚀 _pullRemoteChanges started');
     
     final lastSyncTime = await _getLastSyncTimestamp();
+    debugPrint('🕐 Last sync time: $lastSyncTime');
     
     // Pull each table safely - handle missing tables
     await _pullTableSafely('users', _pullUsers, lastSyncTime);
@@ -82,7 +83,9 @@ class SyncEngine {
     await _pullTableSafely('stock_movements', _pullStockMovements, lastSyncTime);
     await _pullTableSafely('deliveries', _pullDeliveries, lastSyncTime);
     
+    // Update timestamp AFTER successful pull
     await _updateLastSyncTimestamp();
+    debugPrint('🕐 Last sync timestamp updated');
     debugPrint('Remote changes pulled successfully');
   }
   
@@ -484,6 +487,7 @@ class SyncEngine {
   
   /// Table-specific pull methods
   Future<void> _pullUsers(DateTime lastSyncTime) async {
+  debugPrint('🚀 _pullUsers started');
   debugPrint('=== PULLING USERS ===');
   
   // Pull ALL users without timestamp filter

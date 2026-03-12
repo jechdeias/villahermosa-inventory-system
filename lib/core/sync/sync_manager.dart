@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 import '../database/app_database.dart';
 import '../config/supabase_config.dart';
 import 'sync_engine.dart';
@@ -31,13 +32,29 @@ class SyncManager {
   
   /// Initialize connectivity listener for automatic sync on reconnection
   void _initConnectivityListener() {
-    Connectivity().onConnectivityChanged.listen((results) {
-      final isOnline = !results.contains(ConnectivityResult.none);
-      if (isOnline) {
-        debugPrint('🌐 Connection restored - triggering sync...');
-        syncPendingData(); // sync all pending records
+    // Only use connectivity plugin on mobile platforms
+    if (Platform.isAndroid || Platform.isIOS) {
+      try {
+        Connectivity().onConnectivityChanged.listen((results) {
+          final isOnline = !results.contains(ConnectivityResult.none);
+          if (isOnline) {
+            debugPrint('🌐 Connection restored - triggering sync...');
+            syncPendingData(); // sync all pending records
+          }
+        });
+      } catch (e) {
+        debugPrint('Connectivity plugin not supported: $e');
+        // Default to connected on unsupported platforms
+        debugPrint('🌐 Defaulting to connected state on desktop');
       }
-    });
+    } else {
+      // On desktop platforms, assume connected and trigger initial sync
+      debugPrint('🌐 Desktop platform detected - assuming connected');
+      Future.delayed(const Duration(seconds: 2), () {
+        debugPrint('🌐 Triggering desktop sync...');
+        syncPendingData();
+      });
+    }
   }
   
   /// Main sync orchestrator - core thesis logic

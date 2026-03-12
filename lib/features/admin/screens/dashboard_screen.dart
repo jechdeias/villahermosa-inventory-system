@@ -130,7 +130,7 @@ class AdminDashboardView extends StatelessWidget {
                               crossAxisCount: 2,
                               mainAxisSpacing: 16,
                               crossAxisSpacing: 16,
-                              childAspectRatio: 1.4,
+                              childAspectRatio: 2.2,
                               children: [
                                 _buildStatCard('Total Products', Icons.inventory_outlined, AppTheme.statCardPurple, () => _getTotalProducts()),
                                 _buildStatCard('Total Customers', Icons.people_outline, AppTheme.statCardBlue, () => _getTotalCustomers()),
