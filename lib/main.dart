@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:drift/drift.dart';
 import 'core/database/app_database.dart';
 import 'core/config/supabase_config.dart';
 import 'core/sync/sync_manager.dart';
@@ -63,6 +64,18 @@ void main() async {
     final isOnline = !connectivityResults.contains(ConnectivityResult.none);
     if (isOnline) {
       debugPrint('🚀 App started with internet - syncing pending data...');
+      
+      // Clear corrupted users with string dates
+      try {
+        await database.customUpdate(
+          'DELETE FROM users WHERE created_at LIKE ?',
+          variables: [Variable.withString('2%')],
+        );
+        debugPrint('🧹 Cleared users with string dates');
+      } catch (e) {
+        debugPrint('Cleanup error: $e');
+      }
+      
       await SyncManager.instance.syncPendingData();
       
       // Pull after startup push

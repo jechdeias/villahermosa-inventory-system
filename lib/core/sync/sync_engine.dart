@@ -654,6 +654,26 @@ class SyncEngine {
 
   
 
+  /// Convert datetime value to Unix timestamp
+  int _toUnixTimestamp(dynamic value) {
+    if (value == null) {
+      return DateTime.now()
+        .millisecondsSinceEpoch ~/ 1000;
+    }
+    if (value is int) {
+      return value;
+    }
+    try {
+      return DateTime.parse(value.toString())
+        .millisecondsSinceEpoch ~/ 1000;
+    } catch (e) {
+      return DateTime.now()
+        .millisecondsSinceEpoch ~/ 1000;
+    }
+  }
+
+  
+
   /// Table-specific push methods
 
   Future<List<dynamic>> _pushUsers() async {
@@ -1521,9 +1541,8 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
               Variable.withString(
                 data['sync_status'] as String? ?? 'synced'),
 
-              Variable.withString(
-                data['updated_at']?.toString() ??
-                DateTime.now().toIso8601String()),
+              Variable.withInt(
+                _toUnixTimestamp(data['updated_at'])),
 
               Variable.withInt(data['id'] as int),
 
@@ -1628,13 +1647,11 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
               Variable.withBool(
                 data['force_password_change'] as bool? ?? false),
 
-              Variable.withString(
-                data['created_at']?.toString() ??
-                DateTime.now().toIso8601String()),
+              Variable.withInt(
+                _toUnixTimestamp(data['created_at'])),
 
-              Variable.withString(
-                data['updated_at']?.toString() ??
-                DateTime.now().toIso8601String()),
+              Variable.withInt(
+                _toUnixTimestamp(data['updated_at'])),
 
             ],
 
