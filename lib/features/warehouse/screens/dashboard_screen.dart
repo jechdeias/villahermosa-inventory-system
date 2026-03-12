@@ -333,49 +333,54 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
         border: Border.all(color: const Color(0xFFE0E0E0)),
       ),
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Icon and label row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1E1E1E),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon and label row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1E1E1E),
+                  ),
                 ),
-              ),
-              Icon(
-                icon,
-                color: const Color(0xFF1E1E1E),
-                size: 20,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Large number
-          Text(
-            value.toString(),
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1E1E1E),
+                Icon(
+                  icon,
+                  color: const Color(0xFF1E1E1E),
+                  size: 20,
+                ),
+              ],
             ),
-          ),
-          
-          // Description
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF6B6B6B),
+            const SizedBox(height: 12),
+            
+            // Large number
+            Text(
+              value.toString(),
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E1E1E),
+              ),
             ),
-          ),
-        ],
+            
+            // Description
+            Text(
+              description,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF6B6B6B),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

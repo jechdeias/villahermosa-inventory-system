@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../database/app_database.dart';
+import '../sync/sync_manager.dart';
 
 /// Authentication Service
 /// Handles user authentication and session management
@@ -111,6 +112,13 @@ class AuthService {
       debugPrint('🔑 Local auth succeeded, attempting Supabase Auth...');
       await _attemptSupabaseAuth(identifier, password);
       debugPrint('📋 Session after auth: ${Supabase.instance.client.auth.currentSession != null ? "Active" : "None"}');
+      
+      // Pull remote data after successful login
+      try {
+        await SyncManager.instance.pull();
+      } catch (e) {
+        debugPrint('Post-login pull failed: $e');
+      }
       
       return localUser;
     } catch (e) {

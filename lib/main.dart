@@ -79,6 +79,13 @@ void main() async {
     if (isOnline) {
       debugPrint('🚀 App started with internet - syncing pending data...');
       await SyncManager.instance.syncPendingData();
+      
+      // Pull after startup push
+      try {
+        await SyncManager.instance.pull();
+      } catch (e) {
+        debugPrint('Startup pull failed: $e');
+      }
     }
   } catch (e) {
     debugPrint('⚠️ Startup sync check failed: $e');

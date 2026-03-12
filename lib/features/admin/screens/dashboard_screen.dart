@@ -278,25 +278,29 @@ class AdminDashboardView extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 20, color: color),
             ),
-            child: Icon(icon, size: 20, color: color),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: AppTheme.figmaCardTitle,
-          ),
-          const SizedBox(height: 4),
-          FutureBuilder<int>(
-            future: countFunction(),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: AppTheme.figmaCardTitle,
+            ),
+            const SizedBox(height: 4),
+            FutureBuilder<int>(
+              future: countFunction(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(
@@ -311,7 +315,8 @@ class AdminDashboardView extends StatelessWidget {
               );
             },
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
