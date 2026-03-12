@@ -1484,7 +1484,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
             '''UPDATE users SET 
 
-                first_name = ?, last_name = ?, email = ?, password_hash = ?, role = ?, 
+                uuid = ?, first_name = ?, last_name = ?, email = ?, password_hash = ?, role = ?, 
 
                 is_active = ?, is_deleted = ?, sync_status = ?, 
 
@@ -1493,6 +1493,9 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
                 WHERE id = ?''',
 
             variables: [
+
+              Variable.withString(
+                data['uuid'] as String? ?? ''),
 
               Variable.withString(
                 data['first_name'] as String? ?? ''),
@@ -1578,13 +1581,16 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
             '''INSERT OR REPLACE INTO users 
 
-                    (id, first_name, last_name, email, password_hash, role, is_active, is_deleted, sync_status, created_at, updated_at) 
+                    (id, uuid, first_name, last_name, email, password_hash, role, is_active, is_deleted, sync_status, created_at, updated_at) 
 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
 
             variables: [
 
               Variable.withInt(data['id'] as int),
+
+              Variable.withString(
+                data['uuid'] as String? ?? ''),
 
               Variable.withString(
                 data['first_name'] as String? ?? ''),
