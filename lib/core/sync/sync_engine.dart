@@ -1484,7 +1484,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
             '''UPDATE users SET 
 
-                first_name = ?, last_name = ?, email = ?, role = ?, 
+                first_name = ?, last_name = ?, email = ?, password_hash = ?, role = ?, 
 
                 is_active = ?, is_deleted = ?, sync_status = ?, 
 
@@ -1494,23 +1494,35 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
             variables: [
 
-              Variable.withString(data['first_name'] ?? data['name'] ?? ''),
+              Variable.withString(
+                data['first_name'] as String? ?? ''),
 
-              Variable.withString(data['last_name'] ?? ''),
+              Variable.withString(
+                data['last_name'] as String? ?? ''),
 
-              Variable.withString(data['email'] ?? ''),
+              Variable.withString(
+                data['email'] as String? ?? ''),
 
-              Variable.withString(data['role'] ?? ''),
+              Variable.withString(
+                data['password_hash'] as String? ?? ''),
 
-              Variable.withBool(data['is_active'] ?? true),
+              Variable.withString(
+                data['role'] as String? ?? 'pending'),
 
-              Variable.withBool(data['is_deleted'] ?? false),
+              Variable.withBool(
+                data['is_active'] as bool? ?? true),
 
-              Variable.withString('synced'),
+              Variable.withBool(
+                data['is_deleted'] as bool? ?? false),
 
-              Variable.withDateTime(DateTime.parse(data['updated_at'])),
+              Variable.withString(
+                data['sync_status'] as String? ?? 'synced'),
 
-              Variable.withInt(data['id']),
+              Variable.withString(
+                data['updated_at']?.toString() ??
+                DateTime.now().toIso8601String()),
+
+              Variable.withInt(data['id'] as int),
 
             ],
 
@@ -1564,33 +1576,47 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
           await _database.customInsert(
 
-            '''INSERT INTO users 
+            '''INSERT OR REPLACE INTO users 
 
-                    (id, first_name, last_name, email, role, is_active, is_deleted, sync_status, created_at, updated_at) 
+                    (id, first_name, last_name, email, password_hash, role, is_active, is_deleted, sync_status, created_at, updated_at) 
 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
 
             variables: [
 
-              Variable.withInt(data['id']),
+              Variable.withInt(data['id'] as int),
 
-              Variable.withString(data['first_name'] ?? data['name'] ?? ''),
+              Variable.withString(
+                data['first_name'] as String? ?? ''),
 
-              Variable.withString(data['last_name'] ?? ''),
+              Variable.withString(
+                data['last_name'] as String? ?? ''),
 
-              Variable.withString(data['email'] ?? ''),
+              Variable.withString(
+                data['email'] as String? ?? ''),
 
-              Variable.withString(data['role'] ?? ''),
+              Variable.withString(
+                data['password_hash'] as String? ?? ''),
 
-              Variable.withBool(data['is_active'] ?? true),
+              Variable.withString(
+                data['role'] as String? ?? 'pending'),
 
-              Variable.withBool(data['is_deleted'] ?? false),
+              Variable.withBool(
+                data['is_active'] as bool? ?? true),
 
-              Variable.withString('synced'),
+              Variable.withBool(
+                data['is_deleted'] as bool? ?? false),
 
-              Variable.withDateTime(DateTime.parse(data['created_at'])),
+              Variable.withString(
+                data['sync_status'] as String? ?? 'synced'),
 
-              Variable.withDateTime(DateTime.parse(data['updated_at'])),
+              Variable.withString(
+                data['created_at']?.toString() ??
+                DateTime.now().toIso8601String()),
+
+              Variable.withString(
+                data['updated_at']?.toString() ??
+                DateTime.now().toIso8601String()),
 
             ],
 

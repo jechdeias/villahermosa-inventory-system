@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:drift/drift.dart';
 import 'core/database/app_database.dart';
 import 'core/config/supabase_config.dart';
 import 'core/sync/sync_manager.dart';
@@ -53,20 +52,6 @@ void main() async {
       }
     }
   );
-  
-  // Force-sync admin user to unblock pending sync
-  try {
-    await database.customUpdate(
-      'UPDATE users SET sync_status = ? WHERE email = ?',
-      variables: [
-        Variable.withString('synced'),
-        Variable.withString('admin@villahermosa.com'),
-      ],
-    );
-    debugPrint('✅ Force-synced admin user in local DB');
-  } catch (e) {
-    debugPrint('Force-sync failed: $e');
-  }
   
   // Seed admin user if database is empty
   final authRepository = AuthRepository(database);
