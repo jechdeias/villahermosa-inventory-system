@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:drift/drift.dart';
 import 'core/database/app_database.dart';
 import 'core/config/supabase_config.dart';
 import 'core/sync/sync_manager.dart';
@@ -57,19 +56,15 @@ void main() async {
   // Seed admin user if database is empty
   final authRepository = AuthRepository(database);
   
-  // Clear corrupted users with string dates BEFORE any other operations
+  // One-time full reset to clear corrupted datetime data
   try {
-    debugPrint('🧹 Running cleanup for corrupted user dates...');
-    final deletedCount = await database.customUpdate(
-      'DELETE FROM users WHERE created_at LIKE ? OR updated_at LIKE ?',
-      variables: [
-        Variable.withString('2%'), 
-        Variable.withString('2%')
-      ],
+    await database.customUpdate(
+      'DELETE FROM users',
+      variables: [],
     );
-    debugPrint('🧹 Cleared $deletedCount users with string dates');
+    debugPrint('🧹 Wiped all users for clean reseed');
   } catch (e) {
-    debugPrint('Cleanup error: $e');
+    debugPrint('Wipe error: $e');
   }
   
   await authRepository.seedAdminUserIfEmpty();
