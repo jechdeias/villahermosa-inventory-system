@@ -24,7 +24,15 @@ class ResponsiveShell extends StatefulWidget {
 }
 
 class _ResponsiveShellState extends State<ResponsiveShell> {
-  bool _sidebarExpanded = true;
+  static bool _sidebarExpandedGlobal = true; // Persist across route changes
+  
+  bool get _sidebarExpanded => _sidebarExpandedGlobal;
+  
+  void _toggleSidebar() {
+    setState(() {
+      _sidebarExpandedGlobal = !_sidebarExpandedGlobal;
+    });
+  }
   
   // Navigation items configuration - matching Figma design
   List<NavigationItem> get navItems => widget.navItems ?? _getNavItemsForRole();
@@ -265,7 +273,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                 // Hamburger toggle button inline with header
                 IconButton(
                   icon: const Icon(Icons.menu, color: Colors.white, size: 20),
-                  onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+                  onPressed: _toggleSidebar,
                   padding: EdgeInsets.zero,
                   tooltip: 'Collapse sidebar',
                 ),
@@ -336,7 +344,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             child: Center(
               child: IconButton(
                 icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+                onPressed: _toggleSidebar,
                 tooltip: 'Expand sidebar',
               ),
             ),
