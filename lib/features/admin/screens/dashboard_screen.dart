@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:drift/drift.dart' as drift;
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
@@ -73,119 +72,208 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   Future<List<Map<String, dynamic>>> _getRecentActivity() async {
-    try {
-      final db = widget.database;
-      final activities = <Map<String, dynamic>>[];
-      
-      debugPrint('=== LOADING RECENT ACTIVITY ===');
-      
-      // 1. Check what timestamp format is actually stored
-      final timestampCheck = await db.customSelect(
-        'SELECT created_at, updated_at FROM users LIMIT 1',
-      ).getSingleOrNull();
-      
-      if (timestampCheck != null) {
-        debugPrint('Raw created_at value: ${timestampCheck.data}');
-        debugPrint('Created_at type: ${timestampCheck.data['created_at'].runtimeType}');
+  try {
+    final db = widget.database;
+    final activities = <Map<String, dynamic>>[];
+    
+    debugPrint('=== LOADING RECENT ACTIVITY ===');
+    
+    // Helper to parse timestamps (handles both Unix and ISO)
+    DateTime parseTimestamp(dynamic value) {
+      if (value is int) {
+        return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+      } else if (value is String) {
+        return DateTime.parse(value);
+      } else {
+        return DateTime.now();
       }
-      
-      // 2. Query recent users with different timestamp approaches
-      debugPrint('Querying recent users...');
-      
-      // Try approach A: Unix timestamp (stored as integers)
-      final cutoffTimestamp = DateTime.now()
-          .subtract(const Duration(days: 7))
-          .millisecondsSinceEpoch ~/ 1000;
-      
-      final recentUsersA = await db.customSelect(
-        '''SELECT id, first_name, last_name, created_at 
-           FROM users 
-           WHERE created_at >= ?
-           ORDER BY created_at DESC
-           LIMIT 5''',
-        variables: [drift.Variable.withInt(cutoffTimestamp)],
-      ).get();
-      
-      debugPrint('Found ${recentUsersA.length} users (Unix timestamp approach)');
-      
-      // If that didn't work, try approach B: ISO string
-      if (recentUsersA.isEmpty) {
-        final cutoffISO = DateTime.now()
-            .subtract(const Duration(days: 7))
-            .toIso8601String();
-        
-        final recentUsersB = await db.customSelect(
-          '''SELECT id, first_name, last_name, created_at 
-             FROM users 
-             WHERE created_at >= ?
-             ORDER BY created_at DESC
-             LIMIT 5''',
-          variables: [drift.Variable.withString(cutoffISO)],
-        ).get();
-        
-        debugPrint('Found ${recentUsersB.length} users (ISO string approach)');
-      }
-      
-      // If both failed, just get ANY recent users
-      final allRecentUsers = await db.customSelect(
-        '''SELECT id, first_name, last_name, created_at 
-           FROM users 
-           ORDER BY created_at DESC
-           LIMIT 5''',
-      ).get();
-      
-      debugPrint('Found ${allRecentUsers.length} total recent users (no date filter)');
-      
-      // Process the results that worked
-      for (final row in allRecentUsers) {
-        try {
-          debugPrint('Processing user: ${row.data}');
-          
-          // Try to parse created_at as Unix timestamp first
-          DateTime timestamp;
-          final createdAtValue = row.data['created_at'];
-          
-          if (createdAtValue is int) {
-            // Unix timestamp (seconds)
-            timestamp = DateTime.fromMillisecondsSinceEpoch(
-              createdAtValue * 1000);
-          } else if (createdAtValue is String) {
-            // ISO string
-            timestamp = DateTime.parse(createdAtValue);
-          } else {
-            debugPrint('Unknown timestamp format: $createdAtValue');
-            continue;
-          }
-          
-          activities.add({
-            'time': timestamp,
-            'user': '${row.read<String>('first_name')} ${row.read<String>('last_name')}',
-            'action': 'User Created',
-            'details': 'New user account',
-            'icon': Icons.person_add_outlined,
-            'color': const Color(0xFF065F46),
-          });
-          
-          debugPrint('Added activity for user at $timestamp');
-        } catch (e) {
-          debugPrint('Error processing user row: $e');
-        }
-      }
-      
-      debugPrint('Total activities collected: ${activities.length}');
-      
-      // Sort by time
-      activities.sort((a, b) => 
-        (b['time'] as DateTime).compareTo(a['time'] as DateTime));
-      
-      return activities.take(10).toList();
-      
-    } catch (e, stack) {
-      debugPrint('ERROR in _getRecentActivity: $e');
-      debugPrint('Stack trace: $stack');
-      return [];
     }
+    
+    // 1. RECENT USERS (created or updated)
+    try {
+      final recentUsers = await db.customSelect(
+        '''SELECT id, first_name, last_name, created_at, 
+           updated_at, email
+           FROM users 
+           WHERE is_deleted = 0
+           ORDER BY created_at DESC
+           LIMIT 5''',
+      ).get();
+      
+      debugPrint('Found ${recentUsers.length} recent users');
+      
+      for (final row in recentUsers) {
+        final createdAt = parseTimestamp(row.data['created_at']);
+        final updatedAt = row.data['updated_at'] != null 
+          ? parseTimestamp(row.data['updated_at'])
+          : null;
+        
+        // Determine if this was a recent update vs create
+        final isUpdate = updatedAt != null && 
+          updatedAt.difference(createdAt).inMinutes > 1;
+        
+        activities.add({
+          'time': isUpdate ? updatedAt : createdAt,
+          'user': 'System',
+          'action': isUpdate ? 'Updated user' : 'Created user',
+          'details': '${row.read<String>('first_name')} ${row.read<String>('last_name')}',
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading users: $e');
+    }
+    
+    // 2. RECENT PRODUCTS (created or updated)
+    try {
+      final recentProducts = await db.customSelect(
+        '''SELECT id, name, sku, created_at, updated_at,
+           stock_level
+           FROM products 
+           ORDER BY created_at DESC
+           LIMIT 5''',
+      ).get();
+      
+      debugPrint('Found ${recentProducts.length} recent products');
+      
+      for (final row in recentProducts) {
+        final createdAt = parseTimestamp(row.data['created_at']);
+        final updatedAt = row.data['updated_at'] != null 
+          ? parseTimestamp(row.data['updated_at'])
+          : null;
+        
+        final isUpdate = updatedAt != null && 
+          updatedAt.difference(createdAt).inMinutes > 1;
+        
+        activities.add({
+          'time': isUpdate ? updatedAt : createdAt,
+          'user': 'System',
+          'action': isUpdate ? 'Updated product' : 'Added product',
+          'details': '${row.read<String>('name')} (SKU: ${row.read<String>('sku')})',
+        });
+      }
+    } catch (e) {
+      debugPrint('Products table might not exist yet: $e');
+    }
+    
+    // 3. STOCK MOVEMENTS
+    try {
+      final stockMovements = await db.customSelect(
+        '''SELECT sm.id, sm.movement_type, sm.quantity, 
+           sm.created_at, sm.product_id,
+           p.name as product_name,
+           u.first_name, u.last_name
+           FROM stock_movements sm
+           LEFT JOIN products p ON sm.product_id = p.id
+           LEFT JOIN users u ON sm.performed_by = u.id
+           ORDER BY sm.created_at DESC
+           LIMIT 5''',
+      ).get();
+      
+      debugPrint('Found ${stockMovements.length} stock movements');
+      
+      for (final row in stockMovements) {
+        final movementType = row.read<String>('movement_type');
+        final quantity = row.read<int>('quantity');
+        final productName = row.read<String?>('product_name') ?? 'Unknown Product';
+        final firstName = row.read<String?>('first_name') ?? 'System';
+        final lastName = row.read<String?>('last_name') ?? '';
+        final userName = '$firstName $lastName'.trim();
+        
+        // Determine action based on movement type
+        String action;
+        if (movementType.toLowerCase().contains('in') || 
+            movementType.toLowerCase().contains('purchase')) {
+          action = 'Stock in';
+        } else if (movementType.toLowerCase().contains('out') || 
+                   movementType.toLowerCase().contains('sale')) {
+          action = 'Stock out';
+        } else if (movementType.toLowerCase().contains('adjustment')) {
+          action = 'Stock adjusted';
+        } else {
+          action = movementType;
+        }
+        
+        activities.add({
+          'time': parseTimestamp(row.data['created_at']),
+          'user': userName,
+          'action': action,
+          'details': '$productName (${quantity.abs()} units)',
+        });
+      }
+    } catch (e) {
+      debugPrint('Stock movements might not exist yet: $e');
+    }
+    
+    // 4. RECENT CUSTOMERS
+    try {
+      final recentCustomers = await db.customSelect(
+        '''SELECT id, name, email, created_at
+           FROM customers 
+           ORDER BY created_at DESC
+           LIMIT 5''',
+      ).get();
+      
+      debugPrint('Found ${recentCustomers.length} recent customers');
+      
+      for (final row in recentCustomers) {
+        activities.add({
+          'time': parseTimestamp(row.data['created_at']),
+          'user': 'System',
+          'action': 'Added customer',
+          'details': '${row.read<String>('name')} (${row.read<String>('email')})',
+        });
+      }
+    } catch (e) {
+      debugPrint('Customers table might not exist yet: $e');
+    }
+    
+    // 5. RECENT ORDERS
+    try {
+      final recentOrders = await db.customSelect(
+        '''SELECT id, status, total_amount, created_at,
+           updated_at
+           FROM orders 
+           ORDER BY created_at DESC
+           LIMIT 5''',
+      ).get();
+      
+      debugPrint('Found ${recentOrders.length} recent orders');
+      
+      for (final row in recentOrders) {
+        final status = row.read<String>('status');
+        final orderId = row.read<int>('id');
+        final amount = row.read<double?>('total_amount');
+        
+        final amountStr = amount != null 
+          ? ' - ₱${amount.toStringAsFixed(2)}'
+          : '';
+        
+        activities.add({
+          'time': parseTimestamp(row.data['created_at']),
+          'user': 'System',
+          'action': 'Order ${status.toLowerCase()}',
+          'details': 'Order #$orderId$amountStr',
+        });
+      }
+    } catch (e) {
+      debugPrint('Orders table might not exist yet: $e');
+    }
+    
+    // Sort all activities by time (most recent first)
+    activities.sort((a, b) => 
+      (b['time'] as DateTime).compareTo(a['time'] as DateTime));
+    
+    debugPrint('Total activities collected: ${activities.length}');
+    
+    // Return top 10 most recent across all types
+    return activities.take(10).toList();
+    
+  } catch (e, stack) {
+    debugPrint('ERROR in _getRecentActivity: $e');
+    debugPrint('Stack trace: $stack');
+    return [];
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -412,6 +500,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -425,69 +514,143 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
             TextButton(
               onPressed: () {
-                // Refresh activity
-                setState(() {});
+                // TODO: Navigate to full activity log
               },
-              child: const Text('Refresh'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Row(
+                children: [
+                  Text(
+                    'View All',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF1E1E1E),
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: Color(0xFF1E1E1E),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        
+
+        // Column Headers
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Color(0xFFE0E0E0),
+                width: 1,
+              ),
+            ),
+          ),
+          child: const Row(
+            children: [
+              SizedBox(
+                width: 120,
+                child: Text(
+                  'TIME',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6B6B6B),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  'USER',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6B6B6B),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  'ACTION',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6B6B6B),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  'DETAILS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6B6B6B),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Activity List
         FutureBuilder<List<Map<String, dynamic>>>(
           future: _getRecentActivity(),
           builder: (context, snapshot) {
-            debugPrint('FutureBuilder state: ${snapshot.connectionState}');
-            debugPrint('FutureBuilder hasData: ${snapshot.hasData}');
-            debugPrint('FutureBuilder data: ${snapshot.data}');
-            debugPrint('FutureBuilder error: ${snapshot.error}');
-            
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(20),
+                  padding: EdgeInsets.all(40),
                   child: CircularProgressIndicator(),
                 ),
               );
             }
-            
+
             if (snapshot.hasError) {
               return Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
-                  'Error: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
+                  'Error loading activity',
+                  style: const TextStyle(
+                    color: Color(0xFF991B1B),
+                    fontSize: 14,
+                  ),
                 ),
               );
             }
-            
+
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Text(
-                      'No recent activity',
-                      style: TextStyle(
-                        color: Color(0xFF6B6B6B),
-                        fontSize: 14,
-                      ),
+              return const Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: Text(
+                    'No recent activity',
+                    style: TextStyle(
+                      color: Color(0xFF6B6B6B),
+                      fontSize: 14,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Debug: Checked ${snapshot.data?.length ?? 0} activities',
-                      style: const TextStyle(
-                        color: Color(0xFF9CA3AF),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               );
             }
-            
+
             final activities = snapshot.data!;
-            
+
             return Column(
               children: activities.map((activity) {
                 return _buildActivityRow(
@@ -495,8 +658,6 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   user: activity['user'] as String,
                   action: activity['action'] as String,
                   details: activity['details'] as String,
-                  icon: activity['icon'] as IconData,
-                  color: activity['color'] as Color,
                 );
               }).toList(),
             );
@@ -508,107 +669,108 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 }
 
   Widget _buildActivityRow({
-    required DateTime time,
-    required String user,
-    required String action,
-    required String details,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFE0E0E0),
-            width: 1,
-          ),
+  required DateTime time,
+  required String user,
+  required String action,
+  required String details,
+}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    decoration: const BoxDecoration(
+      border: Border(
+        bottom: BorderSide(
+          color: Color(0xFFE0E0E0),
+          width: 1,
         ),
       ),
-      child: Row(
-        children: [
-          // Icon
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 12),
-          
-          // Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      user,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF1E1E1E),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      action,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF6B6B6B),
-                      ),
-                    ),
-                  ],
+    ),
+    child: Row(
+      children: [
+        // TIME column
+        SizedBox(
+          width: 120,
+          child: Row(
+            children: [
+              const Icon(
+                Icons.access_time,
+                size: 16,
+                color: Color(0xFF6B6B6B),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _formatRelativeTime(time),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF1E1E1E),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  details,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9CA3AF),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          
-          // Time
-          Text(
-            _formatRelativeTime(time),
+        ),
+        
+        // USER column
+        Expanded(
+          flex: 2,
+          child: Text(
+            user,
             style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF9CA3AF),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E1E1E),
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        
+        // ACTION column
+        Expanded(
+          flex: 2,
+          child: Text(
+            action,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF1E1E1E),
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        
+        // DETAILS column
+        Expanded(
+          flex: 2,
+          child: Text(
+            details,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF6B6B6B),
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   String _formatRelativeTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-    
-    if (difference.inSeconds < 60) {
-      return '${difference.inSeconds}s ago';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else {
-      return '${difference.inDays}d ago';
-    }
+  final now = DateTime.now();
+  final difference = now.difference(time);
+  
+  if (difference.inSeconds < 60) {
+    return 'Just now';
+  } else if (difference.inMinutes < 60) {
+    final mins = difference.inMinutes;
+    return '$mins min ago';
+  } else if (difference.inHours < 24) {
+    final hours = difference.inHours;
+    return '$hours hr ago';
+  } else if (difference.inDays < 7) {
+    final days = difference.inDays;
+    return '$days day${days > 1 ? 's' : ''} ago';
+  } else {
+    return '${time.day}/${time.month}/${time.year}';
   }
+}
 
   Widget _buildQuickActionsPanel() {
     try {
