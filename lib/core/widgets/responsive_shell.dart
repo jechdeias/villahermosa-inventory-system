@@ -24,6 +24,8 @@ class ResponsiveShell extends StatefulWidget {
 }
 
 class _ResponsiveShellState extends State<ResponsiveShell> {
+  bool _sidebarExpanded = true;
+  
   // Navigation items configuration - matching Figma design
   List<NavigationItem> get navItems => widget.navItems ?? _getNavItemsForRole();
   
@@ -174,6 +176,25 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
+  Widget _buildTopBar() {
+    return Container(
+      height: 56,
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.menu, color: Color(0xFF1E1E1E)),
+            onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+            tooltip: _sidebarExpanded 
+              ? 'Collapse sidebar' 
+              : 'Expand sidebar',
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
@@ -189,115 +210,125 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     return Scaffold(
       body: Row(
         children: [
-          // Desktop Sidebar - matching Figma design exactly
-          Container(
-            width: 256,
-            height: double.infinity,
-            color: const Color(0xFF1E1E1E), // #1E1E1E from Figma
+          // Collapsible Desktop Sidebar
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            width: _sidebarExpanded ? 256 : 0,
+            child: _sidebarExpanded 
+              ? _buildSidebar(context) 
+              : const SizedBox.shrink(),
+          ),
+          // Main Content Area with Top Bar
+          Expanded(
             child: Column(
               children: [
-                // Sidebar Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Color(0xFF2A2A2A), // #2A2A2A divider
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: Row(
+                _buildTopBar(),   // 56px with hamburger
+                Expanded(child: widget.child),  // screen content
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebar(BuildContext context) {
+    return Container(
+      height: double.infinity,
+      color: const Color(0xFF1E1E1E), // #1E1E1E from Figma
+      child: Column(
+        children: [
+          // Sidebar Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Color(0xFF2A2A2A), // #2A2A2A divider
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Villahermosa Logo
+                Image.asset(
+                  'assets/images/logo/vm_logo.png',
+                  width: 40,
+                  height: 40,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Villahermosa Logo
-                      Image.asset(
-                        'assets/images/logo/vm_logo.png',
-                        width: 40,
-                        height: 40,
+                      const Text(
+                        'Villahermosa',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white, // White text
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Villahermosa',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white, // White text
-                              ),
-                            ),
-                            Text(
-                              _getRoleLabel(),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF8A8A8A), // #8A8A8A muted gray
-                              ),
-                            ),
-                          ],
+                      Text(
+                        _getRoleLabel(),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF8A8A8A), // #8A8A8A muted gray
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Navigation Items
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    itemCount: navItems.length,
-                    itemBuilder: (context, index) {
-                      final item = navItems[index];
-                      final isActive = widget.selectedRoute == item.route;
-                      
-                      return _buildDesktopNavItem(item, isActive);
-                    },
-                  ),
-                ),
-                // Divider before logout
-                const Divider(
-                  color: Color(0xFF2A2A2A), // #2A2A2A divider
-                  height: 1,
-                  thickness: 1,
-                ),
-                // Logout Button
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: InkWell(
-                    onTap: _logout,
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.logout_outlined,
-                            size: 20,
-                            color: const Color(0xFF8A8A8A), // #8A8A8A
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Logout',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF8A8A8A), // #8A8A8A
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
-          // Main Content Area
+          // Navigation Items
           Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFF4F4F4), // Light content background
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              itemCount: navItems.length,
+              itemBuilder: (context, index) {
+                final item = navItems[index];
+                final isActive = widget.selectedRoute == item.route;
+                
+                return _buildDesktopNavItem(item, isActive);
+              },
+            ),
+          ),
+          // Divider before logout
+          const Divider(
+            color: Color(0xFF2A2A2A), // #2A2A2A divider
+            height: 1,
+            thickness: 1,
+          ),
+          // Logout Button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: InkWell(
+              onTap: _logout,
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.logout_outlined,
+                      size: 20,
+                      color: const Color(0xFF8A8A8A), // #8A8A8A
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF8A8A8A), // #8A8A8A
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: widget.child,
             ),
           ),
         ],
