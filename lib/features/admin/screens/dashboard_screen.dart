@@ -350,7 +350,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               ),
             ),
             const SizedBox(height: 20),
-            Expanded(
+            SizedBox(
+              height: 200,
               child: GridView.count(
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
@@ -533,8 +534,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               getTitlesWidget: (value, meta) {
                 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
                 final idx = value.toInt();
-                if (idx < 0 || idx >= months.length)
+                if (idx < 0 || idx >= months.length) {
                   return const SizedBox();
+                }
                 return Text(
                   months[idx],
                   style: const TextStyle(
@@ -652,7 +654,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           ),
         ),
         const SizedBox(height: 10),
-        const Column(
+        Column(
           children: [
             _buildLegendItem('Pending', const Color(0xFF9E9E9E), 12),
             _buildLegendItem('Processing', const Color(0xFF616161), 28),
@@ -815,9 +817,5 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         maxY: 600,
       ),
     );
-  }
-
-  void _performRefresh() {
-    _loadDashboardData();
   }
 }
