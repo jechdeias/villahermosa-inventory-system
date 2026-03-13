@@ -202,23 +202,21 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _buildActivityAndActions() {
     try {
-      return IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Recent Activity Panel (70%)
-            Expanded(
-              flex: 7,
-              child: _buildRecentActivityPanel(),
-            ),
-            const SizedBox(width: 16),
-            // Quick Actions Panel (30%)
-            Expanded(
-              flex: 3,
-              child: _buildQuickActionsPanel(),
-            ),
-          ],
-        ),
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Recent Activity Panel (65% width)
+          Expanded(
+            flex: 65,
+            child: _buildRecentActivityPanel(),
+          ),
+          const SizedBox(width: 16),
+          // Quick Actions Panel (35% width)
+          Expanded(
+            flex: 35,
+            child: _buildQuickActionsPanel(),
+          ),
+        ],
       );
     } catch (e) {
       return Container(
