@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
@@ -28,6 +29,47 @@ class AdminDashboardView extends StatefulWidget {
 }
 
 class _AdminDashboardViewState extends State<AdminDashboardView> {
+  int _totalUsers = 0;
+  int _activeUsers = 0;
+  int _totalProducts = 0;
+  int _lowStockCount = 0;
+  int _totalOrders = 0;
+  int _pendingOrders = 0;
+  int _totalDeliveries = 0;
+  int _inTransitDeliveries = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    try {
+      final users = await widget.database.getAllUsers();
+      final activeUsers = users.where((u) => u.isActive && !u.isDeleted).toList();
+      
+      if (mounted) {
+        setState(() {
+          _totalUsers = users.length;
+          _activeUsers = activeUsers.length;
+          // For now, set others to 0 until tables exist
+          _totalProducts = 0;
+          _lowStockCount = 0;
+          _totalOrders = 0;
+          _pendingOrders = 0;
+          _totalDeliveries = 0;
+          _inTransitDeliveries = 0;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading dashboard data: $e');
+    }
+  }
+
+  Future<void> _refreshData() async {
+    await _loadDashboardData();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,7 +142,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               ),
               const SizedBox(width: 12),
               IconButton(
-                onPressed: _performRefresh,
+                onPressed: _refreshData,
                 icon: const Icon(Icons.refresh, color: Colors.black87),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white,
@@ -127,13 +169,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     try {
       return Row(
         children: [
-          Expanded(child: _statCard('Users', Icons.people_outline)),
+          Expanded(child: _statCard('Users', Icons.people_outline, _totalUsers, '$_activeUsers active')),
           const SizedBox(width: 16),
-          Expanded(child: _statCard('Products', Icons.inventory_2_outlined)),
+          Expanded(child: _statCard('Products', Icons.inventory_2_outlined, _totalProducts, 'Low: $_lowStockCount')),
           const SizedBox(width: 16),
-          Expanded(child: _statCard('Orders', Icons.shopping_cart_outlined)),
+          Expanded(child: _statCard('Orders', Icons.shopping_cart_outlined, _totalOrders, 'Pending: $_pendingOrders')),
           const SizedBox(width: 16),
-          Expanded(child: _statCard('Deliveries', Icons.local_shipping_outlined)),
+          Expanded(child: _statCard('Deliveries', Icons.local_shipping_outlined, _totalDeliveries, 'Transit: $_inTransitDeliveries')),
         ],
       );
     } catch (e) {
@@ -145,7 +187,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     }
   }
 
-  Widget _statCard(String title, IconData icon) {
+  Widget _statCard(String title, IconData icon, int count, String subLabel) {
     try {
       return Container(
         padding: const EdgeInsets.all(20),
@@ -172,9 +214,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               child: Icon(icon, size: 20, color: Colors.grey[700]),
             ),
             const SizedBox(height: 16),
-            const Text(
-              '--',
-              style: TextStyle(
+            Text(
+              count.toString(),
+              style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -186,6 +228,15 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subLabel,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
               ),
             ),
           ],
@@ -299,19 +350,37 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               ),
             ),
             const SizedBox(height: 20),
-            GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _actionButton(Icons.person_add_outlined, 'Create User'),
-                _actionButton(Icons.add_box_outlined, 'Add Product'),
-                _actionButton(Icons.description_outlined, 'Reports'),
-                _actionButton(Icons.list_alt_outlined, 'Orders'),
-              ],
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.0,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildQuickActionButton(
+                    icon: Icons.person_add_outlined,
+                    label: 'Create User',
+                    onTap: () => Navigator.pushNamed(context, '/admin/users'),
+                  ),
+                  _buildQuickActionButton(
+                    icon: Icons.add_box_outlined,
+                    label: 'Add Product',
+                    onTap: () => Navigator.pushNamed(context, '/admin/inventory'),
+                  ),
+                  _buildQuickActionButton(
+                    icon: Icons.description_outlined,
+                    label: 'Reports',
+                    onTap: () => Navigator.pushNamed(context, '/admin/reports'),
+                  ),
+                  _buildQuickActionButton(
+                    icon: Icons.list_alt_outlined,
+                    label: 'View Orders',
+                    onTap: () => Navigator.pushNamed(context, '/admin/orders'),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -325,57 +394,60 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     }
   }
 
-  Widget _actionButton(IconData icon, String label) {
-    try {
-      return InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(8),
+  Widget _buildQuickActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: const Color(0xFFE0E0E0),
+            ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 48,
+                height: 48,
                 decoration: const BoxDecoration(
                   color: Color(0xFF1E1E1E),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 24, color: Colors.white),
+                child: Icon(icon, color: Colors.white, size: 22),
               ),
               const SizedBox(height: 8),
               Text(
                 label,
-                style: const TextStyle(fontSize: 12, color: Colors.black87),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1E1E1E),
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(8),
-        color: Colors.red[100],
-        child: Text('Action Button Error: $e'),
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildCharts() {
     try {
       return Row(
         children: [
-          Expanded(child: _chartCard('Sales Trend')),
+          Expanded(child: _buildSalesTrendChart()),
           const SizedBox(width: 16),
-          Expanded(child: _chartCard('Orders by Status')),
+          Expanded(child: _buildOrdersByStatusChart()),
           const SizedBox(width: 16),
-          Expanded(child: _chartCard('Stock Levels')),
+          Expanded(child: _buildStockLevelsChart()),
         ],
       );
     } catch (e) {
@@ -387,53 +459,362 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     }
   }
 
-  Widget _chartCard(String title) {
-    try {
-      return Container(
-        height: 300,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+  Widget _buildSalesTrendChart() {
+    return Container(
+      height: 300,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Sales Trend',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
-          ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: _buildLineChart(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLineChart() {
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 20000,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade300,
+              strokeWidth: 1,
+            );
+          },
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 20000,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  '₱${(value / 1000).toInt()}k',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                  ),
+                );
+              },
+              reservedSize: 40,
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                final idx = value.toInt();
+                if (idx < 0 || idx >= months.length)
+                  return const SizedBox();
+                return Text(
+                  months[idx],
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                  ),
+                );
+              },
+              reservedSize: 30,
+            ),
+          ),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: [
+              const FlSpot(0, 45000),
+              FlSpot(1, 52000),
+              FlSpot(2, 48000),
+              FlSpot(3, 61000),
+              FlSpot(4, 55000),
+              FlSpot(5, 67000),
+            ],
+            isCurved: false,
+            color: const Color(0xFF212121),
+            barWidth: 2,
+            dotData: FlDotData(show: true),
+            belowBarData: BarAreaData(show: false),
+          ),
+        ],
+        minX: 0,
+        maxX: 5,
+        minY: 0,
+        maxY: 80000,
+      ),
+    );
+  }
+
+  Widget _buildOrdersByStatusChart() {
+    return Container(
+      height: 300,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Orders by Status',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: _buildDonutChart(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDonutChart() {
+    final sections = [
+      PieChartSectionData(
+        value: 12,
+        title: '',
+        color: const Color(0xFF9E9E9E),
+        radius: 40,
+      ),
+      PieChartSectionData(
+        value: 28,
+        title: '',
+        color: const Color(0xFF616161),
+        radius: 40,
+      ),
+      PieChartSectionData(
+        value: 45,
+        title: '',
+        color: const Color(0xFF212121),
+        radius: 40,
+      ),
+      PieChartSectionData(
+        value: 4,
+        title: '',
+        color: const Color(0xFFBDBDBD),
+        radius: 40,
+      ),
+    ];
+
+    return Column(
+      children: [
+        Expanded(
+          child: PieChart(
+            PieChartData(
+              sectionsSpace: 2,
+              centerSpaceRadius: 50,
+              sections: sections,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Column(
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Expanded(
-              child: Center(
-                child: Text(
-                  'Chart coming soon',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-            ),
+            _buildLegendItem('Pending', const Color(0xFF9E9E9E), 12),
+            _buildLegendItem('Processing', const Color(0xFF616161), 28),
+            _buildLegendItem('Delivered', const Color(0xFF212121), 45),
+            _buildLegendItem('Cancelled', const Color(0xFFBDBDBD), 4),
           ],
         ),
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Chart Card Error: $e'),
-      );
-    }
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color, int count) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$label ($count)',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStockLevelsChart() {
+    return Container(
+      height: 300,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Stock Levels',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: _buildBarChart(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart() {
+    final categories = ['Beverages', 'Snacks', 'Household', 'Personal Care', 'Frozen'];
+    final stocks = [450, 320, 180, 210, 95];
+    final colors = [
+      const Color(0xFF212121),
+      const Color(0xFF212121),
+      const Color(0xFF212121),
+      const Color(0xFF212121),
+      const Color(0xFF212121),
+    ];
+
+    return BarChart(
+      BarChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 100,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade300,
+              strokeWidth: 1,
+            );
+          },
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 100,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                  ),
+                );
+              },
+              reservedSize: 30,
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                final idx = value.toInt();
+                if (idx < 0 || idx >= categories.length) {
+                  return const SizedBox();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Transform.rotate(
+                    angle: -45 * 3.14159 / 180,
+                    child: Text(
+                      categories[idx],
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                );
+              },
+              reservedSize: 30,
+            ),
+          ),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: List.generate(5, (index) {
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: stocks[index].toDouble(),
+                color: colors[index],
+                width: 20,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ],
+          );
+        }),
+        minY: 0,
+        maxY: 600,
+      ),
+    );
   }
 
   void _performRefresh() {
