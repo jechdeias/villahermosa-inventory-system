@@ -222,7 +222,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
         children: [
           // Sidebar Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             decoration: const BoxDecoration(
               border: Border(
                 bottom: BorderSide(
@@ -236,8 +236,8 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                 // Villahermosa Logo
                 Image.asset(
                   'assets/images/logo/vm_logo.png',
-                  width: 40,
-                  height: 40,
+                  width: 32,
+                  height: 32,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -247,7 +247,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                       const Text(
                         'Villahermosa',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white, // White text
                         ),
@@ -255,17 +255,18 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                       Text(
                         _getRoleLabel(),
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: Color(0xFF8A8A8A), // #8A8A8A muted gray
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Hamburger toggle button
+                // Hamburger toggle button inline with header
                 IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
+                  icon: const Icon(Icons.menu, color: Colors.white, size: 20),
                   onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+                  padding: EdgeInsets.zero,
                   tooltip: 'Collapse sidebar',
                 ),
               ],
