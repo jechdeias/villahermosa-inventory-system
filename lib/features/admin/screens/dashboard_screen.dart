@@ -818,7 +818,6 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   void _performRefresh() {
-    // Simple refresh for now
-    debugPrint('Refresh pressed');
+    _loadDashboardData();
   }
 }
