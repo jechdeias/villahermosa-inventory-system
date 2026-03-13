@@ -84,11 +84,17 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             const SizedBox(height: 32),
             
             // Recent Activity + Quick Actions Row
-            _buildActivityAndActionsRow(),
+            SizedBox(
+              height: 420,
+              child: _buildActivityAndActionsRow(),
+            ),
             const SizedBox(height: 32),
             
             // Charts Row
-            _buildChartsRow(),
+            SizedBox(
+              height: 280,
+              child: _buildChartsRow(),
+            ),
           ],
         ),
       ),
@@ -401,7 +407,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ),
           const SizedBox(height: 20),
-          Expanded(
+          SizedBox(
+            height: 280,
             child: GridView.count(
               crossAxisCount: 2,
               mainAxisSpacing: 12,
@@ -493,7 +500,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ),
           const SizedBox(height: 20),
-          Expanded(
+          SizedBox(
+            height: 200,
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _monthlySalesFuture,
               builder: (context, snapshot) {
@@ -616,7 +624,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ),
           const SizedBox(height: 20),
-          Expanded(
+          SizedBox(
+            height: 200,
             child: FutureBuilder<Map<String, int>>(
               future: _ordersByStatusFuture,
               builder: (context, snapshot) {
@@ -726,7 +735,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ),
           const SizedBox(height: 20),
-          Expanded(
+          SizedBox(
+            height: 200,
             child: FutureBuilder<Map<String, int>>(
               future: _stockByCategoryFuture,
               builder: (context, snapshot) {

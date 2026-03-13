@@ -13,6 +13,7 @@ import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/change_password_screen.dart';
 import 'features/admin/screens/dashboard_screen.dart';
 import 'features/admin/screens/user_accounts_screen.dart';
+import 'features/admin/screens/placeholder_screens.dart';
 import 'core/widgets/responsive_shell.dart';
 import 'features/warehouse/screens/dashboard_screen.dart';
 import 'features/customer/screens/dashboard_screen.dart';
@@ -109,6 +110,41 @@ class VillahermosaInventoryApp extends StatelessWidget {
         database: database,
         selectedRoute: '/admin/users',
         child: UserAccountsScreen(database: database, syncManager: SyncManager.instance),
+      ),
+      '/admin/products': (context) => ResponsiveShell(
+        database: database,
+        selectedRoute: '/admin/products',
+        child: const ProductsPlaceholderScreen(),
+      ),
+      '/admin/customers': (context) => ResponsiveShell(
+        database: database,
+        selectedRoute: '/admin/customers',
+        child: const CustomersPlaceholderScreen(),
+      ),
+      '/admin/orders': (context) => ResponsiveShell(
+        database: database,
+        selectedRoute: '/admin/orders',
+        child: const OrdersPlaceholderScreen(),
+      ),
+      '/admin/inventory': (context) => ResponsiveShell(
+        database: database,
+        selectedRoute: '/admin/inventory',
+        child: const StockPlaceholderScreen(),
+      ),
+      '/admin/deliveries': (context) => ResponsiveShell(
+        database: database,
+        selectedRoute: '/admin/deliveries',
+        child: const DeliveriesPlaceholderScreen(),
+      ),
+      '/admin/reports': (context) => ResponsiveShell(
+        database: database,
+        selectedRoute: '/admin/reports',
+        child: const ReportsPlaceholderScreen(),
+      ),
+      '/admin/settings': (context) => ResponsiveShell(
+        database: database,
+        selectedRoute: '/admin/settings',
+        child: const SettingsPlaceholderScreen(),
       ),
       '/warehouse/dashboard': (context) => WarehouseDashboardScreen(database: database, syncManager: SyncManager.instance),
       '/customer/dashboard': (context) => const CustomerDashboardScreen(),
