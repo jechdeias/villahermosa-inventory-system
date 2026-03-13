@@ -73,6 +73,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Row
@@ -84,17 +85,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             const SizedBox(height: 32),
             
             // Recent Activity + Quick Actions Row
-            SizedBox(
-              height: 420,
-              child: _buildActivityAndActionsRow(),
-            ),
+            _buildActivityAndActionsRow(),
             const SizedBox(height: 32),
             
             // Charts Row
-            SizedBox(
-              height: 280,
-              child: _buildChartsRow(),
-            ),
+            _buildChartsRow(),
           ],
         ),
       ),
@@ -181,7 +176,6 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _buildStatCard(String title, IconData icon, Future<int> countFuture, Future<int> subCountFuture, String subLabel) {
     return Container(
-      height: 140, // Fixed height to prevent overflow
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -263,20 +257,23 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   Widget _buildActivityAndActionsRow() {
-    return Row(
-      children: [
-        // Recent Activity Panel (70%)
-        Expanded(
-          flex: 7,
-          child: _buildRecentActivityPanel(),
-        ),
-        const SizedBox(width: 16),
-        // Quick Actions Panel (30%)
-        Expanded(
-          flex: 3,
-          child: _buildQuickActionsPanel(),
-        ),
-      ],
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Recent Activity Panel (70%)
+          Expanded(
+            flex: 7,
+            child: _buildRecentActivityPanel(),
+          ),
+          const SizedBox(width: 16),
+          // Quick Actions Panel (30%)
+          Expanded(
+            flex: 3,
+            child: _buildQuickActionsPanel(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -295,6 +292,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -396,6 +394,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -407,20 +406,19 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 280,
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1,
-              children: [
-                _buildActionButton(Icons.person_add_outlined, 'Create User', () => _navigateTo('/admin/users')),
-                _buildActionButton(Icons.add_box_outlined, 'Add Product', () => _navigateTo('/admin/inventory')),
-                _buildActionButton(Icons.description_outlined, 'Generate Report', () => _navigateTo('/admin/reports')),
-                _buildActionButton(Icons.list_alt_outlined, 'View Orders', () => _navigateTo('/admin/orders')),
-              ],
-            ),
+          GridView.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _buildActionButton(Icons.person_add_outlined, 'Create User', () => _navigateTo('/admin/users')),
+              _buildActionButton(Icons.add_box_outlined, 'Add Product', () => _navigateTo('/admin/inventory')),
+              _buildActionButton(Icons.description_outlined, 'Generate Report', () => _navigateTo('/admin/reports')),
+              _buildActionButton(Icons.list_alt_outlined, 'View Orders', () => _navigateTo('/admin/orders')),
+            ],
           ),
         ],
       ),
@@ -489,6 +487,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -613,6 +612,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -724,6 +724,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
