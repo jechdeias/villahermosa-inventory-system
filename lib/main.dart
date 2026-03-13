@@ -12,7 +12,7 @@ import 'features/auth/email_verification_screen.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/change_password_screen.dart';
 import 'features/admin/screens/dashboard_screen.dart';
-import 'features/admin/screens/user_accounts_screen.dart';
+import 'features/admin/screens/user_management_screen.dart';
 import 'features/admin/screens/placeholder_screens.dart';
 import 'core/widgets/responsive_shell.dart';
 import 'features/warehouse/screens/dashboard_screen.dart';
@@ -106,10 +106,9 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/login': (context) => LoginScreen(database: database),
       '/signup': (context) => const SignupScreen(),
       '/admin/dashboard': (context) => AdminDashboardScreen(database: database, syncManager: SyncManager.instance),
-      '/admin/users': (context) => ResponsiveShell(
-        database: database,
-        selectedRoute: '/admin/users',
-        child: UserAccountsScreen(database: database, syncManager: SyncManager.instance),
+      '/admin/users': (context) => UserManagementScreen(
+        database: database, 
+        syncManager: SyncManager.instance
       ),
       '/admin/products': (context) => AdminInventoryScreen(database: database, syncManager: SyncManager.instance),
       '/admin/customers': (context) => AdminCustomersScreen(database: database, syncManager: SyncManager.instance),
