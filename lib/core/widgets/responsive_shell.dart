@@ -69,12 +69,12 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       label: 'Orders',
     ),
     NavigationItem(
-      route: '/stock',
+      route: '/admin/stock',
       icon: Icons.trending_up,
       label: 'Stock Movement',
     ),
     NavigationItem(
-      route: '/admin/delivery',
+      route: '/admin/deliveries',
       icon: Icons.local_shipping_outlined,
       label: 'Deliveries',
     ),
@@ -107,7 +107,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       label: 'Products',
     ),
     NavigationItem(
-      route: '/stock',
+      route: '/admin/stock',
       icon: Icons.trending_up,
       label: 'Stock Movement',
     ),
@@ -120,7 +120,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       label: 'Dashboard',
     ),
     NavigationItem(
-      route: '/admin/delivery',
+      route: '/admin/deliveries',
       icon: Icons.local_shipping_outlined,
       label: 'Deliveries',
     ),
@@ -176,25 +176,6 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-  Widget _buildTopBar() {
-    return Container(
-      height: 56,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Color(0xFF1E1E1E)),
-            onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
-            tooltip: _sidebarExpanded 
-              ? 'Collapse sidebar' 
-              : 'Expand sidebar',
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
@@ -210,22 +191,22 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     return Scaffold(
       body: Row(
         children: [
-          // Collapsible Desktop Sidebar
+          // Collapsible Desktop Sidebar (64px rail when collapsed, 256px when expanded)
           AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
+            duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
-            width: _sidebarExpanded ? 256 : 0,
+            width: _sidebarExpanded ? 256 : 64,
             child: _sidebarExpanded 
-              ? _buildSidebar(context) 
-              : const SizedBox.shrink(),
+              ? _buildExpandedSidebar(context) 
+              : _buildCollapsedSidebar(context),
           ),
-          // Main Content Area with Top Bar
+          // Main Content Area (no top bar)
           Expanded(
-            child: Column(
-              children: [
-                _buildTopBar(),   // 56px with hamburger
-                Expanded(child: widget.child),  // screen content
-              ],
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFF4F4F4), // Light content background
+              ),
+              child: widget.child,
             ),
           ),
         ],
@@ -233,7 +214,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     );
   }
 
-  Widget _buildSidebar(BuildContext context) {
+  Widget _buildExpandedSidebar(BuildContext context) {
     return Container(
       height: double.infinity,
       color: const Color(0xFF1E1E1E), // #1E1E1E from Figma
@@ -281,6 +262,12 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                     ],
                   ),
                 ),
+                // Hamburger toggle button
+                IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+                  tooltip: 'Collapse sidebar',
+                ),
               ],
             ),
           ),
@@ -327,6 +314,76 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollapsedSidebar(BuildContext context) {
+    return Container(
+      width: 64,
+      color: const Color(0xFF1E1E1E),
+      child: Column(
+        children: [
+          // Hamburger at top
+          SizedBox(
+            height: 72,
+            child: Center(
+              child: IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white),
+                onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+                tooltip: 'Expand sidebar',
+              ),
+            ),
+          ),
+          const Divider(color: Color(0xFF2A2A2A)),
+          // Nav icons only, no labels
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: navItems.map((item) {
+                  final isActive = widget.selectedRoute == item.route;
+                  return Tooltip(
+                    message: item.label,
+                    preferBelow: false,
+                    child: InkWell(
+                      onTap: () => _navigateToRoute(item.route),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        height: 48,
+                        color: isActive
+                          ? const Color(0xFF2A2A2A)
+                          : Colors.transparent,
+                        child: Center(
+                          child: Icon(
+                            item.icon,
+                            color: isActive
+                              ? Colors.white
+                              : const Color(0xFF8A8A8A),
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          // Logout icon at bottom
+          const Divider(color: Color(0xFF2A2A2A)),
+          SizedBox(
+            height: 56,
+            child: Center(
+              child: Tooltip(
+                message: 'Logout',
+                child: IconButton(
+                  icon: const Icon(Icons.logout_outlined, color: Color(0xFF8A8A8A)),
+                  onPressed: _logout,
                 ),
               ),
             ),
