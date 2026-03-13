@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:drift/drift.dart' as drift;
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
@@ -42,7 +41,39 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   @override
   void initState() {
     super.initState();
+    _checkDatabaseStructure();
     _loadDashboardData();
+  }
+
+  Future<void> _checkDatabaseStructure() async {
+    final db = widget.database;
+    
+    // Check users table structure
+    final usersInfo = await db.customSelect(
+      'PRAGMA table_info(users)',
+    ).get();
+    
+    debugPrint('=== USERS TABLE COLUMNS ===');
+    for (final col in usersInfo) {
+      debugPrint('${col.data['name']}: ${col.data['type']}');
+    }
+    
+    // Check if users exist
+    final userCount = await db.customSelect(
+      'SELECT COUNT(*) as count FROM users WHERE is_deleted = 0',
+    ).getSingle();
+    
+    debugPrint('Total active users: ${userCount.data['count']}');
+    
+    // Get sample user data
+    final sampleUsers = await db.customSelect(
+      'SELECT * FROM users LIMIT 2',
+    ).get();
+    
+    debugPrint('=== SAMPLE USER DATA ===');
+    for (final user in sampleUsers) {
+      debugPrint(user.data.toString());
+    }
   }
 
   Future<void> _loadDashboardData() async {
@@ -77,6 +108,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     final db = widget.database;
     final activities = <Map<String, dynamic>>[];
     
+    debugPrint('=== LOADING RECENT ACTIVITY ===');
+    
     // Helper to parse timestamps
     DateTime parseTimestamp(dynamic value) {
       if (value is int) {
@@ -87,72 +120,62 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       return DateTime.now();
     }
     
-    // Helper to get user name from ID
-    Future<String> getUserName(int? userId) async {
-      if (userId == null) return 'System';
-      
-      final user = await db.customSelect(
-        'SELECT first_name, last_name FROM users WHERE id = ?',
-        variables: [drift.Variable.withInt(userId)],
-      ).getSingleOrNull();
-      
-      if (user == null) return 'System';
-      
-      final firstName = user.read<String>('first_name');
-      final lastName = user.read<String>('last_name');
-      return '$firstName $lastName'.trim();
-    }
-    
-    // 1. USER ACTIVITIES (with creator info)
+    // 1. RECENT USERS (no created_by needed)
     try {
-      final userActivities = await db.customSelect(
-        '''SELECT u.id, u.first_name, u.last_name, u.email, 
-           u.role, u.created_at, u.updated_at, u.created_by
-           FROM users u
-           WHERE u.is_deleted = 0
-           ORDER BY u.created_at DESC
+      final recentUsers = await db.customSelect(
+        '''SELECT id, first_name, last_name, email, role, 
+           created_at, updated_at
+           FROM users 
+           WHERE is_deleted = 0
+           ORDER BY created_at DESC
            LIMIT 8''',
       ).get();
       
-      for (final row in userActivities) {
+      debugPrint('Found ${recentUsers.length} recent users');
+      
+      for (final row in recentUsers) {
         final createdAt = parseTimestamp(row.data['created_at']);
         final updatedAt = row.data['updated_at'] != null
             ? parseTimestamp(row.data['updated_at'])
             : null;
         
+        // Check if this was recently updated (more than 5 min after creation)
         final isUpdate = updatedAt != null &&
             updatedAt.difference(createdAt).inMinutes > 5;
         
-        // Get the admin who created this user
-        final createdBy = row.data['created_by'] as int?;
-        final creatorName = await getUserName(createdBy);
-        
-        final userName = '${row.read<String>('first_name')} ${row.read<String>('last_name')}';
+        final firstName = row.read<String>('first_name');
+        final lastName = row.read<String>('last_name');
         final email = row.read<String>('email');
         final role = row.read<String>('role');
         
+        final userName = '$firstName $lastName'.trim();
+        
         activities.add({
           'time': isUpdate ? updatedAt : createdAt,
-          'user': creatorName,
+          'user': 'Admin', // Generic for now since we don't have created_by
           'action': isUpdate ? 'Updated user' : 'Created user',
           'details': '$userName ($email) - $role',
         });
       }
+      
+      debugPrint('Added ${recentUsers.length} user activities');
     } catch (e) {
       debugPrint('Error loading user activities: $e');
     }
     
-    // 2. PRODUCT ACTIVITIES
+    // 2. RECENT PRODUCTS (if table exists)
     try {
-      final productActivities = await db.customSelect(
-        '''SELECT p.id, p.name, p.sku, p.created_at, 
-           p.updated_at, p.created_by, p.stock_level
-           FROM products p
-           ORDER BY p.created_at DESC
+      final recentProducts = await db.customSelect(
+        '''SELECT id, name, sku, stock_level, created_at, 
+           updated_at
+           FROM products 
+           ORDER BY created_at DESC
            LIMIT 8''',
       ).get();
       
-      for (final row in productActivities) {
+      debugPrint('Found ${recentProducts.length} recent products');
+      
+      for (final row in recentProducts) {
         final createdAt = parseTimestamp(row.data['created_at']);
         final updatedAt = row.data['updated_at'] != null
             ? parseTimestamp(row.data['updated_at'])
@@ -161,29 +184,28 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         final isUpdate = updatedAt != null &&
             updatedAt.difference(createdAt).inMinutes > 5;
         
-        final createdBy = row.data['created_by'] as int?;
-        final creatorName = await getUserName(createdBy);
-        
-        final productName = row.read<String>('name');
+        final name = row.read<String>('name');
         final sku = row.read<String>('sku');
         final stock = row.read<int>('stock_level');
         
         activities.add({
           'time': isUpdate ? updatedAt : createdAt,
-          'user': creatorName,
+          'user': 'Warehouse Staff',
           'action': isUpdate ? 'Updated product' : 'Added product',
-          'details': '$productName (SKU: $sku) - $stock units',
+          'details': '$name (SKU: $sku) - $stock units in stock',
         });
       }
+      
+      debugPrint('Added ${recentProducts.length} product activities');
     } catch (e) {
       debugPrint('Products table not ready: $e');
     }
     
-    // 3. STOCK MOVEMENTS
+    // 3. STOCK MOVEMENTS (if table exists)
     try {
       final stockMovements = await db.customSelect(
         '''SELECT sm.id, sm.movement_type, sm.quantity, 
-           sm.created_at, sm.performed_by, sm.notes,
+           sm.created_at, sm.notes,
            p.name as product_name, p.sku
            FROM stock_movements sm
            LEFT JOIN products p ON sm.product_id = p.id
@@ -191,76 +213,85 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
            LIMIT 8''',
       ).get();
       
+      debugPrint('Found ${stockMovements.length} stock movements');
+      
       for (final row in stockMovements) {
-        final performedBy = row.data['performed_by'] as int?;
-        final performerName = await getUserName(performedBy);
-        
         final movementType = row.read<String>('movement_type');
         final quantity = row.read<int>('quantity');
-        final productName = row.read<String?>('product_name') ?? 'Unknown';
+        final productName = row.read<String?>('product_name') ?? 'Unknown Product';
         final sku = row.read<String?>('sku') ?? 'N/A';
-        final notes = row.read<String?>('notes') ?? '';
+        final notes = row.read<String?>('notes');
         
         String action;
+        String user;
+        
         if (movementType.toLowerCase().contains('in')) {
           action = 'Stock in';
+          user = 'Warehouse Staff';
         } else if (movementType.toLowerCase().contains('out')) {
           action = 'Stock out';
-        } else if (movementType.toLowerCase().contains('adjustment')) {
-          action = 'Stock adjusted';
+          user = 'Sales Staff';
         } else {
-          action = movementType;
+          action = 'Stock adjusted';
+          user = 'Warehouse Manager';
         }
         
-        final details = notes.isNotEmpty
-            ? '$productName (SKU: $sku) - ${quantity.abs()} units - $notes'
-            : '$productName (SKU: $sku) - ${quantity.abs()} units';
+        String details = '$productName (SKU: $sku) - ${quantity.abs()} units';
+        if (notes != null && notes.isNotEmpty) {
+          details += ' - $notes';
+        }
         
         activities.add({
           'time': parseTimestamp(row.data['created_at']),
-          'user': performerName,
+          'user': user,
           'action': action,
           'details': details,
         });
       }
+      
+      debugPrint('Added ${stockMovements.length} stock movement activities');
     } catch (e) {
       debugPrint('Stock movements not ready: $e');
     }
     
-    // 4. CUSTOMER ACTIVITIES
+    // 4. CUSTOMERS (if table exists)
     try {
-      final customerActivities = await db.customSelect(
-        '''SELECT c.id, c.name, c.email, c.store_name, 
-           c.created_at, c.created_by
-           FROM customers c
-           ORDER BY c.created_at DESC
+      final recentCustomers = await db.customSelect(
+        '''SELECT id, name, email, store_name, created_at
+           FROM customers 
+           ORDER BY created_at DESC
            LIMIT 5''',
       ).get();
       
-      for (final row in customerActivities) {
-        final createdBy = row.data['created_by'] as int?;
-        final creatorName = await getUserName(createdBy);
-        
-        final customerName = row.read<String>('name');
+      debugPrint('Found ${recentCustomers.length} recent customers');
+      
+      for (final row in recentCustomers) {
+        final name = row.read<String>('name');
         final email = row.read<String>('email');
-        final storeName = row.read<String?>('store_name') ?? 'No store';
+        final storeName = row.read<String?>('store_name');
+        
+        String details = '$name ($email)';
+        if (storeName != null && storeName.isNotEmpty) {
+          details += ' - $storeName';
+        }
         
         activities.add({
           'time': parseTimestamp(row.data['created_at']),
-          'user': creatorName,
+          'user': 'Sales Staff',
           'action': 'Added customer',
-          'details': '$customerName ($email) - $storeName',
+          'details': details,
         });
       }
+      
+      debugPrint('Added ${recentCustomers.length} customer activities');
     } catch (e) {
       debugPrint('Customers not ready: $e');
     }
     
-    // 5. ORDER ACTIVITIES
+    // 5. ORDERS (if table exists)
     try {
-      final orderActivities = await db.customSelect(
-        '''SELECT o.id, o.status, o.total_amount, 
-           o.created_at, o.updated_at, o.created_by,
+      final recentOrders = await db.customSelect(
+        '''SELECT o.id, o.status, o.total_amount, o.created_at,
            c.name as customer_name
            FROM orders o
            LEFT JOIN customers c ON o.customer_id = c.id
@@ -268,15 +299,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
            LIMIT 5''',
       ).get();
       
-      for (final row in orderActivities) {
-        final createdAt = parseTimestamp(row.data['created_at']);
-        final updatedAt = row.data['updated_at'] != null
-            ? parseTimestamp(row.data['updated_at'])
-            : null;
-        
-        final createdBy = row.data['created_by'] as int?;
-        final creatorName = await getUserName(createdBy);
-        
+      debugPrint('Found ${recentOrders.length} recent orders');
+      
+      for (final row in recentOrders) {
         final orderId = row.read<int>('id');
         final status = row.read<String>('status');
         final amount = row.read<double?>('total_amount');
@@ -284,34 +309,36 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         
         final amountStr = amount != null
             ? '₱${amount.toStringAsFixed(2)}'
-            : 'No amount';
-        
-        final isStatusUpdate = updatedAt != null &&
-            updatedAt.difference(createdAt).inMinutes > 5;
+            : 'Amount pending';
         
         activities.add({
-          'time': isStatusUpdate ? updatedAt : createdAt,
-          'user': creatorName,
-          'action': isStatusUpdate ? 'Updated order' : 'Created order',
+          'time': parseTimestamp(row.data['created_at']),
+          'user': 'Sales Staff',
+          'action': 'Created order',
           'details': 'ORD-$orderId - $customerName - $amountStr - Status: $status',
         });
       }
+      
+      debugPrint('Added ${recentOrders.length} order activities');
     } catch (e) {
       debugPrint('Orders not ready: $e');
     }
     
-    // Sort all activities by time (newest first)
+    // Sort by time (newest first)
     activities.sort((a, b) =>
         (b['time'] as DateTime).compareTo(a['time'] as DateTime));
     
-    debugPrint('Total activities collected: ${activities.length}');
+    debugPrint('Total activities to display: ${activities.length}');
     
-    // Return top 10 most recent
+    if (activities.isEmpty) {
+      debugPrint('WARNING: No activities found across all tables!');
+    }
+    
     return activities.take(10).toList();
     
   } catch (e, stack) {
-    debugPrint('ERROR in _getRecentActivity: $e');
-    debugPrint('Stack: $stack');
+    debugPrint('CRITICAL ERROR in _getRecentActivity: $e');
+    debugPrint('Stack trace: $stack');
     return [];
   }
 }
