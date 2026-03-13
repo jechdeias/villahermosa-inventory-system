@@ -1134,13 +1134,17 @@ class SyncEngine {
 
         'id': record.id,
 
-        'firstName': record.firstName,
+        'first_name': record.firstName,
 
-        'lastName': record.lastName,
+        'last_name': record.lastName,
 
         'email': record.email,
 
         'role': record.role,
+
+        'phone': record.phone,
+
+        'address': record.address,
 
         'is_active': record.isActive,
 
@@ -1151,6 +1155,12 @@ class SyncEngine {
         'created_at': record.createdAt.toIso8601String(),
 
         'updated_at': record.updatedAt.toIso8601String(),
+
+        'remote_id': record.remoteId,
+
+        'uuid': record.uuid,
+
+        'force_password_change': record.forcePasswordChange,
 
       };
 

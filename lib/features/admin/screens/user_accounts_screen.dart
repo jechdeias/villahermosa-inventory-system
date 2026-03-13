@@ -7,6 +7,7 @@ import 'dart:async';
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/villahermosa_theme.dart';
 import '../../../core/sync/sync_manager.dart';
+import '../../../core/widgets/responsive_shell.dart';
 
 /// User Accounts & Permissions screen
 /// Manages user access, roles, and security settings
@@ -394,115 +395,119 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: VillahermosaColors.contentBg,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Page Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'User Accounts & Permissions',
-                        style: VillahermosaTextStyles.h2,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Manage user access and security.',
-                        style: VillahermosaTextStyles.small,
-                      ),
-                    ],
-                  ),
-                  ElevatedButton(
-                    onPressed: _showAddUserDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: VillahermosaColors.textPrimary,
-                      foregroundColor: VillahermosaColors.cardBg,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
+    return ResponsiveShell(
+      database: widget.database,
+      selectedRoute: '/admin/users',
+      child: Scaffold(
+        backgroundColor: VillahermosaColors.contentBg,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Page Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'User Accounts & Permissions',
+                          style: VillahermosaTextStyles.h2,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Manage user access and security.',
+                          style: VillahermosaTextStyles.small,
+                        ),
+                      ],
                     ),
-                    child: const Text('+ Add User'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // Search Bar
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search users...',
-                  prefixIcon: const Icon(Icons.search_outlined),
-                  filled: true,
-                  fillColor: VillahermosaColors.cardBg,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: const BorderSide(color: VillahermosaColors.borderColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: const BorderSide(color: VillahermosaColors.borderColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: const BorderSide(color: VillahermosaColors.textPrimary, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ElevatedButton(
+                      onPressed: _showAddUserDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: VillahermosaColors.textPrimary,
+                        foregroundColor: VillahermosaColors.cardBg,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text('+ Add User'),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 24),
-              // Stats Cards
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      label: 'Total Users',
-                      value: _allUsers.length.toString(),
-                      icon: Icons.people_outlined,
+                const SizedBox(height: 24),
+                // Search Bar
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search users...',
+                    prefixIcon: const Icon(Icons.search_outlined),
+                    filled: true,
+                    fillColor: VillahermosaColors.cardBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: VillahermosaColors.borderColor),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      label: 'Active Users',
-                      value: _allUsers.where((u) => u.isActive).length.toString(),
-                      icon: Icons.verified_user_outlined,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: VillahermosaColors.borderColor),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      label: 'Administrators',
-                      value: _allUsers.where((u) => u.role == 'admin').length.toString(),
-                      icon: Icons.admin_panel_settings_outlined,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: VillahermosaColors.textPrimary, width: 2),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      label: 'Sales Reps',
-                      value: _allUsers.where((u) => u.role == 'sales_rep').length.toString(),
-                      icon: Icons.person_pin_outlined,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // User Table
-              Expanded(
-                child: SingleChildScrollView(
-                  child: _buildUserTable(),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                // Stats Cards
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        label: 'Total Users',
+                        value: _allUsers.length.toString(),
+                        icon: Icons.people_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildStatCard(
+                        label: 'Active Users',
+                        value: _allUsers.where((u) => u.isActive).length.toString(),
+                        icon: Icons.verified_user_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildStatCard(
+                        label: 'Administrators',
+                        value: _allUsers.where((u) => u.role == 'admin').length.toString(),
+                        icon: Icons.admin_panel_settings_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildStatCard(
+                        label: 'Sales Reps',
+                        value: _allUsers.where((u) => u.role == 'sales_rep').length.toString(),
+                        icon: Icons.person_pin_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // User Table
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: _buildUserTable(),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
