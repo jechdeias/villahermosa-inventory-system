@@ -350,38 +350,35 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               ),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              height: 200,
-              child: GridView.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.0,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildQuickActionButton(
-                    icon: Icons.person_add_outlined,
-                    label: 'Create User',
-                    onTap: () => Navigator.pushNamed(context, '/admin/users'),
-                  ),
-                  _buildQuickActionButton(
-                    icon: Icons.add_box_outlined,
-                    label: 'Add Product',
-                    onTap: () => Navigator.pushNamed(context, '/admin/inventory'),
-                  ),
-                  _buildQuickActionButton(
-                    icon: Icons.description_outlined,
-                    label: 'Reports',
-                    onTap: () => Navigator.pushNamed(context, '/admin/reports'),
-                  ),
-                  _buildQuickActionButton(
-                    icon: Icons.list_alt_outlined,
-                    label: 'View Orders',
-                    onTap: () => Navigator.pushNamed(context, '/admin/orders'),
-                  ),
-                ],
-              ),
+            GridView.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.0,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildQuickActionButton(
+                  icon: Icons.person_add_outlined,
+                  label: 'Create User',
+                  onTap: () => Navigator.pushNamed(context, '/admin/users'),
+                ),
+                _buildQuickActionButton(
+                  icon: Icons.add_box_outlined,
+                  label: 'Add Product',
+                  onTap: () => Navigator.pushNamed(context, '/admin/inventory'),
+                ),
+                _buildQuickActionButton(
+                  icon: Icons.description_outlined,
+                  label: 'Reports',
+                  onTap: () => Navigator.pushNamed(context, '/admin/reports'),
+                ),
+                _buildQuickActionButton(
+                  icon: Icons.list_alt_outlined,
+                  label: 'View Orders',
+                  onTap: () => Navigator.pushNamed(context, '/admin/orders'),
+                ),
+              ],
             ),
           ],
         ),
@@ -400,41 +397,39 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     required String label,
     required VoidCallback onTap,
   }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: const Color(0xFFE0E0E0),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFFE0E0E0),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E1E1E),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 22),
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1E1E1E),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1E1E1E),
               ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1E1E1E),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
@@ -644,7 +639,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
     return Column(
       children: [
-        Expanded(
+        SizedBox(
+          height: 140,
           child: PieChart(
             PieChartData(
               sectionsSpace: 2,
