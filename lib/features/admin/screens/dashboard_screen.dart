@@ -70,6 +70,126 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   Future<void> _refreshData() async {
     await _loadDashboardData();
   }
+
+  Future<List<Map<String, dynamic>>> _getRecentActivity() async {
+    try {
+      final db = widget.database;
+      final activities = <Map<String, dynamic>>[];
+      
+      // 1. Recent user changes (created or updated in last 7 days)
+      final recentUsers = await db.customSelect(
+        '''SELECT id, first_name, last_name, created_at, 
+           updated_at, 'user_created' as activity_type
+           FROM users 
+           WHERE created_at >= datetime('now', '-7 days')
+           ORDER BY created_at DESC
+           LIMIT 5''',
+      ).get();
+      
+      for (final row in recentUsers) {
+        activities.add({
+          'time': DateTime.parse(row.read<String>('created_at')),
+          'user': '${row.read<String>('first_name')} ${row.read<String>('last_name')}',
+          'action': 'User Created',
+          'details': 'New user account',
+          'icon': Icons.person_add_outlined,
+          'color': const Color(0xFF065F46), // Success green
+        });
+      }
+      
+      // 2. Recent product changes
+      final recentProducts = await db.customSelect(
+        '''SELECT id, name, created_at, 
+           'product_created' as activity_type
+           FROM products 
+           WHERE created_at >= datetime('now', '-7 days')
+           ORDER BY created_at DESC
+           LIMIT 5''',
+      ).get();
+      
+      for (final row in recentProducts) {
+        activities.add({
+          'time': DateTime.parse(row.read<String>('created_at')),
+          'user': 'System',
+          'action': 'Product Added',
+          'details': row.read<String>('name'),
+          'icon': Icons.inventory_2_outlined,
+          'color': const Color(0xFF1E40AF), // Info blue
+        });
+      }
+      
+      // 3. Stock movements (existing)
+      final stockMovements = await db.customSelect(
+        '''SELECT sm.id, sm.movement_type, sm.quantity, 
+           sm.created_at, sm.product_id,
+           p.name as product_name,
+           u.first_name, u.last_name
+           FROM stock_movements sm
+           LEFT JOIN products p ON sm.product_id = p.id
+           LEFT JOIN users u ON sm.created_by = u.id
+           WHERE sm.created_at >= datetime('now', '-7 days')
+           ORDER BY sm.created_at DESC
+           LIMIT 5''',
+      ).get();
+      
+      for (final row in stockMovements) {
+        final movementType = row.read<String>('movement_type');
+        final quantity = row.read<int>('quantity');
+        final productName = row.read<String?>('product_name') ?? 'Unknown';
+        final firstName = row.read<String?>('first_name') ?? 'Unknown';
+        final lastName = row.read<String?>('last_name') ?? '';
+        
+        activities.add({
+          'time': DateTime.parse(row.read<String>('created_at')),
+          'user': '$firstName $lastName'.trim(),
+          'action': movementType,
+          'details': '$productName (${quantity.abs()} units)',
+          'icon': quantity > 0 
+            ? Icons.trending_up 
+            : Icons.trending_down,
+          'color': quantity > 0 
+            ? const Color(0xFF065F46) 
+            : const Color(0xFF991B1B),
+        });
+      }
+      
+      // 4. Recent orders (if orders table exists)
+      try {
+        final recentOrders = await db.customSelect(
+          '''SELECT id, status, created_at, total_amount
+             FROM orders 
+             WHERE created_at >= datetime('now', '-7 days')
+             ORDER BY created_at DESC
+             LIMIT 5''',
+        ).get();
+        
+        for (final row in recentOrders) {
+          activities.add({
+            'time': DateTime.parse(row.read<String>('created_at')),
+            'user': 'System',
+            'action': 'Order ${row.read<String>('status')}',
+            'details': 'Order #${row.read<int>('id')}',
+            'icon': Icons.shopping_cart_outlined,
+            'color': const Color(0xFF92400E), // Warning orange
+          });
+        }
+      } catch (e) {
+        // Orders table might not exist yet, skip
+        debugPrint('Orders query failed: $e');
+      }
+      
+      // Sort all activities by time (most recent first)
+      activities.sort((a, b) => 
+        b['time'].compareTo(a['time']));
+      
+      // Return top 10 most recent
+      return activities.take(10).toList();
+      
+    } catch (e) {
+      debugPrint('Error loading recent activity: $e');
+      return [];
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -279,46 +399,193 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   Widget _buildRecentActivityPanel() {
-    try {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Recent Activity',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Recent Activity',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E1E1E),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'No recent activity',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+              TextButton(
+                onPressed: () {
+                  // TODO: Navigate to full activity log
+                },
+                child: const Text('View All >'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Activity List
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _getRecentActivity(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(
+                    child: Text(
+                      'No recent activity',
+                      style: TextStyle(
+                        color: Color(0xFF6B6B6B),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              
+              final activities = snapshot.data!;
+              
+              return Column(
+                children: activities.map((activity) {
+                  return _buildActivityRow(
+                    time: activity['time'] as DateTime,
+                    user: activity['user'] as String,
+                    action: activity['action'] as String,
+                    details: activity['details'] as String,
+                    icon: activity['icon'] as IconData,
+                    color: activity['color'] as Color,
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityRow({
+    required DateTime time,
+    required String user,
+    required String action,
+    required String details,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFE0E0E0),
+            width: 1,
+          ),
         ),
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Recent Activity Error: $e'),
-      );
+      ),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 12),
+          
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      user,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF1E1E1E),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      action,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF6B6B6B),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  details,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF9CA3AF),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          
+          // Time
+          Text(
+            _formatRelativeTime(time),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF9CA3AF),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatRelativeTime(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+    
+    if (difference.inSeconds < 60) {
+      return '${difference.inSeconds}s ago';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inDays}d ago';
     }
   }
 
