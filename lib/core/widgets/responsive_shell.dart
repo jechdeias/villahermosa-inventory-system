@@ -24,16 +24,42 @@ class ResponsiveShell extends StatefulWidget {
 }
 
 class _ResponsiveShellState extends State<ResponsiveShell> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  // Navigation items configuration
-  List<NavigationItem> get navItems => widget.navItems ?? _defaultNavItems;
+  // Navigation items configuration - matching Figma design
+  List<NavigationItem> get navItems => widget.navItems ?? _getNavItemsForRole();
   
-  static const List<NavigationItem> _defaultNavItems = [
+  List<NavigationItem> _getNavItemsForRole() {
+    // Default to admin role - in real implementation, get from auth service
+    final userRole = 'admin'; // This should come from auth service
+    
+    switch (userRole) {
+      case 'admin':
+        return _adminNavItems;
+      case 'warehouse':
+        return _warehouseNavItems;
+      case 'delivery':
+        return _deliveryNavItems;
+      case 'customer':
+        return _customerNavItems;
+      default:
+        return _pendingNavItems;
+    }
+  }
+
+  static const List<NavigationItem> _adminNavItems = [
     NavigationItem(
       route: '/admin/dashboard',
       icon: Icons.dashboard_outlined,
       label: 'Dashboard',
+    ),
+    NavigationItem(
+      route: '/admin/products',
+      icon: Icons.inventory_2_outlined,
+      label: 'Products',
+    ),
+    NavigationItem(
+      route: '/admin/customers',
+      icon: Icons.storefront_outlined,
+      label: 'Customers',
     ),
     NavigationItem(
       route: '/admin/orders',
@@ -41,34 +67,19 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       label: 'Orders',
     ),
     NavigationItem(
-      route: '/admin/customers',
-      icon: Icons.store_outlined,
-      label: 'Customers & Stores',
-    ),
-    NavigationItem(
-      route: '/admin/inventory',
-      icon: Icons.inventory_2_outlined,
-      label: 'Inventory',
-    ),
-    NavigationItem(
-      route: '/admin/payments',
-      icon: Icons.credit_card_outlined,
-      label: 'Payments',
-    ),
-    NavigationItem(
-      route: '/admin/sales-reps',
-      icon: Icons.people_outlined,
-      label: 'Sales Representatives',
+      route: '/stock',
+      icon: Icons.trending_up,
+      label: 'Stock Movement',
     ),
     NavigationItem(
       route: '/admin/delivery',
       icon: Icons.local_shipping_outlined,
-      label: 'Routes & Delivery',
+      label: 'Deliveries',
     ),
     NavigationItem(
       route: '/admin/reports',
       icon: Icons.bar_chart_outlined,
-      label: 'Reports & Analytics',
+      label: 'Reports',
     ),
     NavigationItem(
       route: '/admin/users',
@@ -78,12 +89,54 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     NavigationItem(
       route: '/admin/settings',
       icon: Icons.settings_outlined,
-      label: 'System Settings',
+      label: 'Settings',
+    ),
+  ];
+
+  static const List<NavigationItem> _warehouseNavItems = [
+    NavigationItem(
+      route: '/warehouse/dashboard',
+      icon: Icons.dashboard_outlined,
+      label: 'Dashboard',
     ),
     NavigationItem(
-      route: '/admin/sync',
-      icon: Icons.sync_outlined,
-      label: 'Sync Status',
+      route: '/admin/products',
+      icon: Icons.inventory_2_outlined,
+      label: 'Products',
+    ),
+    NavigationItem(
+      route: '/stock',
+      icon: Icons.trending_up,
+      label: 'Stock Movement',
+    ),
+  ];
+
+  static const List<NavigationItem> _deliveryNavItems = [
+    NavigationItem(
+      route: '/delivery/dashboard',
+      icon: Icons.dashboard_outlined,
+      label: 'Dashboard',
+    ),
+    NavigationItem(
+      route: '/admin/delivery',
+      icon: Icons.local_shipping_outlined,
+      label: 'Deliveries',
+    ),
+  ];
+
+  static const List<NavigationItem> _customerNavItems = [
+    NavigationItem(
+      route: '/customer/dashboard',
+      icon: Icons.dashboard_outlined,
+      label: 'Dashboard',
+    ),
+  ];
+
+  static const List<NavigationItem> _pendingNavItems = [
+    NavigationItem(
+      route: '/admin/dashboard',
+      icon: Icons.dashboard_outlined,
+      label: 'Dashboard',
     ),
   ];
 
@@ -98,23 +151,21 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     Navigator.pushReplacementNamed(context, route);
   }
 
-  String _getLastSyncTime() {
-    if (widget.syncManager == null) return 'Never';
+  String _getRoleLabel() {
+    // Default to admin role - in real implementation, get from auth service
+    final userRole = 'admin'; // This should come from auth service
     
-    final lastSync = widget.syncManager.lastSyncTime;
-    if (lastSync == null) return 'Never';
-    
-    final now = DateTime.now();
-    final difference = now.difference(lastSync);
-    
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} min ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} hours ago';
-    } else {
-      return '${difference.inDays} days ago';
+    switch (userRole) {
+      case 'admin':
+        return 'Marketing Admin';
+      case 'warehouse':
+        return 'Warehouse Staff';
+      case 'delivery':
+        return 'Delivery Personnel';
+      case 'customer':
+        return 'Customer';
+      default:
+        return 'Pending Approval';
     }
   }
 
@@ -138,52 +189,31 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     return Scaffold(
       body: Row(
         children: [
-          // Desktop Sidebar
+          // Desktop Sidebar - matching Figma design exactly
           Container(
             width: 256,
             height: double.infinity,
-            decoration: BoxDecoration(
-              color: VillahermosaColors.sidebarDark,
-              border: Border(
-                right: BorderSide(
-                  color: VillahermosaColors.sidebarDarkHover,
-                  width: 1,
-                ),
-              ),
-            ),
+            color: const Color(0xFF1E1E1E), // #1E1E1E from Figma
             child: Column(
               children: [
                 // Sidebar Header
                 Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  decoration: const BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: VillahermosaColors.sidebarDarkHover,
+                        color: Color(0xFF2A2A2A), // #2A2A2A divider
                         width: 1,
                       ),
                     ),
                   ),
                   child: Row(
                     children: [
-                      // Logo placeholder
-                      Container(
+                      // Villahermosa Logo
+                      Image.asset(
+                        'assets/images/logo/vm_logo.png',
                         width: 40,
                         height: 40,
-                        decoration: BoxDecoration(
-                          color: VillahermosaColors.cardBg,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'V',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: VillahermosaColors.textPrimary,
-                            ),
-                          ),
-                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -193,16 +223,16 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                             const Text(
                               'Villahermosa',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: VillahermosaColors.cardBg,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white, // White text
                               ),
                             ),
                             Text(
-                              'Marketing Admin',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: VillahermosaColors.textSecondary,
+                              _getRoleLabel(),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF8A8A8A), // #8A8A8A muted gray
                               ),
                             ),
                           ],
@@ -214,7 +244,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                 // Navigation Items
                 Expanded(
                   child: ListView.builder(
-                    padding: EdgeInsets.zero,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     itemCount: navItems.length,
                     itemBuilder: (context, index) {
                       final item = navItems[index];
@@ -224,50 +254,37 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                     },
                   ),
                 ),
-                // Warehouse Footer (only for warehouse nav)
-                if (widget.syncManager != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Offline Mode',
-                          style: TextStyle(
-                            color: const Color(0xFF9CA3AF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Last sync: ${_getLastSyncTime()}',
-                          style: TextStyle(
-                            color: const Color(0xFF9CA3AF),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                // Divider before logout
+                const Divider(
+                  color: Color(0xFF2A2A2A), // #2A2A2A divider
+                  height: 1,
+                  thickness: 1,
+                ),
                 // Logout Button
                 Container(
-                  padding: const EdgeInsets.all(24),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: _logout,
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: VillahermosaColors.cardBg),
-                        backgroundColor: Colors.transparent,
-                        foregroundColor: VillahermosaColors.cardBg,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: InkWell(
+                    onTap: _logout,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.logout_outlined,
+                            size: 20,
+                            color: const Color(0xFF8A8A8A), // #8A8A8A
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Logout',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF8A8A8A), // #8A8A8A
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Text('Logout'),
                     ),
                   ),
                 ),
@@ -277,9 +294,8 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           // Main Content Area
           Expanded(
             child: Container(
-              margin: const EdgeInsets.only(left: 256),
-              decoration: BoxDecoration(
-                color: VillahermosaColors.contentBg,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF4F4F4), // Light content background
               ),
               child: widget.child,
             ),
@@ -289,9 +305,50 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     );
   }
 
+  Widget _buildDesktopNavItem(NavigationItem item, bool isActive) {
+    return Container(
+      height: 48, // Fixed item height from Figma
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _navigateToRoute(item.route),
+          borderRadius: BorderRadius.circular(6),
+          hoverColor: const Color(0xFF252525), // #252525 hover color
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  item.icon,
+                  size: 20, // 20px icon size from Figma
+                  color: isActive 
+                      ? Colors.white // #FFFFFF for active
+                      : const Color(0xFF8A8A8A), // #8A8A8A for inactive
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    style: TextStyle(
+                      fontSize: 15, // 15px label size from Figma
+                      color: isActive 
+                          ? Colors.white // #FFFFFF for active
+                          : const Color(0xFF8A8A8A), // #8A8A8A for inactive
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMobileLayout() {
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: VillahermosaColors.contentBg,
       appBar: AppBar(
         backgroundColor: VillahermosaColors.cardBg,
@@ -341,39 +398,6 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       ),
       body: widget.child,
       bottomNavigationBar: _buildMobileBottomNav(),
-    );
-  }
-
-  Widget _buildDesktopNavItem(NavigationItem item, bool isActive) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isActive ? VillahermosaColors.sidebarDarkHover : Colors.transparent,
-        border: isActive
-            ? Border(
-                left: BorderSide(
-                  color: VillahermosaColors.cardBg,
-                  width: 2,
-                ),
-              )
-            : null,
-      ),
-      child: ListTile(
-        leading: Icon(
-          item.icon,
-          size: 20,
-          color: isActive ? VillahermosaColors.cardBg : VillahermosaColors.textSecondary,
-        ),
-        title: Text(
-          item.label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-            color: isActive ? VillahermosaColors.cardBg : VillahermosaColors.textSecondary,
-          ),
-        ),
-        onTap: () => _navigateToRoute(item.route),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      ),
     );
   }
 
