@@ -457,7 +457,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _buildSalesTrendChart() {
     return Container(
-      height: 300,
+      height: 340,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -574,7 +574,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _buildOrdersByStatusChart() {
     return Container(
-      height: 300,
+      height: 340,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -614,24 +614,28 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       PieChartSectionData(
         value: 12,
         title: '',
+        showTitle: false,
         color: const Color(0xFF9E9E9E),
         radius: 40,
       ),
       PieChartSectionData(
         value: 28,
         title: '',
+        showTitle: false,
         color: const Color(0xFF616161),
         radius: 40,
       ),
       PieChartSectionData(
         value: 45,
         title: '',
+        showTitle: false,
         color: const Color(0xFF212121),
         radius: 40,
       ),
       PieChartSectionData(
         value: 4,
         title: '',
+        showTitle: false,
         color: const Color(0xFFBDBDBD),
         radius: 40,
       ),
@@ -650,12 +654,17 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           ),
         ),
         const SizedBox(height: 10),
-        Column(
+        Row(
           children: [
-            _buildLegendItem('Pending', const Color(0xFF9E9E9E), 12),
-            _buildLegendItem('Processing', const Color(0xFF616161), 28),
-            _buildLegendItem('Delivered', const Color(0xFF212121), 45),
-            _buildLegendItem('Cancelled', const Color(0xFFBDBDBD), 4),
+            Expanded(child: _buildLegendItem('Pending', const Color(0xFF9E9E9E), 12)),
+            Expanded(child: _buildLegendItem('Processing', const Color(0xFF616161), 28)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(child: _buildLegendItem('Delivered', const Color(0xFF212121), 45)),
+            Expanded(child: _buildLegendItem('Cancelled', const Color(0xFFBDBDBD), 4)),
           ],
         ),
       ],
@@ -691,7 +700,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _buildStockLevelsChart() {
     return Container(
-      height: 300,
+      height: 340,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
