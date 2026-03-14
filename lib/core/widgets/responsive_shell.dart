@@ -239,57 +239,53 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                 ),
               ),
             ),
-            child: _sidebarExpanded 
-              ? Row(
-                  children: [
-                    // Villahermosa Logo
-                    Image.asset(
-                      'assets/images/logo/vm_logo.png',
-                      width: 32,
-                      height: 32,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Villahermosa',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white, // White text
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            _getRoleLabel(),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF8A8A8A), // #8A8A8A muted gray
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+            child: Row(
+              children: [
+                // Villahermosa Logo
+                Image.asset(
+                  'assets/images/logo/vm_logo.png',
+                  width: 32,
+                  height: 32,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Villahermosa',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white, // White text
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                    ),
-                    // Hamburger toggle button inline with header
-                    IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.white, size: 20),
-                      onPressed: _toggleSidebar,
-                      padding: EdgeInsets.zero,
-                      tooltip: 'Collapse sidebar',
-                    ),
-                  ],
-                )
-              : Center(
-                  child: IconButton(
-                    icon: const Icon(Icons.menu, color: Colors.white, size: 22),
-                    onPressed: _toggleSidebar,
-                    padding: EdgeInsets.zero,
-                    tooltip: 'Expand sidebar',
+                      Text(
+                        _getRoleLabel(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF8A8A8A), // #8A8A8A muted gray
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ],
                   ),
                 ),
+                // Hamburger toggle button inline with header
+                IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+                  onPressed: _toggleSidebar,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32, minHeight: 32,
+                  ),
+                  tooltip: 'Collapse sidebar',
+                ),
+              ],
+            ),
           ),
           // Navigation Items
           Expanded(
@@ -424,7 +420,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
   Widget _buildDesktopNavItem(NavigationItem item, bool isActive) {
     return Container(
       height: 48, // Fixed item height from Figma
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -432,7 +428,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           borderRadius: BorderRadius.circular(6),
           hoverColor: const Color(0xFF252525), // #252525 hover color
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             child: Row(
               children: [
                 Icon(
