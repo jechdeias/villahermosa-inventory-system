@@ -349,26 +349,45 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       color: const Color(0xFF1E1E1E),
       child: Column(
         children: [
-          // Nav icons only, no labels
+          // Hamburger at top
+          Container(
+            height: 64,
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Color(0xFF2A2A2A),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Center(
+              child: IconButton(
+                icon: const Icon(Icons.menu, 
+                  color: Colors.white, size: 22),
+                onPressed: _toggleSidebar,
+                tooltip: 'Expand sidebar',
+              ),
+            ),
+          ),
+          // Nav icons
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 children: navItems.map((item) {
-                  final isActive = widget.selectedRoute == item.route;
+                  final isActive = 
+                    widget.selectedRoute == item.route;
                   return Tooltip(
                     message: item.label,
                     preferBelow: false,
                     child: InkWell(
                       onTap: () => _navigateToRoute(item.route),
-                      borderRadius: BorderRadius.circular(6),
                       child: Container(
                         height: 48,
                         color: isActive
                           ? const Color(0xFF2A2A2A)
                           : Colors.transparent,
                         child: Center(
-                          child: Icon(
-                            item.icon,
+                          child: Icon(item.icon,
                             color: isActive
                               ? Colors.white
                               : const Color(0xFF8A8A8A),
@@ -382,15 +401,16 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
               ),
             ),
           ),
-          // Logout icon at bottom
-          const Divider(color: Color(0xFF2A2A2A)),
+          // Logout at bottom
+          const Divider(color: Color(0xFF2A2A2A), height: 1),
           SizedBox(
             height: 56,
             child: Center(
               child: Tooltip(
                 message: 'Logout',
                 child: IconButton(
-                  icon: const Icon(Icons.logout_outlined, color: Color(0xFF8A8A8A)),
+                  icon: const Icon(Icons.logout_outlined,
+                    color: Color(0xFF8A8A8A)),
                   onPressed: _logout,
                 ),
               ),
