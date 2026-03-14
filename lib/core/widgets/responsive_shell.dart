@@ -239,46 +239,57 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                 ),
               ),
             ),
-            child: Row(
-              children: [
-                // Villahermosa Logo
-                Image.asset(
-                  'assets/images/logo/vm_logo.png',
-                  width: 32,
-                  height: 32,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Villahermosa',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white, // White text
-                        ),
+            child: _sidebarExpanded 
+              ? Row(
+                  children: [
+                    // Villahermosa Logo
+                    Image.asset(
+                      'assets/images/logo/vm_logo.png',
+                      width: 32,
+                      height: 32,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Villahermosa',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white, // White text
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            _getRoleLabel(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF8A8A8A), // #8A8A8A muted gray
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        _getRoleLabel(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF8A8A8A), // #8A8A8A muted gray
-                        ),
-                      ),
-                    ],
+                    ),
+                    // Hamburger toggle button inline with header
+                    IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+                      onPressed: _toggleSidebar,
+                      padding: EdgeInsets.zero,
+                      tooltip: 'Collapse sidebar',
+                    ),
+                  ],
+                )
+              : Center(
+                  child: IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white, size: 22),
+                    onPressed: _toggleSidebar,
+                    padding: EdgeInsets.zero,
+                    tooltip: 'Expand sidebar',
                   ),
                 ),
-                // Hamburger toggle button inline with header
-                IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white, size: 20),
-                  onPressed: _toggleSidebar,
-                  padding: EdgeInsets.zero,
-                  tooltip: 'Collapse sidebar',
-                ),
-              ],
-            ),
           ),
           // Navigation Items
           Expanded(
@@ -338,18 +349,6 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       color: const Color(0xFF1E1E1E),
       child: Column(
         children: [
-          // Hamburger at top
-          SizedBox(
-            height: 72,
-            child: Center(
-              child: IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: _toggleSidebar,
-                tooltip: 'Expand sidebar',
-              ),
-            ),
-          ),
-          const Divider(color: Color(0xFF2A2A2A)),
           // Nav icons only, no labels
           Expanded(
             child: SingleChildScrollView(
