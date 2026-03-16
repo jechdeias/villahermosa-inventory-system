@@ -610,16 +610,26 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _buildActivityAndActions() {
     try {
+      final isNarrow = MediaQuery.of(context).size.width < 700;
+      
+      if (isNarrow) {
+        return Column(
+          children: [
+            _buildRecentActivityPanel(),
+            const SizedBox(height: 16),
+            _buildQuickActionsPanel(),
+          ],
+        );
+      }
+      
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Recent Activity Panel (65% width)
           Expanded(
             flex: 65,
             child: _buildRecentActivityPanel(),
           ),
           const SizedBox(width: 16),
-          // Quick Actions Panel (35% width)
           Expanded(
             flex: 35,
             child: _buildQuickActionsPanel(),
@@ -1041,6 +1051,20 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _buildCharts() {
     try {
+      final isNarrow = MediaQuery.of(context).size.width < 700;
+      
+      if (isNarrow) {
+        return Column(
+          children: [
+            _buildSalesTrendChart(),
+            const SizedBox(height: 16),
+            _buildOrdersByStatusChart(),
+            const SizedBox(height: 16),
+            _buildStockLevelsChart(),
+          ],
+        );
+      }
+      
       return Row(
         children: [
           Expanded(child: _buildSalesTrendChart()),

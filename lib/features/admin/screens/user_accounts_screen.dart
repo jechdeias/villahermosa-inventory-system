@@ -213,7 +213,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                   ),
                 ),
                 Expanded(
-                  flex: 2,
+                  flex: 1,
                   child: Text(
                     'LAST LOGIN',
                     style: VillahermosaTextStyles.extraSmall.copyWith(
@@ -226,7 +226,13 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
             ),
           ),
           // Table Body
-          ..._filteredUsers.map((user) => _buildUserRow(user)),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: _filteredUsers.map((user) => _buildUserRow(user)).toList(),
+              ),
+            ),
+          ),
         ],
       ),
     );
