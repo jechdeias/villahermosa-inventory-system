@@ -199,16 +199,14 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     return Scaffold(
       body: Row(
         children: [
-          // Collapsible Desktop Sidebar with OverflowBox clipping
+          // Collapsible Desktop Sidebar with Transform clipping
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             width: _sidebarExpanded ? 256 : 64,
             child: ClipRect(
-              child: OverflowBox(
-                alignment: Alignment.centerLeft,
-                minWidth: 0,
-                maxWidth: 256,
+              child: Transform.translate(
+                offset: Offset(_sidebarExpanded ? 0 : -192, 0),
                 child: SizedBox(
                   width: 256,
                   child: _buildExpandedSidebar(context),
