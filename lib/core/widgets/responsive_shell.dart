@@ -118,65 +118,68 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
   }
 
   Widget _buildSidebarHeader() {
+  if (!_sidebarExpanded) {
     return SizedBox(
       height: 72,
-      child: _sidebarExpanded
-        ? Padding(
-            padding: const EdgeInsets.only(
-              left: 12, right: 4),
-            child: Row(
-              children: [
-                Image.asset(
-                  'assets/images/logo/vm_logo.png',
-                  width: 32, height: 32),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment:
-                      MainAxisAlignment.center,
-                    crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                    children: [
-                      const Text('Villahermosa',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
-                        overflow: TextOverflow.ellipsis),
-                      const Text('Marketing Admin',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF8A8A8A)),
-                        overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.menu,
-                    color: Colors.white, size: 20),
-                  onPressed: _toggle,
-                  tooltip: 'Collapse',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 28, minHeight: 28),
-                ),
-              ],
-            ),
-          )
-        : Center(
-            child: IconButton(
-              icon: const Icon(Icons.menu,
-                color: Colors.white, size: 22),
-              onPressed: _toggle,
-              tooltip: 'Expand',
-            ),
-          ),
+      child: Center(
+        child: IconButton(
+          icon: const Icon(Icons.menu,
+            color: Colors.white, size: 22),
+          onPressed: _toggle,
+          tooltip: 'Expand',
+        ),
+      ),
     );
   }
 
+  return SizedBox(
+    height: 72,
+    child: Row(
+      children: [
+        const SizedBox(width: 12),
+        Image.asset(
+          'assets/images/logo/vm_logo.png',
+          width: 32, height: 32),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            mainAxisAlignment:
+                  MainAxisAlignment.center,
+            crossAxisAlignment:
+                  CrossAxisAlignment.start,
+            children: [
+              const Text('Villahermosa',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
+                overflow: TextOverflow.ellipsis),
+              const Text('Marketing Admin',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF8A8A8A)),
+                overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.menu,
+            color: Colors.white, size: 20),
+          onPressed: _toggle,
+          tooltip: 'Collapse',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(
+            minWidth: 28, minHeight: 28),
+        ),
+        const SizedBox(width: 4),
+      ],
+    ),
+  );
+}
+
   Widget _buildNavItems() {
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.zero,
       children: _navItems.map((item) {
         final active = widget.selectedRoute == item.route;
         return _buildNavItem(item, active);
@@ -198,10 +201,9 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           color: active
             ? const Color(0xFF2A2A2A)
             : Colors.transparent,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12),
           child: Row(
             children: [
+              const SizedBox(width: 16),
               Icon(item.icon, size: 20, color: color),
               const SizedBox(width: 12),
               Expanded(
@@ -210,6 +212,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                     fontSize: 14, color: color),
                   overflow: TextOverflow.ellipsis),
               ),
+              const SizedBox(width: 8),
             ],
           ),
         ),
@@ -239,19 +242,19 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     if (_sidebarExpanded) {
       return InkWell(
         onTap: _logout,
-        child: Container(
+        child: SizedBox(
           height: 56,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12),
           child: Row(
-            children: const [
-              Icon(Icons.logout_outlined,
+            children: [
+              const SizedBox(width: 12),
+              const Icon(Icons.logout_outlined,
                 size: 20, color: Color(0xFF8A8A8A)),
-              SizedBox(width: 12),
-              Text('Logout',
+              const SizedBox(width: 12),
+              const Text('Logout',
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF8A8A8A))),
+              const SizedBox(width: 8),
             ],
           ),
         ),
