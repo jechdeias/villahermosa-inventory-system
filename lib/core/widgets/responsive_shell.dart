@@ -199,14 +199,22 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     return Scaffold(
       body: Row(
         children: [
-          // Collapsible Desktop Sidebar (64px rail when collapsed, 256px when expanded)
+          // Collapsible Desktop Sidebar with OverflowBox clipping
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             width: _sidebarExpanded ? 256 : 64,
-            child: _sidebarExpanded 
-              ? _buildExpandedSidebar(context) 
-              : _buildCollapsedSidebar(context),
+            child: ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.centerLeft,
+                minWidth: 0,
+                maxWidth: 256,
+                child: SizedBox(
+                  width: 256,
+                  child: _buildExpandedSidebar(context),
+                ),
+              ),
+            ),
           ),
           // Main Content Area (no top bar)
           Expanded(
@@ -241,13 +249,26 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             ),
             child: Row(
               children: [
-                // Villahermosa Logo
+                // Hamburger FIRST (leftmost, always visible)
+                IconButton(
+                  icon: const Icon(Icons.menu, 
+                    color: Colors.white, size: 20),
+                  onPressed: _toggleSidebar,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 40, minHeight: 40,
+                  ),
+                  tooltip: _sidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar',
+                ),
+                const SizedBox(width: 8),
+                // Logo
                 Image.asset(
                   'assets/images/logo/vm_logo.png',
-                  width: 32,
-                  height: 32,
+                  width: 28,
+                  height: 28,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
+                // Text (gets clipped when collapsed)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,16 +294,6 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                       ),
                     ],
                   ),
-                ),
-                // Hamburger toggle button inline with header
-                IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white, size: 20),
-                  onPressed: _toggleSidebar,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32, minHeight: 32,
-                  ),
-                  tooltip: 'Collapse sidebar',
                 ),
               ],
             ),
@@ -330,84 +341,6 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                       ),
                     ),
                   ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCollapsedSidebar(BuildContext context) {
-    return Container(
-      width: 64,
-      color: const Color(0xFF1E1E1E),
-      child: Column(
-        children: [
-          // Hamburger at top
-          Container(
-            height: 64,
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Color(0xFF2A2A2A),
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Center(
-              child: IconButton(
-                icon: const Icon(Icons.menu, 
-                  color: Colors.white, size: 22),
-                onPressed: _toggleSidebar,
-                tooltip: 'Expand sidebar',
-              ),
-            ),
-          ),
-          // Nav icons
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: navItems.map((item) {
-                  final isActive = 
-                    widget.selectedRoute == item.route;
-                  return Tooltip(
-                    message: item.label,
-                    preferBelow: false,
-                    child: InkWell(
-                      onTap: () => _navigateToRoute(item.route),
-                      child: Container(
-                        height: 48,
-                        color: isActive
-                          ? const Color(0xFF2A2A2A)
-                          : Colors.transparent,
-                        child: Center(
-                          child: Icon(item.icon,
-                            color: isActive
-                              ? Colors.white
-                              : const Color(0xFF8A8A8A),
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          // Logout at bottom
-          const Divider(color: Color(0xFF2A2A2A), height: 1),
-          SizedBox(
-            height: 56,
-            child: Center(
-              child: Tooltip(
-                message: 'Logout',
-                child: IconButton(
-                  icon: const Icon(Icons.logout_outlined,
-                    color: Color(0xFF8A8A8A)),
-                  onPressed: _logout,
                 ),
               ),
             ),
