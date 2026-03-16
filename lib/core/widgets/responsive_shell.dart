@@ -122,8 +122,8 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       height: 72,
       child: _sidebarExpanded
         ? Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16),
+            padding: const EdgeInsets.only(
+              left: 12, right: 4),
             child: Row(
               children: [
                 Image.asset(
@@ -158,7 +158,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                   tooltip: 'Collapse',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
-                    minWidth: 32, minHeight: 32),
+                    minWidth: 28, minHeight: 28),
                 ),
               ],
             ),
@@ -176,7 +176,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
 
   Widget _buildNavItems() {
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       children: _navItems.map((item) {
         final active = widget.selectedRoute == item.route;
         return _buildNavItem(item, active);
@@ -199,7 +199,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             ? const Color(0xFF2A2A2A)
             : Colors.transparent,
           padding: const EdgeInsets.symmetric(
-            horizontal: 20),
+            horizontal: 12),
           child: Row(
             children: [
               Icon(item.icon, size: 20, color: color),
@@ -242,7 +242,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
         child: Container(
           height: 56,
           padding: const EdgeInsets.symmetric(
-            horizontal: 20),
+            horizontal: 12),
           child: Row(
             children: const [
               Icon(Icons.logout_outlined,
