@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/villahermosa_theme.dart';
 
-/// Responsive navigation shell for admin interface
-/// Adapts between desktop sidebar and mobile bottom navigation
 class ResponsiveShell extends StatefulWidget {
   const ResponsiveShell({
     super.key,
@@ -15,211 +13,82 @@ class ResponsiveShell extends StatefulWidget {
 
   final Widget child;
   final String selectedRoute;
-  final dynamic database; // AppDatabase
+  final dynamic database;
   final List<NavigationItem>? navItems;
-  final dynamic syncManager; // SyncManager
+  final dynamic syncManager;
 
   @override
-  State<ResponsiveShell> createState() => _ResponsiveShellState();
+  State<ResponsiveShell> createState() => 
+    _ResponsiveShellState();
 }
 
 class _ResponsiveShellState extends State<ResponsiveShell> {
-  static bool _sidebarExpandedGlobal = true; // Persist across route changes
-  
-  bool get _sidebarExpanded => _sidebarExpandedGlobal;
-  
-  void _toggleSidebar() {
-    setState(() {
-      _sidebarExpandedGlobal = !_sidebarExpandedGlobal;
-    });
-  }
-  
-  // Navigation items configuration - matching Figma design
-  List<NavigationItem> get navItems => widget.navItems ?? _getNavItemsForRole();
-  
-  List<NavigationItem> _getNavItemsForRole() {
-    // Default to admin role - in real implementation, get from auth service
-    final userRole = 'admin'; // This should come from auth service
-    
-    switch (userRole) {
-      case 'admin':
-        return _adminNavItems;
-      case 'warehouse':
-        return _warehouseNavItems;
-      case 'delivery':
-        return _deliveryNavItems;
-      case 'customer':
-        return _customerNavItems;
-      default:
-        return _pendingNavItems;
-    }
-  }
+  static bool _sidebarExpanded = true;
+
+  List<NavigationItem> get _navItems =>
+    widget.navItems ?? _adminNavItems;
 
   static const List<NavigationItem> _adminNavItems = [
-    NavigationItem(
-      route: '/admin/dashboard',
-      icon: Icons.dashboard_outlined,
-      label: 'Dashboard',
-    ),
-    NavigationItem(
-      route: '/admin/products',
-      icon: Icons.inventory_2_outlined,
-      label: 'Products',
-    ),
-    NavigationItem(
-      route: '/admin/customers',
-      icon: Icons.storefront_outlined,
-      label: 'Customers',
-    ),
-    NavigationItem(
-      route: '/admin/orders',
-      icon: Icons.shopping_cart_outlined,
-      label: 'Orders',
-    ),
-    NavigationItem(
-      route: '/admin/stock',
-      icon: Icons.trending_up,
-      label: 'Stock Movement',
-    ),
-    NavigationItem(
-      route: '/admin/deliveries',
-      icon: Icons.local_shipping_outlined,
-      label: 'Deliveries',
-    ),
-    NavigationItem(
-      route: '/admin/reports',
-      icon: Icons.bar_chart_outlined,
-      label: 'Reports',
-    ),
-    NavigationItem(
-      route: '/admin/users',
-      icon: Icons.shield_outlined,
-      label: 'User Accounts',
-    ),
-    NavigationItem(
-      route: '/admin/settings',
-      icon: Icons.settings_outlined,
-      label: 'Settings',
-    ),
+    NavigationItem(route: '/admin/dashboard',
+      icon: Icons.dashboard_outlined, 
+      label: 'Dashboard'),
+    NavigationItem(route: '/admin/products',
+      icon: Icons.inventory_2_outlined, 
+      label: 'Products'),
+    NavigationItem(route: '/admin/customers',
+      icon: Icons.storefront_outlined, 
+      label: 'Customers'),
+    NavigationItem(route: '/admin/orders',
+      icon: Icons.shopping_cart_outlined, 
+      label: 'Orders'),
+    NavigationItem(route: '/admin/stock',
+      icon: Icons.trending_up, 
+      label: 'Stock Movement'),
+    NavigationItem(route: '/admin/deliveries',
+      icon: Icons.local_shipping_outlined, 
+      label: 'Deliveries'),
+    NavigationItem(route: '/admin/reports',
+      icon: Icons.bar_chart_outlined, 
+      label: 'Reports'),
+    NavigationItem(route: '/admin/users',
+      icon: Icons.shield_outlined, 
+      label: 'User Accounts'),
+    NavigationItem(route: '/admin/settings',
+      icon: Icons.settings_outlined, 
+      label: 'Settings'),
   ];
 
-  static const List<NavigationItem> _warehouseNavItems = [
-    NavigationItem(
-      route: '/warehouse/dashboard',
-      icon: Icons.dashboard_outlined,
-      label: 'Dashboard',
-    ),
-    NavigationItem(
-      route: '/admin/products',
-      icon: Icons.inventory_2_outlined,
-      label: 'Products',
-    ),
-    NavigationItem(
-      route: '/admin/stock',
-      icon: Icons.trending_up,
-      label: 'Stock Movement',
-    ),
-  ];
-
-  static const List<NavigationItem> _deliveryNavItems = [
-    NavigationItem(
-      route: '/delivery/dashboard',
-      icon: Icons.dashboard_outlined,
-      label: 'Dashboard',
-    ),
-    NavigationItem(
-      route: '/admin/deliveries',
-      icon: Icons.local_shipping_outlined,
-      label: 'Deliveries',
-    ),
-  ];
-
-  static const List<NavigationItem> _customerNavItems = [
-    NavigationItem(
-      route: '/customer/dashboard',
-      icon: Icons.dashboard_outlined,
-      label: 'Dashboard',
-    ),
-  ];
-
-  static const List<NavigationItem> _pendingNavItems = [
-    NavigationItem(
-      route: '/admin/dashboard',
-      icon: Icons.dashboard_outlined,
-      label: 'Dashboard',
-    ),
-  ];
-
-  bool _isMobile(BuildContext context) {
-    return MediaQuery.of(context).size.width < 768;
+  void _toggle() {
+    setState(() => _sidebarExpanded = !_sidebarExpanded);
   }
 
-  void _navigateToRoute(String route) {
-    if (_isMobile(context)) {
-      Navigator.pop(context); // Close mobile menu
-    }
+  void _navigate(String route) {
     Navigator.pushReplacementNamed(context, route);
   }
 
-  String _getRoleLabel() {
-    // Default to admin role - in real implementation, get from auth service
-    final userRole = 'admin'; // This should come from auth service
-    
-    switch (userRole) {
-      case 'admin':
-        return 'Marketing Admin';
-      case 'warehouse':
-        return 'Warehouse Staff';
-      case 'delivery':
-        return 'Delivery Personnel';
-      case 'customer':
-        return 'Customer';
-      default:
-        return 'Pending Approval';
-    }
-  }
-
   void _logout() {
-    // Navigate to login screen
     Navigator.pushReplacementNamed(context, '/login');
   }
 
+  bool get _isMobile =>
+    MediaQuery.of(context).size.width < 768;
+
   @override
   Widget build(BuildContext context) {
-    final isMobile = _isMobile(context);
-
-    if (isMobile) {
-      return _buildMobileLayout();
-    } else {
-      return _buildDesktopLayout();
-    }
+    if (_isMobile) return _buildMobile();
+    return _buildDesktop();
   }
 
-  Widget _buildDesktopLayout() {
+  // ─── DESKTOP ───────────────────────────────────
+
+  Widget _buildDesktop() {
     return Scaffold(
       body: Row(
         children: [
-          // Collapsible Desktop Sidebar with Transform clipping
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            width: _sidebarExpanded ? 256 : 64,
-            child: ClipRect(
-              child: Transform.translate(
-                offset: Offset(_sidebarExpanded ? 0 : -192, 0),
-                child: SizedBox(
-                  width: 256,
-                  child: _buildExpandedSidebar(context),
-                ),
-              ),
-            ),
-          ),
-          // Main Content Area (no top bar)
+          _buildSidebar(),
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFF4F4F4), // Light content background
-              ),
+              color: const Color(0xFFF4F4F4),
               child: widget.child,
             ),
           ),
@@ -228,216 +97,196 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     );
   }
 
-  Widget _buildExpandedSidebar(BuildContext context) {
-    return Container(
-      height: double.infinity,
-      color: const Color(0xFF1E1E1E), // #1E1E1E from Figma
+  Widget _buildSidebar() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeInOut,
+      width: _sidebarExpanded ? 256 : 64,
+      color: const Color(0xFF1E1E1E),
       child: Column(
         children: [
-          // Sidebar Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Color(0xFF2A2A2A), // #2A2A2A divider
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                // Hamburger FIRST (leftmost, always visible)
-                IconButton(
-                  icon: const Icon(Icons.menu, 
-                    color: Colors.white, size: 20),
-                  onPressed: _toggleSidebar,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 40, minHeight: 40,
-                  ),
-                  tooltip: _sidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar',
-                ),
-                const SizedBox(width: 8),
-                // Logo
-                Image.asset(
-                  'assets/images/logo/vm_logo.png',
-                  width: 28,
-                  height: 28,
-                ),
-                const SizedBox(width: 8),
-                // Text (gets clipped when collapsed)
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Villahermosa',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white, // White text
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      Text(
-                        _getRoleLabel(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF8A8A8A), // #8A8A8A muted gray
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Navigation Items
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: navItems.length,
-              itemBuilder: (context, index) {
-                final item = navItems[index];
-                final isActive = widget.selectedRoute == item.route;
-                
-                return _buildDesktopNavItem(item, isActive);
-              },
-            ),
-          ),
-          // Divider before logout
+          _buildSidebarHeader(),
           const Divider(
-            color: Color(0xFF2A2A2A), // #2A2A2A divider
-            height: 1,
-            thickness: 1,
-          ),
-          // Logout Button
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: InkWell(
-              onTap: _logout,
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.logout_outlined,
-                      size: 20,
-                      color: const Color(0xFF8A8A8A), // #8A8A8A
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Logout',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF8A8A8A), // #8A8A8A
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+            color: Color(0xFF2A2A2A), height: 1),
+          Expanded(child: _buildNavItems()),
+          const Divider(
+            color: Color(0xFF2A2A2A), height: 1),
+          _buildLogout(),
         ],
       ),
     );
   }
 
-  Widget _buildDesktopNavItem(NavigationItem item, bool isActive) {
-    return Container(
-      height: 48, // Fixed item height from Figma
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _navigateToRoute(item.route),
-          borderRadius: BorderRadius.circular(6),
-          hoverColor: const Color(0xFF252525), // #252525 hover color
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+  Widget _buildSidebarHeader() {
+    return SizedBox(
+      height: 72,
+      child: _sidebarExpanded
+        ? Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16),
             child: Row(
               children: [
-                Icon(
-                  item.icon,
-                  size: 20, // 20px icon size from Figma
-                  color: isActive 
-                      ? Colors.white // #FFFFFF for active
-                      : const Color(0xFF8A8A8A), // #8A8A8A for inactive
-                ),
-                const SizedBox(width: 12),
+                Image.asset(
+                  'assets/images/logo/vm_logo.png',
+                  width: 32, height: 32),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    item.label,
-                    style: TextStyle(
-                      fontSize: 15, // 15px label size from Figma
-                      color: isActive 
-                          ? Colors.white // #FFFFFF for active
-                          : const Color(0xFF8A8A8A), // #8A8A8A for inactive
-                      fontWeight: FontWeight.w400,
-                    ),
+                  child: Column(
+                    mainAxisAlignment:
+                      MainAxisAlignment.center,
+                    crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                    children: [
+                      const Text('Villahermosa',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                        overflow: TextOverflow.ellipsis),
+                      const Text('Marketing Admin',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF8A8A8A)),
+                        overflow: TextOverflow.ellipsis),
+                    ],
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.menu,
+                    color: Colors.white, size: 20),
+                  onPressed: _toggle,
+                  tooltip: 'Collapse',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32, minHeight: 32),
                 ),
               ],
             ),
+          )
+        : Center(
+            child: IconButton(
+              icon: const Icon(Icons.menu,
+                color: Colors.white, size: 22),
+              onPressed: _toggle,
+              tooltip: 'Expand',
+            ),
           ),
-        ),
-      ),
     );
   }
 
-  Widget _buildMobileLayout() {
+  Widget _buildNavItems() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: _navItems.map((item) {
+        final active = widget.selectedRoute == item.route;
+        return _buildNavItem(item, active);
+      }).toList(),
+    );
+  }
+
+  Widget _buildNavItem(NavigationItem item, bool active) {
+    final color = active
+      ? Colors.white
+      : const Color(0xFF8A8A8A);
+
+    if (_sidebarExpanded) {
+      return InkWell(
+        onTap: () => _navigate(item.route),
+        hoverColor: const Color(0xFF252525),
+        child: Container(
+          height: 48,
+          color: active
+            ? const Color(0xFF2A2A2A)
+            : Colors.transparent,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20),
+          child: Row(
+            children: [
+              Icon(item.icon, size: 20, color: color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(item.label,
+                  style: TextStyle(
+                    fontSize: 14, color: color),
+                  overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      return Tooltip(
+        message: item.label,
+        preferBelow: false,
+        child: InkWell(
+          onTap: () => _navigate(item.route),
+          child: Container(
+            height: 48,
+            color: active
+              ? const Color(0xFF2A2A2A)
+              : Colors.transparent,
+            child: Center(
+              child: Icon(item.icon,
+                size: 22, color: color),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildLogout() {
+    if (_sidebarExpanded) {
+      return InkWell(
+        onTap: _logout,
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20),
+          child: Row(
+            children: const [
+              Icon(Icons.logout_outlined,
+                size: 20, color: Color(0xFF8A8A8A)),
+              SizedBox(width: 12),
+              Text('Logout',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF8A8A8A))),
+            ],
+          ),
+        ),
+      );
+    } else {
+      return Tooltip(
+        message: 'Logout',
+        child: InkWell(
+          onTap: _logout,
+          child: const SizedBox(
+            height: 56,
+            child: Center(
+              child: Icon(Icons.logout_outlined,
+                size: 22,
+                color: Color(0xFF8A8A8A)),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  // ─── MOBILE ────────────────────────────────────
+
+  Widget _buildMobile() {
     return Scaffold(
       backgroundColor: VillahermosaColors.contentBg,
       appBar: AppBar(
         backgroundColor: VillahermosaColors.cardBg,
         elevation: 1,
-        title: Row(
-          children: [
-            // Logo
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: VillahermosaColors.sidebarDark,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Center(
-                child: Text(
-                  'V',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: VillahermosaColors.cardBg,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Villahermosa',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: VillahermosaColors.textPrimary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: VillahermosaColors.textPrimary),
-            onPressed: () {
-              _showMobileMenu();
-            },
-          ),
-        ],
+        title: const Text('Villahermosa',
+          style: TextStyle(
+            fontSize:16,
+            fontWeight: FontWeight.w600,
+            color: VillahermosaColors.textPrimary)),
       ),
       body: widget.child,
       bottomNavigationBar: _buildMobileBottomNav(),
@@ -445,140 +294,49 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
   }
 
   Widget _buildMobileBottomNav() {
-    // Show first 5 items in bottom nav
-    final primaryItems = navItems.take(5).toList();
-    
+    final items = _navItems.take(5).toList();
     return Container(
       decoration: BoxDecoration(
         color: VillahermosaColors.cardBg,
         border: Border(
           top: BorderSide(
-            color: VillahermosaColors.borderColor,
-            width: 1,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 6,
-            offset: const Offset(0, -4),
-          ),
-        ],
+            color: VillahermosaColors.borderColor)),
       ),
       child: SafeArea(
         child: Row(
-          children: primaryItems.map((item) {
-            final isActive = widget.selectedRoute == item.route;
+          children: items.map((item) {
+            final active =
+              widget.selectedRoute == item.route;
             return Expanded(
               child: InkWell(
-                onTap: () => _navigateToRoute(item.route),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                onTap: () => _navigate(item.route),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        item.icon,
-                        size: 24,
-                        color: isActive 
-                            ? VillahermosaColors.textPrimary 
-                            : VillahermosaColors.textSecondary,
-                      ),
+                      Icon(item.icon, size: 24,
+                        color: active
+                          ? VillahermosaColors.textPrimary
+                          : VillahermosaColors
+                            .textSecondary),
                       const SizedBox(height: 2),
-                      Text(
-                        item.label,
+                      Text(item.label,
                         style: TextStyle(
                           fontSize: 10,
-                          fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                          color: isActive 
-                              ? VillahermosaColors.textPrimary 
-                              : VillahermosaColors.textSecondary,
-                        ),
+                          color: active
+                            ? VillahermosaColors.textPrimary
+                            : VillahermosaColors
+                              .textSecondary),
                         textAlign: TextAlign.center,
-                      ),
+                        overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
               ),
             );
           }).toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showMobileMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: VillahermosaColors.sidebarDark,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      builder: (context) => Container(
-        width: 288,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Navigation Menu',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: VillahermosaColors.cardBg,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: VillahermosaColors.cardBg),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            ...navItems.map((item) {
-              final isActive = widget.selectedRoute == item.route;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: Icon(
-                    item.icon,
-                    color: isActive ? VillahermosaColors.cardBg : VillahermosaColors.textSecondary,
-                  ),
-                  title: Text(
-                    item.label,
-                    style: TextStyle(
-                      color: isActive ? VillahermosaColors.cardBg : VillahermosaColors.textSecondary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _navigateToRoute(item.route);
-                  },
-                ),
-              );
-            }),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: _logout,
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: VillahermosaColors.cardBg),
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: VillahermosaColors.cardBg,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-                child: const Text('Logout'),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -591,7 +349,6 @@ class NavigationItem {
     required this.icon,
     required this.label,
   });
-
   final String route;
   final IconData icon;
   final String label;
