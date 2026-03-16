@@ -371,6 +371,76 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _buildHeader() {
     try {
+      final isNarrow = MediaQuery.of(context).size.width < 600;
+      
+      if (isNarrow) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Dashboard',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  'System overview and analytics',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Buttons row
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.grey.shade300)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_today,
+                          size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 6),
+                        const Text('Last 30 days',
+                          style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _refreshData,
+                  icon: const Icon(Icons.refresh, color: Colors.black87),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: Colors.grey.shade300))),
+                ),
+              ],
+            ),
+          ],
+        );
+      }
+      
+      // Desktop: existing Row layout unchanged
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

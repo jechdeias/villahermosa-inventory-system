@@ -297,6 +297,14 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             fontSize:16,
             fontWeight: FontWeight.w600,
             color: VillahermosaColors.textPrimary)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu,
+              color: VillahermosaColors.textPrimary),
+            onPressed: _showMobileMenu,
+            tooltip: 'Navigation menu',
+          ),
+        ],
       ),
       body: widget.child,
       bottomNavigationBar: _buildMobileBottomNav(),
@@ -347,6 +355,55 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
               ),
             );
           }).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showMobileMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: Row(
+                children: [
+                  const Text(
+                    'Navigation',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            ..._navItems.map((item) => ListTile(
+              leading: Icon(item.icon),
+              title: Text(item.label),
+              onTap: () {
+                Navigator.pop(context);
+                _navigate(item.route);
+              },
+            )),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
