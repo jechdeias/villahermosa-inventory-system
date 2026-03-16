@@ -85,7 +85,94 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     return Scaffold(
       body: Row(
         children: [
-          _buildSidebar(),
+          // Sidebar + hamburger as a Stack
+          SizedBox(
+            width: _sidebarExpanded ? 256 : 64,
+            child: Stack(
+              children: [
+                // Full sidebar (animated width)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeInOut,
+                  width: _sidebarExpanded ? 256 : 64,
+                  color: const Color(0xFF1E1E1E),
+                  child: Column(
+                    children: [
+                      // Header space (72px) - hamburger floats over this
+                      const SizedBox(height: 72),
+                      const Divider(
+                        color: Color(0xFF2A2A2A), height: 1),
+                      Expanded(child: _buildNavItems()),
+                      const Divider(
+                        color: Color(0xFF2A2A2A), height: 1),
+                      _buildLogout(),
+                    ],
+                  ),
+                ),
+                // Logo area (only visible when expanded)
+                if (_sidebarExpanded)
+                  Positioned(
+                    top: 0, left: 0,
+                    right: 40, // leave space for hamburger
+                    height: 72,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/logo/vm_logo.png',
+                            width: 32, height: 32),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment:
+                                MainAxisAlignment.center,
+                              crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                              children: [
+                                const Text('Villahermosa',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight:
+                                      FontWeight.bold,
+                                    color: Colors.white),
+                                  overflow:
+                                    TextOverflow.ellipsis),
+                                const Text('Marketing Admin',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color:
+                                      Color(0xFF8A8A8A)),
+                                  overflow:
+                                    TextOverflow.ellipsis),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // Hamburger - ALWAYS at same position
+                // top-left, same x/y always
+                Positioned(
+                  top: 16,
+                  left: 12,
+                  child: IconButton(
+                    icon: const Icon(Icons.menu,
+                      color: Colors.white, size: 22),
+                    onPressed: _toggle,
+                    tooltip: _sidebarExpanded
+                      ? 'Collapse sidebar'
+                      : 'Expand sidebar',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 40, minHeight: 40),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Main content
           Expanded(
             child: Container(
               color: const Color(0xFFF4F4F4),
@@ -96,86 +183,6 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       ),
     );
   }
-
-  Widget _buildSidebar() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeInOut,
-      width: _sidebarExpanded ? 256 : 64,
-      color: const Color(0xFF1E1E1E),
-      child: Column(
-        children: [
-          _buildSidebarHeader(),
-          const Divider(
-            color: Color(0xFF2A2A2A), height: 1),
-          Expanded(child: _buildNavItems()),
-          const Divider(
-            color: Color(0xFF2A2A2A), height: 1),
-          _buildLogout(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarHeader() {
-  if (!_sidebarExpanded) {
-    return SizedBox(
-      height: 72,
-      child: Center(
-        child: IconButton(
-          icon: const Icon(Icons.menu,
-            color: Colors.white, size: 22),
-          onPressed: _toggle,
-          tooltip: 'Expand',
-        ),
-      ),
-    );
-  }
-
-  return SizedBox(
-    height: 72,
-    child: Row(
-      children: [
-        const SizedBox(width: 12),
-        Image.asset(
-          'assets/images/logo/vm_logo.png',
-          width: 32, height: 32),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            mainAxisAlignment:
-                  MainAxisAlignment.center,
-            crossAxisAlignment:
-                  CrossAxisAlignment.start,
-            children: [
-              const Text('Villahermosa',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
-                overflow: TextOverflow.ellipsis),
-              const Text('Marketing Admin',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF8A8A8A)),
-                overflow: TextOverflow.ellipsis),
-            ],
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.menu,
-            color: Colors.white, size: 20),
-          onPressed: _toggle,
-          tooltip: 'Collapse',
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(
-            minWidth: 28, minHeight: 28),
-        ),
-        const SizedBox(width: 4),
-      ],
-    ),
-  );
-}
 
   Widget _buildNavItems() {
     return ListView(
