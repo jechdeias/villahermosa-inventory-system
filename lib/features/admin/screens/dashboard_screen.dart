@@ -439,25 +439,46 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   Widget _buildStatCards() {
-    try {
-      return Row(
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isNarrow = screenWidth < 600;
+        
+    if (isNarrow) {
+      // 2x2 grid on mobile
+      return Column(
         children: [
-          Expanded(child: _statCard('Users', Icons.people_outline, _totalUsers, '$_activeUsers active')),
-          const SizedBox(width: 16),
-          Expanded(child: _statCard('Products', Icons.inventory_2_outlined, _totalProducts, 'Low: $_lowStockCount')),
-          const SizedBox(width: 16),
-          Expanded(child: _statCard('Orders', Icons.shopping_cart_outlined, _totalOrders, 'Pending: $_pendingOrders')),
-          const SizedBox(width: 16),
-          Expanded(child: _statCard('Deliveries', Icons.local_shipping_outlined, _totalDeliveries, 'Transit: $_inTransitDeliveries')),
+          Row(
+            children: [
+              Expanded(child: _statCard('Users', Icons.people_outline, _totalUsers, '$_activeUsers active')),
+              const SizedBox(width: 12),
+              Expanded(child: _statCard('Products', Icons.inventory_2_outlined, _totalProducts, 'Low: $_lowStockCount')),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _statCard('Orders', Icons.shopping_cart_outlined, _totalOrders, 'Pending: $_pendingOrders')),
+              const SizedBox(width: 12),
+              Expanded(child: _statCard('Deliveries', Icons.local_shipping_outlined, _totalDeliveries, 'Transit: $_inTransitDeliveries')),
+            ],
+          ),
         ],
       );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Stat Cards Error: $e'),
-      );
-    }
+    } else {
+      // Desktop: 4 in a row
+      return Row(
+        children: [
+              Expanded(child: _statCard('Users', Icons.people_outline, _totalUsers, '$_activeUsers active')),
+              const SizedBox(width: 16),
+              Expanded(child: _statCard('Products', Icons.inventory_2_outlined, _totalProducts, 'Low: $_lowStockCount')),
+              const SizedBox(width: 16),
+              Expanded(child: _statCard('Orders', Icons.shopping_cart_outlined, _totalOrders, 'Pending: $_pendingOrders')),
+              const SizedBox(width: 16),
+              Expanded(child: _statCard('Deliveries', Icons.local_shipping_outlined, _totalDeliveries, 'Transit: $_inTransitDeliveries')),
+            ],
+          );
+        }
+      },
+    );
   }
 
   Widget _statCard(String title, IconData icon, int count, String subLabel) {
@@ -525,30 +546,47 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   Widget _buildActivityAndActions() {
-    try {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isNarrow = screenWidth < 700;
+        
+    if (isNarrow) {
+      // Stack panels vertically in Column
+      return Column(
         children: [
-          // Recent Activity Panel (65% width)
-          Expanded(
-            flex: 65,
-            child: _buildRecentActivityPanel(),
-          ),
-          const SizedBox(width: 16),
-          // Quick Actions Panel (35% width)
-          Expanded(
-            flex: 35,
-            child: _buildQuickActionsPanel(),
-          ),
-        ],
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Activity & Actions Error: $e'),
-      );
-    }
+              // Recent Activity Panel (65% width)
+              Expanded(
+                flex: 65,
+                child: _buildRecentActivityPanel(),
+              ),
+              const SizedBox(width: 16),
+              // Quick Actions Panel (35% width)
+              Expanded(
+                flex: 35,
+                child: _buildQuickActionsPanel(),
+              ),
+            ],
+          );
+        } else {
+          // Row with flex 65/35 on desktop
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Recent Activity Panel (65% width)
+              Expanded(
+                flex: 65,
+                child: _buildRecentActivityPanel(),
+              ),
+              const SizedBox(width: 16),
+              // Quick Actions Panel (35% width)
+              Expanded(
+                flex: 35,
+                child: _buildQuickActionsPanel(),
+              ),
+            ],
+          );
+        }
+      },
+    );
   }
 
   Widget _buildRecentActivityPanel() {
@@ -956,23 +994,43 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   Widget _buildCharts() {
-    try {
-      return Row(
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isNarrow = screenWidth < 600;
+        
+    if (isNarrow) {
+      // Stack charts vertically on mobile
+      return Column(
         children: [
-          Expanded(child: _buildSalesTrendChart()),
-          const SizedBox(width: 16),
-          Expanded(child: _buildOrdersByStatusChart()),
-          const SizedBox(width: 16),
-          Expanded(child: _buildStockLevelsChart()),
-        ],
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Charts Error: $e'),
-      );
-    }
+              SizedBox(
+                height: 340,
+                child: _buildSalesTrendChart(),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 340,
+                child: _buildOrdersByStatusChart(),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 340,
+                child: _buildStockLevelsChart(),
+              ),
+            ],
+          );
+        } else {
+          // Show 3 charts in a row on desktop
+          return Row(
+            children: [
+              Expanded(child: _buildSalesTrendChart()),
+              const SizedBox(width: 16),
+              Expanded(child: _buildOrdersByStatusChart()),
+              const SizedBox(width: 16),
+              Expanded(child: _buildStockLevelsChart()),
+            ],
+          );
+        }
+      },
+    );
   }
 
   Widget _buildSalesTrendChart() {
