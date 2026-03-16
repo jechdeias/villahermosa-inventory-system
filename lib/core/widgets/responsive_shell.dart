@@ -90,7 +90,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             width: _sidebarExpanded ? 256 : 64,
             child: Stack(
               children: [
-                // Full sidebar (animated width)
+                // 1. Sidebar background (bottom)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeInOut,
@@ -109,20 +109,21 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                     ],
                   ),
                 ),
-                // Logo area (only visible when expanded)
+                // 2. Logo/text (middle, only when expanded)
                 if (_sidebarExpanded)
                   Positioned(
-                    top: 0, left: 0,
-                    right: 40, // leave space for hamburger
+                    top: 0,
+                    left: 52,  // after hamburger
+                    right: 0,
                     height: 72,
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
+                      padding: const EdgeInsets.only(right: 8),
                       child: Row(
                         children: [
                           Image.asset(
                             'assets/images/logo/vm_logo.png',
-                            width: 32, height: 32),
-                          const SizedBox(width: 10),
+                            width: 28, height: 28),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Column(
                               mainAxisAlignment:
@@ -152,8 +153,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                       ),
                     ),
                   ),
-                // Hamburger - ALWAYS at same position
-                // top-left, same x/y always
+                // 3. Hamburger LAST (always on top)
                 Positioned(
                   top: 16,
                   left: 12,
