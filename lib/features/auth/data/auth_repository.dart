@@ -195,17 +195,28 @@ class AuthRepository {
   /// Sync user to Supabase
   Future<bool> _syncUserToSupabase(User user) async {
     try {
-      // Create service client for sync operations
-      final serviceClient = SupabaseClient(
-        SupabaseConfig.url,
-        SupabaseConfig.serviceKey,
-        headers: {'X-Client-Info': 'service_role'},
-      );
-      
+      // Prefer service-role client (bypasses RLS). Fall back to the
+      // authenticated anon client so admin flows work without the key.
+      // If neither is available the record stays 'pending' for later sync.
+      final SupabaseClient client;
+      if (SupabaseConfig.serviceKey.isNotEmpty) {
+        client = SupabaseClient(
+          SupabaseConfig.url,
+          SupabaseConfig.serviceKey,
+          headers: {'X-Client-Info': 'service_role'},
+        );
+      } else if (Supabase.instance.client.auth.currentSession != null) {
+        debugPrint('⚠️ SUPABASE_SERVICE_KEY not set — using authenticated client');
+        client = Supabase.instance.client;
+      } else {
+        debugPrint('⚠️ SUPABASE_SERVICE_KEY not set and no session — sync deferred');
+        return false;
+      }
+
       final userData = {
         'uuid': user.uuid,
-        'firstName': user.firstName,    // ← Fix: Use camelCase for Supabase
-        'lastName': user.lastName,      // ← Fix: Use camelCase for Supabase
+        'firstName': user.firstName,
+        'lastName': user.lastName,
         'email': user.email,
         'password_hash': user.passwordHash,
         'role': user.role,
@@ -215,15 +226,15 @@ class AuthRepository {
         'created_at': user.createdAt.toIso8601String(),
         'updated_at': user.updatedAt.toIso8601String(),
       };
-      
+
       debugPrint('☁️ Syncing to Supabase with data: $userData');
-      
-      final result = await serviceClient
+
+      final result = await client
           .from('users')
           .upsert(userData)
           .select()
           .maybeSingle();
-          
+
       debugPrint('☁️ Supabase upsert result: $result');
       return result != null;
     } catch (e) {

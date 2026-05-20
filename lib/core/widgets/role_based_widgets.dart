@@ -1,7 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../auth/auth_service.dart';
 import '../constants/user_roles.dart';
+
+UserRole _roleFromAuth() {
+  final user = AuthService.instance.getCurrentUser();
+  if (user == null) return UserRole.customer;
+  return UserRole.fromString(user.role);
+}
 
 /// Widget that conditionally shows children based on user role
 class RoleGuard extends StatelessWidget {
@@ -27,12 +34,7 @@ class RoleGuard extends StatelessWidget {
     return fallback ?? const SizedBox.shrink();
   }
 
-  UserRole _getCurrentUserRole() {
-    // TODO: This should get the actual user role from the current authenticated user
-    // For now, return customer as default since widgets need synchronous role access
-    // In a real implementation, this could use a state management solution
-    return UserRole.customer;
-  }
+  UserRole _getCurrentUserRole() => _roleFromAuth();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -69,11 +71,7 @@ class PermissionGuard extends StatelessWidget {
     return fallback ?? const SizedBox.shrink();
   }
 
-  UserRole _getCurrentUserRole() {
-    // TODO: Get actual user role from auth service
-    // For now, return customer as default
-    return UserRole.customer;
-  }
+  UserRole _getCurrentUserRole() => _roleFromAuth();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -108,11 +106,7 @@ class AnyRoleGuard extends StatelessWidget {
     return fallback ?? const SizedBox.shrink();
   }
 
-  UserRole _getCurrentUserRole() {
-    // TODO: Get actual user role from auth service
-    // For now, return customer as default
-    return UserRole.customer;
-  }
+  UserRole _getCurrentUserRole() => _roleFromAuth();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -144,11 +138,7 @@ class RoleHide extends StatelessWidget {
     return child;
   }
 
-  UserRole _getCurrentUserRole() {
-    // TODO: Get actual user role from auth service
-    // For now, return customer as default
-    return UserRole.customer;
-  }
+  UserRole _getCurrentUserRole() => _roleFromAuth();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -193,11 +183,7 @@ class PermissionButton extends StatelessWidget {
     );
   }
 
-  UserRole _getCurrentUserRole() {
-    // TODO: Get actual user role from auth service
-    // For now, return customer as default
-    return UserRole.customer;
-  }
+  UserRole _getCurrentUserRole() => _roleFromAuth();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -247,11 +233,7 @@ class PermissionListTile extends StatelessWidget {
     );
   }
 
-  UserRole _getCurrentUserRole() {
-    // TODO: Get actual user role from auth service
-    // For now, return customer as default
-    return UserRole.customer;
-  }
+  UserRole _getCurrentUserRole() => _roleFromAuth();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {

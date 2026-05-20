@@ -696,19 +696,28 @@ class SyncEngine {
 
     debugPrint('📋 Pending users to sync: ${pendingUsers.length}');
 
-    
 
-    final serviceClient = SupabaseClient(
 
-      SupabaseConfig.url,
+    // Prefer the service-role client (bypasses RLS). If the key is not
+    // supplied at build time, fall back to the authenticated anon client so
+    // the admin can still push their own records. Anonymous pushes are skipped
+    // and left as 'pending' for the next sync cycle.
+    final SupabaseClient syncClient;
+    if (SupabaseConfig.serviceKey.isNotEmpty) {
+      syncClient = SupabaseClient(
+        SupabaseConfig.url,
+        SupabaseConfig.serviceKey,
+        headers: {'X-Client-Info': 'service_role'},
+      );
+    } else if (Supabase.instance.client.auth.currentSession != null) {
+      debugPrint('⚠️ SUPABASE_SERVICE_KEY not set — using authenticated client for user sync');
+      syncClient = Supabase.instance.client;
+    } else {
+      debugPrint('⚠️ SUPABASE_SERVICE_KEY not set and no active session — user sync skipped');
+      return [];
+    }
 
-      SupabaseConfig.serviceKey,
 
-      headers: {'X-Client-Info': 'service_role'},
-
-    );
-
-    
 
     for (final user in pendingUsers) {
 
@@ -716,19 +725,19 @@ class SyncEngine {
 
         debugPrint('🔄 Syncing user: ${user.email}');
 
-        
+
 
         final data = _recordToMap(user);
 
         debugPrint('📦 User data mapped: ${data.keys.toList()}');
 
-        
+
 
         try {
 
           // Try insert first
 
-          await serviceClient
+          await syncClient
 
               .from('users')
 
@@ -742,7 +751,7 @@ class SyncEngine {
 
             debugPrint('User exists, updating: ${user.email}');
 
-            await serviceClient
+            await syncClient
 
                 .from('users')
 

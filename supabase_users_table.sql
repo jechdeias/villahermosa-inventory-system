@@ -43,6 +43,11 @@ CREATE POLICY "Users can update own profile" ON public.users
 CREATE POLICY "Service role can insert users" ON public.users
     FOR INSERT WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 
+-- Policy: Authenticated users can insert (fallback when service key is unavailable)
+-- App logic controls which records are created; this enables admin/staff sync flows.
+CREATE POLICY "Authenticated users can insert users" ON public.users
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
 -- Policy: Service role can update users (for sync)
 CREATE POLICY "Service role can update users" ON public.users
     FOR UPDATE USING (auth.jwt() ->> 'role' = 'service_role')

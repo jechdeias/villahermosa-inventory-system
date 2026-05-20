@@ -1,7 +1,11 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../core/auth/auth_service.dart';
+import '../../core/database/app_database.dart';
 import '../../shared/theme/app_theme.dart';
 
 class CustomerFormScreen extends StatefulWidget { // null for new customer, ID for editing
@@ -65,7 +69,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   void initState() {
     super.initState();
     if (widget.customerId != null) {
-      _loadCustomerData();
+      _loadCustomerData(); // async — setState called inside when ready
     }
   }
 
@@ -81,18 +85,23 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     super.dispose();
   }
 
-  void _loadCustomerData() {
-    // TODO: Load actual customer data from database
-    // For now, populate with sample data for demo
-    _nameController.text = 'Anding Maningas';
-    _businessNameController.text = 'ABC Market';
-    _contactNumberController.text = '09123456789';
-    _creditLimitController.text = '50000.00';
-    _selectedMunicipality = 'Boac';
-    _selectedProvince = 'Marinduque';
-    _selectedStoreType = 'Market Stall';
-    _selectedCustomerType = 'regular';
-    _selectedStatus = 'active';
+  Future<void> _loadCustomerData() async {
+    final db = AuthService.instance.database;
+    final customer = await db.getCustomerById(widget.customerId ?? '');
+    if (customer == null || !mounted) return;
+    setState(() {
+      _nameController.text = customer.name;
+      _businessNameController.text = customer.businessName ?? '';
+      _contactNumberController.text = customer.contactNumber;
+      _emailController.text = customer.email ?? '';
+      _addressController.text = customer.address ?? '';
+      _creditLimitController.text = customer.creditLimit.toString();
+      _selectedMunicipality = customer.municipality;
+      _selectedProvince = customer.province;
+      _selectedStoreType = customer.storeType;
+      _selectedCustomerType = customer.customerType;
+      _selectedStatus = customer.status;
+    });
   }
 
   Future<void> _saveCustomer() async {
@@ -101,13 +110,34 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Save to database
-      await Future.delayed(const Duration(seconds: 1)); // Simulate save
+      final db = AuthService.instance.database;
+      final isNew = widget.customerId == null;
+      final companion = CustomersCompanion(
+        name: Value(_nameController.text.trim()),
+        businessName: Value(_businessNameController.text.trim().isEmpty ? null : _businessNameController.text.trim()),
+        contactNumber: Value(_contactNumberController.text.trim()),
+        email: Value(_emailController.text.trim().isEmpty ? null : _emailController.text.trim()),
+        address: Value(_addressController.text.trim().isEmpty ? null : _addressController.text.trim()),
+        municipality: Value(_selectedMunicipality),
+        province: Value(_selectedProvince),
+        storeType: Value(_selectedStoreType),
+        customerType: Value(_selectedCustomerType),
+        status: Value(_selectedStatus),
+        creditLimit: Value(double.tryParse(_creditLimitController.text) ?? 0),
+        syncStatus: const Value('pending'),
+        uuid: Value(const Uuid().v4()),
+      );
+
+      if (isNew) {
+        await db.createCustomer(companion);
+      } else {
+        await db.updateCustomer(widget.customerId!, companion);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.customerId == null ? 'Customer added successfully!' : 'Customer updated successfully!'),
+            content: Text(isNew ? 'Customer added successfully!' : 'Customer updated successfully!'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -116,16 +146,11 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -399,9 +424,10 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Delete from database
-      await Future.delayed(const Duration(seconds: 1)); // Simulate delete
-
+      final db = AuthService.instance.database;
+      if (widget.customerId != null) {
+        await db.softDeleteCustomer(widget.customerId!);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -414,16 +440,11 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

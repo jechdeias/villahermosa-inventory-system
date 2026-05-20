@@ -220,6 +220,10 @@ class AuthService {
     }
   }
 
+  /// Shared database instance — use this in leaf widgets that need DB access
+  /// without threading the database through constructors.
+  AppDatabase get database => _database;
+
   /// Get current Supabase session (for sync operations)
   String? get supabaseAccessToken {
     return Supabase.instance.client.auth.currentSession?.accessToken;

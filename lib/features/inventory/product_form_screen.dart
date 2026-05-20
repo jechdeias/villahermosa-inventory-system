@@ -1,6 +1,10 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../core/auth/auth_service.dart';
+import '../../core/database/app_database.dart';
 import '../../shared/theme/app_theme.dart';
 
 class ProductFormScreen extends StatefulWidget { // null for new product, ID for editing
@@ -61,7 +65,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   void initState() {
     super.initState();
     if (widget.productId != null) {
-      _loadProductData();
+      _loadProductData(); // async — setState called inside when ready
     }
   }
 
@@ -92,25 +96,21 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     super.dispose();
   }
 
-  void _loadProductData() {
-    // TODO: Load actual product data from database
-    // For now, populate with sample data for demo
-    _skuController.text = 'LAP-001';
-    _nameController.text = 'Dell Laptop XPS 15';
-    _descriptionController.text = 'High-performance laptop for professionals';
-    _categoryController.text = 'Electronics';
-    _brandController.text = 'Dell';
-    _unitPriceController.text = '89999.99';
-    _costPriceController.text = '75000.00';
-    _wholesalePriceController.text = '85000.00';
-    _currentStockController.text = '5';
-    _minStockController.text = '10';
-    _maxStockController.text = '50';
-    _weightController.text = '2.0';
-    _locationController.text = 'Warehouse A-1';
-    _supplierController.text = 'Dell Philippines';
-    _supplierSkuController.text = 'DELL-XPS15-2024';
-    _leadTimeController.text = '7';
+  Future<void> _loadProductData() async {
+    final db = AuthService.instance.database;
+    final product = await db.getProductById(int.tryParse(widget.productId ?? '') ?? 0);
+    if (product == null || !mounted) return;
+    setState(() {
+      _skuController.text = product.sku;
+      _nameController.text = product.name;
+      _categoryController.text = product.category;
+      _unitPriceController.text = product.unitPrice.toString();
+      _costPriceController.text = product.costPrice.toString();
+      _currentStockController.text = product.currentStock.toString();
+      _minStockController.text = product.minStock.toString();
+      _locationController.text = product.location ?? '';
+      _selectedStatus = product.status;
+    });
   }
 
   Future<void> _saveProduct() async {
@@ -119,13 +119,37 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Save to database
-      await Future.delayed(const Duration(seconds: 1)); // Simulate save
+      final db = AuthService.instance.database;
+      final isNew = widget.productId == null;
+      final companion = ProductsCompanion(
+        sku: Value(_skuController.text.trim()),
+        name: Value(_nameController.text.trim()),
+        category: Value(_categoryController.text.trim().isEmpty ? 'Other' : _categoryController.text.trim()),
+        unitPrice: Value(double.tryParse(_unitPriceController.text) ?? 0),
+        costPrice: Value(double.tryParse(_costPriceController.text) ?? 0),
+        unit: Value(_unitController.text.trim().isEmpty ? 'pcs' : _unitController.text.trim()),
+        currentStock: Value(int.tryParse(_currentStockController.text) ?? 0),
+        minStock: Value(int.tryParse(_minStockController.text) ?? 0),
+        status: Value(_selectedStatus),
+        location: Value(_locationController.text.trim().isEmpty ? null : _locationController.text.trim()),
+        syncStatus: const Value('pending'),
+        uuid: Value(const Uuid().v4()),
+      );
+
+      if (isNew) {
+        await db.createProduct(companion);
+      } else {
+        final id = int.tryParse(widget.productId!);
+        final existing = id != null ? await db.getProductById(id) : null;
+        if (existing != null) {
+          await db.updateProduct(existing.uuid, companion);
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.productId == null ? 'Product added successfully!' : 'Product updated successfully!'),
+            content: Text(isNew ? 'Product added successfully!' : 'Product updated successfully!'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -134,16 +158,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -461,31 +480,26 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Delete from database
-      await Future.delayed(const Duration(seconds: 1)); // Simulate delete
-
+      final db = AuthService.instance.database;
+      final id = int.tryParse(widget.productId ?? '');
+      final existing = id != null ? await db.getProductById(id) : null;
+      if (existing != null) {
+        await db.softDeleteProduct(existing.uuid);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Product deleted successfully!'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+          const SnackBar(content: Text('Product deleted successfully!'), backgroundColor: AppTheme.errorColor),
         );
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

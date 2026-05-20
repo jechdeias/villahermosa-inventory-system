@@ -5,12 +5,20 @@
 .build/
 build/
 
+# JVM crash logs (Android build)
+hs_err_pid*.log
+replay_pid*.log
+
+# Claude Code project settings
+.claude/
+
 # Environment variables
 .env
 .env.local
 .env.production
 
-# Supabase config with sensitive keys
+# Supabase credentials — copy secrets.json.example → secrets.json and fill in real values
+secrets.json
 lib/core/config/supabase_config.dart
 
 # Android

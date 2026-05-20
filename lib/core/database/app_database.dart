@@ -37,12 +37,26 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (m, from, to) async {
+      // Columns added in v2
+      if (from < 2) {
+        try { await m.addColumn(users, users.remoteId); } catch (_) {}
+        try { await m.addColumn(users, users.forcePasswordChange); } catch (_) {}
+        try { await m.addColumn(products, products.remoteId); } catch (_) {}
+        try { await m.addColumn(customers, customers.remoteId); } catch (_) {}
+        try { await m.addColumn(orders, orders.remoteId); } catch (_) {}
+        try { await m.addColumn(orderItems, orderItems.remoteId); } catch (_) {}
+        try { await m.addColumn(deliveries, deliveries.remoteId); } catch (_) {}
+        try { await m.addColumn(stockMovements, stockMovements.remoteId); } catch (_) {}
+      }
+      // Columns added in v3 (uuid on every table)
       if (from < 3) {
-        // Recreate all tables for schema version 3
-        for (final table in allTables) {
-          await m.deleteTable(table.actualTableName);
-        }
-        await m.createAll();
+        try { await m.addColumn(users, users.uuid); } catch (_) {}
+        try { await m.addColumn(products, products.uuid); } catch (_) {}
+        try { await m.addColumn(customers, customers.uuid); } catch (_) {}
+        try { await m.addColumn(orders, orders.uuid); } catch (_) {}
+        try { await m.addColumn(orderItems, orderItems.uuid); } catch (_) {}
+        try { await m.addColumn(deliveries, deliveries.uuid); } catch (_) {}
+        try { await m.addColumn(stockMovements, stockMovements.uuid); } catch (_) {}
       }
     },
   );
