@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'core/database/app_database.dart';
@@ -11,6 +12,8 @@ import 'features/auth/signup_screen.dart';
 import 'features/auth/email_verification_screen.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/change_password_screen.dart';
+import 'features/admin/screens/admin_orders_screen.dart';
+import 'features/admin/screens/admin_payments_screen.dart';
 import 'features/admin/screens/dashboard_screen.dart';
 import 'features/admin/screens/user_accounts_screen.dart';
 import 'features/admin/screens/placeholder_screens.dart';
@@ -56,6 +59,7 @@ void main() async {
   // Seed admin user if database is empty
   final authRepository = AuthRepository(database);
   await authRepository.seedAdminUserIfEmpty();
+  await database.seedOrdersForDemo();
   
   // Check connectivity and sync pending records on startup
   try {
@@ -76,7 +80,7 @@ void main() async {
     debugPrint('⚠️ Startup sync check failed: $e');
   }
   
-  runApp(VillahermosaInventoryApp(database: database));
+  runApp(ProviderScope(child: VillahermosaInventoryApp(database: database)));
 }
 
 class VillahermosaInventoryApp extends StatelessWidget {
@@ -112,6 +116,7 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/admin/products': (context) => AdminInventoryScreen(database: database, syncManager: SyncManager.instance),
       '/admin/customers': (context) => AdminCustomersScreen(database: database, syncManager: SyncManager.instance),
       '/admin/orders': (context) => AdminOrdersScreen(database: database, syncManager: SyncManager.instance),
+      '/admin/payments': (context) => AdminPaymentsScreen(database: database, syncManager: SyncManager.instance),
       '/admin/inventory': (context) => AdminInventoryScreen(database: database, syncManager: SyncManager.instance),
       '/admin/stock': (context) => AdminStockScreen(database: database, syncManager: SyncManager.instance),
       '/admin/deliveries': (context) => AdminDeliveriesScreen(database: database, syncManager: SyncManager.instance),

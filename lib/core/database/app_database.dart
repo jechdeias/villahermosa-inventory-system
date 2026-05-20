@@ -12,6 +12,7 @@ import 'tables/order_items_table.dart';
 import 'tables/deliveries_table.dart';
 import 'tables/stock_movements_table.dart';
 import 'tables/suppliers_table.dart';
+import 'tables/payments_table.dart';
 
 part 'app_database.g.dart';
 
@@ -24,14 +25,15 @@ part 'app_database.g.dart';
   Deliveries,
   StockMovements,
   Suppliers,
+  Payments,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
-  
+
   AppDatabase.forTesting(DatabaseConnection super.connection);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -84,6 +86,10 @@ class AppDatabase extends _$AppDatabase {
         try { await m.addColumn(orders, orders.salesRepId); } catch (_) {}
         try { await m.addColumn(orders, orders.salesRepName); } catch (_) {}
         try { await m.addColumn(orders, orders.itemCount); } catch (_) {}
+      }
+      // Payments table added in v7
+      if (from < 7) {
+        await m.createTable(payments);
       }
     },
   );
@@ -432,6 +438,50 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<Supplier>> getPendingSyncSuppliers() async =>
       (select(suppliers)..where((t) => t.syncStatus.equals('pending'))).get();
+
+  // Payment methods
+  Stream<List<Payment>> watchAllPayments() => (select(payments)
+    ..orderBy([(t) => OrderingTerm(expression: t.paymentDate, mode: OrderingMode.desc)])
+  ).watch();
+
+  Future<Payment?> getPaymentById(int id) async =>
+      (select(payments)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  Future<void> updatePayment(int id, PaymentsCompanion companion) async {
+    await (update(payments)..where((t) => t.id.equals(id))).write(companion);
+  }
+
+  Future<void> seedPaymentsForDemo() async {
+    final existing = await (select(payments)..where((t) => t.paymentId.equals('PAY-001'))).getSingleOrNull();
+    if (existing != null) return;
+
+    const seedPayments = [
+      ('PAY-001', 1, 'ORD-2401', 'Sari-Sari Store A', 1, 'Juan dela Cruz', 12450.0, 12450.0, 0.0,    'Cash',  '2024-12-15', 'paid'),
+      ('PAY-002', 2, 'ORD-2405', 'Mini Mart E',        2, 'Maria Santos',   34200.0, 10000.0, 24200.0, 'GCash', '2024-12-15', 'partial'),
+      ('PAY-003', 3, 'ORD-2408', 'Grocery H',          3, 'Pedro Reyes',    56780.0, 0.0,     56780.0, null,    '2024-12-14', 'unpaid'),
+      ('PAY-004', 4, 'ORD-2403', 'Corner Store B',     1, 'Juan dela Cruz', 23500.0, 23500.0, 0.0,    'Cash',  '2024-12-13', 'paid'),
+      ('PAY-005', 5, 'ORD-2406', 'Tindahan F',         2, 'Maria Santos',   19650.0, 0.0,     19650.0, null,    '2024-12-12', 'credit'),
+      ('PAY-006', 6, 'ORD-2402', 'Store C',            1, 'Juan dela Cruz',  8750.0,  8750.0,     0.0, null,    '2024-12-10', 'paid'),
+    ];
+
+    for (final (pid, oid, ocode, store, repId, repName, orderAmt, paid, bal, method, dateStr, status) in seedPayments) {
+      await into(payments).insert(PaymentsCompanion(
+        paymentId:     Value(pid),
+        orderId:       Value(oid),
+        orderCode:     Value(ocode),
+        storeName:     Value(store),
+        salesRepId:    Value(repId),
+        salesRepName:  Value(repName),
+        orderAmount:   Value(orderAmt),
+        amountPaid:    Value(paid),
+        balance:       Value(bal),
+        paymentMethod: Value(method),
+        paymentDate:   Value(DateTime.parse(dateStr)),
+        status:        Value(status),
+        syncStatus:    const Value('synced'),
+      ));
+    }
+  }
 
   Future<void> resetUserPassword(String uuid, String newPasswordHash) async {
     await (update(users)..where((u) => u.uuid.equals(uuid))).write(
