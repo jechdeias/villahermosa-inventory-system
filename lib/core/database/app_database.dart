@@ -33,7 +33,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(DatabaseConnection super.connection);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -87,9 +87,13 @@ class AppDatabase extends _$AppDatabase {
         try { await m.addColumn(orders, orders.salesRepName); } catch (_) {}
         try { await m.addColumn(orders, orders.itemCount); } catch (_) {}
       }
-      // Payments table added in v7
+      // Payments table originally added in v7 (migration may have been missed)
       if (from < 7) {
-        await m.createTable(payments);
+        try { await m.createTable(payments); } catch (_) {}
+      }
+      // v8: ensure payments table exists for devices that skipped the v7 migration
+      if (from < 8) {
+        try { await m.createTable(payments); } catch (_) {}
       }
     },
   );
