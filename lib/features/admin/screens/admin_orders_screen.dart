@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
@@ -5,8 +6,11 @@ import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../providers/orders_provider.dart';
 import '../services/orders_service.dart';
+import '../widgets/add_item_form.dart';
 import '../widgets/order_detail_panel.dart';
+import '../widgets/order_item_row.dart';
 import '../widgets/order_status_badge.dart';
+import '../widgets/orders_filter_sheet.dart';
 import '../widgets/orders_stat_card.dart';
 
 class AdminOrdersScreen extends ConsumerStatefulWidget {
@@ -24,6 +28,7 @@ class AdminOrdersScreen extends ConsumerStatefulWidget {
 
 class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
   final _searchCtrl = TextEditingController();
+  bool _showNewOrderPanel = false;
 
   @override
   void initState() {
@@ -42,31 +47,58 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
     super.dispose();
   }
 
-  void _closePanel() {
+  void _closeDetailPanel() {
     ref.read(selectedOrderProvider.notifier).state = null;
+  }
+
+  void _openNewOrderPanel() {
+    setState(() => _showNewOrderPanel = true);
+    ref.read(selectedOrderProvider.notifier).state = null;
+  }
+
+  void _closeNewOrderPanel() => setState(() => _showNewOrderPanel = false);
+
+  void _showNewOrderSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => UncontrolledProviderScope(
+        container: ProviderScope.containerOf(context),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: _NewOrderPanel(onClose: () => Navigator.pop(context)),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width >= 768;
+    final selectedOrder = ref.watch(selectedOrderProvider);
 
     ref.listen<Order?>(selectedOrderProvider, (_, next) {
-      if (next != null && !isWide) {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          builder: (_) => UncontrolledProviderScope(
-            container: ProviderScope.containerOf(context),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.85,
-              child: OrderDetailPanel(onClose: () => Navigator.pop(context)),
+      if (next != null) {
+        if (!isWide) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.white,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
-          ),
-        ).then((_) => _closePanel());
+            builder: (_) => UncontrolledProviderScope(
+              container: ProviderScope.containerOf(context),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.85,
+                child: OrderDetailPanel(onClose: () => Navigator.pop(context)),
+              ),
+            ),
+          ).then((_) => _closeDetailPanel());
+        } else if (_showNewOrderPanel) {
+          setState(() => _showNewOrderPanel = false);
+        }
       }
     });
 
@@ -78,16 +110,24 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _OrdersListColumn(searchCtrl: _searchCtrl)),
-            if (isWide)
-              Consumer(builder: (ctx, ref, w) {
-                final selected = ref.watch(selectedOrderProvider);
-                if (selected == null) return const SizedBox.shrink();
-                return SizedBox(
-                  width: 360,
-                  child: OrderDetailPanel(onClose: _closePanel),
-                );
-              }),
+            Expanded(
+              child: _OrdersListColumn(
+                searchCtrl: _searchCtrl,
+                onNewOrder: isWide
+                    ? _openNewOrderPanel
+                    : () => _showNewOrderSheet(context),
+              ),
+            ),
+            if (isWide && _showNewOrderPanel)
+              SizedBox(
+                width: 380,
+                child: _NewOrderPanel(onClose: _closeNewOrderPanel),
+              ),
+            if (isWide && !_showNewOrderPanel && selectedOrder != null)
+              SizedBox(
+                width: 360,
+                child: OrderDetailPanel(onClose: _closeDetailPanel),
+              ),
           ],
         ),
       ),
@@ -98,8 +138,12 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
 // ── List Column ───────────────────────────────────────────────────────────────
 
 class _OrdersListColumn extends ConsumerWidget {
-  const _OrdersListColumn({required this.searchCtrl});
+  const _OrdersListColumn({
+    required this.searchCtrl,
+    required this.onNewOrder,
+  });
   final TextEditingController searchCtrl;
+  final VoidCallback onNewOrder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -225,7 +269,7 @@ class _OrdersListColumn extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildTabBar(ref, tab, tabs),
-          _buildToolbar(ref),
+          _buildToolbar(context, ref),
           _buildTableHeader(),
           if (filteredOrders.isEmpty)
             _buildEmptyState(tab)
@@ -295,7 +339,9 @@ class _OrdersListColumn extends ConsumerWidget {
     );
   }
 
-  Widget _buildToolbar(WidgetRef ref) {
+  Widget _buildToolbar(BuildContext context, WidgetRef ref) {
+    final filters = ref.watch(ordersFilterProvider);
+    final filterActive = filters.isActive;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: SizedBox(
@@ -329,15 +375,28 @@ class _OrdersListColumn extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 8),
-            OutlinedButton.icon(
-              onPressed: () {
-                // TODO: open filter sheet
-              },
-              icon: const Icon(Icons.tune, size: 16),
-              label: const Text('Filter'),
+            OutlinedButton(
+              onPressed: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => UncontrolledProviderScope(
+                  container: ProviderScope.containerOf(context),
+                  child: const OrdersFilterSheet(),
+                ),
+              ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF6B7280),
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                foregroundColor: filterActive
+                    ? const Color(0xFF2563EB)
+                    : const Color(0xFF6B7280),
+                backgroundColor: filterActive
+                    ? const Color(0xFFEFF6FF)
+                    : null,
+                side: BorderSide(
+                  color: filterActive
+                      ? const Color(0xFF2563EB)
+                      : const Color(0xFFE5E7EB),
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -345,12 +404,37 @@ class _OrdersListColumn extends ConsumerWidget {
                 minimumSize: const Size(0, 34),
                 textStyle: const TextStyle(fontSize: 12),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.tune, size: 16,
+                      color: filterActive
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFF6B7280)),
+                  const SizedBox(width: 6),
+                  Text('Filter',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: filterActive
+                              ? const Color(0xFF2563EB)
+                              : const Color(0xFF6B7280))),
+                  if (filterActive) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2563EB),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
-              onPressed: () {
-                // TODO: open new order form
-              },
+              onPressed: onNewOrder,
               icon: const Icon(Icons.add, size: 16),
               label: const Text('New Order'),
               style: ElevatedButton.styleFrom(
@@ -629,5 +713,415 @@ class _ActionIconButtonState extends State<_ActionIconButton> {
         ),
       ),
     );
+  }
+}
+
+// ── New Order Panel ───────────────────────────────────────────────────────────
+
+class _OrderItemEntry {
+  const _OrderItemEntry({
+    required this.productName,
+    required this.quantity,
+    required this.unitPrice,
+  });
+  final String productName;
+  final int quantity;
+  final double unitPrice;
+  double get subtotal => quantity * unitPrice;
+}
+
+class _NewOrderPanel extends ConsumerStatefulWidget {
+  const _NewOrderPanel({required this.onClose});
+  final VoidCallback onClose;
+
+  @override
+  ConsumerState<_NewOrderPanel> createState() => _NewOrderPanelState();
+}
+
+class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
+  static const _routes = [
+    'Route 1 - Centro',
+    'Route 2 - North',
+    'Route 3 - South',
+  ];
+
+  Customer? _selectedCustomer;
+  String? _selectedRoute;
+  User? _selectedRep;
+  DateTime _selectedDate = DateTime.now();
+  final List<_OrderItemEntry> _orderItems = [];
+  final _notesCtrl = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  double get _total => _orderItems.fold(0, (s, i) => s + i.subtotal);
+
+  Future<void> _saveOrder() async {
+    if (_selectedCustomer == null) {
+      _snackErr('Please select a store');
+      return;
+    }
+    if (_selectedRoute == null) {
+      _snackErr('Please select a route');
+      return;
+    }
+    if (_selectedRep == null) {
+      _snackErr('Please select a sales rep');
+      return;
+    }
+    if (_orderItems.isEmpty) {
+      _snackErr('Please add at least one item');
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final db = ref.read(databaseProvider);
+      final orderNumber = await db.generateOrderNumber();
+      final orderUuid =
+          'ord-${DateTime.now().microsecondsSinceEpoch}';
+      final repName =
+          '${_selectedRep!.firstName} ${_selectedRep!.lastName}'.trim();
+      final storeName = _selectedCustomer!.businessName?.isNotEmpty == true
+          ? _selectedCustomer!.businessName!
+          : _selectedCustomer!.name;
+      final custId = _selectedCustomer!.uuid;
+
+      await db.createOrder(OrdersCompanion(
+        uuid: Value(orderUuid),
+        orderNumber: Value(orderNumber),
+        customerId: Value(custId),
+        storeName: Value(storeName),
+        routeName: Value(_selectedRoute!),
+        salesRepName: Value(repName),
+        itemCount: Value(_orderItems.length),
+        totalAmount: Value(_total),
+        status: const Value('pending'),
+        syncStatus: const Value('pending'),
+        deliveryAddress: Value(storeName),
+        customerNotes: Value(_notesCtrl.text.trim()),
+        createdAt: Value(_selectedDate),
+        updatedAt: Value(_selectedDate),
+      ));
+
+      for (var i = 0; i < _orderItems.length; i++) {
+        final item = _orderItems[i];
+        await db.createOrderItem(OrderItemsCompanion(
+          uuid: Value('item-${DateTime.now().microsecondsSinceEpoch}-$i'),
+          orderId: Value(orderUuid),
+          productId: const Value(''),
+          productSku: Value(item.productName.toLowerCase().replaceAll(' ', '-')),
+          productName: Value(item.productName),
+          quantity: Value(item.quantity),
+          unitPrice: Value(item.unitPrice),
+          subtotal: Value(item.subtotal),
+          totalAmount: Value(item.subtotal),
+          availableStock: const Value(0),
+          syncStatus: const Value('pending'),
+        ));
+      }
+
+      try {
+        await SyncManager.instance.syncPendingData();
+      } catch (_) {}
+
+      widget.onClose();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Order $orderNumber created')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _snackErr(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final customersAsync = ref.watch(customersProvider);
+    final usersAsync = ref.watch(usersProvider);
+    final customers = customersAsync.value ?? [];
+    final reps = (usersAsync.value ?? [])
+        .where((u) => u.role == 'sales_rep' || u.role == 'admin')
+        .toList();
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(left: BorderSide(color: Color(0xFFE5E7EB))),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _sectionLabel('STORE & ROUTE'),
+                  const SizedBox(height: 10),
+                  _storeDropdown(customers),
+                  const SizedBox(height: 10),
+                  _routeDropdown(),
+                  const SizedBox(height: 10),
+                  _repDropdown(reps),
+                  const SizedBox(height: 10),
+                  _dateField(context),
+                  const SizedBox(height: 20),
+                  _sectionLabel('ORDER ITEMS'),
+                  const SizedBox(height: 10),
+                  ..._orderItems.asMap().entries.map((e) => OrderItemRow(
+                        productName: e.value.productName,
+                        quantity: e.value.quantity,
+                        unitPrice: e.value.unitPrice,
+                        onRemove: () =>
+                            setState(() => _orderItems.removeAt(e.key)),
+                      )),
+                  if (_orderItems.isNotEmpty)
+                    const Divider(height: 16),
+                  AddItemForm(
+                    onAdd: (name, qty, price) => setState(() =>
+                        _orderItems.add(_OrderItemEntry(
+                          productName: name,
+                          quantity: qty,
+                          unitPrice: price,
+                        ))),
+                  ),
+                  if (_orderItems.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      const Expanded(
+                        child: Text('Order Total',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF111827))),
+                      ),
+                      Text(
+                        '₱${_fmtNum(_total)}',
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF111827)),
+                      ),
+                    ]),
+                  ],
+                  const SizedBox(height: 20),
+                  _sectionLabel('NOTES (OPTIONAL)'),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _notesCtrl,
+                    maxLines: 3,
+                    style: const TextStyle(fontSize: 13),
+                    decoration: _dec('Add delivery or order notes...'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _buildFooter(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() => Container(
+        padding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        ),
+        child: Row(children: [
+          const Expanded(
+            child: Text('New Order',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827))),
+          ),
+          GestureDetector(
+            onTap: widget.onClose,
+            child: const Icon(Icons.close,
+                size: 18, color: Color(0xFF6B7280)),
+          ),
+        ]),
+      );
+
+  Widget _buildFooter() => Container(
+        padding:
+            const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+        ),
+        child: Row(children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _saving ? null : widget.onClose,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                foregroundColor: const Color(0xFF374151),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              child: const Text('Cancel',
+                  style: TextStyle(fontSize: 13)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _saving ? null : _saveOrder,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.check, size: 14),
+              label: const Text('Save Order',
+                  style: TextStyle(fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E1E1E),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+        ]),
+      );
+
+  Widget _storeDropdown(List<Customer> customers) =>
+      DropdownButtonFormField<Customer>(
+        decoration: _dec('Store'),
+        isExpanded: true,
+        items: customers.map((c) {
+          final label = c.businessName?.isNotEmpty == true
+              ? c.businessName!
+              : c.name;
+          return DropdownMenuItem(
+            value: c,
+            child: Text(label,
+                style: const TextStyle(fontSize: 13),
+                overflow: TextOverflow.ellipsis),
+          );
+        }).toList(),
+        onChanged: (c) => setState(() => _selectedCustomer = c),
+      );
+
+  Widget _routeDropdown() => DropdownButtonFormField<String>(
+        decoration: _dec('Route'),
+        isExpanded: true,
+        items: _routes.map((r) => DropdownMenuItem(
+              value: r,
+              child: Text(r, style: const TextStyle(fontSize: 13)),
+            )).toList(),
+        onChanged: (v) => setState(() => _selectedRoute = v),
+      );
+
+  Widget _repDropdown(List<User> reps) =>
+      DropdownButtonFormField<User>(
+        decoration: _dec('Sales Rep'),
+        isExpanded: true,
+        items: reps.map((u) {
+          final name = '${u.firstName} ${u.lastName}'.trim();
+          return DropdownMenuItem(
+            value: u,
+            child: Text(name,
+                style: const TextStyle(fontSize: 13),
+                overflow: TextOverflow.ellipsis),
+          );
+        }).toList(),
+        onChanged: (u) => setState(() => _selectedRep = u),
+      );
+
+  Widget _dateField(BuildContext context) => GestureDetector(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: _selectedDate,
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2030),
+          );
+          if (picked != null) setState(() => _selectedDate = picked);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            borderRadius: BorderRadius.circular(6),
+            color: Colors.white,
+          ),
+          child: Row(children: [
+            Expanded(
+              child: Text(
+                '${_selectedDate.day.toString().padLeft(2, '0')}/'
+                '${_selectedDate.month.toString().padLeft(2, '0')}/'
+                '${_selectedDate.year}',
+                style: const TextStyle(
+                    fontSize: 13, color: Color(0xFF111827)),
+              ),
+            ),
+            const Icon(Icons.calendar_today_outlined,
+                size: 14, color: Color(0xFF9CA3AF)),
+          ]),
+        ),
+      );
+
+  Widget _sectionLabel(String label) => Text(
+        label,
+        style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF9CA3AF),
+            letterSpacing: 0.8),
+      );
+
+  InputDecoration _dec(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle:
+            const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide:
+                const BorderSide(color: Color(0xFFE5E7EB))),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide:
+                const BorderSide(color: Color(0xFFE5E7EB))),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide:
+                const BorderSide(color: Color(0xFF374151))),
+        contentPadding: const EdgeInsets.symmetric(
+            vertical: 10, horizontal: 12),
+        filled: true,
+        fillColor: Colors.white,
+      );
+
+  static String _fmtNum(double v) {
+    final n = v.round().toString();
+    final buf = StringBuffer();
+    final mod = n.length % 3;
+    for (var i = 0; i < n.length; i++) {
+      if (i > 0 && (i - mod) % 3 == 0) buf.write(',');
+      buf.write(n[i]);
+    }
+    return buf.toString();
   }
 }

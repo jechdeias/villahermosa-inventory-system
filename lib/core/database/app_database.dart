@@ -31,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(DatabaseConnection super.connection);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -65,6 +65,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(suppliers);
       }
       // Columns added in v5 (Supabase schema alignment)
+      // v6 columns are added below at the end of this block
       if (from < 5) {
         try { await m.addColumn(customers, customers.currentCredit); } catch (_) {}
         try { await m.addColumn(customers, customers.barangay); } catch (_) {}
@@ -74,6 +75,15 @@ class AppDatabase extends _$AppDatabase {
         try { await m.addColumn(products, products.qtyPerCase); } catch (_) {}
         try { await m.addColumn(deliveries, deliveries.deliveryDate); } catch (_) {}
         try { await m.addColumn(stockMovements, stockMovements.createdBy); } catch (_) {}
+      }
+      // Columns added in v6 (orders screen: cached display fields)
+      if (from < 6) {
+        try { await m.addColumn(orders, orders.storeName); } catch (_) {}
+        try { await m.addColumn(orders, orders.routeId); } catch (_) {}
+        try { await m.addColumn(orders, orders.routeName); } catch (_) {}
+        try { await m.addColumn(orders, orders.salesRepId); } catch (_) {}
+        try { await m.addColumn(orders, orders.salesRepName); } catch (_) {}
+        try { await m.addColumn(orders, orders.itemCount); } catch (_) {}
       }
     },
   );
@@ -319,6 +329,91 @@ class AppDatabase extends _$AppDatabase {
   Future<List<StockMovement>> getPendingSyncStockMovements() async => (select(stockMovements)..where((t) => t.syncStatus.equals('pending'))).get();
 
   Future<List<Order>> getPendingSyncOrders() async => (select(orders)..where((t) => t.syncStatus.equals('pending'))).get();
+
+  Stream<List<Order>> watchAllOrders() => (select(orders)
+    ..where((t) => t.isDeleted.equals(false))
+    ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
+  ).watch();
+
+  Future<String> generateOrderNumber() async {
+    final all = await (select(orders)
+          ..where((t) => t.isDeleted.equals(false)))
+        .get();
+    int maxNum = 2400;
+    for (final o in all) {
+      final match = RegExp(r'ORD-(\d+)').firstMatch(o.orderNumber);
+      if (match != null) {
+        final n = int.tryParse(match.group(1)!) ?? 0;
+        if (n > maxNum) maxNum = n;
+      }
+    }
+    return 'ORD-${maxNum + 1}';
+  }
+
+  Future<void> updateOrderStatus(String uuid, String status) async {
+    await (update(orders)..where((t) => t.uuid.equals(uuid))).write(
+      OrdersCompanion(
+        status: Value(status),
+        syncStatus: const Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> seedOrdersForDemo() async {
+    final existing = await (select(orders)..where((t) => t.orderNumber.equals('ORD-2401'))).getSingleOrNull();
+    if (existing != null) return;
+
+    const seedOrders = [
+      ('ORD-2401', 'seed-ord-2401', 'Sari-Sari Store A', 'Route 1 - Centro', 'Juan dela Cruz', 12, 12450.0, 'pending',  '2024-12-15'),
+      ('ORD-2405', 'seed-ord-2405', 'Mini Mart E',        'Route 2 - North',  'Maria Santos',  25, 34200.0, 'pending',  '2024-12-15'),
+      ('ORD-2408', 'seed-ord-2408', 'Grocery H',          'Route 3 - South',  'Pedro Reyes',   34, 56780.0, 'pending',  '2024-12-14'),
+      ('ORD-2403', 'seed-ord-2403', 'Corner Store B',     'Route 1 - Centro', 'Juan dela Cruz', 18, 23500.0, 'completed','2024-12-13'),
+      ('ORD-2406', 'seed-ord-2406', 'Tindahan F',         'Route 2 - North',  'Maria Santos',  21, 19650.0, 'completed','2024-12-12'),
+      ('ORD-2402', 'seed-ord-2402', 'Store C',            'Route 1 - Centro', 'Juan dela Cruz',  8,  8750.0, 'cancelled','2024-12-10'),
+    ];
+
+    for (final (num, uuid, store, route, rep, items, amount, status, dateStr) in seedOrders) {
+      await into(orders).insert(OrdersCompanion(
+        uuid:            Value(uuid),
+        orderNumber:     Value(num),
+        customerId:      const Value('seed-customer'),
+        deliveryAddress: Value(store),
+        storeName:       Value(store),
+        routeName:       Value(route),
+        salesRepName:    Value(rep),
+        itemCount:       Value(items),
+        totalAmount:     Value(amount),
+        status:          Value(status),
+        syncStatus:      const Value('synced'),
+        createdAt:       Value(DateTime.parse(dateStr)),
+        updatedAt:       Value(DateTime.parse(dateStr)),
+      ));
+    }
+
+    // Seed items for ORD-2401
+    const items2401 = [
+      ('seed-item-2401-1', 'Coca-Cola 1.5L',        6,  72.0,  432.0),
+      ('seed-item-2401-2', 'Lucky Me Pancit Canton', 24, 14.0,  336.0),
+      ('seed-item-2401-3', 'Birch Tree Milk 150g',   12, 38.0,  456.0),
+      ('seed-item-2401-4', 'Regent Cheese Rings',    30,  8.0,  240.0),
+    ];
+    for (final (uuid, name, qty, price, sub) in items2401) {
+      await into(orderItems).insert(OrderItemsCompanion(
+        uuid:              Value(uuid),
+        orderId:           const Value('seed-ord-2401'),
+        productId:         const Value('seed-product'),
+        productSku:        Value(name.replaceAll(' ', '-').toLowerCase()),
+        productName:       Value(name),
+        quantity:          Value(qty),
+        unitPrice:         Value(price),
+        subtotal:          Value(sub),
+        totalAmount:       Value(sub),
+        availableStock:    const Value(100),
+        syncStatus:        const Value('synced'),
+      ));
+    }
+  }
 
   Future<List<OrderItem>> getPendingSyncOrderItems() async => (select(orderItems)..where((t) => t.syncStatus.equals('pending'))).get();
 
