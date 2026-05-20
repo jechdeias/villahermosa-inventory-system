@@ -71,4 +71,7 @@ class StockMovements extends Table {
   
   /// Remote database ID for cross-system synchronization.
   TextColumn get remoteId => text().nullable()();
+
+  /// ID of the user who created this movement (FK→users.id, matches Supabase created_by).
+  IntColumn get createdBy => integer().nullable()();
 }

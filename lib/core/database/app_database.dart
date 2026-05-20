@@ -11,6 +11,7 @@ import 'tables/orders_table.dart';
 import 'tables/order_items_table.dart';
 import 'tables/deliveries_table.dart';
 import 'tables/stock_movements_table.dart';
+import 'tables/suppliers_table.dart';
 
 part 'app_database.g.dart';
 
@@ -22,6 +23,7 @@ part 'app_database.g.dart';
   OrderItems,
   Deliveries,
   StockMovements,
+  Suppliers,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -29,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(DatabaseConnection super.connection);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -57,6 +59,21 @@ class AppDatabase extends _$AppDatabase {
         try { await m.addColumn(orderItems, orderItems.uuid); } catch (_) {}
         try { await m.addColumn(deliveries, deliveries.uuid); } catch (_) {}
         try { await m.addColumn(stockMovements, stockMovements.uuid); } catch (_) {}
+      }
+      // New table added in v4
+      if (from < 4) {
+        await m.createTable(suppliers);
+      }
+      // Columns added in v5 (Supabase schema alignment)
+      if (from < 5) {
+        try { await m.addColumn(customers, customers.currentCredit); } catch (_) {}
+        try { await m.addColumn(customers, customers.barangay); } catch (_) {}
+        try { await m.addColumn(customers, customers.town); } catch (_) {}
+        try { await m.addColumn(customers, customers.channel); } catch (_) {}
+        try { await m.addColumn(products, products.supplierId); } catch (_) {}
+        try { await m.addColumn(products, products.qtyPerCase); } catch (_) {}
+        try { await m.addColumn(deliveries, deliveries.deliveryDate); } catch (_) {}
+        try { await m.addColumn(stockMovements, stockMovements.createdBy); } catch (_) {}
       }
     },
   );
@@ -306,6 +323,20 @@ class AppDatabase extends _$AppDatabase {
   Future<List<OrderItem>> getPendingSyncOrderItems() async => (select(orderItems)..where((t) => t.syncStatus.equals('pending'))).get();
 
   Future<List<Delivery>> getPendingSyncDeliveries() async => (select(deliveries)..where((t) => t.syncStatus.equals('pending'))).get();
+
+  // Supplier methods
+  Future<List<Supplier>> getAllSuppliers() async =>
+      (select(suppliers)..where((t) => t.isDeleted.equals(false))).get();
+
+  Future<Supplier?> getSupplierByUuid(String uuid) async =>
+      (select(suppliers)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
+
+  Future<void> upsertSupplier(SuppliersCompanion supplier) async {
+    await into(suppliers).insertOnConflictUpdate(supplier);
+  }
+
+  Future<List<Supplier>> getPendingSyncSuppliers() async =>
+      (select(suppliers)..where((t) => t.syncStatus.equals('pending'))).get();
 
   Future<void> resetUserPassword(String uuid, String newPasswordHash) async {
     await (update(users)..where((u) => u.uuid.equals(uuid))).write(

@@ -59,4 +59,10 @@ class Products extends Table {
   
   /// UUID for cross-system synchronization.
   TextColumn get uuid => text().unique()();
+
+  /// Foreign key to the supplier of this product.
+  IntColumn get supplierId => integer().nullable()();
+
+  /// Number of units per case for case-based ordering.
+  IntColumn get qtyPerCase => integer().withDefault(const Constant(1))();
 }

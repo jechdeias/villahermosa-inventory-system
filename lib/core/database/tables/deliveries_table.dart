@@ -80,4 +80,7 @@ class Deliveries extends Table {
   
   /// Remote database ID for cross-system synchronization.
   TextColumn get remoteId => text().nullable()();
+
+  /// Actual delivery date matching Supabase schema.
+  DateTimeColumn get deliveryDate => dateTime().nullable()();
 }

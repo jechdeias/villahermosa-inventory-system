@@ -148,7 +148,9 @@ class SyncEngine {
 
     await _syncTable('deliveries', _pushDeliveries, SyncConflictResolution.localWins);
 
-    
+    await _syncTable('suppliers', _pushSuppliers, SyncConflictResolution.remoteWins);
+
+
 
     debugPrint('Local changes pushed successfully');
 
@@ -186,7 +188,9 @@ class SyncEngine {
 
     await _pullTableSafely('deliveries', _pullDeliveries, lastSyncTime);
 
-    
+    await _pullTableSafely('suppliers', _pullSuppliers, lastSyncTime);
+
+
 
     // Update timestamp AFTER successful pull
 
@@ -1021,6 +1025,104 @@ class SyncEngine {
 
   
 
+  Future<List<dynamic>> _pushSuppliers() async {
+
+    debugPrint('Pushing suppliers to Supabase...');
+
+
+
+    final pendingSuppliers = await _database.getPendingSyncSuppliers();
+
+    if (pendingSuppliers.isEmpty) {
+
+      debugPrint('No pending suppliers to push');
+
+      return [];
+
+    }
+
+
+
+    final SupabaseClient syncClient;
+
+    if (SupabaseConfig.serviceKey.isNotEmpty) {
+
+      syncClient = SupabaseClient(
+
+        SupabaseConfig.url,
+
+        SupabaseConfig.serviceKey,
+
+        headers: {'X-Client-Info': 'service_role'},
+
+      );
+
+    } else if (Supabase.instance.client.auth.currentSession != null) {
+
+      debugPrint('⚠️ SUPABASE_SERVICE_KEY not set — using authenticated client for supplier sync');
+
+      syncClient = Supabase.instance.client;
+
+    } else {
+
+      debugPrint('⚠️ SUPABASE_SERVICE_KEY not set and no active session — supplier sync skipped');
+
+      return [];
+
+    }
+
+
+
+    for (final supplier in pendingSuppliers) {
+
+      try {
+
+        final data = _recordToMap(supplier);
+
+        try {
+
+          await syncClient.from('suppliers').insert(data);
+
+        } catch (e) {
+
+          if (e is PostgrestException && e.code == '23505') {
+
+            await syncClient
+
+                .from('suppliers')
+
+                .update(data)
+
+                .eq('uuid', supplier.uuid);
+
+          } else {
+
+            rethrow;
+
+          }
+
+        }
+
+        await _markRecordAsSynced(supplier, supplier.id.toString());
+
+        debugPrint('✅ Synced supplier: ${supplier.tradeName}');
+
+      } catch (e) {
+
+        debugPrint('❌ Failed to sync supplier ${supplier.tradeName}: $e');
+
+      }
+
+    }
+
+
+
+    return pendingSuppliers;
+
+  }
+
+
+
   /// Table-specific pull methods
 
   Future<void> _pullUsers(DateTime lastSyncTime) async {
@@ -1131,7 +1233,39 @@ class SyncEngine {
 
   }
 
-  
+
+
+  Future<void> _pullSuppliers(DateTime lastSyncTime) async {
+
+    debugPrint('=== PULLING SUPPLIERS ===');
+
+
+
+    // Pull ALL suppliers without timestamp filter
+
+    final response = await Supabase.instance.client
+
+        .from('suppliers')
+
+        .select();
+
+
+
+    debugPrint('Supabase returned ${response.length} suppliers');
+
+
+
+    for (final supplierData in response) {
+
+      await _updateLocalRecord('suppliers', supplierData);
+
+    }
+
+    debugPrint('=== PULL SUPPLIERS COMPLETE ===');
+
+  }
+
+
 
   /// Utility methods
 
@@ -1383,11 +1517,41 @@ class SyncEngine {
 
     
 
+    if (record is Supplier) {
+
+      return {
+
+        'id': record.id,
+
+        'uuid': record.uuid,
+
+        'supplier_code': record.supplierCode,
+
+        'trade_name': record.tradeName,
+
+        'address1': record.address1,
+
+        'address2': record.address2,
+
+        'tin': record.tin,
+
+        'is_deleted': record.isDeleted,
+
+        'sync_status': record.syncStatus,
+
+        'created_at': record.createdAt.toIso8601String(),
+
+        'updated_at': record.updatedAt.toIso8601String(),
+
+      };
+
+    }
+
     return {};
 
   }
 
-  
+
 
   String _getTableName(dynamic record) {
 
@@ -1404,6 +1568,8 @@ class SyncEngine {
     if (record is OrderItem) return 'order_items';
 
     if (record is Delivery) return 'deliveries';
+
+    if (record is Supplier) return 'suppliers';
 
     return '';
 
@@ -1569,17 +1735,55 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
           );
 
+        } else if (tableName == 'suppliers') {
+
+          await _database.customUpdate(
+
+            '''UPDATE suppliers SET
+
+                uuid = ?, supplier_code = ?, trade_name = ?, address1 = ?, address2 = ?, tin = ?,
+
+                is_deleted = ?, sync_status = ?, updated_at = ?
+
+                WHERE id = ?''',
+
+            variables: [
+
+              Variable.withString(data['uuid'] as String? ?? ''),
+
+              Variable.withString(data['supplier_code'] as String? ?? ''),
+
+              Variable.withString(data['trade_name'] as String? ?? ''),
+
+              Variable.withString(data['address1'] as String? ?? ''),
+
+              Variable.withString(data['address2'] as String? ?? ''),
+
+              Variable.withString(data['tin'] as String? ?? ''),
+
+              Variable.withBool(data['is_deleted'] as bool? ?? false),
+
+              Variable.withString(data['sync_status'] as String? ?? 'synced'),
+
+              Variable.withInt(_toUnixTimestamp(data['updated_at'])),
+
+              Variable.withInt(data['id'] as int),
+
+            ],
+
+          );
+
         } else {
 
           // Generic handling for other tables
 
           await _database.customUpdate(
 
-            '''UPDATE $tableName SET 
+            '''UPDATE $tableName SET
 
-                name = ?, email = ?, phone = ?, address = ?, 
+                name = ?, email = ?, phone = ?, address = ?,
 
-                sync_status = ?, updated_at = ? 
+                sync_status = ?, updated_at = ?
 
                 WHERE id = ?''',
 
@@ -1676,15 +1880,53 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
           );
 
+        } else if (tableName == 'suppliers') {
+
+          await _database.customInsert(
+
+            '''INSERT OR REPLACE INTO suppliers
+
+                    (id, uuid, supplier_code, trade_name, address1, address2, tin, is_deleted, sync_status, created_at, updated_at)
+
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+
+            variables: [
+
+              Variable.withInt(data['id'] as int),
+
+              Variable.withString(data['uuid'] as String? ?? ''),
+
+              Variable.withString(data['supplier_code'] as String? ?? ''),
+
+              Variable.withString(data['trade_name'] as String? ?? ''),
+
+              Variable.withString(data['address1'] as String? ?? ''),
+
+              Variable.withString(data['address2'] as String? ?? ''),
+
+              Variable.withString(data['tin'] as String? ?? ''),
+
+              Variable.withBool(data['is_deleted'] as bool? ?? false),
+
+              Variable.withString(data['sync_status'] as String? ?? 'synced'),
+
+              Variable.withInt(_toUnixTimestamp(data['created_at'])),
+
+              Variable.withInt(_toUnixTimestamp(data['updated_at'])),
+
+            ],
+
+          );
+
         } else {
 
           // Generic handling for other tables
 
           await _database.customInsert(
 
-            '''INSERT INTO $tableName 
+            '''INSERT INTO $tableName
 
-                    (id, name, email, phone, address, sync_status, created_at, updated_at) 
+                    (id, name, email, phone, address, sync_status, created_at, updated_at)
 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
 

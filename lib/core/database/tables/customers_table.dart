@@ -65,4 +65,16 @@ class Customers extends Table {
   
   /// UUID for cross-system synchronization.
   TextColumn get uuid => text().unique()();
+
+  /// Current outstanding credit balance.
+  RealColumn get currentCredit => real().nullable()();
+
+  /// Barangay (sub-municipality) of the customer.
+  TextColumn get barangay => text().nullable()();
+
+  /// Town/municipality matching Supabase schema.
+  TextColumn get town => text().nullable()();
+
+  /// Sales channel (e.g. direct, online, distributor).
+  TextColumn get channel => text().nullable()();
 }
