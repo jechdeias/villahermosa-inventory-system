@@ -24,12 +24,6 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
   final _searchCtrl = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    widget.database.seedPaymentsForDemo();
-  }
-
-  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();

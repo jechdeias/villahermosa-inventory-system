@@ -64,10 +64,9 @@ class AppDatabase extends _$AppDatabase {
       }
       // New table added in v4
       if (from < 4) {
-        await m.createTable(suppliers);
+        try { await m.createTable(suppliers); } catch (_) {}
       }
       // Columns added in v5 (Supabase schema alignment)
-      // v6 columns are added below at the end of this block
       if (from < 5) {
         try { await m.addColumn(customers, customers.currentCredit); } catch (_) {}
         try { await m.addColumn(customers, customers.barangay); } catch (_) {}
@@ -87,14 +86,34 @@ class AppDatabase extends _$AppDatabase {
         try { await m.addColumn(orders, orders.salesRepName); } catch (_) {}
         try { await m.addColumn(orders, orders.itemCount); } catch (_) {}
       }
-      // Payments table originally added in v7 (migration may have been missed)
-      if (from < 7) {
-        try { await m.createTable(payments); } catch (_) {}
-      }
-      // v8: ensure payments table exists for devices that skipped the v7 migration
+      // v7/v8: payments table (migration may have been skipped on some devices)
       if (from < 8) {
         try { await m.createTable(payments); } catch (_) {}
       }
+    },
+    beforeOpen: (details) async {
+      // Nuclear option: guarantee payments table exists regardless of
+      // migration history by using raw SQL IF NOT EXISTS.
+      await customStatement(
+        'CREATE TABLE IF NOT EXISTS payments ('
+        '  id INTEGER PRIMARY KEY AUTOINCREMENT,'
+        '  payment_id TEXT NOT NULL,'
+        '  order_id INTEGER NOT NULL,'
+        '  order_code TEXT NOT NULL,'
+        '  store_name TEXT NOT NULL,'
+        '  sales_rep_id INTEGER NOT NULL,'
+        '  sales_rep_name TEXT NOT NULL,'
+        '  order_amount REAL NOT NULL,'
+        '  amount_paid REAL NOT NULL DEFAULT 0,'
+        '  balance REAL NOT NULL,'
+        '  payment_method TEXT,'
+        '  payment_date INTEGER NOT NULL,'
+        '  status TEXT NOT NULL DEFAULT \'unpaid\','
+        '  notes TEXT,'
+        '  sync_status TEXT NOT NULL DEFAULT \'pending\''
+        ')',
+      );
+      await _seedPaymentsIfEmpty();
     },
   );
 
@@ -453,6 +472,15 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> updatePayment(int id, PaymentsCompanion companion) async {
     await (update(payments)..where((t) => t.id.equals(id))).write(companion);
+  }
+
+  Future<void> _seedPaymentsIfEmpty() async {
+    final countExpr = payments.id.count();
+    final count = await (selectOnly(payments)..addColumns([countExpr]))
+        .map((r) => r.read(countExpr))
+        .getSingle();
+    if ((count ?? 0) > 0) return;
+    await seedPaymentsForDemo();
   }
 
   Future<void> seedPaymentsForDemo() async {
