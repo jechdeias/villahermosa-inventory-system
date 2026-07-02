@@ -10,13 +10,11 @@ class AdminDashboardScreen extends StatelessWidget {
   final SyncManager syncManager;
 
   @override
-  Widget build(BuildContext context) {
-    return ResponsiveShell(
-      database: database,
-      selectedRoute: '/admin/dashboard',
-      child: AdminDashboardView(database: database, syncManager: syncManager),
-    );
-  }
+  Widget build(BuildContext context) => ResponsiveShell(
+        database: database,
+        selectedRoute: '/admin/dashboard',
+        child: AdminDashboardView(database: database, syncManager: syncManager),
+      );
 }
 
 class AdminDashboardView extends StatefulWidget {
@@ -29,339 +27,148 @@ class AdminDashboardView extends StatefulWidget {
 }
 
 class _AdminDashboardViewState extends State<AdminDashboardView> {
-  int _totalUsers = 0;
-  int _activeUsers = 0;
+  int _totalCustomers = 0;
   int _totalProducts = 0;
   int _lowStockCount = 0;
   int _totalOrders = 0;
   int _pendingOrders = 0;
-  int _totalDeliveries = 0;
-  int _inTransitDeliveries = 0;
+  double _totalValue = 0;
+  double _collectedValue = 0;
 
   @override
   void initState() {
     super.initState();
-    _checkDatabaseStructure();
     _loadDashboardData();
   }
 
-  Future<void> _checkDatabaseStructure() async {
-    final db = widget.database;
-    
-    // Check users table structure
-    final usersInfo = await db.customSelect(
-      'PRAGMA table_info(users)',
-    ).get();
-    
-    debugPrint('=== USERS TABLE COLUMNS ===');
-    for (final col in usersInfo) {
-      debugPrint('${col.data['name']}: ${col.data['type']}');
-    }
-    
-    // Check if users exist
-    final userCount = await db.customSelect(
-      'SELECT COUNT(*) as count FROM users WHERE is_deleted = 0',
-    ).getSingle();
-    
-    debugPrint('Total active users: ${userCount.data['count']}');
-    
-    // Get sample user data
-    final sampleUsers = await db.customSelect(
-      'SELECT * FROM users LIMIT 2',
-    ).get();
-    
-    debugPrint('=== SAMPLE USER DATA ===');
-    for (final user in sampleUsers) {
-      debugPrint(user.data.toString());
-    }
-  }
-
   Future<void> _loadDashboardData() async {
+    final db = widget.database;
     try {
-      final users = await widget.database.getAllUsers();
-      final activeUsers = users.where((u) => u.isActive && !u.isDeleted).toList();
-      
+      final c = await db.getAllCustomers();
+      if (mounted) setState(() => _totalCustomers = c.length);
+    } catch (_) {}
+    try {
+      final p = await db.getAllProducts();
       if (mounted) {
         setState(() {
-          _totalUsers = users.length;
-          _activeUsers = activeUsers.length;
-          // For now, set others to 0 until tables exist
-          _totalProducts = 0;
-          _lowStockCount = 0;
-          _totalOrders = 0;
-          _pendingOrders = 0;
-          _totalDeliveries = 0;
-          _inTransitDeliveries = 0;
+          _totalProducts = p.length;
+          _lowStockCount = p.where((x) => x.currentStock <= x.minStock).length;
         });
       }
-    } catch (e) {
-      debugPrint('Error loading dashboard data: $e');
-    }
+    } catch (_) {}
+    try {
+      final o = await db.watchAllOrders().first;
+      if (mounted) {
+        setState(() {
+          _totalOrders = o.length;
+          _pendingOrders = o.where((x) => x.status == 'pending').length;
+        });
+      }
+    } catch (_) {}
+    try {
+      final pay = await db.watchAllPayments().first;
+      if (mounted) {
+        setState(() {
+          _totalValue = pay.fold(0.0, (s, p) => s + p.orderAmount);
+          _collectedValue = pay.fold(0.0, (s, p) => s + p.amountPaid);
+        });
+      }
+    } catch (_) {}
   }
 
-  Future<void> _refreshData() async {
-    await _loadDashboardData();
-  }
+  Future<void> _refreshData() => _loadDashboardData();
 
   Future<List<Map<String, dynamic>>> _getRecentActivity() async {
-  try {
-    final db = widget.database;
-    final activities = <Map<String, dynamic>>[];
-    
-    debugPrint('=== LOADING RECENT ACTIVITY ===');
-    
-    // Helper to parse timestamps
-    DateTime parseTimestamp(dynamic value) {
-      if (value is int) {
-        return DateTime.fromMillisecondsSinceEpoch(value * 1000);
-      } else if (value is String) {
-        return DateTime.parse(value);
-      }
-      return DateTime.now();
-    }
-    
-    // 1. RECENT USERS (no created_by needed)
     try {
-      final recentUsers = await db.customSelect(
-        '''SELECT id, first_name, last_name, email, role, 
-           created_at, updated_at
-           FROM users 
-           WHERE is_deleted = 0
-           ORDER BY created_at DESC
-           LIMIT 8''',
-      ).get();
-      
-      debugPrint('Found ${recentUsers.length} recent users');
-      
-      for (final row in recentUsers) {
-        final createdAt = parseTimestamp(row.data['created_at']);
-        final updatedAt = row.data['updated_at'] != null
-            ? parseTimestamp(row.data['updated_at'])
-            : null;
-        
-        // Check if this was recently updated (more than 5 min after creation)
-        final isUpdate = updatedAt != null &&
-            updatedAt.difference(createdAt).inMinutes > 5;
-        
-        final firstName = row.read<String>('first_name');
-        final lastName = row.read<String>('last_name');
-        final email = row.read<String>('email');
-        final role = row.read<String>('role');
-        
-        final userName = '$firstName $lastName'.trim();
-        
-        activities.add({
-          'time': isUpdate ? updatedAt : createdAt,
-          'user': 'Admin', // Generic for now since we don't have created_by
-          'action': isUpdate ? 'Updated user' : 'Created user',
-          'details': '$userName ($email) - $role',
-        });
+      final db = widget.database;
+      final activities = <Map<String, dynamic>>[];
+
+      DateTime parseTimestamp(dynamic value) {
+        if (value is int) return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+        if (value is String) return DateTime.parse(value);
+        return DateTime.now();
       }
-      
-      debugPrint('Added ${recentUsers.length} user activities');
-    } catch (e) {
-      debugPrint('Error loading user activities: $e');
-    }
-    
-    // 2. RECENT PRODUCTS (if table exists)
-    try {
-      final recentProducts = await db.customSelect(
-        '''SELECT id, name, sku, stock_level, created_at, 
-           updated_at
-           FROM products 
-           ORDER BY created_at DESC
-           LIMIT 8''',
-      ).get();
-      
-      debugPrint('Found ${recentProducts.length} recent products');
-      
-      for (final row in recentProducts) {
-        final createdAt = parseTimestamp(row.data['created_at']);
-        final updatedAt = row.data['updated_at'] != null
-            ? parseTimestamp(row.data['updated_at'])
-            : null;
-        
-        final isUpdate = updatedAt != null &&
-            updatedAt.difference(createdAt).inMinutes > 5;
-        
-        final name = row.read<String>('name');
-        final sku = row.read<String>('sku');
-        final stock = row.read<int>('stock_level');
-        
-        activities.add({
-          'time': isUpdate ? updatedAt : createdAt,
-          'user': 'Warehouse Staff',
-          'action': isUpdate ? 'Updated product' : 'Added product',
-          'details': '$name (SKU: $sku) - $stock units in stock',
-        });
-      }
-      
-      debugPrint('Added ${recentProducts.length} product activities');
-    } catch (e) {
-      debugPrint('Products table not ready: $e');
-    }
-    
-    // 3. STOCK MOVEMENTS (if table exists)
-    try {
-      final stockMovements = await db.customSelect(
-        '''SELECT sm.id, sm.movement_type, sm.quantity, 
-           sm.created_at, sm.notes,
-           p.name as product_name, p.sku
-           FROM stock_movements sm
-           LEFT JOIN products p ON sm.product_id = p.id
-           ORDER BY sm.created_at DESC
-           LIMIT 8''',
-      ).get();
-      
-      debugPrint('Found ${stockMovements.length} stock movements');
-      
-      for (final row in stockMovements) {
-        final movementType = row.read<String>('movement_type');
-        final quantity = row.read<int>('quantity');
-        final productName = row.read<String?>('product_name') ?? 'Unknown Product';
-        final sku = row.read<String?>('sku') ?? 'N/A';
-        final notes = row.read<String?>('notes');
-        
-        String action;
-        String user;
-        
-        if (movementType.toLowerCase().contains('in')) {
-          action = 'Stock in';
-          user = 'Warehouse Staff';
-        } else if (movementType.toLowerCase().contains('out')) {
-          action = 'Stock out';
-          user = 'Sales Staff';
-        } else {
-          action = 'Stock adjusted';
-          user = 'Warehouse Manager';
+
+      try {
+        final rows = await db.customSelect(
+          'SELECT id, first_name, last_name, email, role, created_at, updated_at FROM users WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT 8',
+        ).get();
+        for (final row in rows) {
+          final createdAt = parseTimestamp(row.data['created_at']);
+          final updatedAt = row.data['updated_at'] != null ? parseTimestamp(row.data['updated_at']) : null;
+          final isUpdate = updatedAt != null && updatedAt.difference(createdAt).inMinutes > 5;
+          final name = '${row.read<String>('first_name')} ${row.read<String>('last_name')}'.trim();
+          final email = row.read<String>('email');
+          activities.add({
+            'time': isUpdate ? updatedAt : createdAt,
+            'user': 'Admin',
+            'action': isUpdate ? 'Updated user' : 'Created user',
+            'details': '$name (${email.length > 20 ? '${email.substring(0, 18)}...' : email})',
+          });
         }
-        
-        String details = '$productName (SKU: $sku) - ${quantity.abs()} units';
-        if (notes != null && notes.isNotEmpty) {
-          details += ' - $notes';
+      } catch (_) {}
+
+      try {
+        final rows = await db.customSelect(
+          'SELECT o.id, o.order_number, o.total_amount, o.created_at, o.store_name, o.sales_rep_name FROM orders o ORDER BY o.created_at DESC LIMIT 5',
+        ).get();
+        for (final row in rows) {
+          final amount = row.read<double?>('total_amount');
+          final orderNum = row.read<String?>('order_number') ?? 'ORD-${row.read<int>('id')}';
+          final amountStr = amount != null ? '₱${amount.toStringAsFixed(0)}' : '';
+          activities.add({
+            'time': parseTimestamp(row.data['created_at']),
+            'user': row.read<String?>('sales_rep_name') ?? 'Sales Staff',
+            'action': 'Created order',
+            'details': '$orderNum · $amountStr',
+          });
         }
-        
-        activities.add({
-          'time': parseTimestamp(row.data['created_at']),
-          'user': user,
-          'action': action,
-          'details': details,
-        });
-      }
-      
-      debugPrint('Added ${stockMovements.length} stock movement activities');
-    } catch (e) {
-      debugPrint('Stock movements not ready: $e');
+      } catch (_) {}
+
+      activities.sort((a, b) => (b['time'] as DateTime).compareTo(a['time'] as DateTime));
+      return activities.take(8).toList();
+    } catch (_) {
+      return [];
     }
-    
-    // 4. CUSTOMERS (if table exists)
-    try {
-      final recentCustomers = await db.customSelect(
-        '''SELECT id, name, email, store_name, created_at
-           FROM customers 
-           ORDER BY created_at DESC
-           LIMIT 5''',
-      ).get();
-      
-      debugPrint('Found ${recentCustomers.length} recent customers');
-      
-      for (final row in recentCustomers) {
-        final name = row.read<String>('name');
-        final email = row.read<String>('email');
-        final storeName = row.read<String?>('store_name');
-        
-        String details = '$name ($email)';
-        if (storeName != null && storeName.isNotEmpty) {
-          details += ' - $storeName';
-        }
-        
-        activities.add({
-          'time': parseTimestamp(row.data['created_at']),
-          'user': 'Sales Staff',
-          'action': 'Added customer',
-          'details': details,
-        });
-      }
-      
-      debugPrint('Added ${recentCustomers.length} customer activities');
-    } catch (e) {
-      debugPrint('Customers not ready: $e');
-    }
-    
-    // 5. ORDERS (if table exists)
-    try {
-      final recentOrders = await db.customSelect(
-        '''SELECT o.id, o.status, o.total_amount, o.created_at,
-           c.name as customer_name
-           FROM orders o
-           LEFT JOIN customers c ON o.customer_id = c.id
-           ORDER BY o.created_at DESC
-           LIMIT 5''',
-      ).get();
-      
-      debugPrint('Found ${recentOrders.length} recent orders');
-      
-      for (final row in recentOrders) {
-        final orderId = row.read<int>('id');
-        final status = row.read<String>('status');
-        final amount = row.read<double?>('total_amount');
-        final customerName = row.read<String?>('customer_name') ?? 'Walk-in';
-        
-        final amountStr = amount != null
-            ? '₱${amount.toStringAsFixed(2)}'
-            : 'Amount pending';
-        
-        activities.add({
-          'time': parseTimestamp(row.data['created_at']),
-          'user': 'Sales Staff',
-          'action': 'Created order',
-          'details': 'ORD-$orderId - $customerName - $amountStr - Status: $status',
-        });
-      }
-      
-      debugPrint('Added ${recentOrders.length} order activities');
-    } catch (e) {
-      debugPrint('Orders not ready: $e');
-    }
-    
-    // Sort by time (newest first)
-    activities.sort((a, b) =>
-        (b['time'] as DateTime).compareTo(a['time'] as DateTime));
-    
-    debugPrint('Total activities to display: ${activities.length}');
-    
-    if (activities.isEmpty) {
-      debugPrint('WARNING: No activities found across all tables!');
-    }
-    
-    return activities.take(10).toList();
-    
-  } catch (e, stack) {
-    debugPrint('CRITICAL ERROR in _getRecentActivity: $e');
-    debugPrint('Stack trace: $stack');
-    return [];
   }
-}
+
+  String _formatRelativeTime(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${m[time.month - 1]} ${time.day}, ${time.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final isNarrow = MediaQuery.of(context).size.width < 700;
-    
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(),
-            const SizedBox(height: 24),
             _buildStatCards(isNarrow),
-            const SizedBox(height: 24),
-            _buildActivityAndActions(),
-            const SizedBox(height: 24),
-            _buildCharts(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+              child: isNarrow
+                  ? Column(children: [
+                      _buildActivityPanel(),
+                      const SizedBox(height: 14),
+                      _buildQuickActionsPanel(),
+                    ])
+                  : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(flex: 62, child: _buildActivityPanel()),
+                      const SizedBox(width: 14),
+                      Expanded(flex: 38, child: _buildQuickActionsPanel()),
+                    ]),
+            ),
+            _buildChartsSection(isNarrow),
             const SizedBox(height: 24),
           ],
         ),
@@ -369,1086 +176,573 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     );
   }
 
-  Widget _buildHeader() {
-    try {
-      final isNarrow = MediaQuery.of(context).size.width < 600;
-      
-      if (isNarrow) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeader() => Padding(
+        padding: const EdgeInsets.fromLTRB(28, 24, 28, 0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Title
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Dashboard',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                Text(
-                  'System overview and analytics',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Buttons row
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.grey.shade300)),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.calendar_today,
-                          size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 6),
-                        const Text('Last 30 days',
-                          style: TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _refreshData,
-                  icon: const Icon(Icons.refresh, color: Colors.black87),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color: Colors.grey.shade300))),
-                ),
-              ],
-            ),
-          ],
-        );
-      }
-      
-      // Desktop: existing Row layout unchanged
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Dashboard',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              Text(
-                'System overview and analytics',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Last 30 days',
-                      style: TextStyle(fontSize: 14, color: Colors.black87),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              IconButton(
-                onPressed: _refreshData,
-                icon: const Icon(Icons.refresh, color: Colors.black87),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Header Error: $e'),
-      );
-    }
-  }
-
-  Widget _buildStatCards(bool isNarrow) {
-    try {
-      return isNarrow
-        ? Column(children: [
-            Row(children: [
-              Expanded(child: _statCard('Users', Icons.people_outline, _totalUsers, '$_activeUsers active')),
-              const SizedBox(width: 12),
-              Expanded(child: _statCard('Products', Icons.inventory_2_outlined, _totalProducts, 'Low: $_lowStockCount')),
-            ]),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(child: _statCard('Orders', Icons.shopping_cart_outlined, _totalOrders, 'Pending: $_pendingOrders')),
-              const SizedBox(width: 12),
-              Expanded(child: _statCard('Deliveries', Icons.local_shipping_outlined, _totalDeliveries, 'Transit: $_inTransitDeliveries')),
-            ]),
-          ])
-        : Row(children: [
-            Expanded(child: _statCard('Users', Icons.people_outline, _totalUsers, '$_activeUsers active')),
-            const SizedBox(width: 16),
-            Expanded(child: _statCard('Products', Icons.inventory_2_outlined, _totalProducts, 'Low: $_lowStockCount')),
-            const SizedBox(width: 16),
-            Expanded(child: _statCard('Orders', Icons.shopping_cart_outlined, _totalOrders, 'Pending: $_pendingOrders')),
-            const SizedBox(width: 16),
-            Expanded(child: _statCard('Deliveries', Icons.local_shipping_outlined, _totalDeliveries, 'Transit: $_inTransitDeliveries')),
-          ]);
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Stat Cards Error: $e'),
-      );
-    }
-  }
-
-  Widget _statCard(String title, IconData icon, int count, String subLabel) {
-    try {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4F4F4),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(icon, size: 20, color: Colors.grey[700]),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              count.toString(),
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subLabel,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Stat Card Error: $e'),
-      );
-    }
-  }
-
-  Widget _buildActivityAndActions() {
-    try {
-      final isNarrow = MediaQuery.of(context).size.width < 700;
-      
-      if (isNarrow) {
-        return Column(
-          children: [
-            _buildRecentActivityPanel(),
-            const SizedBox(height: 16),
-            _buildQuickActionsPanel(),
-          ],
-        );
-      }
-      
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 65,
-            child: _buildRecentActivityPanel(),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 35,
-            child: _buildQuickActionsPanel(),
-          ),
-        ],
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Activity & Actions Error: $e'),
-      );
-    }
-  }
-
-  Widget _buildRecentActivityPanel() {
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.06),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Recent Activity',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E1E1E),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // TODO: Navigate to full activity log
-              },
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(0, 0),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Row(
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'View All',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF1E1E1E),
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 18,
-                    color: Color(0xFF1E1E1E),
-                  ),
+                  Text('Dashboard',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF111827))),
+                  SizedBox(height: 2),
+                  Text('System overview and analytics',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
                 ],
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Column Headers
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: const BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: Color(0xFFE0E0E0),
-                width: 1,
-              ),
-            ),
-          ),
-          child: const Row(
-            children: [
-              SizedBox(
-                width: 120,
-                child: Text(
-                  'TIME',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B6B6B),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'USER',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B6B6B),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'ACTION',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B6B6B),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'DETAILS',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B6B6B),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Activity List
-        FutureBuilder<List<Map<String, dynamic>>>(
-          future: _getRecentActivity(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
-
-            if (snapshot.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  'Error loading activity',
-                  style: const TextStyle(
-                    color: Color(0xFF991B1B),
-                    fontSize: 14,
-                  ),
-                ),
-              );
-            }
-
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(
-                  child: Text(
-                    'No recent activity',
-                    style: TextStyle(
-                      color: Color(0xFF6B6B6B),
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            final activities = snapshot.data!;
-
-            return Column(
-              children: activities.map((activity) {
-                return _buildActivityRow(
-                  time: activity['time'] as DateTime,
-                  user: activity['user'] as String,
-                  action: activity['action'] as String,
-                  details: activity['details'] as String,
-                );
-              }).toList(),
-            );
-          },
-        ),
-      ],
-    ),
-  );
-}
-
-  Widget _buildActivityRow({
-  required DateTime time,
-  required String user,
-  required String action,
-  required String details,
-}) {
-  return Container(
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    decoration: const BoxDecoration(
-      border: Border(
-        bottom: BorderSide(
-          color: Color(0xFFE0E0E0),
-          width: 1,
-        ),
-      ),
-    ),
-    child: Row(
-      children: [
-        // TIME column
-        SizedBox(
-          width: 120,
-          child: Row(
-            children: [
-              const Icon(
-                Icons.access_time,
-                size: 16,
-                color: Color(0xFF6B6B6B),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _formatRelativeTime(time),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF1E1E1E),
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        // USER column
-        Expanded(
-          flex: 2,
-          child: Text(
-            user,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E1E1E),
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        
-        // ACTION column
-        Expanded(
-          flex: 2,
-          child: Text(
-            action,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF1E1E1E),
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        
-        // DETAILS column
-        Expanded(
-          flex: 2,
-          child: Text(
-            details,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF6B6B6B),
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-  String _formatRelativeTime(DateTime time) {
-  final now = DateTime.now();
-  final difference = now.difference(time);
-  
-  if (difference.inSeconds < 60) {
-    return 'Just now';
-  } else if (difference.inMinutes < 60) {
-    return '${difference.inMinutes} min ago';
-  } else if (difference.inHours < 24) {
-    return '${difference.inHours} hr ago';
-  } else if (difference.inDays == 1) {
-    return 'Yesterday';
-  } else if (difference.inDays < 7) {
-    return '${difference.inDays} days ago';
-  } else {
-    // Format as date: "Mar 13, 2026"
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${months[time.month - 1]} ${time.day}, ${time.year}';
-  }
-}
-
-  Widget _buildQuickActionsPanel() {
-    try {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Quick Actions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 20),
-            GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.0,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+            Row(
               children: [
-                _buildQuickActionButton(
-                  icon: Icons.person_add_outlined,
-                  label: 'Create User',
-                  onTap: () => Navigator.pushNamed(context, '/admin/users'),
+                Container(
+                  height: 30,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today_outlined,
+                          size: 12, color: Color(0xFF6B7280)),
+                      SizedBox(width: 6),
+                      Text('Last 30 days',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                    ],
+                  ),
                 ),
-                _buildQuickActionButton(
-                  icon: Icons.add_box_outlined,
-                  label: 'Add Product',
-                  onTap: () => Navigator.pushNamed(context, '/admin/inventory'),
-                ),
-                _buildQuickActionButton(
-                  icon: Icons.description_outlined,
-                  label: 'Reports',
-                  onTap: () => Navigator.pushNamed(context, '/admin/reports'),
-                ),
-                _buildQuickActionButton(
-                  icon: Icons.list_alt_outlined,
-                  label: 'View Orders',
-                  onTap: () => Navigator.pushNamed(context, '/admin/orders'),
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: _refreshData,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child:
+                        const Icon(Icons.refresh, size: 14, color: Color(0xFF6B7280)),
+                  ),
                 ),
               ],
             ),
           ],
         ),
       );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Quick Actions Error: $e'),
-      );
-    }
+
+  Widget _buildStatCards(bool isNarrow) {
+    final totalStr = _totalValue >= 1000
+        ? '₱${(_totalValue / 1000).toStringAsFixed(0)}K'
+        : '₱${_totalValue.toStringAsFixed(0)}';
+    final colStr = _collectedValue >= 1000
+        ? '₱${(_collectedValue / 1000).toStringAsFixed(0)}K'
+        : '₱${_collectedValue.toStringAsFixed(0)}';
+
+    final cards = [
+      _statCard(label: 'Total Customers', value: '$_totalCustomers',
+          dotColor: const Color(0xFF059669), sub: 'Active stores'),
+      _statCard(label: 'Products', value: '$_totalProducts',
+          dotColor: const Color(0xFFD97706), sub: 'Low stock: $_lowStockCount'),
+      _statCard(
+          label: 'Orders',
+          value: '$_totalOrders',
+          valueColor: _pendingOrders > 0 ? const Color(0xFFD97706) : null,
+          dotColor: const Color(0xFFD97706),
+          sub: 'Pending: $_pendingOrders'),
+      _statCard(label: 'Total Value', value: totalStr,
+          dotColor: const Color(0xFF059669), sub: '$colStr collected'),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 16, 28, 0),
+      child: isNarrow
+          ? Column(children: [
+              Row(children: [
+                Expanded(child: cards[0]),
+                const SizedBox(width: 10),
+                Expanded(child: cards[1]),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: cards[2]),
+                const SizedBox(width: 10),
+                Expanded(child: cards[3]),
+              ]),
+            ])
+          : Row(children: [
+              Expanded(child: cards[0]),
+              const SizedBox(width: 10),
+              Expanded(child: cards[1]),
+              const SizedBox(width: 10),
+              Expanded(child: cards[2]),
+              const SizedBox(width: 10),
+              Expanded(child: cards[3]),
+            ]),
+    );
   }
 
-  Widget _buildQuickActionButton({
-    required IconData icon,
+  Widget _statCard({
     required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    required String value,
+    required Color dotColor,
+    required String sub,
+    Color? valueColor,
+  }) =>
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E7EB)),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: const Color(0xFFE0E0E0),
-          ),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1E1E1E),
-                shape: BoxShape.circle,
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: valueColor ?? const Color(0xFF111827))),
+            const SizedBox(height: 3),
+            Row(children: [
+              Container(
+                  width: 6,
+                  height: 6,
+                  decoration:
+                      BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(sub,
+                    style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
+                    overflow: TextOverflow.ellipsis),
               ),
-              child: Icon(icon, color: Colors.white, size: 22),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1E1E1E),
-              ),
-              textAlign: TextAlign.center,
-            ),
+            ]),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildCharts() {
-    try {
-      final isNarrow = MediaQuery.of(context).size.width < 700;
-      
-      if (isNarrow) {
-        return Column(
-          children: [
-            _buildSalesTrendChart(),
-            const SizedBox(height: 16),
-            _buildOrdersByStatusChart(),
-            const SizedBox(height: 16),
-            _buildStockLevelsChart(),
-          ],
-        );
-      }
-      
-      return Row(
-        children: [
-          Expanded(child: _buildSalesTrendChart()),
-          const SizedBox(width: 16),
-          Expanded(child: _buildOrdersByStatusChart()),
-          const SizedBox(width: 16),
-          Expanded(child: _buildStockLevelsChart()),
-        ],
       );
-    } catch (e) {
-      return Container(
+
+  Widget _buildActivityPanel() => Container(
         padding: const EdgeInsets.all(16),
-        color: Colors.red[100],
-        child: Text('Charts Error: $e'),
-      );
-    }
-  }
-
-  Widget _buildSalesTrendChart() {
-    return Container(
-      height: 340,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Sales Trend',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: _buildLineChart(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLineChart() {
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: 20000,
-          getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: Colors.grey.shade300,
-              strokeWidth: 1,
-            );
-          },
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(12),
         ),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 20000,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  '₱${(value / 1000).toInt()}k',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey,
-                  ),
-                );
-              },
-              reservedSize: 40,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Recent Activity',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827))),
+                GestureDetector(
+                  onTap: () {},
+                  child: const Row(children: [
+                    Text('View All',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                    SizedBox(width: 2),
+                    Icon(Icons.chevron_right, size: 14, color: Color(0xFF6B7280)),
+                  ]),
+                ),
+              ],
             ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                final idx = value.toInt();
-                if (idx < 0 || idx >= months.length) {
-                  return const SizedBox();
+            const SizedBox(height: 12),
+            const Row(children: [
+              SizedBox(width: 100, child: _ColHead('TIME')),
+              SizedBox(width: 90, child: _ColHead('USER')),
+              SizedBox(width: 100, child: _ColHead('ACTION')),
+              Expanded(child: _ColHead('DETAILS')),
+            ]),
+            const Divider(height: 12),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _getRecentActivity(),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
                 }
-                return Text(
-                  months[idx],
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey,
-                  ),
+                final list = snap.data ?? [];
+                if (list.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(
+                        child: Text('No recent activity',
+                            style: TextStyle(
+                                fontSize: 12, color: Color(0xFF6B7280)))),
+                  );
+                }
+                return Column(
+                  children: list
+                      .map((a) => _activityRow(
+                            time: a['time'] as DateTime,
+                            user: a['user'] as String,
+                            action: a['action'] as String,
+                            details: a['details'] as String,
+                          ))
+                      .toList(),
                 );
               },
-              reservedSize: 30,
             ),
-          ),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ],
         ),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: [
-              const FlSpot(0, 45000),
-              FlSpot(1, 52000),
-              FlSpot(2, 48000),
-              FlSpot(3, 61000),
-              FlSpot(4, 55000),
-              FlSpot(5, 67000),
-            ],
-            isCurved: false,
-            color: const Color(0xFF212121),
-            barWidth: 2,
-            dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(show: false),
-          ),
-        ],
-        minX: 0,
-        maxX: 5,
-        minY: 0,
-        maxY: 80000,
-      ),
-    );
-  }
+      );
 
-  Widget _buildOrdersByStatusChart() {
-    return Container(
-      height: 340,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Orders by Status',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 20),
+  Widget _activityRow({
+    required DateTime time,
+    required String user,
+    required String action,
+    required String details,
+  }) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(children: [
           SizedBox(
-            height: 200,
-            child: _buildDonutChart(),
+            width: 100,
+            child: Row(children: [
+              const Icon(Icons.access_time_outlined,
+                  size: 12, color: Color(0xFF9CA3AF)),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(_formatRelativeTime(time),
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF6B7280)),
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ]),
           ),
-        ],
-      ),
+          SizedBox(
+            width: 90,
+            child: Text(user,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827)),
+                overflow: TextOverflow.ellipsis),
+          ),
+          SizedBox(
+            width: 100,
+            child: Text(action,
+                style:
+                    const TextStyle(fontSize: 12, color: Color(0xFF374151)),
+                overflow: TextOverflow.ellipsis),
+          ),
+          Expanded(
+            child: Text(details,
+                style:
+                    const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                overflow: TextOverflow.ellipsis),
+          ),
+        ]),
+      );
+
+  Widget _buildQuickActionsPanel() => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Quick Actions',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827))),
+            const SizedBox(height: 12),
+            GridView.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _quickAction(Icons.person_add_outlined, 'Create User', '/admin/users'),
+                _quickAction(Icons.inventory_2_outlined, 'Add Product', '/admin/inventory'),
+                _quickAction(Icons.bar_chart_outlined, 'Reports', '/admin/reports'),
+                _quickAction(Icons.shopping_cart_outlined, 'View Orders', '/admin/orders'),
+              ],
+            ),
+          ],
+        ),
+      );
+
+  Widget _quickAction(IconData icon, String label, String route) => InkWell(
+        onTap: () => Navigator.pushNamed(context, route),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icon, color: Colors.white, size: 14),
+              ),
+              const Spacer(),
+              Text(label,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF111827))),
+            ],
+          ),
+        ),
+      );
+
+  Widget _buildChartsSection(bool isNarrow) {
+    final charts = [
+      _chartCard('Sales Trend', _lineChart()),
+      _chartCard('Orders by Status', _donutChart()),
+      _chartCard('Stock Levels', _barChart()),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+      child: isNarrow
+          ? Column(children: [
+              charts[0],
+              const SizedBox(height: 14),
+              charts[1],
+              const SizedBox(height: 14),
+              charts[2],
+            ])
+          : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: charts[0]),
+              const SizedBox(width: 14),
+              Expanded(child: charts[1]),
+              const SizedBox(width: 14),
+              Expanded(child: charts[2]),
+            ]),
     );
   }
 
-  Widget _buildDonutChart() {
-    final sections = [
-      PieChartSectionData(
-        value: 12,
-        title: '',
-        showTitle: false,
-        color: const Color(0xFF9E9E9E),
-        radius: 40,
-      ),
-      PieChartSectionData(
-        value: 28,
-        title: '',
-        showTitle: false,
-        color: const Color(0xFF616161),
-        radius: 40,
-      ),
-      PieChartSectionData(
-        value: 45,
-        title: '',
-        showTitle: false,
-        color: const Color(0xFF212121),
-        radius: 40,
-      ),
-      PieChartSectionData(
-        value: 4,
-        title: '',
-        showTitle: false,
-        color: const Color(0xFFBDBDBD),
-        radius: 40,
-      ),
+  Widget _chartCard(String title, Widget chart) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827))),
+            const SizedBox(height: 10),
+            chart,
+          ],
+        ),
+      );
+
+  Widget _lineChart() => SizedBox(
+        height: 160,
+        child: LineChart(
+          LineChartData(
+            lineBarsData: [
+              LineChartBarData(
+                spots: const [
+                  FlSpot(0, 45),
+                  FlSpot(1, 52),
+                  FlSpot(2, 48),
+                  FlSpot(3, 61),
+                  FlSpot(4, 55),
+                  FlSpot(5, 67),
+                ],
+                isCurved: true,
+                color: const Color(0xFF1E1E1E),
+                barWidth: 1.5,
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, pct, bar, idx) => FlDotCirclePainter(
+                    radius: 3,
+                    color: const Color(0xFF1E1E1E),
+                    strokeWidth: 0,
+                  ),
+                ),
+                belowBarData: BarAreaData(show: false),
+              ),
+            ],
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 22,
+                  getTitlesWidget: (val, meta) {
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                    final idx = val.toInt();
+                    if (idx < 0 || idx >= months.length) return const SizedBox();
+                    return Text(months[idx],
+                        style: const TextStyle(
+                            fontSize: 10, color: Color(0xFF6B7280)));
+                  },
+                ),
+              ),
+              leftTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false)),
+            ),
+            gridData: const FlGridData(show: false),
+            borderData: FlBorderData(show: false),
+          ),
+        ),
+      );
+
+  Widget _donutChart() {
+    const data = [
+      ('Delivered', 45, Color(0xFF1E1E1E)),
+      ('Processing', 28, Color(0xFF6B7280)),
+      ('Pending', 12, Color(0xFFD1D5DB)),
+      ('Cancelled', 4, Color(0xFFE5E7EB)),
     ];
+    final total = data.fold(0, (s, d) => s + d.$2);
 
     return Column(
       children: [
         SizedBox(
-          height: 140,
+          height: 100,
           child: PieChart(
             PieChartData(
+              sections: data
+                  .map((d) => PieChartSectionData(
+                        value: d.$2.toDouble(),
+                        color: d.$3,
+                        radius: 20,
+                        showTitle: false,
+                      ))
+                  .toList(),
+              centerSpaceRadius: 30,
               sectionsSpace: 2,
-              centerSpaceRadius: 50,
-              sections: sections,
             ),
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(child: _buildLegendItem('Pending', const Color(0xFF9E9E9E), 12)),
-            Expanded(child: _buildLegendItem('Processing', const Color(0xFF616161), 28)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(child: _buildLegendItem('Delivered', const Color(0xFF212121), 45)),
-            Expanded(child: _buildLegendItem('Cancelled', const Color(0xFFBDBDBD), 4)),
-          ],
-        ),
+        ...data.map((d) {
+          final pct = total > 0 ? (d.$2 / total * 100).toStringAsFixed(0) : '0';
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(children: [
+              Container(
+                  width: 8,
+                  height: 8,
+                  decoration:
+                      BoxDecoration(color: d.$3, shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              Expanded(
+                  child: Text('${d.$1} (${d.$2})',
+                      style: const TextStyle(
+                          fontSize: 10, color: Color(0xFF6B7280)))),
+              Text('$pct%',
+                  style: const TextStyle(
+                      fontSize: 10, color: Color(0xFF6B7280))),
+            ]),
+          );
+        }),
       ],
     );
   }
 
-  Widget _buildLegendItem(String label, Color color, int count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$label ($count)',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _barChart() {
+    const cats = ['Beverages', 'Snacks', 'Household', 'Personal', 'Frozen'];
+    const vals = [450.0, 320.0, 180.0, 210.0, 95.0];
+    const opacities = [0.9, 0.6, 0.75, 0.45, 0.3];
 
-  Widget _buildStockLevelsChart() {
-    return Container(
-      height: 340,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Stock Levels',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: _buildBarChart(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBarChart() {
-    final categories = ['Beverages', 'Snacks', 'Household', 'Personal Care', 'Frozen'];
-    final stocks = [450, 320, 180, 210, 95];
-    final colors = [
-      const Color(0xFF212121),
-      const Color(0xFF212121),
-      const Color(0xFF212121),
-      const Color(0xFF212121),
-      const Color(0xFF212121),
-    ];
-
-    return BarChart(
-      BarChartData(
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: 100,
-          getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: Colors.grey.shade300,
-              strokeWidth: 1,
-            );
-          },
-        ),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 100,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey,
+    return SizedBox(
+      height: 160,
+      child: BarChart(
+        BarChartData(
+          barGroups: List.generate(5, (i) => BarChartGroupData(
+                x: i,
+                barRods: [
+                  BarChartRodData(
+                    toY: vals[i],
+                    color: const Color(0xFF1E1E1E).withValues(alpha: opacities[i]),
+                    width: 20,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(4)),
                   ),
-                );
-              },
-              reservedSize: 30,
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= categories.length) {
-                  return const SizedBox();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Transform.rotate(
-                    angle: -45 * 3.14159 / 180,
-                    child: Text(
-                      categories[idx],
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                );
-              },
-              reservedSize: 30,
-            ),
-          ),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-        barGroups: List.generate(5, (index) {
-          return BarChartGroupData(
-            x: index,
-            barRods: [
-              BarChartRodData(
-                toY: stocks[index].toDouble(),
-                color: colors[index],
-                width: 20,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                ],
+              )),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 24,
+                getTitlesWidget: (val, meta) {
+                  final idx = val.toInt();
+                  if (idx < 0 || idx >= cats.length) return const SizedBox();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(cats[idx],
+                        style: const TextStyle(
+                            fontSize: 9, color: Color(0xFF6B7280)),
+                        textAlign: TextAlign.center),
+                  );
+                },
               ),
-            ],
-          );
-        }),
-        minY: 0,
-        maxY: 600,
+            ),
+            leftTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false)),
+          ),
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+        ),
       ),
     );
   }
+}
+
+class _ColHead extends StatelessWidget {
+  const _ColHead(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Text(label,
+      style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF6B7280),
+          letterSpacing: 0.3));
 }

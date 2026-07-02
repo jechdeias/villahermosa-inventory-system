@@ -80,4 +80,22 @@ class Orders extends Table {
   
   /// Remote database ID for cross-system synchronization.
   TextColumn get remoteId => text().nullable()();
+
+  /// Cached store/customer display name for fast list rendering.
+  TextColumn get storeName => text().nullable()();
+
+  /// Route identifier (optional).
+  IntColumn get routeId => integer().nullable()();
+
+  /// Cached route display name for fast list rendering.
+  TextColumn get routeName => text().nullable()();
+
+  /// Foreign key to the sales representative user.
+  IntColumn get salesRepId => integer().nullable()();
+
+  /// Cached sales rep display name for fast list rendering.
+  TextColumn get salesRepName => text().nullable()();
+
+  /// Cached total item count across all order items.
+  IntColumn get itemCount => integer().withDefault(const Constant(0))();
 }

@@ -9,8 +9,6 @@ import '../../../core/theme/villahermosa_theme.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 
-/// User Accounts & Permissions screen
-/// Manages user access, roles, and security settings
 class UserAccountsScreen extends StatefulWidget {
   const UserAccountsScreen({
     super.key,
@@ -27,49 +25,24 @@ class UserAccountsScreen extends StatefulWidget {
 
 class _UserAccountsScreenState extends State<UserAccountsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  late Stream<List<User>> _usersStream;
-  List<User> _allUsers = []; // Store all users from stream
+  List<User> _allUsers = [];
   List<User> _filteredUsers = [];
   StreamSubscription<List<User>>? _userSubscription;
+  String _selectedTab = 'all';
 
   @override
   void initState() {
     super.initState();
-    _setupUserStream();
-    _pullUsersInBackground();
-    _searchController.addListener(_onSearchChanged);
-  }
-
-  void _setupUserStream() {
-    _usersStream = widget.database.getAllUsersStream();
-    
-    // Set up stream listener to update local state
-    _userSubscription = _usersStream.listen((users) {
+    _userSubscription = widget.database.getAllUsersStream().listen((users) {
       if (mounted) {
         setState(() {
           _allUsers = users;
-          _filteredUsers = _applySearchFilter(users, _searchController.text);
+          _filteredUsers = _applyFilters(users);
         });
       }
     });
-  }
-
-  Future<void> _pullUsersInBackground() async {
-    try {
-      await widget.syncManager.pull();
-    } catch (e) {
-      debugPrint('Background pull failed: $e');
-    }
-  }
-
-  String _getDisplayName(User user) {
-    final first = user.firstName.trim();
-    final last = user.lastName.trim();
-    if (first.length > 1 || last.length > 1) {
-      return '$first $last'.trim();
-    }
-    // Fall back to email prefix if name looks wrong
-    return user.email.split('@').first;
+    _searchController.addListener(_onSearchChanged);
+    _pullUsersInBackground();
   }
 
   @override
@@ -80,283 +53,70 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     super.dispose();
   }
 
+  Future<void> _pullUsersInBackground() async {
+    try {
+      await widget.syncManager.pull();
+    } catch (e) {
+      debugPrint('Background pull failed: $e');
+    }
+  }
+
   void _onSearchChanged() {
+    setState(() => _filteredUsers = _applyFilters(_allUsers));
+  }
+
+  void _selectTab(String tab) {
     setState(() {
-      _filteredUsers = _applySearchFilter(_allUsers, _searchController.text);
+      _selectedTab = tab;
+      _filteredUsers = _applyFilters(_allUsers);
     });
   }
 
-  List<User> _applySearchFilter(List<User> users, String query) {
-    if (query.isEmpty) {
-      return users;
-    } else {
-      final lowerQuery = query.toLowerCase();
-      return users.where((user) {
-        final fullName = _getDisplayName(user).toLowerCase();
-        final email = user.email.toLowerCase();
-        return fullName.contains(lowerQuery) || email.contains(lowerQuery);
-      }).toList();
-    }
-  }
-
-  Future<void> _loadUsers() async {
-    // This method is no longer needed - using streams instead
-  }
-
-  String _getPermissionsForRole(String? role) {
-    switch (role) {
+  List<User> _applyFilters(List<User> users) {
+    var result = users;
+    switch (_selectedTab) {
       case 'admin':
-        return 'Full Access';
-      case 'warehouse':
-        return 'Inventory';
+        result = result.where((u) => u.role == 'admin').toList();
       case 'sales_rep':
-        return 'Orders, Customers';
-      case 'delivery':
-        return 'Delivery';
-      default:
-        return 'Limited';
+        result = result.where((u) => u.role == 'sales_rep').toList();
+      case 'warehouse':
+        result = result.where((u) => u.role == 'warehouse').toList();
+      case 'inactive':
+        result = result.where((u) => !u.isActive).toList();
     }
+    final q = _searchController.text.toLowerCase();
+    if (q.isNotEmpty) {
+      result = result.where((u) =>
+        _getDisplayName(u).toLowerCase().contains(q) ||
+        u.email.toLowerCase().contains(q),
+      ).toList();
+    }
+    return result;
   }
 
-  Widget _buildStatCard({
-    required String label,
-    required String value,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: VillahermosaColors.cardBg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: VillahermosaColors.borderColor),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 24, color: VillahermosaColors.textSecondary),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: VillahermosaTextStyles.h3.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: VillahermosaTextStyles.small,
-          ),
-        ],
-      ),
-    );
+  String _getDisplayName(User user) {
+    final first = user.firstName.trim();
+    final last = user.lastName.trim();
+    if (first.length > 1 || last.length > 1) return '$first $last'.trim();
+    return user.email.split('@').first;
   }
 
-  Widget _buildUserTable() {
-    return Container(
-      decoration: BoxDecoration(
-        color: VillahermosaColors.cardBg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: VillahermosaColors.borderColor),
-      ),
-      child: Column(
-        children: [
-          // Table Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: VillahermosaColors.contentBg,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'NAME',
-                    style: VillahermosaTextStyles.extraSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'EMAIL',
-                    style: VillahermosaTextStyles.extraSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'ROLE',
-                    style: VillahermosaTextStyles.extraSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'PERMISSIONS',
-                    style: VillahermosaTextStyles.extraSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'STATUS',
-                    style: VillahermosaTextStyles.extraSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'LAST LOGIN',
-                    style: VillahermosaTextStyles.extraSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 80), // Actions column
-              ],
-            ),
-          ),
-          // Table Body
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: _filteredUsers.map((user) => _buildUserRow(user)).toList(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  String _getInitials(User user) {
+    final first = user.firstName.trim();
+    final last = user.lastName.trim();
+    if (first.isNotEmpty && last.isNotEmpty) {
+      return '${first[0]}${last[0]}'.toUpperCase();
+    }
+    if (first.isNotEmpty) return first[0].toUpperCase();
+    return user.email[0].toUpperCase();
   }
 
-  Widget _buildUserRow(User user) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: VillahermosaColors.borderColor,
-            width: 1,
-          ),
-        ),
-      ),
-      child: InkWell(
-        onTap: () => _showUserDetails(user),
-        child: Row(
-          children: [
-            // Name
-            Expanded(
-              flex: 2,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.shield_outlined,
-                    size: 16,
-                    color: VillahermosaColors.textSecondary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _getDisplayName(user),
-                      style: VillahermosaTextStyles.small,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Email
-            Expanded(
-              flex: 2,
-              child: Text(
-                user.email,
-                style: VillahermosaTextStyles.small,
-              ),
-            ),
-            // Role
-            Expanded(
-              flex: 1,
-              child: Text(
-                user.role,
-                style: VillahermosaTextStyles.small,
-              ),
-            ),
-            // Permissions
-            Expanded(
-              flex: 2,
-              child: Text(
-                _getPermissionsForRole(user.role),
-                style: VillahermosaTextStyles.small,
-              ),
-            ),
-            // Status
-            Expanded(
-              flex: 1,
-              child: _buildStatusBadge(user.isActive),
-            ),
-            // Last Login
-            Expanded(
-              flex: 2,
-              child: Text(
-                _formatDateTime(user.updatedAt),
-                style: VillahermosaTextStyles.small,
-              ),
-            ),
-            // Actions
-            SizedBox(
-              width: 80,
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    onPressed: () => _editUser(user),
-                    tooltip: 'Edit User',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.key_outlined, size: 18),
-                    onPressed: () => _resetPassword(user),
-                    tooltip: 'Reset Password',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isActive ? VillahermosaColors.successBg : VillahermosaColors.errorBg,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        isActive ? 'Active' : 'Inactive',
-        style: VillahermosaTextStyles.extraSmall.copyWith(
-          color: isActive ? VillahermosaColors.successText : VillahermosaColors.errorText,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day.toString().padLeft(2, '0')}/'
-           '${dateTime.month.toString().padLeft(2, '0')}/'
-           '${dateTime.year} '
-           '${dateTime.hour.toString().padLeft(2, '0')}:'
-           '${dateTime.minute.toString().padLeft(2, '0')}';
+  String _formatDate(DateTime dt) {
+    const months = [
+      'Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec',
+    ];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 
   void _showAddUserDialog() {
@@ -364,7 +124,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       context: context,
       builder: (context) => _AddUserDialog(
         database: widget.database,
-        onUserAdded: _loadUsers,
+        onUserAdded: () {},
       ),
     );
   }
@@ -382,134 +142,411 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       builder: (context) => _EditUserDialog(
         database: widget.database,
         user: user,
-        onUserUpdated: () {
-          // Stream will automatically refresh the UI
-        },
+        onUserUpdated: () {},
       ),
     );
   }
 
-  void _resetPassword(User user) {
-    showDialog(
+  Future<void> _deactivateUser(User user) async {
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => _ResetPasswordDialog(
-        database: widget.database,
-        user: user,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Deactivate User'),
+        content: Text('Deactivate ${_getDisplayName(user)}? They will no longer be able to log in.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFDC2626)),
+            child: const Text('Deactivate'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      await widget.database.deactivateUser(user.uuid);
+    }
+  }
+
+  // ─── STAT CARD ──────────────────────────────────
+
+  Widget _statCard({
+    required String label,
+    required String value,
+    required Color dotColor,
+    required String sub,
+  }) =>
+    Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280), fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Text(value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          const SizedBox(height: 3),
+          Row(children: [
+            Container(width: 6, height: 6,
+              decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+            const SizedBox(width: 4),
+            Expanded(child: Text(sub,
+              style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
+              overflow: TextOverflow.ellipsis)),
+          ]),
+        ],
+      ),
+    );
+
+  // ─── ROLE BADGE ─────────────────────────────────
+
+  Widget _roleBadge(String role) {
+    Color bg, fg;
+    String label;
+    switch (role) {
+      case 'admin':
+        bg = const Color(0xFFEFF6FF); fg = const Color(0xFF1E40AF); label = 'Admin';
+      case 'sales_rep':
+        bg = const Color(0xFFF0FDF4); fg = const Color(0xFF166534); label = 'Sales Rep';
+      case 'warehouse':
+        bg = const Color(0xFFFFFBEB); fg = const Color(0xFF92400E); label = 'Warehouse';
+      case 'delivery':
+        bg = const Color(0xFFF5F3FF); fg = const Color(0xFF5B21B6); label = 'Delivery';
+      default:
+        bg = const Color(0xFFF3F4F6); fg = const Color(0xFF374151); label = role;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: fg)),
+    );
+  }
+
+  // ─── STATUS BADGE ───────────────────────────────
+
+  Widget _statusBadge(bool isActive) {
+    final bg = isActive ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2);
+    final fg = isActive ? const Color(0xFF065F46) : const Color(0xFF991B1B);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
+      child: Text(isActive ? 'Active' : 'Inactive',
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: fg)),
+    );
+  }
+
+  // ─── TAB BAR ────────────────────────────────────
+
+  Widget _buildTabs() {
+    final tabs = [
+      ('all', 'All Users', _allUsers.length),
+      ('admin', 'Admins', _allUsers.where((u) => u.role == 'admin').length),
+      ('sales_rep', 'Sales Reps', _allUsers.where((u) => u.role == 'sales_rep').length),
+      ('warehouse', 'Warehouse', _allUsers.where((u) => u.role == 'warehouse').length),
+      ('inactive', 'Inactive', _allUsers.where((u) => !u.isActive).length),
+    ];
+    return Container(
+      height: 40,
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: tabs.map((t) {
+            final (key, label, count) = t;
+            final selected = _selectedTab == key;
+            return GestureDetector(
+              onTap: () => _selectTab(key),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: selected ? const Color(0xFF111827) : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Row(children: [
+                  Text('$label ($count)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                      color: selected ? const Color(0xFF111827) : const Color(0xFF6B7280),
+                    )),
+                ]),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
+
+  // ─── TOOLBAR ────────────────────────────────────
+
+  Widget _buildToolbar() {
+    return Row(children: [
+      Expanded(
+        child: SizedBox(
+          height: 36,
+          child: TextField(
+            controller: _searchController,
+            style: const TextStyle(fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Search users...',
+              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+              prefixIcon: const Icon(Icons.search_outlined, size: 16, color: Color(0xFF9CA3AF)),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              contentPadding: EdgeInsets.zero,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: Color(0xFF111827), width: 1.5),
+              ),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(width: 8),
+      OutlinedButton.icon(
+        onPressed: () {},
+        icon: const Icon(Icons.filter_list_outlined, size: 14),
+        label: const Text('Filter', style: TextStyle(fontSize: 13)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF374151),
+          side: const BorderSide(color: Color(0xFFE5E7EB)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          minimumSize: const Size(0, 36),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ),
+      ),
+      const SizedBox(width: 8),
+      ElevatedButton.icon(
+        onPressed: _showAddUserDialog,
+        icon: const Icon(Icons.add, size: 14, color: Colors.white),
+        label: const Text('Add User', style: TextStyle(fontSize: 13, color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1E1E1E),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          minimumSize: const Size(0, 36),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ),
+      ),
+    ]);
+  }
+
+  // ─── TABLE ──────────────────────────────────────
+
+  static const _colHeader = TextStyle(
+    fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF6B7280),
+    letterSpacing: 0.5,
+  );
+
+  Widget _buildTableHeader() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    color: const Color(0xFFF9FAFB),
+    child: const Row(children: [
+      Expanded(flex: 3, child: Text('NAME', style: _colHeader)),
+      Expanded(flex: 3, child: Text('EMAIL', style: _colHeader)),
+      Expanded(flex: 2, child: Text('ROLE', style: _colHeader)),
+      Expanded(flex: 2, child: Text('STATUS', style: _colHeader)),
+      Expanded(flex: 2, child: Text('CREATED', style: _colHeader)),
+      SizedBox(width: 96, child: Text('ACTIONS', style: _colHeader)),
+    ]),
+  );
+
+  Widget _buildUserRow(User user, bool isLast) {
+    final name = _getDisplayName(user);
+    final initials = _getInitials(user);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: isLast
+          ? null
+          : const Border(bottom: BorderSide(color: Color(0xFFF3F4F6))),
+      ),
+      child: Row(children: [
+        // NAME — avatar + full name
+        Expanded(
+          flex: 3,
+          child: Row(children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: const Color(0xFF1E1E1E),
+              child: Text(initials,
+                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(name,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF111827), fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis),
+            ),
+          ]),
+        ),
+        // EMAIL
+        Expanded(
+          flex: 3,
+          child: Text(user.email,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            overflow: TextOverflow.ellipsis),
+        ),
+        // ROLE badge
+        Expanded(flex: 2, child: _roleBadge(user.role)),
+        // STATUS badge
+        Expanded(flex: 2, child: _statusBadge(user.isActive)),
+        // CREATED date
+        Expanded(
+          flex: 2,
+          child: Text(_formatDate(user.createdAt),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+        ),
+        // ACTIONS
+        SizedBox(
+          width: 96,
+          child: Row(children: [
+            _actionBtn(Icons.visibility_outlined, 'View', () => _showUserDetails(user)),
+            _actionBtn(Icons.edit_outlined, 'Edit', () => _editUser(user)),
+            _actionBtn(Icons.person_off_outlined, 'Deactivate', () => _deactivateUser(user),
+              color: const Color(0xFFDC2626)),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _actionBtn(IconData icon, String tip, VoidCallback onTap, {Color? color}) =>
+    Tooltip(
+      message: tip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(icon, size: 16, color: color ?? const Color(0xFF6B7280)),
+        ),
+      ),
+    );
+
+  // ─── BUILD ──────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final totalUsers = _allUsers.length;
+    final activeUsers = _allUsers.where((u) => u.isActive).length;
+    final adminCount = _allUsers.where((u) => u.role == 'admin').length;
+    final salesCount = _allUsers.where((u) => u.role == 'sales_rep').length;
+
     return ResponsiveShell(
       database: widget.database,
       selectedRoute: '/admin/users',
       child: Scaffold(
-        backgroundColor: VillahermosaColors.contentBg,
+        backgroundColor: const Color(0xFFF4F4F4),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Page Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'User Accounts & Permissions',
-                          style: VillahermosaTextStyles.h2,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Manage user access and security.',
-                          style: VillahermosaTextStyles.small,
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: _showAddUserDialog,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: VillahermosaColors.textPrimary,
-                        foregroundColor: VillahermosaColors.cardBg,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      child: const Text('+ Add User'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // Search Bar
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search users...',
-                    prefixIcon: const Icon(Icons.search_outlined),
-                    filled: true,
-                    fillColor: VillahermosaColors.cardBg,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: const BorderSide(color: VillahermosaColors.borderColor),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: const BorderSide(color: VillahermosaColors.borderColor),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: const BorderSide(color: VillahermosaColors.textPrimary, width: 2),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Stats Cards
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        label: 'Total Users',
-                        value: _allUsers.length.toString(),
-                        icon: Icons.people_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildStatCard(
-                        label: 'Active Users',
-                        value: _allUsers.where((u) => u.isActive).length.toString(),
-                        icon: Icons.verified_user_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildStatCard(
-                        label: 'Administrators',
-                        value: _allUsers.where((u) => u.role == 'admin').length.toString(),
-                        icon: Icons.admin_panel_settings_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildStatCard(
-                        label: 'Sales Reps',
-                        value: _allUsers.where((u) => u.role == 'sales_rep').length.toString(),
-                        icon: Icons.person_pin_outlined,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // User Table
+                // ── Header ──
+                const Text('User Accounts',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                const SizedBox(height: 2),
+                const Text('Manage user access and security settings.',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                const SizedBox(height: 20),
+
+                // ── Stat Cards ──
+                Row(children: [
+                  Expanded(child: _statCard(
+                    label: 'Total Users',
+                    value: totalUsers.toString(),
+                    dotColor: const Color(0xFF6B7280),
+                    sub: 'registered accounts',
+                  )),
+                  const SizedBox(width: 12),
+                  Expanded(child: _statCard(
+                    label: 'Active Users',
+                    value: activeUsers.toString(),
+                    dotColor: const Color(0xFF10B981),
+                    sub: 'currently active',
+                  )),
+                  const SizedBox(width: 12),
+                  Expanded(child: _statCard(
+                    label: 'Administrators',
+                    value: adminCount.toString(),
+                    dotColor: const Color(0xFF3B82F6),
+                    sub: 'full admin access',
+                  )),
+                  const SizedBox(width: 12),
+                  Expanded(child: _statCard(
+                    label: 'Sales Reps',
+                    value: salesCount.toString(),
+                    dotColor: const Color(0xFFF59E0B),
+                    sub: 'field representatives',
+                  )),
+                ]),
+                const SizedBox(height: 20),
+
+                // ── Tabs ──
+                _buildTabs(),
+                const SizedBox(height: 12),
+
+                // ── Toolbar ──
+                _buildToolbar(),
+                const SizedBox(height: 12),
+
+                // ── Table ──
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: _buildUserTable(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Column(children: [
+                        _buildTableHeader(),
+                        const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                        Expanded(
+                          child: _filteredUsers.isEmpty
+                            ? const Center(
+                                child: Text('No users found.',
+                                  style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+                              )
+                            : SingleChildScrollView(
+                                child: Column(
+                                  children: List.generate(_filteredUsers.length, (i) =>
+                                    _buildUserRow(
+                                      _filteredUsers[i],
+                                      i == _filteredUsers.length - 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                        ),
+                      ]),
+                    ),
                   ),
                 ),
               ],
@@ -520,6 +557,10 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     );
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// DIALOGS — unchanged
+// ════════════════════════════════════════════════════════════════════════════
 
 class _AddUserDialog extends StatefulWidget {
   const _AddUserDialog({
@@ -722,7 +763,6 @@ class _AddUserDialogState extends State<_AddUserDialog> {
     }
   }
 
-  /// Hash password using SHA-256 algorithm
   String _hashPassword(String password) {
     final bytes = utf8.encode(password);
     final digest = sha256.convert(bytes);
@@ -741,7 +781,6 @@ class _UserDetailsDialog extends StatelessWidget {
     if (first.length > 1 || last.length > 1) {
       return '$first $last'.trim();
     }
-    // Fall back to email prefix if name looks wrong
     return user.email.split('@').first;
   }
 
@@ -777,7 +816,7 @@ class _UserDetailsDialog extends StatelessWidget {
             _buildDetailRow('Email', user.email),
             _buildDetailRow('Role', user.role),
             _buildDetailRow('Status', user.isActive ? 'Active' : 'Inactive'),
-            _buildDetailRow('Last Login', 
+            _buildDetailRow('Last Login',
                 '${user.updatedAt.day}/${user.updatedAt.month}/${user.updatedAt.year}'),
             const SizedBox(height: 24),
             Center(
@@ -1029,7 +1068,6 @@ class _ResetPasswordDialog extends StatefulWidget {
     if (first.length > 1 || last.length > 1) {
       return '$first $last'.trim();
     }
-    // Fall back to email prefix if name looks wrong
     return user.email.split('@').first;
   }
 
@@ -1159,7 +1197,6 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
     }
   }
 
-  /// Hash password using SHA-256 algorithm
   String _hashPassword(String password) {
     final bytes = utf8.encode(password);
     final digest = sha256.convert(bytes);
