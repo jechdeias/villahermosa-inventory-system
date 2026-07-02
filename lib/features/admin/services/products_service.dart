@@ -24,6 +24,7 @@ class ProductsService {
     String? notes,
     required String userUuid,
     required String userName,
+    String? referenceId,
   }) async {
     await _ref.read(productsDatabaseProvider).adjustProductStock(
       productUuid: productUuid,
@@ -32,6 +33,7 @@ class ProductsService {
       notes: notes,
       userUuid: userUuid,
       userName: userName,
+      referenceId: referenceId,
     );
     await _sync();
   }

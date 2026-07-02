@@ -14,6 +14,7 @@ import 'tables/deliveries_table.dart';
 import 'tables/stock_movements_table.dart';
 import 'tables/suppliers_table.dart';
 import 'tables/payments_table.dart';
+import 'tables/delivery_routes_table.dart';
 
 part 'app_database.g.dart';
 
@@ -27,6 +28,7 @@ part 'app_database.g.dart';
   StockMovements,
   Suppliers,
   Payments,
+  DeliveryRoutes,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -34,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(DatabaseConnection super.connection);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -91,6 +93,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         try { await m.createTable(payments); } catch (_) {}
       }
+      // v9: delivery routes table
+      if (from < 9) {
+        try { await m.createTable(deliveryRoutes); } catch (_) {}
+      }
     },
     beforeOpen: (details) async {
       // Nuclear option: guarantee payments table exists regardless of
@@ -115,6 +121,23 @@ class AppDatabase extends _$AppDatabase {
         ')',
       );
       await _seedPaymentsIfEmpty();
+
+      await customStatement(
+        'CREATE TABLE IF NOT EXISTS delivery_routes ('
+        '  id INTEGER PRIMARY KEY AUTOINCREMENT,'
+        '  uuid TEXT NOT NULL UNIQUE,'
+        '  route_name TEXT NOT NULL,'
+        '  municipality TEXT NOT NULL,'
+        '  assigned_rep_name TEXT,'
+        '  delivery_days TEXT NOT NULL,'
+        '  customer_count INTEGER NOT NULL DEFAULT 0,'
+        '  status TEXT NOT NULL DEFAULT \'active\','
+        '  is_deleted INTEGER NOT NULL DEFAULT 0,'
+        '  sync_status TEXT NOT NULL DEFAULT \'pending\','
+        '  created_at INTEGER NOT NULL DEFAULT (unixepoch()),'
+        '  updated_at INTEGER NOT NULL DEFAULT (unixepoch())'
+        ')',
+      );
     },
   );
 
@@ -243,6 +266,7 @@ class AppDatabase extends _$AppDatabase {
     String? notes,
     required String userUuid,
     required String userName,
+    String? referenceId,
   }) async {
     await transaction(() async {
       final product = await (select(products)..where((t) => t.uuid.equals(productUuid))).getSingle();
@@ -260,6 +284,7 @@ class AppDatabase extends _$AppDatabase {
         quantity: delta.abs(),
         reason: reason,
         notes: Value(notes),
+        referenceId: Value(referenceId),
         userId: userUuid,
         userName: userName,
         syncStatus: const Value('pending'),
@@ -339,6 +364,11 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<Order>> getOrdersByCustomerId(String customerId) async => (select(orders)..where((t) => t.customerId.equals(customerId) & t.isDeleted.equals(false))).get();
 
+  Future<List<Order>> getOrdersByRouteName(String routeName) async => (select(orders)
+    ..where((t) => t.routeName.equals(routeName) & t.isDeleted.equals(false))
+    ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
+  ).get();
+
   Future<List<Order>> getPendingOrders() async => (select(orders)
     ..where((t) => t.status.equals('pending') & t.isDeleted.equals(false))
     ..orderBy([(t) => OrderingTerm(expression: t.createdAt)])
@@ -399,6 +429,11 @@ class AppDatabase extends _$AppDatabase {
   ).get();
 
   Future<List<StockMovement>> getPendingSyncStockMovements() async => (select(stockMovements)..where((t) => t.syncStatus.equals('pending'))).get();
+
+  Stream<List<StockMovement>> watchAllStockMovements() => (select(stockMovements)
+    ..where((t) => t.isDeleted.equals(false))
+    ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
+  ).watch();
 
   Future<List<Order>> getPendingSyncOrders() async => (select(orders)..where((t) => t.syncStatus.equals('pending'))).get();
 
@@ -508,6 +543,21 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<Supplier>> getPendingSyncSuppliers() async =>
       (select(suppliers)..where((t) => t.syncStatus.equals('pending'))).get();
+
+  // Delivery route methods
+  Stream<List<DeliveryRoute>> watchAllDeliveryRoutes() => (select(deliveryRoutes)
+    ..where((t) => t.isDeleted.equals(false))
+    ..orderBy([(t) => OrderingTerm(expression: t.routeName)])
+  ).watch();
+
+  Future<void> createDeliveryRoute(DeliveryRoutesCompanion route) async {
+    await into(deliveryRoutes).insert(route);
+  }
+
+  Future<void> updateDeliveryRoute(String uuid, DeliveryRoutesCompanion route) async {
+    await (update(deliveryRoutes)..where((t) => t.uuid.equals(uuid)))
+        .write(route.copyWith(updatedAt: Value(DateTime.now())));
+  }
 
   // Payment methods
   Stream<List<Payment>> watchAllPayments() => (select(payments)

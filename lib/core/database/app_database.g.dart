@@ -10818,6 +10818,717 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
   }
 }
 
+class $DeliveryRoutesTable extends DeliveryRoutes
+    with TableInfo<$DeliveryRoutesTable, DeliveryRoute> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DeliveryRoutesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _routeNameMeta = const VerificationMeta(
+    'routeName',
+  );
+  @override
+  late final GeneratedColumn<String> routeName = GeneratedColumn<String>(
+    'route_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _municipalityMeta = const VerificationMeta(
+    'municipality',
+  );
+  @override
+  late final GeneratedColumn<String> municipality = GeneratedColumn<String>(
+    'municipality',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _assignedRepNameMeta = const VerificationMeta(
+    'assignedRepName',
+  );
+  @override
+  late final GeneratedColumn<String> assignedRepName = GeneratedColumn<String>(
+    'assigned_rep_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deliveryDaysMeta = const VerificationMeta(
+    'deliveryDays',
+  );
+  @override
+  late final GeneratedColumn<String> deliveryDays = GeneratedColumn<String>(
+    'delivery_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _customerCountMeta = const VerificationMeta(
+    'customerCount',
+  );
+  @override
+  late final GeneratedColumn<int> customerCount = GeneratedColumn<int>(
+    'customer_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('active'),
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    uuid,
+    routeName,
+    municipality,
+    assignedRepName,
+    deliveryDays,
+    customerCount,
+    status,
+    isDeleted,
+    syncStatus,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'delivery_routes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DeliveryRoute> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_uuidMeta);
+    }
+    if (data.containsKey('route_name')) {
+      context.handle(
+        _routeNameMeta,
+        routeName.isAcceptableOrUnknown(data['route_name']!, _routeNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_routeNameMeta);
+    }
+    if (data.containsKey('municipality')) {
+      context.handle(
+        _municipalityMeta,
+        municipality.isAcceptableOrUnknown(
+          data['municipality']!,
+          _municipalityMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_municipalityMeta);
+    }
+    if (data.containsKey('assigned_rep_name')) {
+      context.handle(
+        _assignedRepNameMeta,
+        assignedRepName.isAcceptableOrUnknown(
+          data['assigned_rep_name']!,
+          _assignedRepNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('delivery_days')) {
+      context.handle(
+        _deliveryDaysMeta,
+        deliveryDays.isAcceptableOrUnknown(
+          data['delivery_days']!,
+          _deliveryDaysMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_deliveryDaysMeta);
+    }
+    if (data.containsKey('customer_count')) {
+      context.handle(
+        _customerCountMeta,
+        customerCount.isAcceptableOrUnknown(
+          data['customer_count']!,
+          _customerCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DeliveryRoute map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DeliveryRoute(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      )!,
+      routeName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}route_name'],
+      )!,
+      municipality: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}municipality'],
+      )!,
+      assignedRepName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assigned_rep_name'],
+      ),
+      deliveryDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivery_days'],
+      )!,
+      customerCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}customer_count'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DeliveryRoutesTable createAlias(String alias) {
+    return $DeliveryRoutesTable(attachedDatabase, alias);
+  }
+}
+
+class DeliveryRoute extends DataClass implements Insertable<DeliveryRoute> {
+  final int id;
+  final String uuid;
+  final String routeName;
+  final String municipality;
+  final String? assignedRepName;
+
+  /// Comma-joined delivery days, e.g. "Mon,Wed,Fri".
+  final String deliveryDays;
+  final int customerCount;
+
+  /// 'active' | 'on_hold' | 'inactive'
+  final String status;
+  final bool isDeleted;
+  final String syncStatus;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const DeliveryRoute({
+    required this.id,
+    required this.uuid,
+    required this.routeName,
+    required this.municipality,
+    this.assignedRepName,
+    required this.deliveryDays,
+    required this.customerCount,
+    required this.status,
+    required this.isDeleted,
+    required this.syncStatus,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uuid'] = Variable<String>(uuid);
+    map['route_name'] = Variable<String>(routeName);
+    map['municipality'] = Variable<String>(municipality);
+    if (!nullToAbsent || assignedRepName != null) {
+      map['assigned_rep_name'] = Variable<String>(assignedRepName);
+    }
+    map['delivery_days'] = Variable<String>(deliveryDays);
+    map['customer_count'] = Variable<int>(customerCount);
+    map['status'] = Variable<String>(status);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    map['sync_status'] = Variable<String>(syncStatus);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DeliveryRoutesCompanion toCompanion(bool nullToAbsent) {
+    return DeliveryRoutesCompanion(
+      id: Value(id),
+      uuid: Value(uuid),
+      routeName: Value(routeName),
+      municipality: Value(municipality),
+      assignedRepName: assignedRepName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assignedRepName),
+      deliveryDays: Value(deliveryDays),
+      customerCount: Value(customerCount),
+      status: Value(status),
+      isDeleted: Value(isDeleted),
+      syncStatus: Value(syncStatus),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DeliveryRoute.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DeliveryRoute(
+      id: serializer.fromJson<int>(json['id']),
+      uuid: serializer.fromJson<String>(json['uuid']),
+      routeName: serializer.fromJson<String>(json['routeName']),
+      municipality: serializer.fromJson<String>(json['municipality']),
+      assignedRepName: serializer.fromJson<String?>(json['assignedRepName']),
+      deliveryDays: serializer.fromJson<String>(json['deliveryDays']),
+      customerCount: serializer.fromJson<int>(json['customerCount']),
+      status: serializer.fromJson<String>(json['status']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uuid': serializer.toJson<String>(uuid),
+      'routeName': serializer.toJson<String>(routeName),
+      'municipality': serializer.toJson<String>(municipality),
+      'assignedRepName': serializer.toJson<String?>(assignedRepName),
+      'deliveryDays': serializer.toJson<String>(deliveryDays),
+      'customerCount': serializer.toJson<int>(customerCount),
+      'status': serializer.toJson<String>(status),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DeliveryRoute copyWith({
+    int? id,
+    String? uuid,
+    String? routeName,
+    String? municipality,
+    Value<String?> assignedRepName = const Value.absent(),
+    String? deliveryDays,
+    int? customerCount,
+    String? status,
+    bool? isDeleted,
+    String? syncStatus,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => DeliveryRoute(
+    id: id ?? this.id,
+    uuid: uuid ?? this.uuid,
+    routeName: routeName ?? this.routeName,
+    municipality: municipality ?? this.municipality,
+    assignedRepName: assignedRepName.present
+        ? assignedRepName.value
+        : this.assignedRepName,
+    deliveryDays: deliveryDays ?? this.deliveryDays,
+    customerCount: customerCount ?? this.customerCount,
+    status: status ?? this.status,
+    isDeleted: isDeleted ?? this.isDeleted,
+    syncStatus: syncStatus ?? this.syncStatus,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DeliveryRoute copyWithCompanion(DeliveryRoutesCompanion data) {
+    return DeliveryRoute(
+      id: data.id.present ? data.id.value : this.id,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      routeName: data.routeName.present ? data.routeName.value : this.routeName,
+      municipality: data.municipality.present
+          ? data.municipality.value
+          : this.municipality,
+      assignedRepName: data.assignedRepName.present
+          ? data.assignedRepName.value
+          : this.assignedRepName,
+      deliveryDays: data.deliveryDays.present
+          ? data.deliveryDays.value
+          : this.deliveryDays,
+      customerCount: data.customerCount.present
+          ? data.customerCount.value
+          : this.customerCount,
+      status: data.status.present ? data.status.value : this.status,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DeliveryRoute(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('routeName: $routeName, ')
+          ..write('municipality: $municipality, ')
+          ..write('assignedRepName: $assignedRepName, ')
+          ..write('deliveryDays: $deliveryDays, ')
+          ..write('customerCount: $customerCount, ')
+          ..write('status: $status, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    uuid,
+    routeName,
+    municipality,
+    assignedRepName,
+    deliveryDays,
+    customerCount,
+    status,
+    isDeleted,
+    syncStatus,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DeliveryRoute &&
+          other.id == this.id &&
+          other.uuid == this.uuid &&
+          other.routeName == this.routeName &&
+          other.municipality == this.municipality &&
+          other.assignedRepName == this.assignedRepName &&
+          other.deliveryDays == this.deliveryDays &&
+          other.customerCount == this.customerCount &&
+          other.status == this.status &&
+          other.isDeleted == this.isDeleted &&
+          other.syncStatus == this.syncStatus &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DeliveryRoutesCompanion extends UpdateCompanion<DeliveryRoute> {
+  final Value<int> id;
+  final Value<String> uuid;
+  final Value<String> routeName;
+  final Value<String> municipality;
+  final Value<String?> assignedRepName;
+  final Value<String> deliveryDays;
+  final Value<int> customerCount;
+  final Value<String> status;
+  final Value<bool> isDeleted;
+  final Value<String> syncStatus;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const DeliveryRoutesCompanion({
+    this.id = const Value.absent(),
+    this.uuid = const Value.absent(),
+    this.routeName = const Value.absent(),
+    this.municipality = const Value.absent(),
+    this.assignedRepName = const Value.absent(),
+    this.deliveryDays = const Value.absent(),
+    this.customerCount = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  DeliveryRoutesCompanion.insert({
+    this.id = const Value.absent(),
+    required String uuid,
+    required String routeName,
+    required String municipality,
+    this.assignedRepName = const Value.absent(),
+    required String deliveryDays,
+    this.customerCount = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : uuid = Value(uuid),
+       routeName = Value(routeName),
+       municipality = Value(municipality),
+       deliveryDays = Value(deliveryDays);
+  static Insertable<DeliveryRoute> custom({
+    Expression<int>? id,
+    Expression<String>? uuid,
+    Expression<String>? routeName,
+    Expression<String>? municipality,
+    Expression<String>? assignedRepName,
+    Expression<String>? deliveryDays,
+    Expression<int>? customerCount,
+    Expression<String>? status,
+    Expression<bool>? isDeleted,
+    Expression<String>? syncStatus,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uuid != null) 'uuid': uuid,
+      if (routeName != null) 'route_name': routeName,
+      if (municipality != null) 'municipality': municipality,
+      if (assignedRepName != null) 'assigned_rep_name': assignedRepName,
+      if (deliveryDays != null) 'delivery_days': deliveryDays,
+      if (customerCount != null) 'customer_count': customerCount,
+      if (status != null) 'status': status,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  DeliveryRoutesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uuid,
+    Value<String>? routeName,
+    Value<String>? municipality,
+    Value<String?>? assignedRepName,
+    Value<String>? deliveryDays,
+    Value<int>? customerCount,
+    Value<String>? status,
+    Value<bool>? isDeleted,
+    Value<String>? syncStatus,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return DeliveryRoutesCompanion(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      routeName: routeName ?? this.routeName,
+      municipality: municipality ?? this.municipality,
+      assignedRepName: assignedRepName ?? this.assignedRepName,
+      deliveryDays: deliveryDays ?? this.deliveryDays,
+      customerCount: customerCount ?? this.customerCount,
+      status: status ?? this.status,
+      isDeleted: isDeleted ?? this.isDeleted,
+      syncStatus: syncStatus ?? this.syncStatus,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
+    if (routeName.present) {
+      map['route_name'] = Variable<String>(routeName.value);
+    }
+    if (municipality.present) {
+      map['municipality'] = Variable<String>(municipality.value);
+    }
+    if (assignedRepName.present) {
+      map['assigned_rep_name'] = Variable<String>(assignedRepName.value);
+    }
+    if (deliveryDays.present) {
+      map['delivery_days'] = Variable<String>(deliveryDays.value);
+    }
+    if (customerCount.present) {
+      map['customer_count'] = Variable<int>(customerCount.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DeliveryRoutesCompanion(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('routeName: $routeName, ')
+          ..write('municipality: $municipality, ')
+          ..write('assignedRepName: $assignedRepName, ')
+          ..write('deliveryDays: $deliveryDays, ')
+          ..write('customerCount: $customerCount, ')
+          ..write('status: $status, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10830,6 +11541,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $StockMovementsTable stockMovements = $StockMovementsTable(this);
   late final $SuppliersTable suppliers = $SuppliersTable(this);
   late final $PaymentsTable payments = $PaymentsTable(this);
+  late final $DeliveryRoutesTable deliveryRoutes = $DeliveryRoutesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -10844,6 +11556,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     stockMovements,
     suppliers,
     payments,
+    deliveryRoutes,
   ];
 }
 
@@ -15841,6 +16554,345 @@ typedef $$PaymentsTableProcessedTableManager =
       Payment,
       PrefetchHooks Function({bool orderId, bool salesRepId})
     >;
+typedef $$DeliveryRoutesTableCreateCompanionBuilder =
+    DeliveryRoutesCompanion Function({
+      Value<int> id,
+      required String uuid,
+      required String routeName,
+      required String municipality,
+      Value<String?> assignedRepName,
+      required String deliveryDays,
+      Value<int> customerCount,
+      Value<String> status,
+      Value<bool> isDeleted,
+      Value<String> syncStatus,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$DeliveryRoutesTableUpdateCompanionBuilder =
+    DeliveryRoutesCompanion Function({
+      Value<int> id,
+      Value<String> uuid,
+      Value<String> routeName,
+      Value<String> municipality,
+      Value<String?> assignedRepName,
+      Value<String> deliveryDays,
+      Value<int> customerCount,
+      Value<String> status,
+      Value<bool> isDeleted,
+      Value<String> syncStatus,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+class $$DeliveryRoutesTableFilterComposer
+    extends Composer<_$AppDatabase, $DeliveryRoutesTable> {
+  $$DeliveryRoutesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get routeName => $composableBuilder(
+    column: $table.routeName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get municipality => $composableBuilder(
+    column: $table.municipality,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assignedRepName => $composableBuilder(
+    column: $table.assignedRepName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveryDays => $composableBuilder(
+    column: $table.deliveryDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get customerCount => $composableBuilder(
+    column: $table.customerCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DeliveryRoutesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DeliveryRoutesTable> {
+  $$DeliveryRoutesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get routeName => $composableBuilder(
+    column: $table.routeName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get municipality => $composableBuilder(
+    column: $table.municipality,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assignedRepName => $composableBuilder(
+    column: $table.assignedRepName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deliveryDays => $composableBuilder(
+    column: $table.deliveryDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get customerCount => $composableBuilder(
+    column: $table.customerCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DeliveryRoutesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DeliveryRoutesTable> {
+  $$DeliveryRoutesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<String> get routeName =>
+      $composableBuilder(column: $table.routeName, builder: (column) => column);
+
+  GeneratedColumn<String> get municipality => $composableBuilder(
+    column: $table.municipality,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get assignedRepName => $composableBuilder(
+    column: $table.assignedRepName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deliveryDays => $composableBuilder(
+    column: $table.deliveryDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get customerCount => $composableBuilder(
+    column: $table.customerCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DeliveryRoutesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DeliveryRoutesTable,
+          DeliveryRoute,
+          $$DeliveryRoutesTableFilterComposer,
+          $$DeliveryRoutesTableOrderingComposer,
+          $$DeliveryRoutesTableAnnotationComposer,
+          $$DeliveryRoutesTableCreateCompanionBuilder,
+          $$DeliveryRoutesTableUpdateCompanionBuilder,
+          (
+            DeliveryRoute,
+            BaseReferences<_$AppDatabase, $DeliveryRoutesTable, DeliveryRoute>,
+          ),
+          DeliveryRoute,
+          PrefetchHooks Function()
+        > {
+  $$DeliveryRoutesTableTableManager(
+    _$AppDatabase db,
+    $DeliveryRoutesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DeliveryRoutesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DeliveryRoutesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DeliveryRoutesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uuid = const Value.absent(),
+                Value<String> routeName = const Value.absent(),
+                Value<String> municipality = const Value.absent(),
+                Value<String?> assignedRepName = const Value.absent(),
+                Value<String> deliveryDays = const Value.absent(),
+                Value<int> customerCount = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => DeliveryRoutesCompanion(
+                id: id,
+                uuid: uuid,
+                routeName: routeName,
+                municipality: municipality,
+                assignedRepName: assignedRepName,
+                deliveryDays: deliveryDays,
+                customerCount: customerCount,
+                status: status,
+                isDeleted: isDeleted,
+                syncStatus: syncStatus,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uuid,
+                required String routeName,
+                required String municipality,
+                Value<String?> assignedRepName = const Value.absent(),
+                required String deliveryDays,
+                Value<int> customerCount = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => DeliveryRoutesCompanion.insert(
+                id: id,
+                uuid: uuid,
+                routeName: routeName,
+                municipality: municipality,
+                assignedRepName: assignedRepName,
+                deliveryDays: deliveryDays,
+                customerCount: customerCount,
+                status: status,
+                isDeleted: isDeleted,
+                syncStatus: syncStatus,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DeliveryRoutesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DeliveryRoutesTable,
+      DeliveryRoute,
+      $$DeliveryRoutesTableFilterComposer,
+      $$DeliveryRoutesTableOrderingComposer,
+      $$DeliveryRoutesTableAnnotationComposer,
+      $$DeliveryRoutesTableCreateCompanionBuilder,
+      $$DeliveryRoutesTableUpdateCompanionBuilder,
+      (
+        DeliveryRoute,
+        BaseReferences<_$AppDatabase, $DeliveryRoutesTable, DeliveryRoute>,
+      ),
+      DeliveryRoute,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -15863,4 +16915,6 @@ class $AppDatabaseManager {
       $$SuppliersTableTableManager(_db, _db.suppliers);
   $$PaymentsTableTableManager get payments =>
       $$PaymentsTableTableManager(_db, _db.payments);
+  $$DeliveryRoutesTableTableManager get deliveryRoutes =>
+      $$DeliveryRoutesTableTableManager(_db, _db.deliveryRoutes);
 }
