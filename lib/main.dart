@@ -14,6 +14,8 @@ import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/change_password_screen.dart';
 import 'features/admin/screens/admin_orders_screen.dart';
 import 'features/admin/screens/admin_payments_screen.dart';
+import 'features/admin/screens/admin_products_screen.dart';
+import 'features/admin/screens/admin_customers_screen.dart';
 import 'features/admin/screens/dashboard_screen.dart';
 import 'features/admin/screens/user_accounts_screen.dart';
 import 'features/admin/screens/placeholder_screens.dart';
@@ -113,11 +115,11 @@ class VillahermosaInventoryApp extends StatelessWidget {
         database: database, 
         syncManager: SyncManager.instance
       ),
-      '/admin/products': (context) => AdminInventoryScreen(database: database, syncManager: SyncManager.instance),
+      '/admin/products': (context) => AdminProductsScreen(database: database, syncManager: SyncManager.instance),
       '/admin/customers': (context) => AdminCustomersScreen(database: database, syncManager: SyncManager.instance),
       '/admin/orders': (context) => AdminOrdersScreen(database: database, syncManager: SyncManager.instance),
       '/admin/payments': (context) => AdminPaymentsScreen(database: database, syncManager: SyncManager.instance),
-      '/admin/inventory': (context) => AdminInventoryScreen(database: database, syncManager: SyncManager.instance),
+      '/admin/inventory': (context) => AdminProductsScreen(database: database, syncManager: SyncManager.instance),
       '/admin/stock': (context) => AdminStockScreen(database: database, syncManager: SyncManager.instance),
       '/admin/deliveries': (context) => AdminDeliveriesScreen(database: database, syncManager: SyncManager.instance),
       '/admin/reports': (context) => AdminReportsScreen(database: database, syncManager: SyncManager.instance),

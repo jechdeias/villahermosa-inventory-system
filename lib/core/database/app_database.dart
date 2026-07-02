@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import 'tables/users_table.dart';
 import 'tables/products_table.dart';
 import 'tables/customers_table.dart';
@@ -229,6 +230,43 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<Product>> getAllProducts() async => (select(products)..where((t) => t.isDeleted.equals(false))).get();
 
+  Stream<List<Product>> watchAllProducts() => (select(products)
+    ..where((t) => t.isDeleted.equals(false))
+    ..orderBy([(t) => OrderingTerm(expression: t.name)])
+  ).watch();
+
+  /// Adjusts a product's stock count and logs a StockMovement record.
+  Future<void> adjustProductStock({
+    required String productUuid,
+    required int delta,
+    required String reason,
+    String? notes,
+    required String userUuid,
+    required String userName,
+  }) async {
+    await transaction(() async {
+      final product = await (select(products)..where((t) => t.uuid.equals(productUuid))).getSingle();
+      await (update(products)..where((t) => t.uuid.equals(productUuid))).write(
+        ProductsCompanion(
+          currentStock: Value(product.currentStock + delta),
+          syncStatus: const Value('pending'),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+      await into(stockMovements).insert(StockMovementsCompanion.insert(
+        uuid: const Uuid().v4(),
+        productId: productUuid,
+        movementType: delta >= 0 ? 'in' : 'out',
+        quantity: delta.abs(),
+        reason: reason,
+        notes: Value(notes),
+        userId: userUuid,
+        userName: userName,
+        syncStatus: const Value('pending'),
+      ));
+    });
+  }
+
   Future<Product?> getProductById(int id) async => (select(products)..where((t) => t.id.equals(id) & t.isDeleted.equals(false))).getSingleOrNull();
 
   Future<Product?> getProductByIntId(int id) async => (select(products)..where((t) => t.id.equals(id) & t.isDeleted.equals(false))).getSingleOrNull();
@@ -259,6 +297,11 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<List<Customer>> getAllCustomers() async => (select(customers)..where((t) => t.isDeleted.equals(false))).get();
+
+  Stream<List<Customer>> watchAllCustomers() => (select(customers)
+    ..where((t) => t.isDeleted.equals(false))
+    ..orderBy([(t) => OrderingTerm(expression: t.name)])
+  ).watch();
 
   Future<Customer?> getCustomerById(String id) async => (select(customers)..where((t) => t.uuid.equals(id) & t.isDeleted.equals(false))).getSingleOrNull();
 
@@ -451,6 +494,10 @@ class AppDatabase extends _$AppDatabase {
   // Supplier methods
   Future<List<Supplier>> getAllSuppliers() async =>
       (select(suppliers)..where((t) => t.isDeleted.equals(false))).get();
+
+  Stream<List<Supplier>> watchAllSuppliers() => (select(suppliers)
+    ..where((t) => t.isDeleted.equals(false))
+  ).watch();
 
   Future<Supplier?> getSupplierByUuid(String uuid) async =>
       (select(suppliers)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
