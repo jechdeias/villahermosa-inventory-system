@@ -13,12 +13,12 @@ Android builds need the same flag. Never commit `secrets.json` or `lib/core/conf
 ## Architecture
 
 ### State management
-Provider (`provider: ^6.1.2`) + `ChangeNotifier`. Five ViewModels live under `lib/features/<feature>/viewmodels/`. Some screens still use plain `setState` — the goal is to move everything to ViewModels over time. Do **not** introduce Bloc or Riverpod without agreement.
+Mixed, and drifted from the original plan. `provider` + `ChangeNotifier` was the original convention (five ViewModels live under `lib/features/<feature>/viewmodels/`, one per role + auth), with a stated rule of not introducing Riverpod without agreement — but `flutter_riverpod` has since been adopted throughout the admin feature (every `lib/features/admin/providers/*.dart` file: products, orders, payments, stock movements, reports, settings) and is now a direct dependency. Warehouse/customer/delivery screens still use plain `setState` or the (mostly stub) ChangeNotifier ViewModels. Treat admin as Riverpod-based going forward; reconcile the other roles' approach with whoever owns that decision before adding more state-management patterns.
 
 ### Database (offline-first)
-- **Local:** Drift ORM over SQLite (`lib/core/database/`). Seven tables: users, products, customers, orders, order_items, deliveries, stock_movements. Schema version 3.
+- **Local:** Drift ORM over SQLite (`lib/core/database/`). Ten tables: users, products, customers, orders, order_items, deliveries, stock_movements, suppliers, payments, delivery_routes. Schema version 9.
 - **Remote:** Supabase PostgREST (`lib/core/config/supabase_config.dart`).
-- **Sync:** `SyncManager` (singleton) drives push/pull via `SyncEngine`. Records carry a `sync_status` column (`pending` | `synced`). Push runs on login and startup; pull runs after push.
+- **Sync:** `SyncManager` (singleton) drives push/pull via `SyncEngine`. Records carry a `sync_status` column (`pending` | `synced`). Push runs on login and startup (unless disabled via Settings' auto-sync toggle); pull runs after push. Last-sync timestamp is persisted via `AppSettings` (`lib/core/settings/app_settings.dart`, backed by `shared_preferences`).
 
 ### Auth
 `AuthService` singleton (`lib/core/auth/auth_service.dart`) owns the local Drift session. Supabase Auth runs alongside for token-based RLS. Passwords are bcrypt; SHA-256 hashes are migrated on next login.
@@ -46,13 +46,14 @@ Provider (`provider: ^6.1.2`) + `ChangeNotifier`. Five ViewModels live under `li
 - After any local write, set `sync_status = 'pending'` so the next sync cycle picks it up.
 - All screens wrapped in `ResponsiveShell` for consistent sidebar navigation.
 
-## Current status (May 2026)
-- **Done:** Auth flow, admin dashboard with charts, warehouse dashboard, sync engine, responsive shell.
-- **Partial:** Product form, customer form (UI done, DB wired).
-- **Stub:** Delivery screens, customer screens, all ViewModels except admin + auth.
-- **Placeholder:** Admin sub-screens (inventory, customers, orders, stock, deliveries, reports, settings).
+## Current status (July 2026)
+- **Done — admin role:** every admin screen (Dashboard, Products, Customers, Orders, Payments, Stock Movement, Deliveries/Routes, Reports, Settings, User Accounts) is real, wired to live Drift data via Riverpod stream providers. This is the most complete role by far — previous "placeholder" notes in this file were stale.
+- **Stub — warehouse, customer, delivery roles:** dashboards and screens exist but are mostly static UI with no database wiring. Warehouse specifically has several duplicate/unused dashboard variants (`simple_warehouse_dashboard.dart`, `tablet_warehouse_dashboard.dart`) and a `product_list_screen_mock.dart`; delivery's route screen and QR confirmation tab are explicit unbuilt placeholders.
+- **Stub — ViewModels:** `WarehouseViewModel`, `CustomerViewModel`, `DeliveryViewModel` are TODO-commented stubs that only toggle loading/error flags, no real logic. `WarehouseViewModel` isn't referenced by any screen at all.
+- **Dead code to clean up:** `lib/features/admin/screens/users_screen.dart` (`AdminUsersScreen`) duplicates the real, routed `user_accounts_screen.dart` and is never routed itself.
+- **Tests:** only 4 test files total (`test/`), covering the database layer and auth repository. Zero UI/ViewModel test coverage across all four roles.
 
 ## Known architecture debt
-- `serviceKey` (Supabase service role) is used in the Flutter client for user sync. Long-term fix is a Supabase Edge Function. Tracked in `sync_engine.dart` and `auth_repository.dart`.
-- WarehouseViewModel, DeliveryViewModel, CustomerViewModel methods are stubs — business logic not yet implemented.
-- QR scanning is wired up but the scanner dependency is commented out.
+- `serviceKey` (Supabase service role) is used in the Flutter client for user sync — confirmed still in use in `sync_engine.dart` and `auth_repository.dart`. Long-term fix is a Supabase Edge Function.
+- WarehouseViewModel, DeliveryViewModel, CustomerViewModel methods are stubs — business logic not yet implemented, and none are consistently wired into their screens.
+- QR scanning was never actually wired up — there's no scanner dependency in `pubspec.yaml` at all (not even commented out), and `qr_service_locator.dart` is a pure stub returning a bare `Object()`.
