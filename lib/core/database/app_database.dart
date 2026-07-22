@@ -388,6 +388,10 @@ class AppDatabase extends _$AppDatabase {
 
   Future<OrderItem?> getOrderItemById(String id) async => (select(orderItems)..where((t) => t.uuid.equals(id) & t.isDeleted.equals(false))).getSingleOrNull();
 
+  Stream<List<OrderItem>> watchAllOrderItems() => (select(orderItems)
+    ..where((t) => t.isDeleted.equals(false))
+  ).watch();
+
   /// Custom update method for complex SQL operations
   @override
   Future<int> customUpdate(

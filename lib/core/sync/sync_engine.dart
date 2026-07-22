@@ -8,6 +8,8 @@ import '../database/app_database.dart';
 
 import '../config/supabase_config.dart';
 
+import '../settings/app_settings.dart';
+
 
 
 enum SyncOperation {
@@ -1972,17 +1974,17 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
   Future<DateTime> _getLastSyncTimestamp() async {
 
-    // Get last sync timestamp from local storage
+    // Fall back to 1 day ago the very first time, before any sync has completed.
 
-    return DateTime.now().subtract(const Duration(days: 1));
+    return AppSettings.instance.lastSyncTimestamp ?? DateTime.now().subtract(const Duration(days: 1));
 
   }
 
-  
+
 
   Future<void> _updateLastSyncTimestamp() async {
 
-    // Update last sync timestamp
+    await AppSettings.instance.setLastSyncTimestamp(DateTime.now());
 
   }
 

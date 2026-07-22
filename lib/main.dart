@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'core/database/app_database.dart';
 import 'core/config/supabase_config.dart';
+import 'core/settings/app_settings.dart';
 import 'core/sync/sync_manager.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/auth/login_screen.dart';
@@ -16,11 +17,12 @@ import 'features/admin/screens/admin_orders_screen.dart';
 import 'features/admin/screens/admin_payments_screen.dart';
 import 'features/admin/screens/admin_products_screen.dart';
 import 'features/admin/screens/admin_customers_screen.dart';
+import 'features/admin/screens/admin_reports_screen.dart';
 import 'features/admin/screens/admin_stock_movement_screen.dart';
 import 'features/admin/screens/admin_deliveries_screen.dart';
 import 'features/admin/screens/dashboard_screen.dart';
 import 'features/admin/screens/user_accounts_screen.dart';
-import 'features/admin/screens/placeholder_screens.dart';
+import 'features/admin/screens/admin_settings_screen.dart';
 import 'features/warehouse/screens/dashboard_screen.dart';
 import 'features/customer/screens/dashboard_screen.dart';
 import 'features/delivery/screens/dashboard_screen.dart';
@@ -29,7 +31,10 @@ import 'features/auth/data/auth_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Initialize local app preferences before anything that might read/write them
+  await AppSettings.initialize();
+
   // Initialize Supabase
   await Supabase.initialize(
     url: SupabaseConfig.url,
@@ -65,23 +70,27 @@ void main() async {
   await authRepository.seedAdminUserIfEmpty();
   await database.seedOrdersForDemo();
   
-  // Check connectivity and sync pending records on startup
-  try {
-    final connectivityResults = await Connectivity().checkConnectivity();
-    final isOnline = !connectivityResults.contains(ConnectivityResult.none);
-    if (isOnline) {
-      debugPrint('🚀 App started with internet - syncing pending data...');
-      await SyncManager.instance.syncPendingData();
-      
-      // Pull after startup push
-      try {
-        await SyncManager.instance.pull();
-      } catch (e) {
-        debugPrint('Startup pull failed: $e');
+  // Check connectivity and sync pending records on startup, unless disabled in Settings
+  if (AppSettings.instance.autoSyncOnStartup) {
+    try {
+      final connectivityResults = await Connectivity().checkConnectivity();
+      final isOnline = !connectivityResults.contains(ConnectivityResult.none);
+      if (isOnline) {
+        debugPrint('🚀 App started with internet - syncing pending data...');
+        await SyncManager.instance.syncPendingData();
+
+        // Pull after startup push
+        try {
+          await SyncManager.instance.pull();
+        } catch (e) {
+          debugPrint('Startup pull failed: $e');
+        }
       }
+    } catch (e) {
+      debugPrint('⚠️ Startup sync check failed: $e');
     }
-  } catch (e) {
-    debugPrint('⚠️ Startup sync check failed: $e');
+  } else {
+    debugPrint('⏭️ Auto-sync on startup disabled in Settings — skipping');
   }
   
   runApp(ProviderScope(child: VillahermosaInventoryApp(database: database)));
