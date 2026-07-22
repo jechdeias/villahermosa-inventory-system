@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
-import '../../../core/database/app_database.dart';
 import '../providers/products_provider.dart';
 import '../services/products_service.dart';
 
@@ -16,7 +15,10 @@ class RecordMovementPanel extends ConsumerStatefulWidget {
 }
 
 class _RecordMovementPanelState extends ConsumerState<RecordMovementPanel> {
-  Product? _selectedProduct;
+  // Keyed by uuid (not the Product object) so a live stock-count update to the
+  // selected product mid-panel doesn't break DropdownButtonFormField's value
+  // equality check (Drift's generated Product == compares every column).
+  String? _selectedProductUuid;
   bool _isStockIn = true;
   String _reason = _reasons.first;
   final _qtyCtrl = TextEditingController();
@@ -33,7 +35,7 @@ class _RecordMovementPanelState extends ConsumerState<RecordMovementPanel> {
   }
 
   Future<void> _save() async {
-    if (_selectedProduct == null) {
+    if (_selectedProductUuid == null) {
       _snackErr('Please select a product');
       return;
     }
@@ -47,7 +49,7 @@ class _RecordMovementPanelState extends ConsumerState<RecordMovementPanel> {
     try {
       final user = AuthService.instance.getCurrentUser();
       await ref.read(productsServiceProvider).adjustStock(
-        productUuid: _selectedProduct!.uuid,
+        productUuid: _selectedProductUuid!,
         delta: _isStockIn ? qty : -qty,
         reason: _reason,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
@@ -91,15 +93,15 @@ class _RecordMovementPanelState extends ConsumerState<RecordMovementPanel> {
                 children: [
                   _sectionLabel('MOVEMENT DETAILS'),
                   const SizedBox(height: 10),
-                  DropdownButtonFormField<Product>(
+                  DropdownButtonFormField<String>(
                     decoration: _dec('Product'),
                     isExpanded: true,
-                    initialValue: _selectedProduct,
+                    initialValue: _selectedProductUuid,
                     items: products.map((p) => DropdownMenuItem(
-                      value: p,
+                      value: p.uuid,
                       child: Text('${p.sku} — ${p.name}', style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
                     )).toList(),
-                    onChanged: (p) => setState(() => _selectedProduct = p),
+                    onChanged: (uuid) => setState(() => _selectedProductUuid = uuid),
                   ),
                   const SizedBox(height: 10),
                   Row(children: [
