@@ -121,6 +121,8 @@ class AppDatabase extends _$AppDatabase {
         ')',
       );
       await _seedPaymentsIfEmpty();
+      await _seedProductsIfEmpty();
+      await _seedCustomersIfEmpty();
 
       await customStatement(
         'CREATE TABLE IF NOT EXISTS delivery_routes ('
@@ -612,6 +614,90 @@ class AppDatabase extends _$AppDatabase {
         paymentDate:   Value(DateTime.parse(dateStr)),
         status:        Value(status),
         syncStatus:    const Value('synced'),
+      ));
+    }
+  }
+
+  Future<void> _seedProductsIfEmpty() async {
+    final countExpr = products.id.count();
+    final count = await (selectOnly(products)..addColumns([countExpr]))
+        .map((r) => r.read(countExpr))
+        .getSingle();
+    if ((count ?? 0) > 0) return;
+    await seedProductsForDemo();
+  }
+
+  Future<void> seedProductsForDemo() async {
+    final existing = await (select(products)..where((t) => t.sku.equals('COKE-1.5L'))).getSingleOrNull();
+    if (existing != null) return;
+
+    const seedProducts = [
+      ('COKE-1.5L',    'Coca-Cola 1.5L',            'Beverages',     72.0, 58.0, 'btl', 120, 24),
+      ('LM-PC-55G',    'Lucky Me Pancit Canton',    'Snacks',        14.0, 10.5, 'pc',  300, 48),
+      ('BT-MILK-150G', 'Birch Tree Milk 150g',      'Dairy',         38.0, 30.0, 'pc',  150, 30),
+      ('RG-CHEESE',    'Regent Cheese Rings',        'Snacks',         8.0,  5.5, 'pc',  200, 40),
+      ('NES-3IN1',     'Nescafe 3-in-1',             'Beverages',      9.0,  6.5, 'pc',  250, 50),
+      ('SG-SOAP',      'Safeguard Soap',             'Personal Care', 32.0, 24.0, 'pc',   90, 20),
+      ('CT-TUNA',      'Century Tuna',               'Canned Goods',  28.0, 21.0, 'can', 180, 36),
+      ('KP-CANDY',     'Kopiko Coffee Candy',        'Snacks',         5.0,  3.0, 'pc',  400, 60),
+      ('ARG-CB',       'Argentina Corned Beef',      'Canned Goods',  45.0, 36.0, 'can', 100, 20),
+      ('PT-CHIPS',     'Piattos Chips',              'Snacks',        22.0, 16.0, 'pc',  140, 28),
+    ];
+
+    for (final (sku, name, category, price, cost, unit, stock, minStock) in seedProducts) {
+      await into(products).insert(ProductsCompanion(
+        uuid:         Value('seed-product-$sku'),
+        sku:          Value(sku),
+        name:         Value(name),
+        category:     Value(category),
+        unitPrice:    Value(price),
+        costPrice:    Value(cost),
+        unit:         Value(unit),
+        currentStock: Value(stock),
+        minStock:     Value(minStock),
+        syncStatus:   const Value('synced'),
+      ));
+    }
+  }
+
+  Future<void> _seedCustomersIfEmpty() async {
+    final countExpr = customers.id.count();
+    final count = await (selectOnly(customers)..addColumns([countExpr]))
+        .map((r) => r.read(countExpr))
+        .getSingle();
+    if ((count ?? 0) > 0) return;
+    await seedCustomersForDemo();
+  }
+
+  Future<void> seedCustomersForDemo() async {
+    final existing = await (select(customers)..where((t) => t.uuid.equals('seed-customer-a'))).getSingleOrNull();
+    if (existing != null) return;
+
+    const seedCustomers = [
+      ('seed-customer-a', 'Sari-Sari Store A',            'Boac',       'Poblacion',  'Sari-Sari Store', '0917-100-0001'),
+      ('seed-customer-b', 'Corner Store B',                'Boac',       'Tabi',       'Sari-Sari Store', '0917-100-0002'),
+      ('seed-customer-c', 'Store C',                       'Buenavista', 'Poctoy',     'Sari-Sari Store', '0917-100-0003'),
+      ('seed-customer-e', 'Mini Mart E',                    'Mogpog',    'Poblacion',  'Mini Mart',       '0917-100-0004'),
+      ('seed-customer-f', 'Tindahan F',                     'Torrijos',  'Poblacion',  'Sari-Sari Store', '0917-100-0005'),
+      ('seed-customer-h', 'Grocery H',                      'Santa Cruz','Poblacion',  'Grocery',         '0917-100-0006'),
+      ('seed-customer-i', "Aling Nena's Store",              'Gasan',     'Poblacion',  'Sari-Sari Store', '0917-100-0007'),
+      ('seed-customer-j', 'Kuya Bong Sari-Sari',             'Boac',      'Malbog',     'Sari-Sari Store', '0917-100-0008'),
+      ('seed-customer-k', 'Reyes General Merchandise',       'Santa Cruz','Poblacion',  'Grocery',         '0917-100-0009'),
+      ('seed-customer-l', 'Dela Cruz Mini Grocery',          'Mogpog',    'Poblacion',  'Mini Mart',       '0917-100-0010'),
+    ];
+
+    for (final (uuid, name, town, barangay, storeType, contact) in seedCustomers) {
+      await into(customers).insert(CustomersCompanion(
+        uuid:           Value(uuid),
+        name:           Value(name),
+        municipality:   Value(town),
+        province:       const Value('Marinduque'),
+        town:           Value(town),
+        barangay:       Value(barangay),
+        storeType:      Value(storeType),
+        contactNumber:  Value(contact),
+        channel:        Value(storeType),
+        syncStatus:     const Value('synced'),
       ));
     }
   }
