@@ -8,6 +8,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/theme/villahermosa_theme.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
+import '../widgets/mobile_list_card.dart';
 
 class UserAccountsScreen extends StatefulWidget {
   const UserAccountsScreen({
@@ -294,63 +295,77 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   // ─── TOOLBAR ────────────────────────────────────
 
   Widget _buildToolbar() {
-    return Row(children: [
-      Expanded(
-        child: SizedBox(
-          height: 36,
-          child: TextField(
-            controller: _searchController,
-            style: const TextStyle(fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Search users...',
-              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-              prefixIcon: const Icon(Icons.search_outlined, size: 16, color: Color(0xFF9CA3AF)),
-              filled: true,
-              fillColor: const Color(0xFFF9FAFB),
-              contentPadding: EdgeInsets.zero,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFF111827), width: 1.5),
-              ),
-            ),
+    final searchField = SizedBox(
+      height: 36,
+      child: TextField(
+        controller: _searchController,
+        style: const TextStyle(fontSize: 13),
+        decoration: InputDecoration(
+          hintText: 'Search users...',
+          hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+          prefixIcon: const Icon(Icons.search_outlined, size: 16, color: Color(0xFF9CA3AF)),
+          filled: true,
+          fillColor: const Color(0xFFF9FAFB),
+          contentPadding: EdgeInsets.zero,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: Color(0xFF111827), width: 1.5),
           ),
         ),
       ),
-      const SizedBox(width: 8),
-      OutlinedButton.icon(
-        onPressed: () {},
-        icon: const Icon(Icons.filter_list_outlined, size: 14),
-        label: const Text('Filter', style: TextStyle(fontSize: 13)),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF374151),
-          side: const BorderSide(color: Color(0xFFE5E7EB)),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          minimumSize: const Size(0, 36),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        ),
+    );
+    final filterButton = OutlinedButton.icon(
+      onPressed: () {},
+      icon: const Icon(Icons.filter_list_outlined, size: 14),
+      label: const Text('Filter', style: TextStyle(fontSize: 13)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF374151),
+        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        minimumSize: const Size(0, 36),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
-      const SizedBox(width: 8),
-      ElevatedButton.icon(
-        onPressed: _showAddUserDialog,
-        icon: const Icon(Icons.add, size: 14, color: Colors.white),
-        label: const Text('Add User', style: TextStyle(fontSize: 13, color: Colors.white)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1E1E1E),
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          minimumSize: const Size(0, 36),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        ),
+    );
+    final addButton = ElevatedButton.icon(
+      onPressed: _showAddUserDialog,
+      icon: const Icon(Icons.add, size: 14, color: Colors.white),
+      label: const Text('Add User', style: TextStyle(fontSize: 13, color: Colors.white)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF1E1E1E),
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        minimumSize: const Size(0, 36),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
-    ]);
+    );
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 500) {
+        return Column(children: [
+          searchField,
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: filterButton),
+            const SizedBox(width: 8),
+            Expanded(child: addButton),
+          ]),
+        ]);
+      }
+      return Row(children: [
+        Expanded(child: searchField),
+        const SizedBox(width: 8),
+        filterButton,
+        const SizedBox(width: 8),
+        addButton,
+      ]);
+    });
   }
 
   // ─── TABLE ──────────────────────────────────────
@@ -434,6 +449,40 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     );
   }
 
+  Widget _buildUserMobileCard(User user) {
+    final name = _getDisplayName(user);
+    final initials = _getInitials(user);
+    return MobileListCard(
+      onTap: () => _showUserDetails(user),
+      primary: Row(children: [
+        CircleAvatar(
+          radius: 14,
+          backgroundColor: const Color(0xFF1E1E1E),
+          child: Text(initials,
+              style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(name,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF111827), fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis),
+        ),
+      ]),
+      badge: _roleBadge(user.role),
+      secondary: MobileCardMuted(user.email),
+      valueLeft: _statusBadge(user.isActive),
+      valueRight: MobileCardMuted(_formatDate(user.createdAt)),
+      actions: [
+        MobileCardAction(label: 'Edit', onPressed: () => _editUser(user)),
+        MobileCardAction(
+          label: 'Deactivate',
+          color: const Color(0xFFDC2626),
+          onPressed: () => _deactivateUser(user),
+        ),
+      ],
+    );
+  }
+
   Widget _actionBtn(IconData icon, String tip, VoidCallback onTap, {Color? color}) =>
     Tooltip(
       message: tip,
@@ -476,35 +525,34 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                 const SizedBox(height: 20),
 
                 // ── Stat Cards ──
-                Row(children: [
-                  Expanded(child: _statCard(
-                    label: 'Total Users',
-                    value: totalUsers.toString(),
-                    dotColor: const Color(0xFF6B7280),
-                    sub: 'registered accounts',
-                  )),
-                  const SizedBox(width: 12),
-                  Expanded(child: _statCard(
-                    label: 'Active Users',
-                    value: activeUsers.toString(),
-                    dotColor: const Color(0xFF10B981),
-                    sub: 'currently active',
-                  )),
-                  const SizedBox(width: 12),
-                  Expanded(child: _statCard(
-                    label: 'Administrators',
-                    value: adminCount.toString(),
-                    dotColor: const Color(0xFF3B82F6),
-                    sub: 'full admin access',
-                  )),
-                  const SizedBox(width: 12),
-                  Expanded(child: _statCard(
-                    label: 'Sales Reps',
-                    value: salesCount.toString(),
-                    dotColor: const Color(0xFFF59E0B),
-                    sub: 'field representatives',
-                  )),
-                ]),
+                LayoutBuilder(builder: (context, constraints) {
+                  final cards = [
+                    _statCard(label: 'Total Users', value: totalUsers.toString(),
+                        dotColor: const Color(0xFF6B7280), sub: 'registered accounts'),
+                    _statCard(label: 'Active Users', value: activeUsers.toString(),
+                        dotColor: const Color(0xFF10B981), sub: 'currently active'),
+                    _statCard(label: 'Administrators', value: adminCount.toString(),
+                        dotColor: const Color(0xFF3B82F6), sub: 'full admin access'),
+                    _statCard(label: 'Sales Reps', value: salesCount.toString(),
+                        dotColor: const Color(0xFFF59E0B), sub: 'field representatives'),
+                  ];
+                  if (constraints.maxWidth < 500) {
+                    return Column(children: [
+                      Row(children: [Expanded(child: cards[0]), const SizedBox(width: 12), Expanded(child: cards[1])]),
+                      const SizedBox(height: 12),
+                      Row(children: [Expanded(child: cards[2]), const SizedBox(width: 12), Expanded(child: cards[3])]),
+                    ]);
+                  }
+                  return Row(children: [
+                    Expanded(child: cards[0]),
+                    const SizedBox(width: 12),
+                    Expanded(child: cards[1]),
+                    const SizedBox(width: 12),
+                    Expanded(child: cards[2]),
+                    const SizedBox(width: 12),
+                    Expanded(child: cards[3]),
+                  ]);
+                }),
                 const SizedBox(height: 20),
 
                 // ── Tabs ──
@@ -525,27 +573,35 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Column(children: [
-                        _buildTableHeader(),
-                        const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                        Expanded(
-                          child: _filteredUsers.isEmpty
-                            ? const Center(
-                                child: Text('No users found.',
-                                  style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
-                              )
-                            : SingleChildScrollView(
-                                child: Column(
-                                  children: List.generate(_filteredUsers.length, (i) =>
-                                    _buildUserRow(
-                                      _filteredUsers[i],
-                                      i == _filteredUsers.length - 1,
-                                    ),
+                      child: LayoutBuilder(builder: (context, constraints) {
+                        final isMobile = constraints.maxWidth < 600;
+                        return Column(children: [
+                          if (!isMobile) ...[
+                            _buildTableHeader(),
+                            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                          ],
+                          Expanded(
+                            child: _filteredUsers.isEmpty
+                              ? const Center(
+                                  child: Text('No users found.',
+                                    style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+                                )
+                              : SingleChildScrollView(
+                                  padding: isMobile ? const EdgeInsets.symmetric(vertical: 4) : EdgeInsets.zero,
+                                  child: Column(
+                                    children: isMobile
+                                      ? _filteredUsers.map((u) => _buildUserMobileCard(u)).toList()
+                                      : List.generate(_filteredUsers.length, (i) =>
+                                          _buildUserRow(
+                                            _filteredUsers[i],
+                                            i == _filteredUsers.length - 1,
+                                          ),
+                                        ),
                                   ),
                                 ),
-                              ),
-                        ),
-                      ]),
+                          ),
+                        ]);
+                      }),
                     ),
                   ),
                 ),
@@ -600,7 +656,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
-        width: 400,
+        width: MediaQuery.of(context).size.width < 480 ? MediaQuery.of(context).size.width * 0.92 : 400,
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -792,7 +848,7 @@ class _UserDetailsDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
-        width: 400,
+        width: MediaQuery.of(context).size.width < 480 ? MediaQuery.of(context).size.width * 0.92 : 400,
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -906,7 +962,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
-        width: 400,
+        width: MediaQuery.of(context).size.width < 480 ? MediaQuery.of(context).size.width * 0.92 : 400,
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1093,7 +1149,7 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
-        width: 400,
+        width: MediaQuery.of(context).size.width < 480 ? MediaQuery.of(context).size.width * 0.92 : 400,
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,

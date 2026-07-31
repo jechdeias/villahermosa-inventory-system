@@ -4,6 +4,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../providers/payments_provider.dart';
+import '../widgets/mobile_list_card.dart';
 import '../widgets/payment_status_badge.dart';
 import '../widgets/payment_detail_panel.dart';
 
@@ -157,9 +158,14 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
             const Divider(height: 1),
             _toolbar(context),
             const Divider(height: 1),
-            _tableHeader(),
-            const Divider(height: 1),
-            _tableBody(context),
+            LayoutBuilder(builder: (context, constraints) {
+              if (constraints.maxWidth < 600) return _tableBody(context);
+              return Column(children: [
+                _tableHeader(),
+                const Divider(height: 1),
+                _tableBody(context),
+              ]);
+            }),
           ],
         ),
       );
@@ -308,13 +314,23 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
         ),
       );
     }
-    return Column(
-      children: list.map((p) => _PaymentRow(
-        payment: p,
-        onTap: () => _selectPayment(context, p),
-        onRecord: () => _selectPayment(context, p),
-      )).toList(),
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 600) {
+        return Column(
+          children: list.map((p) => _PaymentMobileCard(
+            payment: p,
+            onTap: () => _selectPayment(context, p),
+          )).toList(),
+        );
+      }
+      return Column(
+        children: list.map((p) => _PaymentRow(
+          payment: p,
+          onTap: () => _selectPayment(context, p),
+          onRecord: () => _selectPayment(context, p),
+        )).toList(),
+      );
+    });
   }
 
   void _selectPayment(BuildContext context, Payment p) {
@@ -557,4 +573,38 @@ class _PaymentRowState extends State<_PaymentRow> {
 
   static String _fmtDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+}
+
+// ── Payment Mobile Card ───────────────────────────────────────────────────────
+
+class _PaymentMobileCard extends StatelessWidget {
+  const _PaymentMobileCard({required this.payment, required this.onTap});
+  final Payment payment;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = payment;
+    return MobileListCard(
+      onTap: onTap,
+      primary: Text(p.orderCode,
+          style: const TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+      badge: PaymentStatusBadge(status: p.status),
+      secondary: MobileCardMuted('${p.storeName} · ${p.salesRepName}'),
+      valueLeft: Text('Order ₱${_PaymentRowState._fmt(p.orderAmount)}',
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+      valueRight: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text('Paid ₱${_PaymentRowState._fmt(p.amountPaid)}',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF059669))),
+          if (p.balance > 0)
+            Text('Bal ₱${_PaymentRowState._fmt(p.balance)}',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))),
+        ],
+      ),
+      actions: [MobileCardAction(label: 'View', onPressed: onTap)],
+    );
+  }
 }

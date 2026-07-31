@@ -6,6 +6,7 @@ import '../../../core/widgets/responsive_shell.dart';
 import '../providers/products_provider.dart';
 import '../widgets/add_product_panel.dart';
 import '../widgets/adjust_stock_sheet.dart';
+import '../widgets/mobile_list_card.dart';
 import '../widgets/product_detail_panel.dart';
 import '../widgets/product_status_badge.dart';
 import '../widgets/orders_stat_card.dart';
@@ -230,11 +231,20 @@ class _ProductsListColumn extends ConsumerWidget {
         children: [
           _buildTabBar(ref, tab, tabs),
           _buildToolbar(context, ref),
-          _buildTableHeader(),
           if (filteredProducts.isEmpty)
             _buildEmptyState(tab)
           else
-            ...filteredProducts.map((p) => _ProductRow(product: p, onEdit: () => onEditProduct(p))),
+            LayoutBuilder(builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return Column(
+                  children: filteredProducts.map((p) => _ProductMobileCard(product: p)).toList(),
+                );
+              }
+              return Column(children: [
+                _buildTableHeader(),
+                ...filteredProducts.map((p) => _ProductRow(product: p, onEdit: () => onEditProduct(p))),
+              ]);
+            }),
         ],
       ),
     );
@@ -508,6 +518,57 @@ class _ProductRow extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Product Mobile Card ───────────────────────────────────────────────────────
+
+class _ProductMobileCard extends ConsumerWidget {
+  const _ProductMobileCard({required this.product});
+  final Product product;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final supplierName = ref.watch(supplierNameProvider(product.supplierId));
+    final isLowStock = product.currentStock <= product.minStock;
+    final stockColor = product.currentStock <= 0
+        ? const Color(0xFFDC2626)
+        : (isLowStock ? const Color(0xFFD97706) : const Color(0xFF111827));
+
+    return MobileListCard(
+      onTap: () => ref.read(selectedProductProvider.notifier).state = product,
+      primary: Text(product.sku,
+          style: const TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+      badge: ProductStatusBadge(currentStock: product.currentStock, minStock: product.minStock),
+      secondary: MobileCardMuted('${product.name} · $supplierName'),
+      valueLeft: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (isLowStock) ...[
+          const Icon(Icons.warning_amber_outlined, size: 13, color: Color(0xFFD97706)),
+          const SizedBox(width: 4),
+        ],
+        Text('${product.currentStock} in stock',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: stockColor)),
+      ]),
+      valueRight: Text('₱${product.unitPrice.toStringAsFixed(0)}',
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+      actions: [
+        MobileCardAction(
+          label: '+ Stock',
+          color: const Color(0xFF059669),
+          onPressed: () => showAdjustStockSheet(context, product),
+        ),
+        MobileCardAction(
+          label: '- Stock',
+          color: const Color(0xFFDC2626),
+          onPressed: () => showAdjustStockSheet(context, product),
+        ),
+        MobileCardAction(
+          label: 'View',
+          onPressed: () => ref.read(selectedProductProvider.notifier).state = product,
+        ),
+      ],
     );
   }
 }

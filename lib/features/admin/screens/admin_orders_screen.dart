@@ -7,6 +7,7 @@ import '../../../core/widgets/responsive_shell.dart';
 import '../providers/orders_provider.dart';
 import '../services/orders_service.dart';
 import '../widgets/add_item_form.dart';
+import '../widgets/mobile_list_card.dart';
 import '../widgets/order_detail_panel.dart';
 import '../widgets/order_item_row.dart';
 import '../widgets/order_status_badge.dart';
@@ -270,11 +271,20 @@ class _OrdersListColumn extends ConsumerWidget {
         children: [
           _buildTabBar(ref, tab, tabs),
           _buildToolbar(context, ref),
-          _buildTableHeader(),
           if (filteredOrders.isEmpty)
             _buildEmptyState(tab)
           else
-            ...filteredOrders.map((o) => _OrderRow(order: o)),
+            LayoutBuilder(builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return Column(
+                  children: filteredOrders.map((o) => _OrderMobileCard(order: o)).toList(),
+                );
+              }
+              return Column(children: [
+                _buildTableHeader(),
+                ...filteredOrders.map((o) => _OrderRow(order: o)),
+              ]);
+            }),
         ],
       ),
     );
@@ -639,6 +649,35 @@ class _OrderRow extends ConsumerWidget {
 
   static String _formatDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+}
+
+// ── Order Mobile Card ─────────────────────────────────────────────────────────
+
+class _OrderMobileCard extends ConsumerWidget {
+  const _OrderMobileCard({required this.order});
+  final Order order;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MobileListCard(
+      onTap: () => ref.read(selectedOrderProvider.notifier).state = order,
+      primary: Text(order.orderNumber,
+          style: const TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+      badge: OrderStatusBadge(status: order.status),
+      secondary: MobileCardMuted(
+          '${order.storeName ?? order.customerId} · ${order.routeName ?? '—'} · ${order.salesRepName ?? '—'}'),
+      valueLeft: Text(_OrderRow._formatFull(order.totalAmount),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+      valueRight: MobileCardMuted(_OrderRow._formatDate(order.createdAt)),
+      actions: [
+        MobileCardAction(
+          label: 'View',
+          onPressed: () => ref.read(selectedOrderProvider.notifier).state = order,
+        ),
+      ],
+    );
+  }
 }
 
 // ── Private helpers ───────────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../providers/products_provider.dart';
 import '../providers/stock_movements_provider.dart';
+import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
 import '../widgets/record_movement_panel.dart';
 import '../widgets/stock_movement_type_badge.dart';
@@ -180,11 +181,18 @@ class _StockMovementListColumn extends ConsumerWidget {
         children: [
           _buildTabBar(ref, tab, tabs),
           _buildToolbar(context, ref),
-          _buildTableHeader(),
           if (filtered.isEmpty)
             _buildEmptyState(tab)
           else
-            ...filtered.map((m) => _MovementRow(movement: m)),
+            LayoutBuilder(builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return Column(children: filtered.map((m) => _MovementMobileCard(movement: m)).toList());
+              }
+              return Column(children: [
+                _buildTableHeader(),
+                ...filtered.map((m) => _MovementRow(movement: m)),
+              ]);
+            }),
         ],
       ),
     );
@@ -364,6 +372,40 @@ class _MovementRow extends ConsumerWidget {
 
   static String _formatDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+}
+
+// ── Movement Mobile Card ──────────────────────────────────────────────────────
+
+class _MovementMobileCard extends ConsumerWidget {
+  const _MovementMobileCard({required this.movement});
+  final StockMovement movement;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final product = ref.watch(productByUuidProvider(movement.productId));
+    final isIn = movement.movementType == 'in';
+
+    return MobileListCard(
+      primary: Text(product?.sku ?? '—',
+          style: const TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+      badge: StockMovementTypeBadge(movementType: movement.movementType),
+      secondary: MobileCardMuted('${product?.name ?? 'Unknown product'} · ${movement.reason}'),
+      valueLeft: Text('${isIn ? '+' : '-'}${movement.quantity}',
+          style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600,
+              color: isIn ? const Color(0xFF059669) : const Color(0xFFDC2626))),
+      valueRight: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          MobileCardMuted(_MovementRow._formatDate(movement.createdAt)),
+          if (movement.referenceId != null)
+            Text(movement.referenceId!,
+                style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF9CA3AF))),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Private helpers ───────────────────────────────────────────────────────────

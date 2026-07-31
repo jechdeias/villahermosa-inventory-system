@@ -7,6 +7,7 @@ import '../providers/customers_provider.dart';
 import '../widgets/add_customer_panel.dart';
 import '../widgets/customer_channel_badge.dart';
 import '../widgets/customer_detail_panel.dart';
+import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
 
 class AdminCustomersScreen extends ConsumerStatefulWidget {
@@ -226,11 +227,20 @@ class _CustomersListColumn extends ConsumerWidget {
         children: [
           _buildTabBar(ref, tab, tabs),
           _buildToolbar(context, ref),
-          _buildTableHeader(),
           if (filteredCustomers.isEmpty)
             _buildEmptyState(tab)
           else
-            ...filteredCustomers.map((c) => _CustomerRow(customer: c, onEdit: () => onEditCustomer(c))),
+            LayoutBuilder(builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return Column(
+                  children: filteredCustomers.map((c) => _CustomerMobileCard(customer: c, onEdit: () => onEditCustomer(c))).toList(),
+                );
+              }
+              return Column(children: [
+                _buildTableHeader(),
+                ...filteredCustomers.map((c) => _CustomerRow(customer: c, onEdit: () => onEditCustomer(c))),
+              ]);
+            }),
         ],
       ),
     );
@@ -467,6 +477,49 @@ class _CustomerRow extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Customer Mobile Card ──────────────────────────────────────────────────────
+
+class _CustomerMobileCard extends ConsumerWidget {
+  const _CustomerMobileCard({required this.customer, required this.onEdit});
+  final Customer customer;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isActive = customer.status == 'active';
+    return MobileListCard(
+      onTap: () => ref.read(selectedCustomerProvider.notifier).state = customer,
+      primary: Text(customer.name,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+      badge: Container(
+        padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 9),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          customer.status[0].toUpperCase() + customer.status.substring(1),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+              color: isActive ? const Color(0xFF065F46) : const Color(0xFF991B1B)),
+        ),
+      ),
+      secondary: MobileCardMuted(
+          '${customer.barangay ?? '—'}, ${customer.town ?? '—'}${customer.businessName != null ? ' · ${customer.businessName}' : ''}'),
+      valueLeft: customer.channel != null
+          ? CustomerChannelBadge(channel: customer.channel!)
+          : const Text('—', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+      valueRight: MobileCardMuted(customer.contactNumber),
+      actions: [
+        MobileCardAction(label: 'Edit', onPressed: onEdit),
+        MobileCardAction(
+          label: 'View',
+          onPressed: () => ref.read(selectedCustomerProvider.notifier).state = customer,
+        ),
+      ],
     );
   }
 }

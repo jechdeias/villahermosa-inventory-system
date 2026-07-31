@@ -6,6 +6,7 @@ import '../../../core/widgets/responsive_shell.dart';
 import '../providers/delivery_routes_provider.dart';
 import '../providers/orders_provider.dart' show ordersStreamProvider;
 import '../widgets/add_route_panel.dart';
+import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
 import '../widgets/route_detail_panel.dart';
 import '../widgets/route_status_badge.dart';
@@ -252,11 +253,20 @@ class _RoutesListColumn extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildToolbar(context),
-          _buildTableHeader(),
           if (filteredRoutes.isEmpty)
             _buildEmptyState()
           else
-            ...filteredRoutes.map((r) => _RouteRow(route: r, onEdit: () => onEditRoute(r))),
+            LayoutBuilder(builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return Column(
+                  children: filteredRoutes.map((r) => _RouteMobileCard(route: r, onEdit: () => onEditRoute(r))).toList(),
+                );
+              }
+              return Column(children: [
+                _buildTableHeader(),
+                ...filteredRoutes.map((r) => _RouteRow(route: r, onEdit: () => onEditRoute(r))),
+              ]);
+            }),
         ],
       ),
     );
@@ -414,6 +424,42 @@ class _RouteRow extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Route Mobile Card ─────────────────────────────────────────────────────────
+
+class _RouteMobileCard extends ConsumerWidget {
+  const _RouteMobileCard({required this.route, required this.onEdit});
+  final DeliveryRoute route;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MobileListCard(
+      onTap: () => ref.read(selectedDeliveryRouteProvider.notifier).state = route,
+      primary: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF9CA3AF)),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(route.routeName,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+              overflow: TextOverflow.ellipsis),
+        ),
+      ]),
+      badge: RouteStatusBadge(status: route.status),
+      secondary: MobileCardMuted('${route.municipality} · ${route.assignedRepName ?? 'Unassigned'}'),
+      valueLeft: Text('${route.customerCount} customers',
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+      valueRight: MobileCardMuted(route.deliveryDays.replaceAll(',', ', ')),
+      actions: [
+        MobileCardAction(
+          label: 'View',
+          onPressed: () => ref.read(selectedDeliveryRouteProvider.notifier).state = route,
+        ),
+        MobileCardAction(label: 'Edit', onPressed: onEdit),
+      ],
     );
   }
 }

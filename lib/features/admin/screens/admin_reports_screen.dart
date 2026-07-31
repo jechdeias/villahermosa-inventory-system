@@ -7,6 +7,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../providers/reports_provider.dart';
+import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
 
 class AdminReportsScreen extends ConsumerWidget {
@@ -526,32 +527,45 @@ class _TopProductsCard extends ConsumerWidget {
               padding: EdgeInsets.symmetric(vertical: 32),
               child: Center(child: Text('No sales in this period', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)))),
             )
-          else ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF9FAFB),
-                border: Border(top: BorderSide(color: Color(0xFFE5E7EB)), bottom: BorderSide(color: Color(0xFFE5E7EB))),
-              ),
-              child: const Row(children: [
-                Expanded(flex: 1, child: Text('SKU', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
-                Expanded(flex: 3, child: Text('PRODUCT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
-                Expanded(flex: 1, child: Text('QTY SOLD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
-                Expanded(flex: 1, child: Text('REVENUE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
-              ]),
-            ),
-            for (final p in products)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
-                child: Row(children: [
-                  Expanded(flex: 1, child: Text(p.sku, style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: Color(0xFF111827)))),
-                  Expanded(flex: 3, child: Text(p.name, style: const TextStyle(fontSize: 12, color: Color(0xFF374151)), overflow: TextOverflow.ellipsis)),
-                  Expanded(flex: 1, child: Text('${p.quantity}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827)))),
-                  Expanded(flex: 1, child: Text('₱${p.revenue.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)))),
-                ]),
-              ),
-          ],
+          else
+            LayoutBuilder(builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return Column(children: products.map((p) => MobileListCard(
+                  primary: Text(p.sku,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+                  secondary: MobileCardMuted(p.name),
+                  valueLeft: Text('${p.quantity} sold',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                  valueRight: MobileCardMuted('₱${p.revenue.toStringAsFixed(0)}'),
+                )).toList());
+              }
+              return Column(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF9FAFB),
+                    border: Border(top: BorderSide(color: Color(0xFFE5E7EB)), bottom: BorderSide(color: Color(0xFFE5E7EB))),
+                  ),
+                  child: const Row(children: [
+                    Expanded(flex: 1, child: Text('SKU', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
+                    Expanded(flex: 3, child: Text('PRODUCT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
+                    Expanded(flex: 1, child: Text('QTY SOLD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
+                    Expanded(flex: 1, child: Text('REVENUE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
+                  ]),
+                ),
+                for (final p in products)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+                    child: Row(children: [
+                      Expanded(flex: 1, child: Text(p.sku, style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: Color(0xFF111827)))),
+                      Expanded(flex: 3, child: Text(p.name, style: const TextStyle(fontSize: 12, color: Color(0xFF374151)), overflow: TextOverflow.ellipsis)),
+                      Expanded(flex: 1, child: Text('${p.quantity}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827)))),
+                      Expanded(flex: 1, child: Text('₱${p.revenue.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)))),
+                    ]),
+                  ),
+              ]);
+            }),
           const SizedBox(height: 4),
         ],
       ),

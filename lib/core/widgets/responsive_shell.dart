@@ -355,7 +355,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
   }
 
   Widget _buildMobileBottomNav() {
-    final items = _navItems.take(5).toList();
+    final items = _navItems.take(4).toList();
     return Container(
       decoration: BoxDecoration(
         color: VillahermosaColors.cardBg,
@@ -365,39 +365,64 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
       ),
       child: SafeArea(
         child: Row(
-          children: items.map((item) {
-            final active =
-              widget.selectedRoute == item.route;
-            return Expanded(
+          children: [
+            ...items.map((item) {
+              final active =
+                widget.selectedRoute == item.route;
+              return Expanded(
+                child: InkWell(
+                  onTap: () => _navigate(item.route),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(item.icon, size: 24,
+                          color: active
+                            ? VillahermosaColors.textPrimary
+                            : VillahermosaColors
+                              .textSecondary),
+                        const SizedBox(height: 2),
+                        Text(item.label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: active
+                              ? VillahermosaColors.textPrimary
+                              : VillahermosaColors
+                                .textSecondary),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+            Expanded(
               child: InkWell(
-                onTap: () => _navigate(item.route),
+                onTap: _showMobileMenu,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     vertical: 8),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(item.icon, size: 24,
-                        color: active
-                          ? VillahermosaColors.textPrimary
-                          : VillahermosaColors
-                            .textSecondary),
+                      Icon(Icons.more_horiz, size: 24,
+                        color: VillahermosaColors.textSecondary),
                       const SizedBox(height: 2),
-                      Text(item.label,
+                      Text('More',
                         style: TextStyle(
                           fontSize: 10,
-                          color: active
-                            ? VillahermosaColors.textPrimary
-                            : VillahermosaColors
-                              .textSecondary),
+                          color: VillahermosaColors.textSecondary),
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
               ),
-            );
-          }).toList(),
+            ),
+          ],
         ),
       ),
     );
