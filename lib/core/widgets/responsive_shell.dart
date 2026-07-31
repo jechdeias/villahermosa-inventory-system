@@ -74,9 +74,12 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         title: const Text('Logout',
           style: TextStyle(fontSize: 16,
-            fontWeight: FontWeight.w600)),
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF111827))),
         content: const Text(
           'Are you sure you want to logout?',
           style: TextStyle(fontSize: 13,
