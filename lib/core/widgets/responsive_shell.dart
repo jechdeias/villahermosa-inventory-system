@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../auth/auth_service.dart';
 import '../theme/villahermosa_theme.dart';
 
 class ResponsiveShell extends StatefulWidget {
@@ -70,7 +71,46 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
   }
 
   void _logout() {
-    Navigator.pushReplacementNamed(context, '/login');
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Logout',
+          style: TextStyle(fontSize: 16,
+            fontWeight: FontWeight.w600)),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontSize: 13,
+            color: Color(0xFF6B7280))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel',
+              style: TextStyle(
+                color: Color(0xFF6B7280)))),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await AuthService.instance.logout();
+              if (mounted) {
+                Navigator.of(context)
+                  .pushNamedAndRemoveUntil(
+                    '/login', (_) => false);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                const Color(0xFF1E1E1E),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                  BorderRadius.circular(8))),
+            child: const Text('Logout')),
+        ],
+      ),
+    );
   }
 
   bool get _isMobile =>
