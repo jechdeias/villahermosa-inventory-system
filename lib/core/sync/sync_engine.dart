@@ -2068,10 +2068,16 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
   Future<DateTime> _getLastSyncTimestamp() async {
 
-    // On a genuinely first-ever sync (no persisted cursor), fetch everything —
-    // a "1 day ago" fallback here would silently skip bulk-imported reference
-    // data (products, customers, etc.) whose updated_at is far older than that,
-    // since every pull filters with `.gte('updated_at', lastSyncTime)`.
+    // Until a genuine full catch-up pull has completed at least once, always
+    // fetch everything — ignoring any already-persisted lastSyncTimestamp.
+    // Devices that ran a pull before the products/customers sync fixes landed
+    // already have a "recent" cursor persisted from that earlier (broken)
+    // sync, which would otherwise permanently block ever catching up on
+    // bulk-imported reference data whose updated_at is far in the past.
+
+    if (!AppSettings.instance.hasCompletedInitialFullSync) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
 
     return AppSettings.instance.lastSyncTimestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
 
@@ -2082,6 +2088,8 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
   Future<void> _updateLastSyncTimestamp() async {
 
     await AppSettings.instance.setLastSyncTimestamp(DateTime.now());
+
+    await AppSettings.instance.setHasCompletedInitialFullSync(true);
 
   }
 
