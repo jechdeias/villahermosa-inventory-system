@@ -678,7 +678,17 @@ class SyncEngine {
     }
   }
 
-  
+  /// Postgres `numeric`/`decimal` columns (unit_price, cost_price,
+  /// credit_limit, ...) are serialized by PostgREST as JSON strings, not
+  /// numbers, to preserve precision — confirmed against a live data dump
+  /// ("750.00", not 750.00). `as num?` throws on those; this handles both.
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+
 
   /// Table-specific push methods
 
@@ -1315,6 +1325,10 @@ class SyncEngine {
 
     if (record is Product) {
 
+      // Matches the real Supabase products table (confirmed against a live
+      // data dump) — no is_active column there; supplier_id/qty_per_case
+      // are real columns that weren't being sent at all before.
+
       return {
 
         'id': record.id,
@@ -1339,7 +1353,9 @@ class SyncEngine {
 
         'location': record.location,
 
-        'is_active': record.isActive,
+        'supplier_id': record.supplierId,
+
+        'qty_per_case': record.qtyPerCase,
 
         'is_deleted': record.isDeleted,
 
@@ -1681,6 +1697,11 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
       // (local autoincrement id == remote Supabase id) so this naturally
       // updates an existing local row or inserts a new one with that id.
       if (tableName == 'products') {
+        // Confirmed against a live data dump: unit_price/cost_price are
+        // Postgres `numeric`, which PostgREST serializes as JSON STRINGS
+        // ("750.00"), not numbers — `as num?` throws on every non-null row.
+        // supplier_id/qty_per_case are real columns that weren't being
+        // pulled at all; there's no is_active column (that was a guess).
         await _database.into(_database.products).insertOnConflictUpdate(
           ProductsCompanion(
             id: Value(data['id'] as int),
@@ -1688,14 +1709,15 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             sku: Value(data['sku'] as String? ?? 'SKU-${data['id']}'),
             name: Value(data['name'] as String? ?? ''),
             category: Value(data['category'] as String? ?? 'General'),
-            unitPrice: Value((data['unit_price'] as num?)?.toDouble() ?? 0),
-            costPrice: Value((data['cost_price'] as num?)?.toDouble() ?? 0),
+            unitPrice: Value(_toDouble(data['unit_price']) ?? 0),
+            costPrice: Value(_toDouble(data['cost_price']) ?? 0),
             unit: Value(data['unit'] as String? ?? 'pc'),
             currentStock: Value((data['current_stock'] as num?)?.toInt() ?? 0),
             minStock: Value((data['min_stock'] as num?)?.toInt() ?? 0),
             status: Value(data['status'] as String? ?? 'active'),
             location: Value(data['location'] as String?),
-            isActive: Value(data['is_active'] as bool? ?? true),
+            supplierId: Value(data['supplier_id'] as int?),
+            qtyPerCase: Value((data['qty_per_case'] as num?)?.toInt() ?? 1),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
           ),
@@ -1723,8 +1745,8 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             storeType: Value(data['store_type'] as String? ?? data['channel'] as String? ?? 'Sari-Sari Store'),
             customerType: Value(data['customer_type'] as String? ?? 'regular'),
             status: Value(data['status'] as String? ?? 'active'),
-            creditLimit: Value((data['credit_limit'] as num?)?.toDouble() ?? 0),
-            currentCredit: Value((data['current_credit'] as num?)?.toDouble()),
+            creditLimit: Value(_toDouble(data['credit_limit']) ?? 0),
+            currentCredit: Value(_toDouble(data['current_credit'])),
             contactNumber: Value(data['phone'] as String? ?? ''),
             barangay: Value(data['barangay'] as String?),
             town: Value(data['town'] as String?),
