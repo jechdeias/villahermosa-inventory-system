@@ -1357,13 +1357,18 @@ class SyncEngine {
 
     if (record is Customer) {
 
+      // Matches the real Supabase customers table (confirmed against a live
+      // data dump) — it has no business_name/municipality/province/is_active
+      // columns at all. Sending those would make PostgREST reject the whole
+      // upsert (unknown column), so every local customer edit would silently
+      // fail to push. barangay/town/channel are real; municipality/province
+      // fold into town/province defaults on the pull side instead.
+
       return {
 
         'id': record.id,
 
         'name': record.name,
-
-        'business_name': record.businessName,
 
         'email': record.email,
 
@@ -1371,13 +1376,19 @@ class SyncEngine {
 
         'address': record.address,
 
-        'municipality': record.municipality,
-
-        'province': record.province,
-
         'credit_limit': record.creditLimit,
 
-        'is_active': record.isActive,
+        'current_credit': record.currentCredit,
+
+        'customer_type': record.customerType,
+
+        'status': record.status,
+
+        'barangay': record.barangay,
+
+        'town': record.town,
+
+        'channel': record.channel,
 
         'is_deleted': record.isDeleted,
 
@@ -1692,6 +1703,12 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
         return;
       }
       if (tableName == 'customers') {
+        // Supabase's actual customers table (confirmed against a live data
+        // dump) has no uuid/municipality/province/store_type/is_active
+        // columns at all — it has barangay/town/channel instead. town is
+        // the real municipality; channel is the real store type. Falling
+        // back to the literal (always-null) column names here would have
+        // silently produced empty/wrong data for every single row.
         await _database.into(_database.customers).insertOnConflictUpdate(
           CustomersCompanion(
             id: Value(data['id'] as int),
@@ -1701,11 +1718,17 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             email: Value(data['email'] as String?),
             phone: Value(data['phone'] as String?),
             address: Value(data['address'] as String?),
-            municipality: Value(data['municipality'] as String? ?? ''),
-            province: Value(data['province'] as String? ?? ''),
-            storeType: Value(data['store_type'] as String? ?? 'Retail'),
+            municipality: Value(data['municipality'] as String? ?? data['town'] as String? ?? ''),
+            province: Value(data['province'] as String? ?? 'Marinduque'),
+            storeType: Value(data['store_type'] as String? ?? data['channel'] as String? ?? 'Sari-Sari Store'),
+            customerType: Value(data['customer_type'] as String? ?? 'regular'),
+            status: Value(data['status'] as String? ?? 'active'),
             creditLimit: Value((data['credit_limit'] as num?)?.toDouble() ?? 0),
+            currentCredit: Value((data['current_credit'] as num?)?.toDouble()),
             contactNumber: Value(data['phone'] as String? ?? ''),
+            barangay: Value(data['barangay'] as String?),
+            town: Value(data['town'] as String?),
+            channel: Value(data['channel'] as String?),
             isActive: Value(data['is_active'] as bool? ?? true),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
