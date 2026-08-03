@@ -1663,7 +1663,56 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
       debugPrint('Data values: $data');
 
-      
+      // Products/customers have no case below (the generic fallback assumes
+      // name/email/phone/address columns, which products doesn't even have) —
+      // handled here via the typed Drift API instead of hand-rolled SQL, using
+      // the same id-parity convention _pushProducts/_pushCustomers rely on
+      // (local autoincrement id == remote Supabase id) so this naturally
+      // updates an existing local row or inserts a new one with that id.
+      if (tableName == 'products') {
+        await _database.into(_database.products).insertOnConflictUpdate(
+          ProductsCompanion(
+            id: Value(data['id'] as int),
+            uuid: Value(data['uuid'] as String? ?? 'sb-product-${data['id']}'),
+            sku: Value(data['sku'] as String? ?? 'SKU-${data['id']}'),
+            name: Value(data['name'] as String? ?? ''),
+            category: Value(data['category'] as String? ?? 'General'),
+            unitPrice: Value((data['unit_price'] as num?)?.toDouble() ?? 0),
+            costPrice: Value((data['cost_price'] as num?)?.toDouble() ?? 0),
+            unit: Value(data['unit'] as String? ?? 'pc'),
+            currentStock: Value((data['current_stock'] as num?)?.toInt() ?? 0),
+            minStock: Value((data['min_stock'] as num?)?.toInt() ?? 0),
+            status: Value(data['status'] as String? ?? 'active'),
+            location: Value(data['location'] as String?),
+            isActive: Value(data['is_active'] as bool? ?? true),
+            isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            syncStatus: const Value('synced'),
+          ),
+        );
+        return;
+      }
+      if (tableName == 'customers') {
+        await _database.into(_database.customers).insertOnConflictUpdate(
+          CustomersCompanion(
+            id: Value(data['id'] as int),
+            uuid: Value(data['uuid'] as String? ?? 'sb-customer-${data['id']}'),
+            name: Value(data['name'] as String? ?? ''),
+            businessName: Value(data['business_name'] as String?),
+            email: Value(data['email'] as String?),
+            phone: Value(data['phone'] as String?),
+            address: Value(data['address'] as String?),
+            municipality: Value(data['municipality'] as String? ?? ''),
+            province: Value(data['province'] as String? ?? ''),
+            storeType: Value(data['store_type'] as String? ?? 'Retail'),
+            creditLimit: Value((data['credit_limit'] as num?)?.toDouble() ?? 0),
+            contactNumber: Value(data['phone'] as String? ?? ''),
+            isActive: Value(data['is_active'] as bool? ?? true),
+            isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            syncStatus: const Value('synced'),
+          ),
+        );
+        return;
+      }
 
       // Check if record exists
 
@@ -1974,9 +2023,12 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
   Future<DateTime> _getLastSyncTimestamp() async {
 
-    // Fall back to 1 day ago the very first time, before any sync has completed.
+    // On a genuinely first-ever sync (no persisted cursor), fetch everything —
+    // a "1 day ago" fallback here would silently skip bulk-imported reference
+    // data (products, customers, etc.) whose updated_at is far older than that,
+    // since every pull filters with `.gte('updated_at', lastSyncTime)`.
 
-    return AppSettings.instance.lastSyncTimestamp ?? DateTime.now().subtract(const Duration(days: 1));
+    return AppSettings.instance.lastSyncTimestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   }
 

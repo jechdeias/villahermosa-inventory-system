@@ -435,46 +435,64 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-              ),
-              child: Row(
-                children: [
-                  const Text(
-                    'Navigation',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+      isScrollControlled: true,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Navigation',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: _navItems.map((item) => ListTile(
+                      leading: Icon(item.icon),
+                      title: Text(item.label),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _navigate(item.route);
+                      },
+                    )).toList(),
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.logout_outlined, color: Color(0xFF8A8A8A)),
+                  title: const Text('Logout', style: TextStyle(color: Color(0xFF8A8A8A))),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _logout();
+                  },
+                ),
+              ],
             ),
-            ..._navItems.map((item) => ListTile(
-              leading: Icon(item.icon),
-              title: Text(item.label),
-              onTap: () {
-                Navigator.pop(context);
-                _navigate(item.route);
-              },
-            )),
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
     );
