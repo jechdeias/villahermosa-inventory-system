@@ -31,9 +31,12 @@ part 'app_database.g.dart';
   DeliveryRoutes,
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : _isTestInstance = false, super(_openConnection());
 
-  AppDatabase.forTesting(DatabaseConnection super.connection);
+  AppDatabase.forTesting(DatabaseConnection super.connection) : _isTestInstance = true;
+
+  /// Skips demo-data seeding in beforeOpen — tests expect a clean database.
+  final bool _isTestInstance;
 
   @override
   int get schemaVersion => 9;
@@ -120,9 +123,11 @@ class AppDatabase extends _$AppDatabase {
         '  sync_status TEXT NOT NULL DEFAULT \'pending\''
         ')',
       );
-      await _seedPaymentsIfEmpty();
-      await _seedProductsIfEmpty();
-      await _seedCustomersIfEmpty();
+      if (!_isTestInstance) {
+        await _seedPaymentsIfEmpty();
+        await _seedProductsIfEmpty();
+        await _seedCustomersIfEmpty();
+      }
 
       await customStatement(
         'CREATE TABLE IF NOT EXISTS delivery_routes ('

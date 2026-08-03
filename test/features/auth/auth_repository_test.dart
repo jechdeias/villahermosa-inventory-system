@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
@@ -5,6 +6,20 @@ import 'package:villahermosa_inventory_system/core/database/app_database.dart';
 import 'package:villahermosa_inventory_system/features/auth/data/auth_repository.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // AuthRepository.signup checks connectivity before deciding whether to
+  // sync to Supabase. There's no real platform plugin in a unit test, so
+  // the method channel needs a mock handler or every signup call throws
+  // MissingPluginException. Report "offline" — these tests only exercise
+  // local password hashing/verification, not real network sync.
+  const connectivityChannel = MethodChannel('dev.fluttercommunity.plus/connectivity');
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(connectivityChannel, (call) async {
+    if (call.method == 'check') return ['none'];
+    return null;
+  });
+
   group('Authentication Tests', () {
     late AppDatabase database;
     late AuthRepository authRepository;
