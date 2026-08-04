@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bcrypt/bcrypt.dart';
 import 'package:crypto/crypto.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
@@ -7,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/config/supabase_config.dart';
 
 class AuthException implements Exception {
   final String message;
@@ -192,31 +192,18 @@ class AuthRepository {
     }
   }
 
-  /// Sync user to Supabase
+  /// Sync user to Supabase via the privileged-sync Edge Function — never
+  /// the service key directly. The function itself enforces that a request
+  /// for anything other than role 'customer' only goes through if the
+  /// caller is independently verified as an existing admin (by email, not
+  /// by anything this client sends), so this path can't be used to create
+  /// a fake admin account regardless of what `user.role` says here.
   Future<bool> _syncUserToSupabase(User user) async {
     try {
-      // Prefer service-role client (bypasses RLS). Fall back to the
-      // authenticated anon client so admin flows work without the key.
-      // If neither is available the record stays 'pending' for later sync.
-      final SupabaseClient client;
-      if (SupabaseConfig.serviceKey.isNotEmpty) {
-        client = SupabaseClient(
-          SupabaseConfig.url,
-          SupabaseConfig.serviceKey,
-          headers: {'X-Client-Info': 'service_role'},
-        );
-      } else if (Supabase.instance.client.auth.currentSession != null) {
-        debugPrint('⚠️ SUPABASE_SERVICE_KEY not set — using authenticated client');
-        client = Supabase.instance.client;
-      } else {
-        debugPrint('⚠️ SUPABASE_SERVICE_KEY not set and no session — sync deferred');
-        return false;
-      }
-
       final userData = {
         'uuid': user.uuid,
-        'firstName': user.firstName,
-        'lastName': user.lastName,
+        'first_name': user.firstName,
+        'last_name': user.lastName,
         'email': user.email,
         'password_hash': user.passwordHash,
         'role': user.role,
@@ -229,14 +216,13 @@ class AuthRepository {
 
       debugPrint('☁️ Syncing to Supabase with data: $userData');
 
-      final result = await client
-          .from('users')
-          .upsert(userData)
-          .select()
-          .maybeSingle();
+      final response = await Supabase.instance.client.functions.invoke(
+        'privileged-sync',
+        body: {'action': 'sync_user', 'data': userData},
+      );
 
-      debugPrint('☁️ Supabase upsert result: $result');
-      return result != null;
+      debugPrint('☁️ privileged-sync result: status=${response.status} data=${response.data}');
+      return response.status == 200;
     } catch (e) {
       debugPrint('❌ Supabase sync error: $e');
       return false;
@@ -250,16 +236,13 @@ class AuthRepository {
   /// Throws AuthException if credentials are invalid.
   Future<User?> login(String email, String password) async {
     try {
-      // Hash provided password
-      final passwordHash = _hashPassword(password);
-      
       // Find user by email only
       final user = await _database.getUserByEmail(email);
-      
+
       // Verify password hash and user is active
-      if (user != null && 
-          user.passwordHash == passwordHash && 
-          user.isActive && 
+      if (user != null &&
+          await _verifyPassword(password, user.passwordHash) &&
+          user.isActive &&
           !user.isDeleted) {
         return user;
       }
@@ -409,12 +392,42 @@ class AuthRepository {
     }
   }
 
-  /// Hashes a password using SHA256 algorithm.
-  /// 
-  /// Returns hex-encoded hash of password string.
+  /// Hashes a password with bcrypt. AuthService already had bcrypt
+  /// infrastructure elsewhere in the app (used for login); this was the
+  /// only place still hashing new passwords with plain SHA-256.
   String _hashPassword(String password) {
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
+    return BCrypt.hashpw(password, BCrypt.gensalt());
+  }
+
+  /// Verifies a password against a stored hash. Bcrypt hashes are salted —
+  /// re-hashing and comparing with `==` (the old approach) never matches,
+  /// even for the correct password — so this checks with BCrypt.checkpw,
+  /// falling back to a legacy SHA-256 comparison (and migrating silently
+  /// on success) for any account created before this fix, mirroring
+  /// AuthService's existing bcrypt/SHA-256 migration pattern.
+  Future<bool> _verifyPassword(String password, String hash) async {
+    try {
+      return BCrypt.checkpw(password, hash);
+    } catch (_) {
+      final sha256Hash = sha256.convert(utf8.encode(password)).toString();
+      if (sha256Hash != hash) return false;
+      await _migratePasswordToBcrypt(password, hash);
+      return true;
+    }
+  }
+
+  Future<void> _migratePasswordToBcrypt(String password, String oldHash) async {
+    try {
+      await (_database.update(_database.users)
+            ..where((u) => u.passwordHash.equals(oldHash)))
+          .write(UsersCompanion(
+            passwordHash: Value(_hashPassword(password)),
+            syncStatus: const Value('pending'),
+            updatedAt: Value(DateTime.now()),
+          ));
+      debugPrint('✅ Password migrated to bcrypt');
+    } catch (e) {
+      debugPrint('⚠️ Password migration failed: $e');
+    }
   }
 }

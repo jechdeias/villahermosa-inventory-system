@@ -6,8 +6,6 @@ import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
 
-import '../config/supabase_config.dart';
-
 import '../settings/app_settings.dart';
 
 
@@ -696,7 +694,7 @@ class SyncEngine {
 
     debugPrint('Pushing users to Supabase...');
 
-    
+
 
     final pendingUsers = await _database.getPendingSyncUsers();
 
@@ -708,32 +706,15 @@ class SyncEngine {
 
     }
 
-    
+
 
     debugPrint('📋 Pending users to sync: ${pendingUsers.length}');
 
-
-
-    // Prefer the service-role client (bypasses RLS). If the key is not
-    // supplied at build time, fall back to the authenticated anon client so
-    // the admin can still push their own records. Anonymous pushes are skipped
-    // and left as 'pending' for the next sync cycle.
-    final SupabaseClient syncClient;
-    if (SupabaseConfig.serviceKey.isNotEmpty) {
-      syncClient = SupabaseClient(
-        SupabaseConfig.url,
-        SupabaseConfig.serviceKey,
-        headers: {'X-Client-Info': 'service_role'},
-      );
-    } else if (Supabase.instance.client.auth.currentSession != null) {
-      debugPrint('⚠️ SUPABASE_SERVICE_KEY not set — using authenticated client for user sync');
-      syncClient = Supabase.instance.client;
-    } else {
-      debugPrint('⚠️ SUPABASE_SERVICE_KEY not set and no active session — user sync skipped');
-      return [];
-    }
-
-
+    // Routed through the privileged-sync Edge Function — writing to `users`
+    // (role, password_hash) needs the service key, which must never live in
+    // the client. The function upserts server-side and rejects any request
+    // that tries to set a non-customer role without the caller actually
+    // being an admin.
 
     for (final user in pendingUsers) {
 
@@ -741,57 +722,21 @@ class SyncEngine {
 
         debugPrint('🔄 Syncing user: ${user.email}');
 
-
-
         final data = _recordToMap(user);
 
         debugPrint('📦 User data mapped: ${data.keys.toList()}');
 
-
-
-        try {
-
-          // Try insert first
-
-          await syncClient
-
-              .from('users')
-
-              .insert(data);
-
-        } catch (e) {
-
-          if (e is PostgrestException && e.code == '23505') {
-
-            // Duplicate — update instead
-
-            debugPrint('User exists, updating: ${user.email}');
-
-            await syncClient
-
-                .from('users')
-
-                .update(data)
-
-                .eq('email', user.email);
-
-          } else {
-
-            rethrow;
-
-          }
-
+        final ok = await _callPrivilegedSync(action: 'sync_user', data: data);
+        if (!ok) {
+          debugPrint('❌ Failed to sync user ${user.email}: privileged-sync rejected the request');
+          continue;
         }
-
-        
-
-        // Mark as synced WHETHER insert or update succeeded
 
         await _markUserAsSynced(user.id);
 
         debugPrint('✅ Synced and marked: ${user.email}');
 
-        
+
 
       } catch (e) {
 
@@ -801,10 +746,31 @@ class SyncEngine {
 
     }
 
-    
+
 
     return pendingUsers;
 
+  }
+
+  /// Calls the privileged-sync Edge Function with the CALLER'S OWN session
+  /// token — never the service key, which only ever lives server-side
+  /// inside the function itself. Returns false (not throw) on any failure
+  /// so callers can decide whether to leave the record 'pending' for the
+  /// next sync cycle.
+  Future<bool> _callPrivilegedSync({
+    required String action,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'privileged-sync',
+        body: {'action': action, 'data': data},
+      );
+      return response.status == 200;
+    } catch (e) {
+      debugPrint('Privileged sync error: $e');
+      return false;
+    }
   }
 
   
@@ -1055,35 +1021,8 @@ class SyncEngine {
 
 
 
-    final SupabaseClient syncClient;
-
-    if (SupabaseConfig.serviceKey.isNotEmpty) {
-
-      syncClient = SupabaseClient(
-
-        SupabaseConfig.url,
-
-        SupabaseConfig.serviceKey,
-
-        headers: {'X-Client-Info': 'service_role'},
-
-      );
-
-    } else if (Supabase.instance.client.auth.currentSession != null) {
-
-      debugPrint('⚠️ SUPABASE_SERVICE_KEY not set — using authenticated client for supplier sync');
-
-      syncClient = Supabase.instance.client;
-
-    } else {
-
-      debugPrint('⚠️ SUPABASE_SERVICE_KEY not set and no active session — supplier sync skipped');
-
-      return [];
-
-    }
-
-
+    // Routed through the privileged-sync Edge Function — same reasoning as
+    // _pushUsers: the service key must never live in the client.
 
     for (final supplier in pendingSuppliers) {
 
@@ -1091,28 +1030,10 @@ class SyncEngine {
 
         final data = _recordToMap(supplier);
 
-        try {
-
-          await syncClient.from('suppliers').insert(data);
-
-        } catch (e) {
-
-          if (e is PostgrestException && e.code == '23505') {
-
-            await syncClient
-
-                .from('suppliers')
-
-                .update(data)
-
-                .eq('uuid', supplier.uuid);
-
-          } else {
-
-            rethrow;
-
-          }
-
+        final ok = await _callPrivilegedSync(action: 'sync_supplier', data: data);
+        if (!ok) {
+          debugPrint('❌ Failed to sync supplier ${supplier.tradeName}: privileged-sync rejected the request');
+          continue;
         }
 
         await _markRecordAsSynced(supplier, supplier.id.toString());
@@ -1285,9 +1206,17 @@ class SyncEngine {
 
     if (record is User) {
 
+      // Matches the real Supabase users table exactly (supabase_users_table.sql
+      // — 11 columns: uuid, first_name, last_name, email, password_hash, role,
+      // is_active, sync_status, is_deleted, created_at, updated_at). id, phone,
+      // address, remote_id, and force_password_change aren't real columns there
+      // at all — sending them would make PostgREST reject the whole upsert.
+      // password_hash was missing entirely despite being NOT NULL, so every
+      // user push has likely always failed regardless of the service-key issue.
+
       return {
 
-        'id': record.id,
+        'uuid': record.uuid,
 
         'first_name': record.firstName,
 
@@ -1295,11 +1224,9 @@ class SyncEngine {
 
         'email': record.email,
 
+        'password_hash': record.passwordHash,
+
         'role': record.role,
-
-        'phone': record.phone,
-
-        'address': record.address,
 
         'is_active': record.isActive,
 
@@ -1310,12 +1237,6 @@ class SyncEngine {
         'created_at': record.createdAt.toIso8601String(),
 
         'updated_at': record.updatedAt.toIso8601String(),
-
-        'remote_id': record.remoteId,
-
-        'uuid': record.uuid,
-
-        'force_password_change': record.forcePasswordChange,
 
       };
 

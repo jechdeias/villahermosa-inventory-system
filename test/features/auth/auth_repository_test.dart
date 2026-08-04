@@ -1,3 +1,4 @@
+import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' as drift;
@@ -60,7 +61,7 @@ void main() {
       expect(user?.role, equals('customer'));
       expect(user?.passwordHash, isNotNull);
       expect(user?.passwordHash, isNot(equals(password))); // Should be hashed
-      expect(user?.passwordHash.length, equals(64)); // SHA256 hex length
+      expect(BCrypt.checkpw(password, user!.passwordHash), isTrue); // Bcrypt, not SHA256
     });
 
     test('Login verifies passwordHash', () async {
@@ -114,7 +115,7 @@ void main() {
       expect(admin.lastName, equals('Administrator'));
       expect(admin.role, equals('admin'));
       expect(admin.passwordHash, isNotNull);
-      expect(admin.passwordHash.length, equals(64)); // SHA256 hex length
+      expect(BCrypt.checkpw('admin123', admin.passwordHash), isTrue); // Bcrypt, not SHA256
     });
   });
 }

@@ -21,7 +21,7 @@ Mixed, and drifted from the original plan. `provider` + `ChangeNotifier` was the
 - **Sync:** `SyncManager` (singleton) drives push/pull via `SyncEngine`. Records carry a `sync_status` column (`pending` | `synced`). Push runs on login and startup (unless disabled via Settings' auto-sync toggle); pull runs after push. Last-sync timestamp is persisted via `AppSettings` (`lib/core/settings/app_settings.dart`, backed by `shared_preferences`).
 
 ### Auth
-`AuthService` singleton (`lib/core/auth/auth_service.dart`) owns the local Drift session. Supabase Auth runs alongside for token-based RLS. Passwords are bcrypt; SHA-256 hashes are migrated on next login.
+`AuthService` singleton (`lib/core/auth/auth_service.dart`) owns the local Drift session. Supabase Auth runs alongside for token-based RLS. Passwords are bcrypt; SHA-256 hashes are migrated on next login. Note: there's a second, largely-parallel implementation in `AuthRepository` (`lib/features/auth/data/auth_repository.dart`) used for customer self-signup and staff account creation — historically it hashed with plain SHA-256 (fixed to bcrypt+migration, matching `AuthService`, but the duplication itself is unresolved debt). `AuthRepository.login()` is not wired into the live login screen at all (only `AuthService.login()` is) — it's exercised by `auth_repository_test.dart` but otherwise dead code.
 
 ### Navigation & roles
 `RoleBasedNavigation.navigate()` in `lib/core/constants/user_roles.dart` routes to the correct dashboard. `ResponsiveShell` (`lib/core/widgets/responsive_shell.dart`) provides the sidebar + hamburger layout used by all post-login screens.
@@ -34,10 +34,12 @@ Mixed, and drifted from the original plan. `provider` + `ChangeNotifier` was the
 | `lib/core/auth/auth_service.dart` | Auth singleton (login / logout / session) |
 | `lib/core/sync/sync_manager.dart` | Sync orchestrator singleton |
 | `lib/core/sync/sync_engine.dart` | Push/pull implementation |
-| `lib/core/config/supabase_config.dart` | Credentials (gitignored — see secrets.json.example) |
+| `lib/core/config/supabase_config.dart` | Credentials (gitignored — see secrets.json.example). No service key here anymore — see below |
 | `lib/features/admin/screens/` | Admin-role screens |
 | `lib/features/warehouse/screens/` | Warehouse-role screens |
-| `supabase_users_table.sql` | SQL schema + RLS policies for Supabase |
+| `supabase_users_table.sql` | Original `users` table schema + RLS (has a known policy hole — see `supabase/rls_policies.sql`) |
+| `supabase/functions/privileged-sync/index.ts` | Edge Function for privileged writes (user/supplier sync); holds the service key server-side only |
+| `supabase/rls_policies.sql` | RLS policies for every other table — run manually via the Supabase SQL Editor, not applied automatically |
 
 ## Development conventions
 - Pass `AppDatabase` and `SyncManager` down through constructors; both are singletons initialised in `main.dart`.
@@ -54,6 +56,9 @@ Mixed, and drifted from the original plan. `provider` + `ChangeNotifier` was the
 - **Tests:** only 4 test files total (`test/`), covering the database layer and auth repository. Zero UI/ViewModel test coverage across all four roles.
 
 ## Known architecture debt
-- `serviceKey` (Supabase service role) is used in the Flutter client for user sync — confirmed still in use in `sync_engine.dart` and `auth_repository.dart`. Long-term fix is a Supabase Edge Function.
+- **Fixed (Aug 2026):** the Supabase service-role key no longer ships in the client at all. It previously lived in `SupabaseConfig.serviceKey` and was used directly for user/supplier sync in `sync_engine.dart` and `auth_repository.dart` — that's now routed through the `privileged-sync` Edge Function, which holds the key server-side only. RLS was also enabled on the 8 tables that had none at all before (`supabase/rls_policies.sql`), and the pre-existing `users` table policy that let any authenticated account insert a row with `role = 'admin'` was closed (client-side writes to `users` are no longer possible at all — everything routes through the Edge Function, which verifies the caller's role server-side by email before allowing anything other than `role = 'customer'`).
+- **Known limitation of that fix, not yet resolved:** there is no reliable way to determine an authenticated caller's app-level role (admin/warehouse/sales_rep/delivery) from SQL alone. `AuthService.signup()` sets the local `users.uuid` to a millisecond-timestamp string, unrelated to the real Supabase Auth user id — the two are never linked anywhere in this codebase, for any existing account or new one. That means RLS currently can't restrict payments/customer credit data/etc. to admin-only; any authenticated account (including a self-registered customer) can read and write those tables. Real per-role restriction needs a one-time migration backfilling `users.uuid` to the real Supabase Auth id (matched by email across ~410 real accounts) plus a `SECURITY DEFINER` role-lookup function — deliberately not attempted as part of the same pass that removed the service key, since it touches live production account data and needs its own dedicated testing.
+- Two parallel, duplicated auth implementations (`AuthService` and `AuthRepository`) — see Auth section above.
 - WarehouseViewModel, DeliveryViewModel, CustomerViewModel methods are stubs — business logic not yet implemented, and none are consistently wired into their screens.
 - QR scanning was never actually wired up — there's no scanner dependency in `pubspec.yaml` at all (not even commented out), and `qr_service_locator.dart` is a pure stub returning a bare `Object()`.
+- `_pullOrders()`, `_pullOrderItems()`, `_pullStockMovements()`, and `_pullDeliveries()` in `sync_engine.dart` are literal `// Implementation needed` stubs — data created on one device for these tables never appears on another. Only users/products/customers/suppliers pull correctly. `payments` isn't in the pull cycle at all — not even as a stub call, it's simply never attempted.
