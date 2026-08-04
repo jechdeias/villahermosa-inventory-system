@@ -21,6 +21,9 @@ replay_pid*.log
 secrets.json
 lib/core/config/supabase_config.dart
 
+# Supabase CLI local project-link cache (created by `supabase link`)
+supabase/.temp/
+
 # Android
 android/.gradle/
 android/local.properties

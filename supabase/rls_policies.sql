@@ -81,25 +81,25 @@ ALTER TABLE public.suppliers        ENABLE ROW LEVEL SECURITY;
 -- _pushDeliveries) already goes through the plain authenticated client, not
 -- the Edge Function — a stricter policy here would break sync outright, not
 -- just tighten it.
-CREATE POLICY "authenticated_full_access" ON public.products
+CREATE POLICY "products_authenticated_access" ON public.products
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "authenticated_full_access" ON public.customers
+CREATE POLICY "customers_authenticated_access" ON public.customers
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "authenticated_full_access" ON public.orders
+CREATE POLICY "orders_authenticated_access" ON public.orders
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "authenticated_full_access" ON public.order_items
+CREATE POLICY "order_items_authenticated_access" ON public.order_items
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "authenticated_full_access" ON public.payments
+CREATE POLICY "payments_authenticated_access" ON public.payments
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "authenticated_full_access" ON public.stock_movements
+CREATE POLICY "stock_movements_authenticated_access" ON public.stock_movements
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "authenticated_full_access" ON public.deliveries
+CREATE POLICY "deliveries_authenticated_access" ON public.deliveries
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 -- Suppliers: reads open to any authenticated session; writes go exclusively
 -- through the privileged-sync Edge Function (service key, bypasses RLS by
 -- design — no client-side write policy needed or wanted here).
-CREATE POLICY "authenticated_read_suppliers" ON public.suppliers
+CREATE POLICY "suppliers_authenticated_read" ON public.suppliers
   FOR SELECT USING (auth.role() = 'authenticated');
 
 -- ============================================================================
@@ -133,7 +133,7 @@ DROP POLICY IF EXISTS "Service role can update users" ON public.users;
 -- pulls the whole table via the plain authenticated client) — subsumes the
 -- "own profile" policy but that one is left in place rather than dropped,
 -- to minimize changes to a working policy.
-CREATE POLICY "authenticated_read_users" ON public.users
+CREATE POLICY "users_authenticated_read" ON public.users
   FOR SELECT USING (auth.role() = 'authenticated');
 
 -- The broader read policy above would otherwise expose password_hash to

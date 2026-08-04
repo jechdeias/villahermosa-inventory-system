@@ -3,7 +3,9 @@
 // Runs everything that previously required embedding the Supabase
 // service-role key directly in the Flutter client. The service key never
 // leaves this function; it's read from an Edge Function secret
-// (SUPABASE_SERVICE_ROLE_KEY), which is only accessible server-side.
+// (SERVICE_ROLE_KEY — not SUPABASE_SERVICE_ROLE_KEY, since Supabase
+// reserves the SUPABASE_ prefix for its own platform env vars), which is
+// only accessible server-side.
 //
 // Two different trust levels, by design:
 //
@@ -66,7 +68,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY') ?? ''
     const admin = createClient(supabaseUrl, serviceRoleKey)
 
     const callerEmail = await resolveCallerEmail(
