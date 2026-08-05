@@ -337,6 +337,8 @@ class AppDatabase extends _$AppDatabase {
 
   Future<Customer?> getCustomerById(String id) async => (select(customers)..where((t) => t.uuid.equals(id) & t.isDeleted.equals(false))).getSingleOrNull();
 
+  Future<Customer?> getCustomerByIntId(int id) async => (select(customers)..where((t) => t.id.equals(id) & t.isDeleted.equals(false))).getSingleOrNull();
+
   Future<bool> updateCustomer(String uuid, CustomersCompanion customer) async => await (update(customers)..where((t) => t.uuid.equals(uuid)))
         .write(customer.copyWith(updatedAt: Value(DateTime.now()))) > 0;
 
@@ -581,6 +583,9 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updatePayment(int id, PaymentsCompanion companion) async {
     await (update(payments)..where((t) => t.id.equals(id))).write(companion);
   }
+
+  Future<List<Payment>> getPendingSyncPayments() async =>
+      (select(payments)..where((t) => t.syncStatus.equals('pending'))).get();
 
   Future<void> _seedPaymentsIfEmpty() async {
     final countExpr = payments.id.count();

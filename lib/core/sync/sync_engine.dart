@@ -146,6 +146,8 @@ class SyncEngine {
 
     await _syncTable('stock_movements', _pushStockMovements, SyncConflictResolution.lastWriteWins);
 
+    await _syncTable('payments', _pushPayments, SyncConflictResolution.localWins);
+
     await _syncTable('deliveries', _pushDeliveries, SyncConflictResolution.localWins);
 
     await _syncTable('suppliers', _pushSuppliers, SyncConflictResolution.remoteWins);
@@ -185,6 +187,8 @@ class SyncEngine {
     await _pullTableSafely('order_items', _pullOrderItems, lastSyncTime);
 
     await _pullTableSafely('stock_movements', _pullStockMovements, lastSyncTime);
+
+    await _pullTableSafely('payments', _pullPayments, lastSyncTime);
 
     await _pullTableSafely('deliveries', _pullDeliveries, lastSyncTime);
 
@@ -686,6 +690,14 @@ class SyncEngine {
     return double.tryParse(value.toString());
   }
 
+  /// Nullable-safe parse for optional timestamp columns (picked_at,
+  /// expected_delivery_date, ...) — these are genuinely absent for most
+  /// rows, unlike created_at/updated_at which always have a value.
+  DateTime? _toDateTime(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
+  }
+
 
 
   /// Table-specific push methods
@@ -863,13 +875,25 @@ class SyncEngine {
 
     final pendingOrders = await _database.getPendingSyncOrders();
 
-    
+
 
     for (final order in pendingOrders) {
 
       try {
 
         final data = _recordToMap(order);
+
+        // Orders.customerId is a local TEXT field holding the customer's
+        // uuid, but Supabase's orders.customer_id is bigint (the same
+        // id-parity numeric id every other table uses) — sending the uuid
+        // string directly would fail the column's type entirely. Resolve
+        // it to the customer's numeric id first.
+        final customer = await _database.getCustomerById(order.customerId);
+        if (customer == null) {
+          debugPrint('Failed to sync order ${order.id}: no local customer for customerId=${order.customerId}');
+          continue;
+        }
+        data['customer_id'] = customer.id;
 
         await Supabase.instance.client
 
@@ -887,7 +911,7 @@ class SyncEngine {
 
     }
 
-    
+
 
     return pendingOrders;
 
@@ -943,6 +967,17 @@ class SyncEngine {
 
         final data = _recordToMap(stockMovement);
 
+        // StockMovements.productId is a local TEXT field holding the
+        // product's uuid, but Supabase's stock_movements.product_id is
+        // bigint — resolve to the product's numeric id first, same
+        // reasoning as _pushOrders' customer_id resolution above.
+        final product = await _database.getProductByUuid(stockMovement.productId);
+        if (product == null) {
+          debugPrint('Failed to sync stock movement ${stockMovement.id}: no local product for productId=${stockMovement.productId}');
+          continue;
+        }
+        data['product_id'] = product.id;
+
         await Supabase.instance.client
 
             .from('stock_movements')
@@ -965,7 +1000,39 @@ class SyncEngine {
 
   }
 
-  
+
+
+  Future<List<Payment>> _pushPayments() async {
+
+    final pendingPayments = await _database.getPendingSyncPayments();
+
+    for (final payment in pendingPayments) {
+
+      try {
+
+        final data = _recordToMap(payment);
+
+        await Supabase.instance.client
+
+            .from('payments')
+
+            .upsert(data);
+
+        await _markRecordAsSynced(payment, payment.id.toString());
+
+      } catch (e) {
+
+        debugPrint('Failed to sync payment ${payment.id}: $e');
+
+      }
+
+    }
+
+    return pendingPayments;
+
+  }
+
+
 
   Future<List<Delivery>> _pushDeliveries() async {
 
@@ -1138,7 +1205,21 @@ class SyncEngine {
 
   Future<void> _pullOrders(DateTime lastSyncTime) async {
 
-    // Implementation needed
+    final response = await Supabase.instance.client
+
+        .from('orders')
+
+        .select()
+
+        .gte('updated_at', lastSyncTime.toIso8601String());
+
+
+
+    for (final orderData in response) {
+
+      await _updateLocalRecord('orders', orderData);
+
+    }
 
   }
 
@@ -1154,7 +1235,41 @@ class SyncEngine {
 
   Future<void> _pullStockMovements(DateTime lastSyncTime) async {
 
-    // Implementation needed
+    final response = await Supabase.instance.client
+
+        .from('stock_movements')
+
+        .select()
+
+        .gte('updated_at', lastSyncTime.toIso8601String());
+
+
+
+    for (final movementData in response) {
+
+      await _updateLocalRecord('stock_movements', movementData);
+
+    }
+
+  }
+
+
+
+  Future<void> _pullPayments(DateTime lastSyncTime) async {
+
+    final response = await Supabase.instance.client
+
+        .from('payments')
+
+        .select()
+
+        .gte('updated_at', lastSyncTime.toIso8601String());
+
+    for (final paymentData in response) {
+
+      await _updateLocalRecord('payments', paymentData);
+
+    }
 
   }
 
@@ -1343,9 +1458,22 @@ class SyncEngine {
 
     if (record is StockMovement) {
 
+      // Confirmed against the real schema pasted earlier this session:
+      // notes/created_by are real columns that were being sent as
+      // reason/user_id (wrong names — reason and notes are two different,
+      // real Drift fields; created_by is the numeric-FK counterpart to
+      // userId that the Drift column comment already said it was for, just
+      // never wired up). product_id is overwritten by the caller
+      // (_pushStockMovements) with the resolved numeric product id — see
+      // there for why record.productId (a uuid) can't go directly into a
+      // bigint column. Everything else here needed
+      // supabase/migrations/add_missing_columns.sql run first.
+
       return {
 
         'id': record.id,
+
+        'uuid': record.uuid,
 
         'product_id': record.productId,
 
@@ -1353,9 +1481,27 @@ class SyncEngine {
 
         'quantity': record.quantity,
 
+        'reference_type': record.referenceType,
+
+        'reference_id': record.referenceId,
+
         'reason': record.reason,
 
+        'notes': record.notes,
+
         'user_id': record.userId,
+
+        'user_name': record.userName,
+
+        'from_location': record.fromLocation,
+
+        'to_location': record.toLocation,
+
+        'unit_cost': record.unitCost,
+
+        'total_cost': record.totalCost,
+
+        'status': record.status,
 
         'is_active': record.isActive,
 
@@ -1367,13 +1513,74 @@ class SyncEngine {
 
         'updated_at': record.updatedAt.toIso8601String(),
 
+        'created_by': record.createdBy,
+
       };
 
     }
 
-    
+    if (record is Payment) {
+
+      // Payments push/pull didn't exist at all before this — no _recordToMap
+      // case, no push method, not registered in the sync loop. orderId and
+      // salesRepId are already plain integer FKs locally (unlike
+      // customerId/productId elsewhere in this file, which are text uuids
+      // needing a lookup) — Payments never had a local uuid column at all,
+      // so this maps directly. There's also no local createdAt/updatedAt on
+      // this table; created_at/updated_at below are synthesized at push
+      // time rather than read from the record.
+
+      final now = DateTime.now().toIso8601String();
+
+      return {
+
+        'id': record.id,
+
+        'payment_id': record.paymentId,
+
+        'order_id': record.orderId,
+
+        'order_code': record.orderCode,
+
+        'store_name': record.storeName,
+
+        'sales_rep_id': record.salesRepId,
+
+        'sales_rep_name': record.salesRepName,
+
+        'order_amount': record.orderAmount,
+
+        'amount_paid': record.amountPaid,
+
+        'balance': record.balance,
+
+        'payment_method': record.paymentMethod,
+
+        'payment_date': record.paymentDate.toIso8601String(),
+
+        'status': record.status,
+
+        'notes': record.notes,
+
+        'sync_status': record.syncStatus,
+
+        'created_at': now,
+
+        'updated_at': now,
+
+      };
+
+    }
+
+
 
     if (record is Order) {
+
+      // customer_notes maps to Supabase's existing `notes` column (not a
+      // new customer_notes column — see add_orders_columns.sql). Every
+      // other field below needed supabase/migrations/add_orders_columns.sql
+      // run first; before that, Supabase only had id/customer_id/status/
+      // total_amount/notes/is_deleted/sync_status/created_at/updated_at.
 
       return {
 
@@ -1389,9 +1596,31 @@ class SyncEngine {
 
         'delivery_address': record.deliveryAddress,
 
-        'customer_notes': record.customerNotes,
+        'notes': record.customerNotes,
+
+        'subtotal': record.subtotal,
+
+        'tax_amount': record.taxAmount,
 
         'total_amount': record.totalAmount,
+
+        'payment_status': record.paymentStatus,
+
+        'warehouse_status': record.warehouseStatus,
+
+        'priority': record.priority,
+
+        'picker_id': record.pickerId,
+
+        'picked_at': record.pickedAt?.toIso8601String(),
+
+        'packer_id': record.packerId,
+
+        'packed_at': record.packedAt?.toIso8601String(),
+
+        'expected_delivery_date': record.expectedDeliveryDate?.toIso8601String(),
+
+        'actual_delivery_date': record.actualDeliveryDate?.toIso8601String(),
 
         'is_active': record.isActive,
 
@@ -1402,6 +1631,18 @@ class SyncEngine {
         'created_at': record.createdAt.toIso8601String(),
 
         'updated_at': record.updatedAt.toIso8601String(),
+
+        'store_name': record.storeName,
+
+        'route_id': record.routeId,
+
+        'route_name': record.routeName,
+
+        'sales_rep_id': record.salesRepId,
+
+        'sales_rep_name': record.salesRepName,
+
+        'item_count': record.itemCount,
 
       };
 
@@ -1520,6 +1761,8 @@ class SyncEngine {
     if (record is Delivery) return 'deliveries';
 
     if (record is Supplier) return 'suppliers';
+
+    if (record is Payment) return 'payments';
 
     return '';
 
@@ -1674,6 +1917,124 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             channel: Value(data['channel'] as String?),
             isActive: Value(data['is_active'] as bool? ?? true),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            syncStatus: const Value('synced'),
+          ),
+        );
+        return;
+      }
+      if (tableName == 'orders') {
+        // Requires supabase/migrations/add_orders_columns.sql to have been
+        // run — before that, most of these columns don't exist remotely at
+        // all. deliveryAddress is NOT NULL locally with no default, so it
+        // needs a fallback even though the remote column is nullable.
+        //
+        // customer_id is bigint remotely (the customer's numeric id) but
+        // Orders.customerId is a local TEXT field holding the customer's
+        // uuid — resolve the numeric id to the matching local customer's
+        // uuid rather than just stringifying the number, or push's own
+        // customerId->customer_id resolution (in _pushOrders) would never
+        // find this row's customer again on a later edit.
+        final localCustomer = data['customer_id'] != null
+            ? await _database.getCustomerByIntId(data['customer_id'] as int)
+            : null;
+        await _database.into(_database.orders).insertOnConflictUpdate(
+          OrdersCompanion(
+            id: Value(data['id'] as int),
+            uuid: Value(data['uuid'] as String? ?? 'sb-order-${data['id']}'),
+            customerId: Value(localCustomer?.uuid ?? data['customer_id']?.toString() ?? ''),
+            orderNumber: Value(data['order_number'] as String? ?? 'ORD-${data['id']}'),
+            status: Value(data['status'] as String? ?? 'pending'),
+            deliveryAddress: Value(data['delivery_address'] as String? ?? ''),
+            customerNotes: Value(data['notes'] as String?),
+            subtotal: Value(_toDouble(data['subtotal']) ?? 0),
+            taxAmount: Value(_toDouble(data['tax_amount']) ?? 0),
+            totalAmount: Value(_toDouble(data['total_amount']) ?? 0),
+            paymentStatus: Value(data['payment_status'] as String? ?? 'pending'),
+            warehouseStatus: Value(data['warehouse_status'] as String? ?? 'pending'),
+            priority: Value(data['priority'] as String? ?? 'normal'),
+            pickerId: Value(data['picker_id'] as String?),
+            pickedAt: Value(_toDateTime(data['picked_at'])),
+            packerId: Value(data['packer_id'] as String?),
+            packedAt: Value(_toDateTime(data['packed_at'])),
+            expectedDeliveryDate: Value(_toDateTime(data['expected_delivery_date'])),
+            actualDeliveryDate: Value(_toDateTime(data['actual_delivery_date'])),
+            isActive: Value(data['is_active'] as bool? ?? true),
+            isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            syncStatus: const Value('synced'),
+            storeName: Value(data['store_name'] as String?),
+            routeId: Value((data['route_id'] as num?)?.toInt()),
+            routeName: Value(data['route_name'] as String?),
+            salesRepId: Value((data['sales_rep_id'] as num?)?.toInt()),
+            salesRepName: Value(data['sales_rep_name'] as String?),
+            itemCount: Value((data['item_count'] as num?)?.toInt() ?? 0),
+          ),
+        );
+        return;
+      }
+      if (tableName == 'stock_movements') {
+        // Requires supabase/migrations/add_missing_columns.sql to have been
+        // run. product_id is bigint remotely but StockMovements.productId
+        // is a local TEXT uuid field — same resolution as orders'
+        // customer_id, and for the same reason (so this row's push, which
+        // resolves productId->product_id by uuid lookup, can find the
+        // product again). movementType/reason/userId/userName are required
+        // (NOT NULL, no default) locally, so they get non-empty fallbacks
+        // even though the remote columns are nullable.
+        final localProduct = data['product_id'] != null
+            ? await _database.getProductById(data['product_id'] as int)
+            : null;
+        await _database.into(_database.stockMovements).insertOnConflictUpdate(
+          StockMovementsCompanion(
+            id: Value(data['id'] as int),
+            uuid: Value(data['uuid'] as String? ?? 'sb-stockmovement-${data['id']}'),
+            productId: Value(localProduct?.uuid ?? data['product_id']?.toString() ?? ''),
+            movementType: Value(data['movement_type'] as String? ?? 'adjustment'),
+            quantity: Value((data['quantity'] as num?)?.toInt() ?? 0),
+            referenceType: Value(data['reference_type'] as String?),
+            referenceId: Value(data['reference_id'] as String?),
+            reason: Value(data['reason'] as String? ?? 'Synced from Supabase'),
+            notes: Value(data['notes'] as String?),
+            userId: Value(data['user_id'] as String? ?? ''),
+            userName: Value(data['user_name'] as String? ?? 'Unknown'),
+            fromLocation: Value(data['from_location'] as String?),
+            toLocation: Value(data['to_location'] as String?),
+            unitCost: Value(_toDouble(data['unit_cost'])),
+            totalCost: Value(_toDouble(data['total_cost'])),
+            status: Value(data['status'] as String? ?? 'completed'),
+            isActive: Value(data['is_active'] as bool? ?? true),
+            isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            syncStatus: const Value('synced'),
+            createdBy: Value((data['created_by'] as num?)?.toInt()),
+          ),
+        );
+        return;
+      }
+      if (tableName == 'payments') {
+        // Requires supabase/migrations/add_missing_columns.sql to have been
+        // run — payments sync (push and pull both) didn't exist at all
+        // before this. orderId/salesRepId are already plain integer FKs on
+        // both sides (id-parity), so unlike customerId/productId elsewhere
+        // in this file they map directly, no uuid lookup needed. Both are
+        // real foreign keys locally (references Orders/Users) though, so
+        // this can fail if the referenced order/user hasn't been pulled
+        // yet — orders pull is registered before payments pull specifically
+        // so that dependency is satisfied in the normal case.
+        await _database.into(_database.payments).insertOnConflictUpdate(
+          PaymentsCompanion(
+            id: Value(data['id'] as int),
+            paymentId: Value(data['payment_id'] as String? ?? 'PAY-${data['id']}'),
+            orderId: Value((data['order_id'] as num?)?.toInt() ?? 0),
+            orderCode: Value(data['order_code'] as String? ?? ''),
+            storeName: Value(data['store_name'] as String? ?? ''),
+            salesRepId: Value((data['sales_rep_id'] as num?)?.toInt() ?? 0),
+            salesRepName: Value(data['sales_rep_name'] as String? ?? ''),
+            orderAmount: Value(_toDouble(data['order_amount']) ?? 0),
+            amountPaid: Value(_toDouble(data['amount_paid']) ?? 0),
+            balance: Value(_toDouble(data['balance']) ?? 0),
+            paymentMethod: Value(data['payment_method'] as String?),
+            paymentDate: Value(_toDateTime(data['payment_date']) ?? DateTime.now()),
+            status: Value(data['status'] as String? ?? 'unpaid'),
+            notes: Value(data['notes'] as String?),
             syncStatus: const Value('synced'),
           ),
         );
