@@ -82,6 +82,8 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         result = result.where((u) => u.role == 'sales_rep').toList();
       case 'warehouse':
         result = result.where((u) => u.role == 'warehouse').toList();
+      case 'customer':
+        result = result.where((u) => u.role == 'customer').toList();
       case 'inactive':
         result = result.where((u) => !u.isActive).toList();
     }
@@ -217,8 +219,10 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         bg = const Color(0xFFF0FDF4); fg = const Color(0xFF166534); label = 'Sales Rep';
       case 'warehouse':
         bg = const Color(0xFFFFFBEB); fg = const Color(0xFF92400E); label = 'Warehouse';
-      case 'delivery':
-        bg = const Color(0xFFF5F3FF); fg = const Color(0xFF5B21B6); label = 'Delivery';
+      case 'customer':
+        bg = const Color(0xFFF3F4F6); fg = const Color(0xFF374151); label = 'Customer';
+      case 'pending':
+        bg = const Color(0xFFFEF2F2); fg = const Color(0xFF991B1B); label = 'Pending';
       default:
         bg = const Color(0xFFF3F4F6); fg = const Color(0xFF374151); label = role;
     }
@@ -250,6 +254,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       ('admin', 'Admins', _allUsers.where((u) => u.role == 'admin').length),
       ('sales_rep', 'Sales Reps', _allUsers.where((u) => u.role == 'sales_rep').length),
       ('warehouse', 'Warehouse', _allUsers.where((u) => u.role == 'warehouse').length),
+      ('customer', 'Customers', _allUsers.where((u) => u.role == 'customer').length),
       ('inactive', 'Inactive', _allUsers.where((u) => !u.isActive).length),
     ];
     return Container(
@@ -728,9 +733,9 @@ class _AddUserDialogState extends State<_AddUserDialog> {
                     decoration: _buildInputDecoration('Role'),
                     items: const [
                       DropdownMenuItem(value: 'admin', child: Text('Administrator')),
-                      DropdownMenuItem(value: 'warehouse', child: Text('Warehouse Manager')),
-                      DropdownMenuItem(value: 'sales_rep', child: Text('Sales Representative')),
-                      DropdownMenuItem(value: 'delivery', child: Text('Delivery Driver')),
+                      DropdownMenuItem(value: 'sales_rep', child: Text('Sales Rep / Delivery')),
+                      DropdownMenuItem(value: 'warehouse', child: Text('Warehouse Staff')),
+                      DropdownMenuItem(value: 'customer', child: Text('Customer')),
                     ],
                     onChanged: (value) {
                       setState(() {
@@ -1019,9 +1024,9 @@ class _EditUserDialogState extends State<_EditUserDialog> {
                     decoration: _buildInputDecoration('Role'),
                     items: const [
                       DropdownMenuItem(value: 'admin', child: Text('Administrator')),
-                      DropdownMenuItem(value: 'warehouse', child: Text('Warehouse Manager')),
-                      DropdownMenuItem(value: 'sales_rep', child: Text('Sales Representative')),
-                      DropdownMenuItem(value: 'delivery', child: Text('Delivery Driver')),
+                      DropdownMenuItem(value: 'sales_rep', child: Text('Sales Rep / Delivery')),
+                      DropdownMenuItem(value: 'warehouse', child: Text('Warehouse Staff')),
+                      DropdownMenuItem(value: 'customer', child: Text('Customer')),
                     ],
                     onChanged: (value) {
                       setState(() {
