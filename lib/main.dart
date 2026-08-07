@@ -26,6 +26,11 @@ import 'features/admin/screens/admin_settings_screen.dart';
 import 'features/warehouse/screens/dashboard_screen.dart';
 import 'features/customer/screens/dashboard_screen.dart';
 import 'features/delivery/screens/dashboard_screen.dart';
+import 'features/sales/screens/sales_home_screen.dart';
+import 'features/sales/screens/sales_customers_screen.dart';
+import 'features/sales/screens/sales_orders_screen.dart';
+import 'features/sales/screens/sales_payments_screen.dart';
+import 'features/sales/screens/sales_profile_screen.dart';
 import 'core/auth/auth_service.dart';
 import 'features/auth/data/auth_repository.dart';
 
@@ -138,6 +143,11 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/warehouse/dashboard': (context) => WarehouseDashboardScreen(database: database, syncManager: SyncManager.instance),
       '/customer/dashboard': (context) => const CustomerDashboardScreen(),
       '/delivery/dashboard': (context) => const DeliveryDashboardScreen(),
+      '/sales/home': (context) => const SalesHomeScreen(),
+      '/sales/customers': (context) => const SalesCustomersScreen(),
+      '/sales/orders': (context) => const SalesOrdersScreen(),
+      '/sales/payments': (context) => const SalesPaymentsScreen(),
+      '/sales/profile': (context) => const SalesProfileScreen(),
       '/email-verification': (context) => const EmailVerificationScreen(),
       '/forgot-password': (context) => const ForgotPasswordScreen(),
       '/change-password': (context) => ChangePasswordScreen(database: database),

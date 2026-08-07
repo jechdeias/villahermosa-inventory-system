@@ -365,9 +365,7 @@ class AppDatabase extends _$AppDatabase {
   ).get();
 
   // Order methods
-  Future<void> createOrder(OrdersCompanion order) async {
-    await into(orders).insert(order);
-  }
+  Future<int> createOrder(OrdersCompanion order) => into(orders).insert(order);
 
   Future<Order?> getOrderById(String id) async => (select(orders)..where((t) => t.uuid.equals(id) & t.isDeleted.equals(false))).getSingleOrNull();
 
@@ -389,9 +387,7 @@ class AppDatabase extends _$AppDatabase {
   ).get();
 
   // Order Item methods
-  Future<void> createOrderItem(OrderItemsCompanion orderItem) async {
-    await into(orderItems).insert(orderItem);
-  }
+  Future<int> createOrderItem(OrderItemsCompanion orderItem) => into(orderItems).insert(orderItem);
 
   Future<List<OrderItem>> getOrderItemsByOrderId(String orderId) async => (select(orderItems)..where((t) => t.orderId.equals(orderId) & t.isDeleted.equals(false))).get();
 
@@ -452,6 +448,11 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<Order>> watchAllOrders() => (select(orders)
     ..where((t) => t.isDeleted.equals(false))
+    ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
+  ).watch();
+
+  Stream<List<Order>> watchOrdersBySalesRep(String repName) => (select(orders)
+    ..where((t) => t.salesRepName.equals(repName) & t.isDeleted.equals(false))
     ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
   ).watch();
 
@@ -579,6 +580,26 @@ class AppDatabase extends _$AppDatabase {
 
   Future<Payment?> getPaymentById(int id) async =>
       (select(payments)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  Stream<List<Payment>> watchPaymentsBySalesRep(String repName) => (select(payments)
+    ..where((t) => t.salesRepName.equals(repName))
+    ..orderBy([(t) => OrderingTerm(expression: t.paymentDate, mode: OrderingMode.desc)])
+  ).watch();
+
+  Future<int> createPayment(PaymentsCompanion payment) => into(payments).insert(payment);
+
+  Future<String> generatePaymentId() async {
+    final all = await select(payments).get();
+    int maxNum = 0;
+    for (final p in all) {
+      final match = RegExp(r'PAY-(\d+)').firstMatch(p.paymentId);
+      if (match != null) {
+        final n = int.tryParse(match.group(1)!) ?? 0;
+        if (n > maxNum) maxNum = n;
+      }
+    }
+    return 'PAY-${(maxNum + 1).toString().padLeft(3, '0')}';
+  }
 
   Future<void> updatePayment(int id, PaymentsCompanion companion) async {
     await (update(payments)..where((t) => t.id.equals(id))).write(companion);
