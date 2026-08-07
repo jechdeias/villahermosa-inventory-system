@@ -57,7 +57,10 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
     ref.read(selectedOrderProvider.notifier).state = null;
   }
 
-  void _closeNewOrderPanel() => setState(() => _showNewOrderPanel = false);
+  void _closeNewOrderPanel() {
+    if (!mounted) return;
+    setState(() => _showNewOrderPanel = false);
+  }
 
   void _showNewOrderSheet(BuildContext context) {
     showModalBottomSheet(
@@ -869,8 +872,8 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
         await SyncManager.instance.syncPendingData();
       } catch (_) {}
 
-      widget.onClose();
       if (mounted) {
+        widget.onClose();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Order $orderNumber created')),
         );
