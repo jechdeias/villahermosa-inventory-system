@@ -432,7 +432,10 @@ class SyncEngine {
 
     data['sync_status'] = 'synced';
 
-    data['local_id'] = record.id;
+    // Supabase's users and order_items tables have no local_id column.
+    if (tableName != 'users' && tableName != 'order_items') {
+      data['local_id'] = record.id;
+    }
 
     
 
@@ -934,7 +937,16 @@ class SyncEngine {
 
       try {
 
+        // OrderItems.orderId is the parent order's local uuid; Supabase's
+        // order_items.order_id is bigint (the order's numeric id, which the
+        // orders push inserts as-is). Skip until the parent order has synced.
+        final parentOrder = await _database.getOrderById(orderItem.orderId);
+        if (parentOrder == null || parentOrder.syncStatus != 'synced') {
+          continue;
+        }
+
         final data = _recordToMap(orderItem);
+        data['order_id'] = parentOrder.id;
 
         await Supabase.instance.client
 
@@ -1506,8 +1518,6 @@ class SyncEngine {
 
         'status': record.status,
 
-        'is_deleted': record.isDeleted,
-
         'sync_status': record.syncStatus,
 
         'created_at': record.createdAt.toIso8601String(),
@@ -1594,8 +1604,6 @@ class SyncEngine {
         'order_number': record.orderNumber,
 
         'status': record.status,
-
-        'delivery_address': record.deliveryAddress,
 
         'notes': record.customerNotes,
 
