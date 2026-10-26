@@ -1506,8 +1506,6 @@ class SyncEngine {
 
         'status': record.status,
 
-        'is_active': record.isActive,
-
         'is_deleted': record.isDeleted,
 
         'sync_status': record.syncStatus,
@@ -1623,8 +1621,6 @@ class SyncEngine {
 
         'expected_delivery_date': record.expectedDeliveryDate?.toIso8601String(),
 
-        'is_active': record.isActive,
-
         'is_deleted': record.isDeleted,
 
         'sync_status': record.syncStatus,
@@ -1690,8 +1686,6 @@ class SyncEngine {
         'status': record.status,
 
         'delivery_notes': record.deliveryNotes,
-
-        'is_active': record.isActive,
 
         'is_deleted': record.isDeleted,
 
