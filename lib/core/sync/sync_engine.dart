@@ -1312,59 +1312,22 @@ class SyncEngine {
       // total_amount/notes/is_deleted/sync_status/created_at/updated_at.
 
       return {
-
         'id': record.id,
-
-        'uuid': record.uuid,
-
         'customer_id': record.customerId,
-
-        'order_number': record.orderNumber,
-
         'status': record.status,
-
-        'notes': record.customerNotes,
-
-        'subtotal': record.subtotal,
-
-        'tax_amount': record.taxAmount,
-
         'total_amount': record.totalAmount,
-
-        'payment_status': record.paymentStatus,
-
-        'warehouse_status': record.warehouseStatus,
-
-        'priority': record.priority,
-
-        'picker_id': record.pickerId,
-
-        'picked_at': record.pickedAt?.toIso8601String(),
-
-        'packer_id': record.packerId,
-
-        'packed_at': record.packedAt?.toIso8601String(),
-
+        'notes': record.customerNotes,
         'is_deleted': record.isDeleted,
-
         'sync_status': record.syncStatus,
-
         'created_at': record.createdAt.toIso8601String(),
-
         'updated_at': record.updatedAt.toIso8601String(),
-
+        'order_code': record.orderNumber,
         'store_name': record.storeName,
-
-        'route_id': record.routeId,
-
         'route_name': record.routeName,
-
         'sales_rep_id': record.salesRepId,
-
         'sales_rep_name': record.salesRepName,
-
         'item_count': record.itemCount,
-
+        'order_date': record.createdAt.toIso8601String(),
       };
 
     }
