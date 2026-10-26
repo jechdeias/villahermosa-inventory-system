@@ -666,6 +666,15 @@ class SyncEngine {
 
         // Same as stock_movements: OrderItems.productId is a product uuid,
         // but Supabase's order_items.product_id is bigint.
+        if (orderItem.productId.isEmpty) {
+          // No product to resolve — can never sync, so stop retrying.
+          debugPrint('Failed to sync order item ${orderItem.id}: empty productId');
+          await (_database.update(_database.orderItems)
+                ..where((i) => i.id.equals(orderItem.id)))
+              .write(const OrderItemsCompanion(syncStatus: Value('error')));
+          continue;
+        }
+
         final product = await _database.getProductByUuid(orderItem.productId);
         if (product == null) {
           debugPrint('Failed to sync order item ${orderItem.id}: no local product for productId=${orderItem.productId}');
@@ -764,6 +773,16 @@ class SyncEngine {
         if (parentOrder == null) {
           // Orphan — the order doesn't exist locally, so it can never sync.
           debugPrint('Failed to sync payment ${payment.id}: no local order for orderId=${payment.orderId}');
+          await (_database.update(_database.payments)
+                ..where((p) => p.id.equals(payment.id)))
+              .write(const PaymentsCompanion(syncStatus: Value('error')));
+          continue;
+        }
+        if (parentOrder.customerId == 'seed-customer') {
+          // Seed orders are never pushed (see _pushOrders), so they will
+          // never exist in Supabase even though they're marked 'synced'
+          // locally — the payment's foreign key can never be satisfied.
+          debugPrint('Failed to sync payment ${payment.id}: parent order ${parentOrder.id} is a seed order');
           await (_database.update(_database.payments)
                 ..where((p) => p.id.equals(payment.id)))
               .write(const PaymentsCompanion(syncStatus: Value('error')));
