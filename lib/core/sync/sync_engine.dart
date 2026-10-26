@@ -707,6 +707,10 @@ class SyncEngine {
         final product = await _database.getProductByUuid(stockMovement.productId);
         if (product == null) {
           debugPrint('Failed to sync stock movement ${stockMovement.id}: no local product for productId=${stockMovement.productId}');
+          // Orphaned — the product will never appear locally, so stop retrying.
+          await (_database.update(_database.stockMovements)
+                ..where((m) => m.id.equals(stockMovement.id)))
+              .write(const StockMovementsCompanion(syncStatus: Value('error')));
           continue;
         }
         data['product_id'] = product.id;
@@ -1216,8 +1220,6 @@ class SyncEngine {
 
         'reference_type': record.referenceType,
 
-        'reference_id': record.referenceId,
-
         'reason': record.reason,
 
         'notes': record.notes,
@@ -1342,8 +1344,6 @@ class SyncEngine {
         'packer_id': record.packerId,
 
         'packed_at': record.packedAt?.toIso8601String(),
-
-        'expected_delivery_date': record.expectedDeliveryDate?.toIso8601String(),
 
         'is_deleted': record.isDeleted,
 
