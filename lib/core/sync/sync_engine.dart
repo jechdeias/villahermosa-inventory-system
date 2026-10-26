@@ -664,6 +664,15 @@ class SyncEngine {
         final data = _recordToMap(orderItem);
         data['order_id'] = parentOrder.id;
 
+        // Same as stock_movements: OrderItems.productId is a product uuid,
+        // but Supabase's order_items.product_id is bigint.
+        final product = await _database.getProductByUuid(orderItem.productId);
+        if (product == null) {
+          debugPrint('Failed to sync order item ${orderItem.id}: no local product for productId=${orderItem.productId}');
+          continue;
+        }
+        data['product_id'] = product.id;
+
         await Supabase.instance.client
 
             .from('order_items')
@@ -714,6 +723,8 @@ class SyncEngine {
           continue;
         }
         data['product_id'] = product.id;
+        data['product_code'] = product.sku;
+        data['product_name'] = product.name;
 
         await Supabase.instance.client
 
@@ -1207,43 +1218,20 @@ class SyncEngine {
       // supabase/migrations/add_missing_columns.sql run first.
 
       return {
-
         'id': record.id,
-
-        'uuid': record.uuid,
-
         'product_id': record.productId,
-
         'movement_type': record.movementType,
-
         'quantity': record.quantity,
-
-        'reference_type': record.referenceType,
-
-        'reason': record.reason,
-
         'notes': record.notes,
-
-        'user_id': record.userId,
-
-        'user_name': record.userName,
-
-        'to_location': record.toLocation,
-
-        'unit_cost': record.unitCost,
-
-        'total_cost': record.totalCost,
-
-        'status': record.status,
-
-        'sync_status': record.syncStatus,
-
-        'created_at': record.createdAt.toIso8601String(),
-
-        'updated_at': record.updatedAt.toIso8601String(),
-
         'created_by': record.createdBy,
-
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+        'reason': record.reason,
+        'reference': record.referenceId,
+        'performed_by_name': record.userName,
+        'movement_date': record.createdAt.toIso8601String(),
+        'is_deleted': record.isDeleted,
       };
 
     }
@@ -1337,25 +1325,16 @@ class SyncEngine {
     if (record is OrderItem) {
 
       return {
-
         'id': record.id,
-
         'order_id': record.orderId,
-
         'product_id': record.productId,
-
         'quantity': record.quantity,
-
         'unit_price': record.unitPrice,
-
+        'total_price': record.totalAmount,
         'is_deleted': record.isDeleted,
-
         'sync_status': record.syncStatus,
-
         'created_at': record.createdAt.toIso8601String(),
-
         'updated_at': record.updatedAt.toIso8601String(),
-
       };
 
     }
