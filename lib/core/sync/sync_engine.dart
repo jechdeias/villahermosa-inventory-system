@@ -758,6 +758,22 @@ class SyncEngine {
 
       try {
 
+        final parentOrder = await (_database.select(_database.orders)
+              ..where((o) => o.id.equals(payment.orderId)))
+            .getSingleOrNull();
+        if (parentOrder == null) {
+          // Orphan — the order doesn't exist locally, so it can never sync.
+          debugPrint('Failed to sync payment ${payment.id}: no local order for orderId=${payment.orderId}');
+          await (_database.update(_database.payments)
+                ..where((p) => p.id.equals(payment.id)))
+              .write(const PaymentsCompanion(syncStatus: Value('error')));
+          continue;
+        }
+        if (parentOrder.syncStatus != 'synced') {
+          // Parent not on Supabase yet; stays pending and retries next cycle.
+          continue;
+        }
+
         final data = _recordToMap(payment);
 
         await Supabase.instance.client
@@ -1467,13 +1483,16 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
   await _database.customUpdate(
 
-    'UPDATE $tableName SET sync_status = ?, updated_at = ? WHERE id = ?',
+    // payments has no updated_at column.
+    tableName == 'payments'
+        ? 'UPDATE $tableName SET sync_status = ? WHERE id = ?'
+        : 'UPDATE $tableName SET sync_status = ?, updated_at = ? WHERE id = ?',
 
     variables: [
 
       Variable.withString('synced'),
 
-      Variable.withDateTime(DateTime.now()),
+      if (tableName != 'payments') Variable.withDateTime(DateTime.now()),
 
       Variable.withInt(record.id),
 
