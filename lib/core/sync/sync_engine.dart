@@ -358,17 +358,12 @@ class SyncEngine {
 
       
 
-      final pendingRecords = await pushFunction();
+      // Each push function inserts/upserts its own records and marks them
+      // synced; a second generic pass over the same (stale) records only
+      // produced bigint/local_id errors.
+      await pushFunction();
 
-      
 
-      for (final record in pendingRecords) {
-
-        await _syncRecord(record, conflictRule);
-
-      }
-
-      
 
       debugPrint('Table $tableName synced successfully');
 
@@ -384,286 +379,7 @@ class SyncEngine {
 
   
 
-  /// Sync individual record to Supabase
 
-  Future<void> _syncRecord(dynamic record, SyncConflictResolution rule) async {
-
-    try {
-
-      final tableName = _getTableName(record);
-
-      final remoteId = record.remoteId;
-
-      
-
-      if (remoteId == null) {
-
-        // Insert new record
-
-        await _insertRemoteRecord(record, tableName);
-
-      } else {
-
-        // Update existing record
-
-        await _updateRemoteRecord(record, tableName, remoteId, rule);
-
-      }
-
-    } catch (e) {
-
-      debugPrint('Error syncing record: $e');
-
-      // Mark as conflicted
-
-      await _markRecordAsConflicted(record);
-
-    }
-
-  }
-
-  
-
-  /// Insert new record to Supabase
-
-  Future<void> _insertRemoteRecord(dynamic record, String tableName) async {
-
-    final data = _recordToMap(record);
-
-    data['sync_status'] = 'synced';
-
-    // Supabase's users and order_items tables have no local_id column.
-    if (tableName != 'users' && tableName != 'order_items') {
-      data['local_id'] = record.id;
-    }
-
-    
-
-    final response = await Supabase.instance.client
-
-        .from(tableName)
-
-        .insert(data)
-
-        .select('id')
-
-        .single();
-
-    
-
-    // Update local record with remote ID
-
-    await _markRecordAsSynced(record, response['id']);
-
-  }
-
-  
-
-  /// Update existing record in Supabase
-
-  Future<void> _updateRemoteRecord(
-
-    dynamic record, 
-
-    String tableName, 
-
-    String remoteId, 
-
-    SyncConflictResolution rule,
-
-  ) async {
-
-    final data = _recordToMap(record);
-
-    data.remove('id'); // Don't update primary key
-
-    data.remove('remote_id'); // Don't update remote ID
-
-    data.remove('local_id'); // Don't update local ID
-
-    
-
-    // Check for conflicts
-
-    final remoteRecord = await Supabase.instance.client
-
-        .from(tableName)
-
-        .select('updated_at')
-
-        .eq('id', remoteId)
-
-        .single();
-
-    
-
-    if (_hasConflict(record, remoteRecord, rule)) {
-
-      await _handleConflict(record, tableName, remoteId, rule);
-
-    } else {
-
-      // No conflict, proceed with update
-
-      await Supabase.instance.client
-
-          .from(tableName)
-
-          .update(data)
-
-          .eq('id', remoteId);
-
-      
-
-      await _markRecordAsSynced(record, remoteId);
-
-    }
-
-  }
-
-  
-
-  /// Helper method to get updatedAt from dynamic record
-
-  DateTime _getRecordUpdatedAt(dynamic record) {
-
-    if (record is User) return record.updatedAt;
-
-    if (record is Customer) return record.updatedAt;
-
-    if (record is Product) return record.updatedAt;
-
-    if (record is StockMovement) return record.updatedAt;
-
-    if (record is Order) return record.updatedAt;
-
-    if (record is OrderItem) return record.updatedAt;
-
-    if (record is Delivery) return record.updatedAt;
-
-    // Default fallback
-
-    return DateTime.now();
-
-  }
-
-
-
-  /// Handle conflict resolution
-
-  Future<void> _handleConflict(
-
-    dynamic record,
-
-    String tableName,
-
-    String remoteId,
-
-    SyncConflictResolution rule,
-
-  ) async {
-
-    switch (rule) {
-
-      case SyncConflictResolution.localWins:
-
-        // Push local changes to remote
-
-        final data = _recordToMap(record);
-
-        await Supabase.instance.client
-
-            .from(tableName)
-
-            .update(data)
-
-            .eq('id', remoteId);
-
-        await _markRecordAsSynced(record, remoteId);
-
-        break;
-
-        
-
-      case SyncConflictResolution.remoteWins:
-
-        // Pull remote changes to local
-
-        final remoteData = await Supabase.instance.client
-
-            .from(tableName)
-
-            .select()
-
-            .eq('id', remoteId)
-
-            .single();
-
-        await _updateLocalRecord(tableName, remoteData);
-
-        break;
-
-        
-
-      case SyncConflictResolution.lastWriteWins:
-
-        // Compare timestamps
-
-        final remoteData = await Supabase.instance.client
-
-            .from(tableName)
-
-            .select()
-
-            .eq('id', remoteId)
-
-            .single();
-
-        final localUpdatedAt = _getRecordUpdatedAt(record);
-
-        final remoteUpdatedAt = DateTime.parse(remoteData['updated_at']);
-
-        if (localUpdatedAt.isAfter(remoteUpdatedAt)) {
-
-          // Local is newer
-
-          final data = _recordToMap(record);
-
-          await Supabase.instance.client
-
-              .from(tableName)
-
-              .update(data)
-
-              .eq('id', remoteId);
-
-          await _markRecordAsSynced(record, remoteId);
-
-        } else {
-
-          // Remote is newer
-
-          await _updateLocalRecord(tableName, remoteData);
-
-        }
-
-        break;
-
-        
-
-      case SyncConflictResolution.manual:
-
-        // Mark for manual resolution
-
-        await _markRecordAsConflicted(record);
-
-        break;
-
-    }
-
-  }
-
-  
 
   /// Convert datetime value to Unix timestamp
   int _toUnixTimestamp(dynamic value) {
@@ -1771,14 +1487,6 @@ class SyncEngine {
 
   
 
-  bool _hasConflict(dynamic record, Map<String, dynamic> remoteRecord, SyncConflictResolution rule) {
-
-    // Check if there's a conflict based on timestamps and rule
-
-    return false;
-
-  }
-
   
 
   /// Mark user as synced (table-specific method)
@@ -1836,12 +1544,6 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 }
 
   
-
-  Future<void> _markRecordAsConflicted(dynamic record) async {
-
-    // Mark record as conflicted
-
-  }
 
   
 
