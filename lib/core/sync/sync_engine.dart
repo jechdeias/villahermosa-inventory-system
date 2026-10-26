@@ -879,6 +879,11 @@ class SyncEngine {
 
     for (final order in pendingOrders) {
 
+      // Seed/placeholder orders have no real customer to link to.
+      if (order.customerId.toString() == 'seed-customer') {
+        continue;
+      }
+
       try {
 
         final data = _recordToMap(order);
@@ -1493,8 +1498,6 @@ class SyncEngine {
 
         'user_name': record.userName,
 
-        'from_location': record.fromLocation,
-
         'to_location': record.toLocation,
 
         'unit_cost': record.unitCost,
@@ -1620,8 +1623,6 @@ class SyncEngine {
 
         'expected_delivery_date': record.expectedDeliveryDate?.toIso8601String(),
 
-        'actual_delivery_date': record.actualDeliveryDate?.toIso8601String(),
-
         'is_active': record.isActive,
 
         'is_deleted': record.isDeleted,
@@ -1663,8 +1664,6 @@ class SyncEngine {
         'quantity': record.quantity,
 
         'unit_price': record.unitPrice,
-
-        'is_active': record.isActive,
 
         'is_deleted': record.isDeleted,
 

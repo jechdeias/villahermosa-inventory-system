@@ -31,6 +31,8 @@ import 'features/sales/screens/sales_customers_screen.dart';
 import 'features/sales/screens/sales_orders_screen.dart';
 import 'features/sales/screens/sales_payments_screen.dart';
 import 'features/sales/screens/sales_profile_screen.dart';
+import 'features/customer/screens/profile_screen.dart';
+import 'features/delivery/screens/route_screen.dart';
 import 'core/auth/auth_service.dart';
 import 'features/auth/data/auth_repository.dart';
 
@@ -143,6 +145,8 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/warehouse/dashboard': (context) => WarehouseDashboardScreen(database: database, syncManager: SyncManager.instance),
       '/customer/dashboard': (context) => const CustomerDashboardScreen(),
       '/delivery/dashboard': (context) => const DeliveryDashboardScreen(),
+      '/delivery/route': (context) => const DeliveryRouteScreen(),
+      '/customer/profile': (context) => const CustomerProfileScreen(),
       '/sales/home': (context) => const SalesHomeScreen(),
       '/sales/customers': (context) => const SalesCustomersScreen(),
       '/sales/orders': (context) => const SalesOrdersScreen(),

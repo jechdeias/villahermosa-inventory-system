@@ -78,7 +78,6 @@ class NavigationService {
         case 'warehouse':
           return '/warehouse/dashboard';
         case 'delivery':
-          return '/delivery/dashboard';
         case 'sales_rep':
           return '/sales/home';
         case 'customer':
