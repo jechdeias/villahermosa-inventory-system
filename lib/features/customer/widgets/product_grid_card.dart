@@ -3,6 +3,17 @@ import '../../../core/database/app_database.dart';
 import 'customer_common.dart';
 import '../../../core/theme/app_theme.dart';
 
+/// First letter of a product's name, for the photo placeholder. Names that
+/// start with a number ("24 Seven Lemon Ice Tea") use their first letter
+/// ("S"), not the digit; a name with no letters at all falls back to its
+/// first character.
+String productInitial(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return '?';
+  final letter = RegExp(r'\p{L}', unicode: true).firstMatch(trimmed);
+  return (letter?.group(0) ?? trimmed[0]).toUpperCase();
+}
+
 /// Big initial letter on a grey tile — stands in for a product photo.
 class ProductImagePlaceholder extends StatelessWidget {
   const ProductImagePlaceholder({super.key, required this.name, required this.height, this.fontSize = 56});
@@ -17,7 +28,7 @@ class ProductImagePlaceholder extends StatelessWidget {
         color: CcColors.imageBg,
         alignment: Alignment.center,
         child: Text(
-          name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase(),
+          productInitial(name),
           style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w800, color: CcColors.muted),
         ),
       );

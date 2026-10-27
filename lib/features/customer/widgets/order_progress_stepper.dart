@@ -10,6 +10,15 @@ class OrderProgressStepper extends StatelessWidget {
 
   static const labels = ['Order Placed', 'Processing', 'Out for Delivery', 'Delivered'];
 
+  /// How each label breaks across lines. Breaking is explicit (never mid-word):
+  /// each line is scaled down to fit its column instead of wrapping, so a long
+  /// word like "Processing" can't split on narrow screens.
+  static const _lines = [
+    ['Order Placed'],
+    ['Processing'],
+    ['Out for', 'Delivery'],
+    ['Delivered'],
+  ];
   @override
   Widget build(BuildContext context) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,16 +35,28 @@ class OrderProgressStepper extends StatelessWidget {
                   ]),
                 ),
                 const SizedBox(height: 6),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Text(
-                    labels[i],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.2,
-                      fontWeight: i == currentStep ? FontWeight.w700 : FontWeight.w400,
-                      color: i <= currentStep ? CcColors.text : CcColors.light,
+                Semantics(
+                  label: labels[i],
+                  excludeSemantics: true,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Column(
+                      children: [
+                        for (final line in _lines[i])
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              line,
+                              maxLines: 1,
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.25,
+                                fontWeight: i == currentStep ? FontWeight.w700 : FontWeight.w400,
+                                color: i <= currentStep ? CcColors.text : CcColors.light,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),

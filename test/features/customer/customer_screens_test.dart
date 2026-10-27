@@ -14,6 +14,8 @@ import 'package:villahermosa_inventory_system/features/customer/screens/customer
 import 'package:villahermosa_inventory_system/features/customer/screens/customer_profile_screen.dart';
 import 'package:villahermosa_inventory_system/features/customer/screens/customer_shop_screen.dart';
 import 'package:villahermosa_inventory_system/features/customer/widgets/customer_common.dart';
+import 'package:villahermosa_inventory_system/features/customer/widgets/order_progress_stepper.dart';
+import 'package:villahermosa_inventory_system/features/customer/widgets/product_grid_card.dart';
 
 const _store = "Nena's Sari-Sari Store";
 
@@ -88,6 +90,39 @@ void main() {
       expect(paymentMethodFromNotes(null), isNull);
       expect(paymentMethodFromNotes('hello'), isNull);
     });
+  });
+
+  group('product placeholder + stepper', () {
+    test('productInitial uses the first letter, not a leading digit', () {
+      expect(productInitial('Coca-Cola 1.5L'), 'C');
+      expect(productInitial('24 Seven Lemon Ice Tea Powdered Drink Mix 40g 12x10'), 'S');
+      expect(productInitial('  nescafé 3-in-1'), 'N');
+      expect(productInitial('7-Up'), 'U');
+      expect(productInitial('555'), '5'); // no letters at all -> first character
+      expect(productInitial(''), '?');
+      expect(productInitial('   '), '?');
+    });
+
+    for (final width in const [320.0, 240.0]) {
+      testWidgets('stepper labels never overflow or split mid-word at ${width.toInt()}px', (tester) async {
+        final errors = <String>[];
+        final previous = FlutterError.onError;
+        FlutterError.onError = (d) => errors.add(d.toString());
+        try {
+          await tester.pumpWidget(MaterialApp(
+            home: Scaffold(body: Center(child: SizedBox(width: width, child: const OrderProgressStepper(currentStep: 1)))),
+          ));
+          await tester.pump();
+        } finally {
+          FlutterError.onError = previous;
+        }
+        expect(errors, isEmpty, reason: errors.join(' ||| '));
+        // Each word renders whole (one Text per line), so no label can wrap inside a word.
+        for (final line in ['Order Placed', 'Processing', 'Out for', 'Delivery', 'Delivered']) {
+          expect(find.text(line), findsOneWidget);
+        }
+      });
+    }
   });
 
   group('cart', () {
