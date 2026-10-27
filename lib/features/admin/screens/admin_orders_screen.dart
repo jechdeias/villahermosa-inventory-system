@@ -15,6 +15,7 @@ import '../widgets/order_item_row.dart';
 import '../widgets/order_status_badge.dart';
 import '../widgets/orders_filter_sheet.dart';
 import '../widgets/orders_stat_card.dart';
+import '../../../core/constants/order_status.dart';
 import '../../../core/theme/app_theme.dart';
 
 class AdminOrdersScreen extends ConsumerStatefulWidget {
@@ -261,9 +262,8 @@ class _OrdersListColumn extends ConsumerWidget {
     final allOrders = ref.watch(ordersStreamProvider).value ?? [];
 
     final tabs = [
-      _Tab('Pending', 'pending', allOrders.where((o) => o.status == 'pending').length),
-      _Tab('Completed', 'completed', allOrders.where((o) => o.status == 'completed').length),
-      _Tab('Cancelled', 'cancelled', allOrders.where((o) => o.status == 'cancelled').length),
+      for (final s in OrderStatus.all)
+        _Tab(OrderStatus.label(s), s, allOrders.where((o) => o.status == s).length),
       _Tab('All Orders', null, allOrders.length),
     ];
 

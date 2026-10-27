@@ -59,17 +59,28 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('pure helpers', () {
-    test('customerStatusOf collapses warehouse states for the customer', () {
-      expect(customerStatusOf(_order()), CustomerOrderStatus.processing);
+    test('customerStatusOf follows orders.status, with a fallback for pre-QR rows', () {
+      expect(customerStatusOf(_order()), CustomerOrderStatus.pending);
+      expect(customerStatusOf(_order(status: 'processing')), CustomerOrderStatus.processing);
+      expect(customerStatusOf(_order(status: 'out_for_delivery')), CustomerOrderStatus.outForDelivery);
+      expect(customerStatusOf(_order(status: 'delivered')), CustomerOrderStatus.delivered);
+      expect(customerStatusOf(_order(status: 'completed')), CustomerOrderStatus.completed);
+      expect(customerStatusOf(_order(status: 'cancelled', warehouseStatus: 'dispatched')), CustomerOrderStatus.cancelled);
+      // Rows the warehouse handled before out_for_delivery existed.
       expect(customerStatusOf(_order(warehouseStatus: 'processing')), CustomerOrderStatus.processing);
       expect(customerStatusOf(_order(warehouseStatus: 'ready')), CustomerOrderStatus.processing);
       expect(customerStatusOf(_order(warehouseStatus: 'dispatched')), CustomerOrderStatus.outForDelivery);
-      expect(customerStatusOf(_order(status: 'completed')), CustomerOrderStatus.delivered);
-      expect(customerStatusOf(_order(status: 'cancelled', warehouseStatus: 'dispatched')), CustomerOrderStatus.cancelled);
+
+      expect(customerStepOf(CustomerOrderStatus.pending), 0);
       expect(customerStepOf(CustomerOrderStatus.processing), 1);
       expect(customerStepOf(CustomerOrderStatus.outForDelivery), 2);
       expect(customerStepOf(CustomerOrderStatus.delivered), 3);
-      expect(isActiveCustomerOrder(CustomerOrderStatus.delivered), isFalse);
+      expect(customerStepOf(CustomerOrderStatus.completed), 3);
+      expect(customerStepOf(CustomerOrderStatus.cancelled), -1);
+      expect(isActiveCustomerOrder(CustomerOrderStatus.delivered), isTrue); // still needs confirming
+      expect(isActiveCustomerOrder(CustomerOrderStatus.completed), isFalse);
+      expect(isActiveCustomerOrder(CustomerOrderStatus.cancelled), isFalse);
+      expect(customerStatusLabel(CustomerOrderStatus.outForDelivery), 'Out for Delivery');
     });
 
     test('nextDeliveryDate picks the next route day', () {

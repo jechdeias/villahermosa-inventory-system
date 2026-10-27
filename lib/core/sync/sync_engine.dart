@@ -122,11 +122,38 @@ class SyncEngine {
 
   
 
+  /// Delivered orders the customer never confirmed receipt of within three
+  /// days are completed automatically. The clock runs from `updatedAt` (when
+  /// the order last changed, i.e. when the rep scanned it) rather than the
+  /// order date, so an order placed long ago but delivered today isn't
+  /// completed straight away. Returns how many orders were completed.
+  Future<int> autoConfirmDeliveries({DateTime? now}) async {
+    final at = now ?? DateTime.now();
+    final cutoff = at.subtract(const Duration(days: 3));
+    final stale = await (_database.select(_database.orders)
+          ..where((o) => o.status.equals('delivered') & o.updatedAt.isSmallerThanValue(cutoff)))
+        .get();
+    for (final o in stale) {
+      await (_database.update(_database.orders)..where((r) => r.id.equals(o.id))).write(
+        OrdersCompanion(
+          status: const Value('completed'),
+          syncStatus: const Value('pending'),
+          updatedAt: Value(at),
+        ),
+      );
+    }
+    if (stale.isNotEmpty) debugPrint('Auto-confirmed ${stale.length} delivered order(s) older than 3 days');
+    return stale.length;
+  }
+
   /// Push pending local records to Supabase
 
   Future<void> _pushLocalChanges() async {
 
     debugPrint('Pushing pending local changes to Supabase...');
+
+    // Complete stale deliveries first so the change goes up in this same push.
+    await autoConfirmDeliveries();
 
     
 
@@ -623,11 +650,14 @@ class SyncEngine {
         }
         data['customer_id'] = customer.id;
 
+        // upsert, not insert: a status change (delivered, completed, ...)
+        // re-pushes an order Supabase already has, and a plain insert would
+        // fail on its primary key and leave the change stuck at 'pending'.
         await Supabase.instance.client
 
             .from('orders')
 
-            .insert(data);
+            .upsert(data);
 
         await _markRecordAsSynced(order, order.id.toString());
 

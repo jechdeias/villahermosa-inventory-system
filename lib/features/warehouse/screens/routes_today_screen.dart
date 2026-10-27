@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/constants/order_status.dart';
 import '../providers/warehouse_providers.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
@@ -23,7 +24,7 @@ class _WarehouseRoutesTodayScreenState extends ConsumerState<WarehouseRoutesToda
     final orders = ref.watch(ordersStreamProvider).value ?? [];
     final lines = ref.watch(orderLinesByOrderProvider);
 
-    bool open(Order o) => o.status != 'cancelled' && o.status != 'completed';
+    bool open(Order o) => !OrderStatus.isFinished(o.status);
     Map<String, List<Order>> perRoute = {
       for (final r in routes) r.routeName: orders.where((o) => o.routeName == r.routeName && open(o)).toList(),
     };

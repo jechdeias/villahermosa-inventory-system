@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/constants/order_status.dart';
+import '../../../core/sync/sync_manager.dart';
 import '../providers/warehouse_providers.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
@@ -33,9 +35,12 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
       ),
     );
     if (ok != true) return;
-    await ref.read(warehouseActionsProvider).dispatchOrders(loadable);
+    final count = await ref.read(warehouseActionsProvider).dispatchOrders(loadable);
+    SyncManager.syncInBackground();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${route.routeName} dispatched')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Route dispatched. $count ${count == 1 ? 'order is' : 'orders are'} out for delivery.')),
+    );
   }
 
   @override
@@ -98,7 +103,7 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
   }
 
   Widget _detail(DeliveryRoute route, List<Order> allOrders, Map<String, List<OrderItem>> byOrder) {
-    final mine = allOrders.where((o) => o.routeName == route.routeName && o.status != 'cancelled' && o.status != 'completed').toList();
+    final mine = allOrders.where((o) => o.routeName == route.routeName && !OrderStatus.isFinished(o.status)).toList();
     final loadable = mine.where((o) => whOrderStatus(o) == 'ready').toList();
     final dispatched = mine.where((o) => whOrderStatus(o) == 'dispatched').toList();
     final waiting = mine.where(needsPreparing).length;

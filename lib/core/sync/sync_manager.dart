@@ -19,6 +19,16 @@ class SyncManager {
     return _instance!;
   }
 
+  /// Starts a push without waiting for it, for use right after a local write
+  /// (the change is already safe in Drift; offline just means it goes up on
+  /// the next sync). Never throws — including when SyncManager isn't
+  /// initialised, as in tests.
+  static void syncInBackground() {
+    try {
+      instance.syncPendingData().catchError((Object _) {});
+    } catch (_) {}
+  }
+
   static void initialize(AppDatabase database) {
     _instance ??= SyncManager(database, SyncEngine(database));
   }

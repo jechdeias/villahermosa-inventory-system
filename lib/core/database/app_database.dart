@@ -465,6 +465,31 @@ class AppDatabase extends _$AppDatabase {
         ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)]))
       .watch();
 
+  /// The order whose number (e.g. ORD-2408) matches [orderCode] — the value
+  /// printed in the customer's delivery QR code. Case and surrounding spaces
+  /// are ignored. (Orders have no separate "code" column: it's `orderNumber`.)
+  Future<Order?> getOrderByCode(String orderCode) {
+    final code = orderCode.trim().toUpperCase();
+    return (select(orders)
+          ..where((o) => o.orderNumber.upper().equals(code) & o.isDeleted.equals(false))
+          ..orderBy([(o) => OrderingTerm(expression: o.createdAt, mode: OrderingMode.desc)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// Sets an order's status by local id and flags it for sync. Delivered also
+  /// stamps the actual delivery time. (The uuid-keyed [updateOrderStatus]
+  /// predates this and is still used by the admin screens.)
+  Future<void> updateOrderStatusById(int id, String status) async {
+    final now = DateTime.now();
+    await (update(orders)..where((o) => o.id.equals(id))).write(OrdersCompanion(
+      status: Value(status),
+      actualDeliveryDate: status == 'delivered' ? Value(now) : const Value.absent(),
+      syncStatus: const Value('pending'),
+      updatedAt: Value(now),
+    ));
+  }
+
   Future<String> generateOrderNumber() async {
     final all = await (select(orders)
           ..where((t) => t.isDeleted.equals(false)))

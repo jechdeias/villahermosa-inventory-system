@@ -46,6 +46,12 @@ String ccWeekdayLong(DateTime d) => '${_longWeekdays[d.weekday - 1]}, ${ccShortD
 String ccLongFullDate(DateTime d) => '${_longWeekdays[d.weekday - 1]}, ${ccFullDate(d)}'; // Saturday, Oct 24, 2026
 String ccMonthYear(DateTime d) => '${_longMonths[d.month - 1]} ${d.year}'; // March 2023
 
+/// 10:12 AM
+String ccTime(DateTime d) {
+  final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+  return '$h:${d.minute.toString().padLeft(2, '0')} ${d.hour >= 12 ? 'PM' : 'AM'}';
+}
+
 bool ccSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// "Today, Oct 26" when it's today, otherwise "Thu, Oct 29".

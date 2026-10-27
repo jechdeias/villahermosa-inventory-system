@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
+import '../../../core/constants/order_status.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../admin/providers/delivery_routes_provider.dart' show deliveryRoutesStreamProvider;
@@ -180,34 +181,61 @@ final orderLinesProvider = StreamProvider.family<List<OrderItem>, String>(
 
 // ── Status helpers (pure) ─────────────────────────────────────────────────────
 
-enum CustomerOrderStatus { processing, outForDelivery, delivered, cancelled }
+enum CustomerOrderStatus { pending, processing, outForDelivery, delivered, completed, cancelled }
 
-/// What the store owner sees. The warehouse tracks finer states
-/// (pending/processing/ready); to the customer all of those are "Processing".
+/// What the store owner sees, from `orders.status`. Orders the warehouse
+/// handled before out_for_delivery existed still carry their progress in
+/// warehouseStatus, so that is used as a fallback for pending rows.
 CustomerOrderStatus customerStatusOf(Order o) {
-  if (o.status == 'cancelled') return CustomerOrderStatus.cancelled;
-  if (o.status == 'completed') return CustomerOrderStatus.delivered;
-  if (o.warehouseStatus == 'dispatched') return CustomerOrderStatus.outForDelivery;
-  return CustomerOrderStatus.processing;
+  switch (o.status) {
+    case OrderStatus.cancelled:
+      return CustomerOrderStatus.cancelled;
+    case OrderStatus.completed:
+      return CustomerOrderStatus.completed;
+    case OrderStatus.delivered:
+      return CustomerOrderStatus.delivered;
+    case OrderStatus.outForDelivery:
+      return CustomerOrderStatus.outForDelivery;
+    case OrderStatus.processing:
+      return CustomerOrderStatus.processing;
+  }
+  switch (o.warehouseStatus) {
+    case 'dispatched':
+      return CustomerOrderStatus.outForDelivery;
+    case 'processing':
+    case 'ready':
+    case 'packed':
+      return CustomerOrderStatus.processing;
+  }
+  return CustomerOrderStatus.pending;
 }
 
-String customerStatusLabel(CustomerOrderStatus s) => switch (s) {
-      CustomerOrderStatus.processing => 'Processing',
-      CustomerOrderStatus.outForDelivery => 'Out for Delivery',
-      CustomerOrderStatus.delivered => 'Delivered',
-      CustomerOrderStatus.cancelled => 'Cancelled',
+/// The matching `orders.status` string (what OrderStatusBadge takes).
+String customerStatusKey(CustomerOrderStatus s) => switch (s) {
+      CustomerOrderStatus.pending => OrderStatus.pending,
+      CustomerOrderStatus.processing => OrderStatus.processing,
+      CustomerOrderStatus.outForDelivery => OrderStatus.outForDelivery,
+      CustomerOrderStatus.delivered => OrderStatus.delivered,
+      CustomerOrderStatus.completed => OrderStatus.completed,
+      CustomerOrderStatus.cancelled => OrderStatus.cancelled,
     };
 
-/// Index of the current step in Placed → Processing → Out for Delivery →
+String customerStatusLabel(CustomerOrderStatus s) => OrderStatus.label(customerStatusKey(s));
+
+/// Index of the current step in Order Placed → Processing → Out for Delivery →
 /// Delivered (0-based). Cancelled orders have no stepper.
 int customerStepOf(CustomerOrderStatus s) => switch (s) {
+      CustomerOrderStatus.pending => 0,
       CustomerOrderStatus.processing => 1,
       CustomerOrderStatus.outForDelivery => 2,
       CustomerOrderStatus.delivered => 3,
+      CustomerOrderStatus.completed => 3,
       CustomerOrderStatus.cancelled => -1,
     };
 
-bool isActiveCustomerOrder(CustomerOrderStatus s) => s == CustomerOrderStatus.processing || s == CustomerOrderStatus.outForDelivery;
+/// Shows the progress stepper in lists: everything up to and including
+/// delivered (a delivered order still needs the customer's confirmation).
+bool isActiveCustomerOrder(CustomerOrderStatus s) => s != CustomerOrderStatus.completed && s != CustomerOrderStatus.cancelled;
 
 /// 'Collected' | 'Partial' | 'Pending' for a payment row.
 String paymentBadgeOf(Payment p) => switch (p.status) {

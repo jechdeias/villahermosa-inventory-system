@@ -4,6 +4,7 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
+import '../../admin/widgets/order_status_badge.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/customer_common.dart';
 import '../widgets/customer_shell.dart';
@@ -24,9 +25,11 @@ class _CustomerOrdersScreenState extends ConsumerState<CustomerOrdersScreen> {
 
   static const _chips = <(String, CustomerOrderStatus?)>[
     ('All', null),
+    ('Pending', CustomerOrderStatus.pending),
     ('Processing', CustomerOrderStatus.processing),
     ('Out for Delivery', CustomerOrderStatus.outForDelivery),
     ('Delivered', CustomerOrderStatus.delivered),
+    ('Completed', CustomerOrderStatus.completed),
     ('Cancelled', CustomerOrderStatus.cancelled),
   ];
 
@@ -105,10 +108,12 @@ class _OrderCard extends ConsumerWidget {
     final active = isActiveCustomerOrder(status);
     final rep = order.salesRepName ?? '';
     String? note;
-    if (status == CustomerOrderStatus.processing && order.expectedDeliveryDate != null) {
+    if ((status == CustomerOrderStatus.pending || status == CustomerOrderStatus.processing) && order.expectedDeliveryDate != null) {
       note = 'Delivery on ${ccWeekdayShort(order.expectedDeliveryDate!)}';
     } else if (status == CustomerOrderStatus.outForDelivery) {
       note = rep.isEmpty ? 'On the way today' : 'On the way today with $rep';
+    } else if (status == CustomerOrderStatus.delivered) {
+      note = 'Delivered \u2014 tap to confirm you received your order';
     }
 
     return Padding(
@@ -125,7 +130,7 @@ class _OrderCard extends ConsumerWidget {
                   TextSpan(text: ' · ${ccShortDate(order.createdAt)}', style: const TextStyle(fontSize: 15, color: CcColors.muted)),
                 ])),
               ),
-              CcBadge.status(customerStatusLabel(status)),
+              OrderStatusBadge(status: customerStatusKey(status)),
             ]),
             const SizedBox(height: 6),
             Row(children: [
@@ -135,7 +140,7 @@ class _OrderCard extends ConsumerWidget {
             ]),
             if (active) ...[
               const SizedBox(height: 12),
-              OrderProgressStepper(currentStep: customerStepOf(status)),
+              OrderProgressStepper(currentStep: customerStepOf(status), completed: status == CustomerOrderStatus.completed),
               if (note != null) ...[
                 const SizedBox(height: 12),
                 Text(note, style: const TextStyle(fontSize: 15, color: CcColors.muted)),

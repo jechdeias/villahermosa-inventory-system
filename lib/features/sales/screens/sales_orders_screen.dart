@@ -7,6 +7,7 @@ import '../../admin/widgets/order_status_badge.dart';
 import '../providers/sales_providers.dart';
 import '../widgets/new_order_flow.dart';
 import '../widgets/sales_shell.dart';
+import '../../../core/constants/order_status.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SalesOrdersScreen extends ConsumerStatefulWidget {
@@ -27,9 +28,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
 
     final tabs = [
       ('all', 'All', orders.length),
-      ('pending', 'Pending', orders.where((o) => o.status == 'pending').length),
-      ('completed', 'Completed', orders.where((o) => o.status == 'completed').length),
-      ('cancelled', 'Cancelled', orders.where((o) => o.status == 'cancelled').length),
+      for (final s in OrderStatus.all) (s, OrderStatus.label(s), orders.where((o) => o.status == s).length),
     ];
 
     return SalesShell(

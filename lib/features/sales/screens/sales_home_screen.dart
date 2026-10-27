@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../providers/sales_providers.dart';
+import 'sales_scan_screen.dart';
 import '../widgets/new_order_flow.dart';
 import '../widgets/record_payment_sheet.dart';
 import '../widgets/sales_shell.dart';
@@ -216,9 +217,10 @@ class _QuickActions extends ConsumerWidget {
             onTap: () => showRecordPaymentSheet(context),
           ),
           _QuickActionCard(
-            icon: Icons.store_outlined,
-            label: 'My Customers',
-            onTap: () => Navigator.of(context).pushReplacementNamed('/sales/customers'),
+            icon: Icons.qr_code_scanner_outlined,
+            label: 'Scan Delivery',
+            highlight: true,
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SalesScanScreen())),
           ),
           _QuickActionCard(
             icon: Icons.sync_outlined,
@@ -240,10 +242,13 @@ class _QuickActions extends ConsumerWidget {
 }
 
 class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({required this.icon, required this.label, required this.onTap});
+  const _QuickActionCard({required this.icon, required this.label, required this.onTap, this.highlight = false});
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+
+  /// Dark icon tile — used for Scan Delivery so it stands out.
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +267,15 @@ class _QuickActionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: AppTheme.primary),
+            if (highlight)
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, size: 18, color: Colors.white),
+              )
+            else
+              Icon(icon, size: 24, color: AppTheme.primary),
             const SizedBox(height: 8),
             Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textPrimary)),
           ],

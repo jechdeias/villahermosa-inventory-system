@@ -4,9 +4,12 @@ import '../../../core/theme/app_theme.dart';
 
 /// Order Placed → Processing → Out for Delivery → Delivered.
 /// Steps up to [currentStep] are filled; the current step's label is bold.
+/// With [completed] the last step reads "Completed ✓" in green (the customer
+/// confirmed receipt).
 class OrderProgressStepper extends StatelessWidget {
-  const OrderProgressStepper({super.key, required this.currentStep});
+  const OrderProgressStepper({super.key, required this.currentStep, this.completed = false});
   final int currentStep;
+  final bool completed;
 
   static const labels = ['Order Placed', 'Processing', 'Out for Delivery', 'Delivered'];
 
@@ -36,13 +39,13 @@ class OrderProgressStepper extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Semantics(
-                  label: labels[i],
+                  label: (completed && i == labels.length - 1) ? 'Completed' : labels[i],
                   excludeSemantics: true,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: Column(
                       children: [
-                        for (final line in _lines[i])
+                        for (final line in (completed && i == labels.length - 1) ? const ['Completed \u2713'] : _lines[i])
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
@@ -52,7 +55,9 @@ class OrderProgressStepper extends StatelessWidget {
                                 fontSize: 12,
                                 height: 1.25,
                                 fontWeight: i == currentStep ? FontWeight.w700 : FontWeight.w400,
-                                color: i <= currentStep ? CcColors.text : CcColors.light,
+                                color: (completed && i == labels.length - 1)
+                                    ? AppTheme.success
+                                    : (i <= currentStep ? CcColors.text : CcColors.light),
                               ),
                             ),
                           ),

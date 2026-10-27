@@ -12,6 +12,7 @@ import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
 import '../widgets/route_detail_panel.dart';
 import '../widgets/route_status_badge.dart';
+import '../../../core/constants/order_status.dart';
 import '../../../core/theme/app_theme.dart';
 
 class AdminDeliveriesScreen extends ConsumerStatefulWidget {
@@ -165,7 +166,7 @@ class _RoutesListColumn extends ConsumerWidget {
     final totalCustomers = allRoutes.fold<int>(0, (s, r) => s + r.customerCount);
     final deliveriesToday = allOrders.where((o) =>
         (o.routeName ?? '').isNotEmpty &&
-        o.status == 'pending' &&
+        OrderStatus.isInFulfilment(o.status) &&
         o.createdAt.year == now.year &&
         o.createdAt.month == now.month &&
         o.createdAt.day == now.day).length;

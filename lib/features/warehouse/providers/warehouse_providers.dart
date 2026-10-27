@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/constants/order_status.dart';
 import '../../../core/settings/app_settings.dart';
 import '../../admin/providers/orders_provider.dart' show databaseProvider;
 import '../../admin/providers/products_provider.dart' show productsStreamProvider;
@@ -22,8 +23,11 @@ final orderItemsStreamProvider = StreamProvider<List<OrderItem>>(
 /// Warehouse-side state of an order: cancelled | completed | dispatched |
 /// ready | processing | pending.
 String whOrderStatus(Order o) {
-  if (o.status == 'cancelled') return 'cancelled';
-  if (o.status == 'completed') return 'completed';
+  // Terminal / downstream statuses come from orders.status, which syncs.
+  if (o.status == OrderStatus.cancelled) return 'cancelled';
+  if (o.status == OrderStatus.completed || o.status == OrderStatus.delivered) return 'completed';
+  if (o.status == OrderStatus.outForDelivery) return 'dispatched';
+  // Before dispatch, picking progress lives in warehouseStatus (local only).
   switch (o.warehouseStatus) {
     case 'dispatched':
       return 'dispatched';
@@ -45,7 +49,7 @@ bool needsPreparing(Order o) {
 
 /// 'not started' | 'loading' | 'dispatched', derived from the route's open orders.
 String routeLoadState(DeliveryRoute r, List<Order> orders) {
-  final mine = orders.where((o) => o.routeName == r.routeName && o.status != 'cancelled' && o.status != 'completed').toList();
+  final mine = orders.where((o) => o.routeName == r.routeName && !OrderStatus.isFinished(o.status)).toList();
   if (mine.isEmpty) return 'not started';
   if (mine.every((o) => whOrderStatus(o) == 'dispatched')) return 'dispatched';
   if (mine.any((o) => whOrderStatus(o) == 'ready' || whOrderStatus(o) == 'dispatched')) return 'loading';
@@ -120,18 +124,24 @@ final lowStockProductsProvider = Provider<List<Product>>((ref) {
 
 // ── Writes ────────────────────────────────────────────────────────────────────
 //
-// Orders / order lines: warehouse_status, packed_at and line status are local
-// warehouse bookkeeping that the Supabase orders / order_items tables don't
-// have (see the push maps in sync_engine.dart), so these writes deliberately
-// leave sync_status alone — marking the row 'pending' would only make the
-// next sync re-insert an already-synced order.
+// Order *status* changes (pending → processing → out_for_delivery) are real
+// lifecycle changes the other roles need to see, so those writes mark the
+// order 'pending' for sync. warehouse_status, packed_at and per-line status
+// are local bookkeeping that Supabase doesn't have (see the push maps in
+// sync_engine.dart); writes that touch only those leave sync_status alone.
 
 class WarehouseActions {
   const WarehouseActions(this._db);
   final AppDatabase _db;
 
+  /// Warehouse picks the order up: pending → processing.
   Future<void> processOrder(Order o) => (_db.update(_db.orders)..where((t) => t.id.equals(o.id))).write(
-        OrdersCompanion(warehouseStatus: const Value('processing'), updatedAt: Value(DateTime.now())),
+        OrdersCompanion(
+          status: const Value(OrderStatus.processing),
+          warehouseStatus: const Value('processing'),
+          syncStatus: const Value('pending'),
+          updatedAt: Value(DateTime.now()),
+        ),
       );
 
   Future<void> setItemPicked(OrderItem i, bool picked) => (_db.update(_db.orderItems)..where((t) => t.id.equals(i.id))).write(
@@ -158,6 +168,10 @@ class WarehouseActions {
         packedAt: Value(now),
         packerId: Value(user?.uuid),
         updatedAt: Value(now),
+        // An order completed straight from pending skipped Process; its status
+        // should still read "processing" from here on.
+        status: o.status == OrderStatus.pending ? const Value(OrderStatus.processing) : const Value.absent(),
+        syncStatus: o.status == OrderStatus.pending ? const Value('pending') : const Value.absent(),
       ),
     );
   }
@@ -166,12 +180,20 @@ class WarehouseActions {
         OrderItemsCompanion(status: Value(loaded ? 'loaded' : 'picked'), updatedAt: Value(DateTime.now())),
       );
 
-  Future<void> dispatchOrders(List<Order> orders) async {
+  /// Truck leaves: every prepared order on the route becomes out_for_delivery
+  /// (the customer's phone then shows its QR code). Returns how many.
+  Future<int> dispatchOrders(List<Order> orders) async {
     for (final o in orders) {
       await (_db.update(_db.orders)..where((t) => t.id.equals(o.id))).write(
-        OrdersCompanion(warehouseStatus: const Value('dispatched'), updatedAt: Value(DateTime.now())),
+        OrdersCompanion(
+          status: const Value(OrderStatus.outForDelivery),
+          warehouseStatus: const Value('dispatched'),
+          syncStatus: const Value('pending'),
+          updatedAt: Value(DateTime.now()),
+        ),
       );
     }
+    return orders.length;
   }
 }
 
