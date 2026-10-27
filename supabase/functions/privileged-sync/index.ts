@@ -16,9 +16,10 @@
 //   may not be one for a while). That's fine: this app's own UI already
 //   lets anyone create a customer account with no privilege check, so
 //   this endpoint isn't opening anything new. What it must never allow is
-//   privilege escalation: any request — authenticated or not — that asks
-//   for a role other than 'customer' is force-downgraded to 'customer'
-//   UNLESS the caller is independently verified as an existing admin.
+//   privilege escalation: `role` is only ever written when the caller is
+//   independently verified as an existing admin. For anyone else the role
+//   field is stripped from the payload, so an existing user's role is left
+//   untouched and a new user is created as 'customer'.
 //   Verification is by the caller's Supabase Auth email, looked up
 //   against this app's own `users.role` — NOT anything the client sends,
 //   and NOT auth.uid(), since this codebase never links a local user's
@@ -82,27 +83,47 @@ serve(async (req) => {
     let result
     switch (action) {
       case 'sync_user': {
-        let role = data?.role ?? 'customer'
-        if (role !== 'customer') {
-          let callerIsAdmin = false
-          if (callerEmail) {
-            const { data: callerRow } = await admin
-              .from('users')
-              .select('role')
-              .eq('email', callerEmail)
-              .maybeSingle()
-            callerIsAdmin = callerRow?.role === 'admin'
-          }
-          if (!callerIsAdmin) {
-            // Silently downgrade rather than error — this keeps the public
-            // self-signup path working normally; it just can't ever create
-            // anything other than a customer.
-            role = 'customer'
-          }
+        // Only a verified admin may set or change `role`. Verification is by
+        // the caller's Supabase Auth email against this app's own users.role.
+        let callerIsAdmin = false
+        if (callerEmail) {
+          const { data: callerRow } = await admin
+            .from('users')
+            .select('role')
+            .eq('email', callerEmail)
+            .maybeSingle()
+          callerIsAdmin = callerRow?.role === 'admin'
         }
-        result = await admin
-          .from('users')
-          .upsert({ ...data, role }, { onConflict: 'uuid', ignoreDuplicates: false })
+
+        if (callerIsAdmin) {
+          result = await admin
+            .from('users')
+            .upsert(
+              { ...data, role: data?.role ?? 'customer' },
+              { onConflict: 'uuid', ignoreDuplicates: false },
+            )
+        } else {
+          // Not an admin: never touch `role`. Stripping it (instead of
+          // forcing 'customer') means an existing user keeps whatever role
+          // they already have — the old force-downgrade silently reset
+          // admin/warehouse/sales_rep/delivery accounts to 'customer' on
+          // every sync push. A brand-new row has no role to preserve, so
+          // it's created as 'customer' (the public self-signup path can
+          // never create anything else).
+          // deno-lint-ignore no-unused-vars
+          const { role: _ignored, ...rest } = data ?? {}
+          const { data: existing } = await admin
+            .from('users')
+            .select('uuid')
+            .eq('uuid', rest.uuid)
+            .maybeSingle()
+          result = await admin
+            .from('users')
+            .upsert(
+              existing ? rest : { ...rest, role: 'customer' },
+              { onConflict: 'uuid', ignoreDuplicates: false },
+            )
+        }
         break
       }
       case 'sync_supplier': {
