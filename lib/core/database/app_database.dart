@@ -456,6 +456,15 @@ class AppDatabase extends _$AppDatabase {
     ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
   ).watch();
 
+  /// A store owner's orders: those linked to their customer record, plus any
+  /// a sales rep took under the same store name. Newest first.
+  Stream<List<Order>> watchOrdersForCustomer(String? customerUuid, String storeName) => (select(orders)
+        ..where((t) =>
+            t.isDeleted.equals(false) &
+            (t.storeName.equals(storeName) | (customerUuid == null ? const Constant(false) : t.customerId.equals(customerUuid))))
+        ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)]))
+      .watch();
+
   Future<String> generateOrderNumber() async {
     final all = await (select(orders)
           ..where((t) => t.isDeleted.equals(false)))

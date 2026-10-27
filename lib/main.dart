@@ -33,14 +33,17 @@ import 'features/warehouse/screens/routes_today_screen.dart';
 import 'features/warehouse/screens/returns_screen.dart';
 import 'features/warehouse/screens/reports_screen.dart';
 import 'features/warehouse/screens/sync_activity_screen.dart';
-import 'features/customer/screens/dashboard_screen.dart';
+import 'features/customer/screens/customer_shop_screen.dart';
+import 'features/customer/screens/customer_orders_screen.dart';
+import 'features/customer/screens/customer_cart_screen.dart';
+import 'features/customer/screens/customer_payments_screen.dart';
+import 'features/customer/screens/customer_profile_screen.dart';
 import 'features/delivery/screens/dashboard_screen.dart';
 import 'features/sales/screens/sales_home_screen.dart';
 import 'features/sales/screens/sales_customers_screen.dart';
 import 'features/sales/screens/sales_orders_screen.dart';
 import 'features/sales/screens/sales_payments_screen.dart';
 import 'features/sales/screens/sales_profile_screen.dart';
-import 'features/customer/screens/profile_screen.dart';
 import 'features/delivery/screens/route_screen.dart';
 import 'core/auth/auth_service.dart';
 import 'features/auth/data/auth_repository.dart';
@@ -161,7 +164,10 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/warehouse/returns': (context) => const WarehouseReturnsScreen(),
       '/warehouse/reports': (context) => const WarehouseReportsScreen(),
       '/warehouse/sync': (context) => const WarehouseSyncActivityScreen(),
-      '/customer/dashboard': (context) => const CustomerDashboardScreen(),
+      '/customer/dashboard': (context) => const CustomerShopScreen(),
+      '/customer/orders': (context) => const CustomerOrdersScreen(),
+      '/customer/cart': (context) => const CustomerCartScreen(),
+      '/customer/payments': (context) => const CustomerPaymentsScreen(),
       '/delivery/dashboard': (context) => const DeliveryDashboardScreen(),
       '/delivery/route': (context) => const DeliveryRouteScreen(),
       '/customer/profile': (context) => const CustomerProfileScreen(),

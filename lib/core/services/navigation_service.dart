@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/admin/screens/dashboard_screen.dart';
 import '../../features/admin/screens/user_accounts_screen.dart';
-import '../../features/customer/screens/dashboard_screen.dart';
+import '../../features/customer/screens/customer_shop_screen.dart';
 import '../../features/delivery/screens/dashboard_screen.dart';
 import '../../features/warehouse/screens/dashboard_screen.dart';
 import '../../features/auth/account_pending_screen.dart';
@@ -31,13 +31,13 @@ class NavigationService {
       case 'delivery':
         return const DeliveryDashboardScreen();
       case 'customer':
-        return const CustomerDashboardScreen();
+        return const CustomerShopScreen();
       case 'pending':
         return const AccountPendingScreen();
       case 'users':
         return UserAccountsScreen(database: _database, syncManager: SyncManager.instance);
       default:
-        return const CustomerDashboardScreen(); // Default fallback
+        return const CustomerShopScreen(); // Default fallback
     }
   }
 
