@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 import '../database/app_database.dart';
 import 'sync_engine.dart';
 
@@ -47,7 +48,28 @@ class SyncManager {
     }
   }
 
+  /// True only when there is an active Supabase Auth session. RLS returns
+  /// zero rows to an unauthenticated client, so a pull without one would look
+  /// like it worked while fetching nothing.
+  bool get _hasSupabaseSession {
+    try {
+      return Supabase.instance.client.auth.currentSession != null;
+    } catch (_) {
+      return false; // Supabase not initialised
+    }
+  }
+
   Future<Map<String, dynamic>> pull() async {
+    if (!_hasSupabaseSession) {
+      debugPrint('Pull skipped: no active Supabase session (sign in first)');
+      return {
+        'success': true,
+        'skipped': true,
+        'recordsPulled': 0,
+        'error': null,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    }
     try {
       debugPrint('Starting pull operation...');
       final initialCounts = await _getTotalRecordCounts();

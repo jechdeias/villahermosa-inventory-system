@@ -614,7 +614,11 @@ class SyncEngine {
         // it to the customer's numeric id first.
         final customer = await _database.getCustomerById(order.customerId);
         if (customer == null) {
-          debugPrint('Failed to sync order ${order.id}: no local customer for customerId=${order.customerId}');
+          // Not a failure: the order belongs to an account with no linked
+          // customer record (e.g. a customer login whose email matches no
+          // customer), so customerId is that user's own uuid. It stays
+          // pending and goes up once the account is linked to a customer.
+          debugPrint('Skipping order ${order.id}: no local customer for customerId=${order.customerId}');
           continue;
         }
         data['customer_id'] = customer.id;
