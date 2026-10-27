@@ -10,6 +10,7 @@ class ResponsiveShell extends StatefulWidget {
     this.selectedRoute = '/',
     this.navItems,
     this.syncManager,
+    this.subtitle = 'Marketing Admin',
   });
 
   final Widget child;
@@ -17,6 +18,9 @@ class ResponsiveShell extends StatefulWidget {
   final dynamic database;
   final List<NavigationItem>? navItems;
   final dynamic syncManager;
+
+  /// Second line under 'Villahermosa' in the sidebar header.
+  final String subtitle;
 
   @override
   State<ResponsiveShell> createState() => 
@@ -185,7 +189,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                                     color: Colors.white),
                                   overflow:
                                     TextOverflow.ellipsis),
-                                const Text('Marketing Admin',
+                                Text(widget.subtitle,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color:
@@ -251,9 +255,17 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
         hoverColor: const Color(0xFF252525),
         child: Container(
           height: 48,
-          color: active
-            ? const Color(0xFF2A2A2A)
-            : Colors.transparent,
+          decoration: BoxDecoration(
+            color: active
+              ? const Color(0xFF2A2A2A)
+              : Colors.transparent,
+            border: Border(
+              left: BorderSide(
+                color: active
+                  ? Colors.white
+                  : Colors.transparent,
+                width: 2)),
+          ),
           child: Row(
             children: [
               const SizedBox(width: 16),

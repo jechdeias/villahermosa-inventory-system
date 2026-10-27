@@ -24,6 +24,15 @@ import 'features/admin/screens/dashboard_screen.dart';
 import 'features/admin/screens/user_accounts_screen.dart';
 import 'features/admin/screens/admin_settings_screen.dart';
 import 'features/warehouse/screens/dashboard_screen.dart';
+import 'features/warehouse/screens/incoming_orders_screen.dart';
+import 'features/warehouse/screens/prepare_orders_screen.dart';
+import 'features/warehouse/screens/inventory_screen.dart';
+import 'features/warehouse/screens/stock_movement_screen.dart';
+import 'features/warehouse/screens/loading_dispatch_screen.dart';
+import 'features/warehouse/screens/routes_today_screen.dart';
+import 'features/warehouse/screens/returns_screen.dart';
+import 'features/warehouse/screens/reports_screen.dart';
+import 'features/warehouse/screens/sync_activity_screen.dart';
 import 'features/customer/screens/dashboard_screen.dart';
 import 'features/delivery/screens/dashboard_screen.dart';
 import 'features/sales/screens/sales_home_screen.dart';
@@ -142,7 +151,16 @@ class VillahermosaInventoryApp extends StatelessWidget {
       '/admin/deliveries': (context) => AdminDeliveriesScreen(database: database, syncManager: SyncManager.instance),
       '/admin/reports': (context) => AdminReportsScreen(database: database, syncManager: SyncManager.instance),
       '/admin/settings': (context) => AdminSettingsScreen(database: database, syncManager: SyncManager.instance),
-      '/warehouse/dashboard': (context) => WarehouseDashboardScreen(database: database, syncManager: SyncManager.instance),
+      '/warehouse/dashboard': (context) => const WarehouseDashboardScreen(),
+      '/warehouse/incoming-orders': (context) => const WarehouseIncomingOrdersScreen(),
+      '/warehouse/prepare-orders': (context) => const WarehousePrepareOrdersScreen(),
+      '/warehouse/inventory': (context) => const WarehouseInventoryScreen(),
+      '/warehouse/stock-movement': (context) => const WarehouseStockMovementScreen(),
+      '/warehouse/loading-dispatch': (context) => const WarehouseLoadingDispatchScreen(),
+      '/warehouse/routes-today': (context) => const WarehouseRoutesTodayScreen(),
+      '/warehouse/returns': (context) => const WarehouseReturnsScreen(),
+      '/warehouse/reports': (context) => const WarehouseReportsScreen(),
+      '/warehouse/sync': (context) => const WarehouseSyncActivityScreen(),
       '/customer/dashboard': (context) => const CustomerDashboardScreen(),
       '/delivery/dashboard': (context) => const DeliveryDashboardScreen(),
       '/delivery/route': (context) => const DeliveryRouteScreen(),

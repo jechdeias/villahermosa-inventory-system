@@ -1,508 +1,255 @@
 import 'package:flutter/material.dart';
-import 'package:drift/drift.dart' as drift;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
-import '../../../core/widgets/responsive_shell.dart';
+import '../providers/warehouse_providers.dart';
+import '../widgets/warehouse_shell.dart';
+import '../widgets/wh_widgets.dart';
 
-/// Warehouse Dashboard Screen
-/// 
-/// Provides warehouse operations overview and management tools.
-class WarehouseDashboardScreen extends StatefulWidget {
-  const WarehouseDashboardScreen({
-    super.key, 
-    required this.database, 
-    required this.syncManager
-  });
-  
-  final AppDatabase database;
-  final SyncManager syncManager;
+class WarehouseDashboardScreen extends ConsumerWidget {
+  const WarehouseDashboardScreen({super.key});
 
   @override
-  State<WarehouseDashboardScreen> createState() => _WarehouseDashboardScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final orders = ref.watch(ordersStreamProvider).value ?? [];
+    final routes = ref.watch(deliveryRoutesStreamProvider).value ?? [];
+    final lowStock = ref.watch(lowStockProductsProvider);
+
+    final incoming = orders.where((o) => whOrderStatus(o) == 'pending').length;
+    final toPrepare = orders.where(needsPreparing).length;
+    final activeRoutes = routes.where((r) => r.status == 'active').length;
+
+    final synced = lastSyncTime();
+
+    return WarehouseShell(
+      route: WhRoutes.dashboard,
+      child: WhPage(children: [
+        WhPageHeader(
+          title: 'Warehouse Dashboard',
+          subtitle: 'Villahermosa Marketing - Warehouse Operations',
+          trailing: _SyncChip(lastSync: synced),
+        ),
+        WhStatRow(cards: [
+          WhStatCard(label: 'Incoming Orders', value: '$incoming', sub: 'Orders to receive', dotColor: WhColors.blue),
+          WhStatCard(label: 'Orders to Prepare', value: '$toPrepare', sub: 'Pending picklist', dotColor: WhColors.amber),
+          WhStatCard(label: 'Low Stock Alerts', value: '${lowStock.length}', sub: 'Items below threshold', dotColor: WhColors.red),
+          WhStatCard(label: "Today's Routes", value: '$activeRoutes', sub: 'Active delivery routes', dotColor: WhColors.green),
+        ]),
+        WhTwoColumn(
+          sideWidth: 320,
+          main: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _RecentActivityCard(),
+              const SizedBox(height: 16),
+              _TodayRoutesCard(routes: routes, orders: orders),
+            ],
+          ),
+          side: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _QuickActionsCard(),
+              const SizedBox(height: 16),
+              _LowStockCard(items: lowStock),
+            ],
+          ),
+        ),
+      ]),
+    );
+  }
 }
 
-class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
-  int _incomingOrdersCount = 0;
-  int _ordersToPrepareCount = 0;
-  int _lowStockAlertsCount = 0;
-  int _todayRoutesCount = 0;
-  List<StockMovement> _recentActivities = [];
-  bool _isLoading = true;
-
-  // Warehouse navigation items
-  static const List<NavigationItem> _warehouseNavItems = [
-    NavigationItem(
-      route: '/warehouse/dashboard',
-      icon: Icons.dashboard,
-      label: 'Dashboard',
-    ),
-    NavigationItem(
-      route: '/warehouse/incoming-orders',
-      icon: Icons.inventory_2,
-      label: 'Incoming Orders',
-    ),
-    NavigationItem(
-      route: '/warehouse/prepare-orders',
-      icon: Icons.assignment,
-      label: 'Prepare Orders',
-    ),
-    NavigationItem(
-      route: '/warehouse/inventory',
-      icon: Icons.storage,
-      label: 'Inventory Stock',
-    ),
-    NavigationItem(
-      route: '/warehouse/stock-movement',
-      icon: Icons.trending_up,
-      label: 'Stock Movement',
-    ),
-    NavigationItem(
-      route: '/warehouse/loading-dispatch',
-      icon: Icons.local_shipping,
-      label: 'Loading & Dispatch',
-    ),
-    NavigationItem(
-      route: '/warehouse/routes',
-      icon: Icons.location_on,
-      label: 'Routes Today',
-    ),
-    NavigationItem(
-      route: '/warehouse/returns',
-      icon: Icons.refresh,
-      label: 'Returns & Damaged',
-    ),
-    NavigationItem(
-      route: '/warehouse/reports',
-      icon: Icons.bar_chart,
-      label: 'Reports',
-    ),
-  ];
+class _SyncChip extends StatelessWidget {
+  const _SyncChip({required this.lastSync});
+  final DateTime? lastSync;
 
   @override
-  void initState() {
-    super.initState();
-    _loadDashboardData();
-  }
-
-  Future<void> _loadDashboardData() async {
-    try {
-      final results = await Future.wait(<Future<Object>>[
-        _getIncomingOrdersCount(),
-        _getOrdersToPrepareCount(),
-        _getLowStockAlertsCount(),
-        _getTodayRoutesCount(),
-        _getRecentActivities(),
-      ]);
-
-      if (mounted) {
-        setState(() {
-          _incomingOrdersCount = results[0] as int;
-          _ordersToPrepareCount = results[1] as int;
-          _lowStockAlertsCount = results[2] as int;
-          _todayRoutesCount = results[3] as int;
-          _recentActivities = results[4] as List<StockMovement>;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading dashboard: $e')),
-        );
-      }
-    }
-  }
-
-  Future<int> _getIncomingOrdersCount() async {
-    final result = await widget.database.customSelect(
-      "SELECT COUNT(*) as count FROM orders WHERE status = 'incoming' AND is_deleted = 0"
-    ).getSingle();
-    return result.read<int>('count');
-  }
-
-  Future<int> _getOrdersToPrepareCount() async {
-    final result = await widget.database.customSelect(
-      "SELECT COUNT(*) as count FROM orders WHERE status = 'pending' AND is_deleted = 0"
-    ).getSingle();
-    return result.read<int>('count');
-  }
-
-  Future<int> _getLowStockAlertsCount() async {
-    final result = await widget.database.customSelect(
-      "SELECT COUNT(*) as count FROM products WHERE current_stock <= min_stock AND is_deleted = 0"
-    ).getSingle();
-    return result.read<int>('count');
-  }
-
-  Future<int> _getTodayRoutesCount() async {
-    final today = DateTime.now();
-    final todayStart = DateTime(today.year, today.month, today.day);
-    final todayEnd = todayStart.add(const Duration(days: 1));
-    
-    final result = await widget.database.customSelect(
-      "SELECT COUNT(*) as count FROM deliveries WHERE date >= ? AND date < ? AND is_deleted = 0",
-      variables: [
-        drift.Variable.withString(todayStart.toIso8601String()),
-        drift.Variable.withString(todayEnd.toIso8601String()),
+  Widget build(BuildContext context) {
+    final ok = lastSync != null;
+    final color = ok ? WhColors.green : WhColors.amber;
+    final label = lastSync == null
+        ? 'Not synced yet'
+        : isSameDay(lastSync!, DateTime.now())
+            ? 'Last sync: Today, ${formatClock(lastSync!)}'
+            : 'Last sync: ${formatDate(lastSync!)}, ${formatClock(lastSync!)}';
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 10,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: ok ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(20)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 6),
+            Text(ok ? 'Synced' : 'Pending', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
+          ]),
+        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: WhColors.muted)),
       ],
-    ).getSingle();
-    return result.read<int>('count');
+    );
   }
+}
 
-  Future<List<StockMovement>> _getRecentActivities() async {
-    return await (widget.database.select(widget.database.stockMovements)
-          ..orderBy([(t) => drift.OrderingTerm(
-            expression: t.createdAt, 
-            mode: drift.OrderingMode.desc
-          )])
-          ..limit(5))
-        .get();
+class _ActivityItem {
+  const _ActivityItem(this.time, this.icon, this.color, this.bg, this.title, this.subtitle);
+  final DateTime time;
+  final IconData icon;
+  final Color color;
+  final Color bg;
+  final String title;
+  final String subtitle;
+}
+
+class _RecentActivityCard extends ConsumerWidget {
+  const _RecentActivityCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final movements = ref.watch(stockMovementsStreamProvider).value ?? [];
+    final orders = ref.watch(ordersStreamProvider).value ?? [];
+    final products = ref.watch(productsStreamProvider).value ?? [];
+
+    String nameOf(String uuid) {
+      for (final p in products) {
+        if (p.uuid == uuid) return p.name;
+      }
+      return 'Unknown product';
+    }
+
+    final items = <_ActivityItem>[
+      for (final m in movements)
+        _ActivityItem(
+          m.createdAt,
+          m.movementType == 'in' ? Icons.south : Icons.north,
+          m.movementType == 'in' ? WhColors.blue : WhColors.red,
+          m.movementType == 'in' ? const Color(0xFFEFF6FF) : const Color(0xFFFEF2F2),
+          m.movementType == 'in' ? 'Stock-in: ${m.quantity} × ${nameOf(m.productId)}' : 'Stock-out: ${m.quantity} × ${nameOf(m.productId)}',
+          [m.reason, if ((m.referenceId ?? '').isNotEmpty) m.referenceId!, 'by ${m.userName}'].join(' · '),
+        ),
+      for (final o in orders)
+        if (whOrderStatus(o) == 'ready' || whOrderStatus(o) == 'dispatched')
+          _ActivityItem(
+            o.packedAt ?? o.updatedAt,
+            whOrderStatus(o) == 'ready' ? Icons.check : Icons.local_shipping_outlined,
+            whOrderStatus(o) == 'ready' ? WhColors.green : WhColors.amber,
+            whOrderStatus(o) == 'ready' ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB),
+            'Order ${o.orderNumber} ${whOrderStatus(o) == 'ready' ? 'prepared' : 'dispatched'}',
+            [o.storeName ?? '', if ((o.routeName ?? '').isNotEmpty) o.routeName!].where((s) => s.isNotEmpty).join(' · '),
+          ),
+    ]..sort((a, b) => b.time.compareTo(a.time));
+
+    final recent = items.take(5).toList();
+    return WhCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          WhCardTitle('Recent Activity',
+              trailing: InkWell(
+                onTap: () => whGo(context, WhRoutes.sync),
+                child: const Text('View all', style: TextStyle(fontSize: 12, color: WhColors.text, decoration: TextDecoration.underline)),
+              )),
+          if (recent.isEmpty)
+            const WhEmpty('No activity yet')
+          else
+            for (final a in recent)
+              WhRecentActivityRow(icon: a.icon, iconColor: a.color, iconBg: a.bg, title: a.title, subtitle: a.subtitle, time: timeAgo(a.time)),
+        ],
+      ),
+    );
   }
+}
 
-  Future<void> _handleQuickAction(String action) async {
-    switch (action) {
-      case 'Sync Data':
-        try {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Syncing data...')),
-          );
-          await widget.syncManager.push();
-          await widget.syncManager.pull();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Sync completed successfully!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Sync failed: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-        break;
-      default:
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Coming soon')),
-          );
-        }
+class _TodayRoutesCard extends StatelessWidget {
+  const _TodayRoutesCard({required this.routes, required this.orders});
+  final List<DeliveryRoute> routes;
+  final List<Order> orders;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = routes.where((r) => r.status == 'active').toList();
+    const flex = [5, 3, 2, 2];
+    return WhCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          WhCardTitle("Today's Routes",
+              trailing: InkWell(
+                onTap: () => whGo(context, WhRoutes.routesToday),
+                child: const Text('Open Routes Today', style: TextStyle(fontSize: 12, color: WhColors.text, decoration: TextDecoration.underline)),
+              )),
+          if (active.isEmpty)
+            const WhEmpty('No active routes')
+          else
+            WhTableScroll(
+              minWidth: 460,
+              child: Column(children: [
+                const WhTableHeader(columns: ['Route', 'Municipality', 'Stores', 'Status'], flex: flex),
+                for (final r in active.take(5))
+                  WhTableRow(
+                    flex: flex,
+                    cells: [
+                      Text(r.routeName, style: const TextStyle(fontSize: 13, color: WhColors.text)),
+                      Text(r.municipality, style: const TextStyle(fontSize: 12, color: WhColors.muted)),
+                      Text('${r.customerCount}', style: const TextStyle(fontSize: 13, color: WhColors.text)),
+                      WhStatusBadge(routeLoadState(r, orders)),
+                    ],
+                  ),
+              ]),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionsCard extends ConsumerStatefulWidget {
+  const _QuickActionsCard();
+
+  @override
+  ConsumerState<_QuickActionsCard> createState() => _QuickActionsCardState();
+}
+
+class _QuickActionsCardState extends ConsumerState<_QuickActionsCard> {
+  Future<void> _sync() async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(const SnackBar(content: Text('Syncing…')));
+    try {
+      await SyncManager.instance.syncPendingData();
+      messenger.showSnackBar(const SnackBar(content: Text('Sync finished')));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Sync failed: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveShell(
-      selectedRoute: '/warehouse/dashboard',
-      database: widget.database,
-      navItems: _warehouseNavItems,
-      syncManager: widget.syncManager,
-      child: _buildWarehouseDashboard(),
-    );
-  }
-
-  Widget _buildWarehouseDashboard() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
+    Widget tile(IconData icon, String label, VoidCallback onTap) => WhQuickActionButton(icon: icon, label: label, onTap: onTap);
+    return WhCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Page Header
-          _buildPageHeader(),
-          const SizedBox(height: 24),
-          
-          // Stats Cards
-          _buildStatsCards(),
-          const SizedBox(height: 24),
-          
-          // Activity and Actions Row
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth > 1200) {
-                  // Desktop layout
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 6, child: _buildRecentActivity()),
-                      const SizedBox(width: 24),
-                      Expanded(flex: 4, child: _buildQuickActions()),
-                    ],
-                  );
-                } else {
-                  // Mobile layout
-                  return Column(
-                    children: [
-                      _buildRecentActivity(),
-                      const SizedBox(height: 24),
-                      _buildQuickActions(),
-                    ],
-                  );
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPageHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Warehouse Dashboard',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF1E1E1E),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Villahermosa Marketing - Warehouse Operations',
-          style: TextStyle(
-            fontSize: 14,
-            color: const Color(0xFF6B6B6B),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsCards() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth > 800 ? 4 : 2;
-        
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.5,
-          children: [
-            _buildStatCard(
-              'Incoming Orders',
-              _incomingOrdersCount,
-              Icons.inventory_2,
-              'Orders to receive',
-            ),
-            _buildStatCard(
-              'Orders to Prepare',
-              _ordersToPrepareCount,
-              Icons.assignment,
-              'Pending picklist',
-            ),
-            _buildStatCard(
-              'Low Stock Alerts',
-              _lowStockAlertsCount,
-              Icons.warning,
-              'Items below threshold',
-            ),
-            _buildStatCard(
-              "Today's Routes",
-              _todayRoutesCount,
-              Icons.local_shipping,
-              'Active delivery routes',
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildStatCard(String label, int value, IconData icon, String description) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon and label row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF1E1E1E),
-                  ),
-                ),
-                Icon(
-                  icon,
-                  color: const Color(0xFF1E1E1E),
-                  size: 20,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            
-            // Large number
-            Text(
-              value.toString(),
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1E1E1E),
-              ),
-            ),
-            
-            // Description
-            Text(
-              description,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6B6B6B),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentActivity() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Recent Activity',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E1E1E),
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          Expanded(
-            child: _recentActivities.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No recent activity',
-                      style: TextStyle(color: Color(0xFF6B6B6B)),
-                    ),
-                  )
-                : ListView.separated(
-                    itemCount: _recentActivities.length,
-                    separatorBuilder: (context, index) => const Divider(
-                      color: Color(0xFFE0E0E0),
-                      height: 1,
-                    ),
-                    itemBuilder: (context, index) {
-                      final activity = _recentActivities[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                activity.reason,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF1E1E1E),
-                                ),
-                              ),
-                            ),
-                            Text(
-                              (() {
-                                final now = DateTime.now();
-                                final difference = now.difference(activity.createdAt);
-                                
-                                if (difference.inMinutes < 1) {
-                                  return 'Just now';
-                                } else if (difference.inMinutes < 60) {
-                                  return '${difference.inMinutes} minutes ago';
-                                } else if (difference.inHours < 24) {
-                                  return '${difference.inHours} hours ago';
-                                } else {
-                                  return '${difference.inDays} days ago';
-                                }
-                              })(),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF6B6B6B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E1E1E),
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          Expanded(
-            child: GridView.count(
+          const WhCardTitle('Quick Actions'),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: GridView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 2.5,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                mainAxisExtent: 88,
+              ),
               children: [
-                _buildActionButton('Stock In'),
-                _buildActionButton('Stock Out'),
-                _buildActionButton('New Order'),
-                _buildActionButton('Print Labels'),
-                _buildActionButton('View Routes'),
-                _buildActionButton('Sync Data'),
+                tile(Icons.download, 'Stock In', () => whGo(context, WhRoutes.stockMovement, args: 'in')),
+                tile(Icons.upload, 'Stock Out', () => whGo(context, WhRoutes.stockMovement, args: 'out')),
+                tile(Icons.add, 'New Order', () => whGo(context, WhRoutes.incoming)),
+                tile(Icons.print_outlined, 'Print Labels', () {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Label printing is not set up yet')));
+                }),
+                tile(Icons.map_outlined, 'View Routes', () => whGo(context, WhRoutes.routesToday)),
+                tile(Icons.sync, 'Sync Data', _sync),
               ],
             ),
           ),
@@ -510,25 +257,42 @@ class _WarehouseDashboardScreenState extends State<WarehouseDashboardScreen> {
       ),
     );
   }
+}
 
-  Widget _buildActionButton(String label) {
-    return ElevatedButton(
-      onPressed: () => _handleQuickAction(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E1E1E),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+class _LowStockCard extends StatelessWidget {
+  const _LowStockCard({required this.items});
+  final List<Product> items;
+
+  @override
+  Widget build(BuildContext context) => WhCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            WhCardTitle('Low Stock',
+                trailing: InkWell(
+                  onTap: () => whGo(context, WhRoutes.inventory),
+                  child: Text('See all ${items.length}', style: const TextStyle(fontSize: 12, color: WhColors.text, decoration: TextDecoration.underline)),
+                )),
+            if (items.isEmpty)
+              const WhEmpty('Nothing is running low')
+            else
+              for (final p in items.take(4))
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6)))),
+                  child: Row(children: [
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(p.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: WhColors.text), overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text('Min ${p.minStock} ${p.unit}', style: const TextStyle(fontSize: 11, color: WhColors.muted)),
+                      ]),
+                    ),
+                    Text('${p.currentStock} left',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isOutOfStock(p) ? WhColors.red : WhColors.amber)),
+                  ]),
+                ),
+          ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
+      );
 }
