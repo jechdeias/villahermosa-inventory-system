@@ -256,7 +256,8 @@ class RouteGuard {
         Navigator.pushReplacementNamed(context, '/warehouse/dashboard');
         break;
       case 'delivery':
-        Navigator.pushReplacementNamed(context, '/delivery/dashboard');
+      case 'sales_rep':
+        Navigator.pushReplacementNamed(context, '/sales/home');
         break;
       case 'customer':
         Navigator.pushReplacementNamed(context, '/customer/dashboard');

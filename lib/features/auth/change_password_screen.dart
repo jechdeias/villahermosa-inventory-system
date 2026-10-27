@@ -89,7 +89,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         Navigator.pushReplacementNamed(context, '/customer/dashboard');
         break;
       case 'delivery':
-        Navigator.pushReplacementNamed(context, '/delivery/dashboard');
+      case 'sales_rep':
+        Navigator.pushReplacementNamed(context, '/sales/home');
         break;
       default:
         Navigator.pushReplacementNamed(context, '/login');
