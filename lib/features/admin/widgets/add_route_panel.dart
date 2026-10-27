@@ -6,6 +6,7 @@ import '../../../core/database/app_database.dart';
 import '../providers/customers_provider.dart';
 import '../providers/orders_provider.dart' show usersProvider;
 import '../services/delivery_routes_service.dart';
+import '../../../core/theme/app_theme.dart';
 
 const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -101,7 +102,7 @@ class _AddRoutePanelState extends ConsumerState<AddRoutePanel> {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(left: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(left: BorderSide(color: AppTheme.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -161,8 +162,8 @@ class _AddRoutePanelState extends ConsumerState<AddRoutePanel> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: selected ? const Color(0xFF1E1E1E) : Colors.white,
-                            border: Border.all(color: selected ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+                            color: selected ? AppTheme.primary : Colors.white,
+                            border: Border.all(color: selected ? AppTheme.primary : AppTheme.border),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(d,
@@ -183,25 +184,25 @@ class _AddRoutePanelState extends ConsumerState<AddRoutePanel> {
 
   Widget _buildHeader() => Container(
     padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
     child: Row(children: [
       Expanded(
         child: Text(_isEditing ? 'Edit Route' : 'Add Route',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
       ),
-      GestureDetector(onTap: widget.onClose, child: const Icon(Icons.close, size: 18, color: Color(0xFF6B7280))),
+      GestureDetector(onTap: widget.onClose, child: const Icon(Icons.close, size: 18, color: AppTheme.textMuted)),
     ]),
   );
 
   Widget _buildFooter() => Container(
     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
-    decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE5E7EB)))),
+    decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.border))),
     child: Row(children: [
       Expanded(
         child: OutlinedButton(
           onPressed: _saving ? null : widget.onClose,
           style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Color(0xFFE5E7EB)),
+            side: const BorderSide(color: AppTheme.border),
             foregroundColor: const Color(0xFF374151),
             padding: const EdgeInsets.symmetric(vertical: 10),
           ),
@@ -213,7 +214,7 @@ class _AddRoutePanelState extends ConsumerState<AddRoutePanel> {
         child: ElevatedButton(
           onPressed: _saving ? null : _save,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E1E1E),
+            backgroundColor: AppTheme.primary,
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -228,15 +229,15 @@ class _AddRoutePanelState extends ConsumerState<AddRoutePanel> {
 
   Widget _sectionLabel(String label) => Text(
     label,
-    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.8),
+    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.8),
   );
 
   InputDecoration _dec(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF6B7280))),
+    hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.textMuted)),
     contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
   );
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'customer_common.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Order Placed → Processing → Out for Delivery → Delivered.
 /// Steps up to [currentStep] are filled; the current step's label is bold.
@@ -51,7 +52,7 @@ class OrderProgressStepper extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: active ? const Color(0xFFE5E7EB) : Colors.transparent,
+          color: active ? AppTheme.border : Colors.transparent,
         ),
         child: Container(
           width: 16,

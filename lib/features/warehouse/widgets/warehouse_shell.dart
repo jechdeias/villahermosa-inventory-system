@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import 'wh_widgets.dart';
@@ -50,3 +51,15 @@ class WarehouseShell extends StatelessWidget {
 /// Navigate between warehouse screens (sidebar-style replace, like admin).
 void whGo(BuildContext context, String route, {Object? args}) =>
     Navigator.pushReplacementNamed(context, route, arguments: args);
+
+/// The warehouse chrome around a shimmer placeholder, shown while a screen's
+/// first data is still loading.
+class WhLoadingShell extends StatelessWidget {
+  const WhLoadingShell({super.key, required this.route, this.statCards = 0, this.rows = 6});
+  final String route;
+  final int statCards;
+  final int rows;
+
+  @override
+  Widget build(BuildContext context) => WarehouseShell(route: route, child: ShimmerTablePage(statCards: statCards, rows: rows));
+}

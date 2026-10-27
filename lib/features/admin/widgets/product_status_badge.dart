@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Derives an In Stock / Low Stock / Out of Stock pill from live stock counts
 /// (not a stored status string).
@@ -12,13 +13,13 @@ class ProductStatusBadge extends StatelessWidget {
     final _Style style;
     final String label;
     if (currentStock <= 0) {
-      style = const _Style(bg: Color(0xFFFEF2F2), text: Color(0xFF991B1B));
+      style = const _Style(bg: AppTheme.errorLight, text: Color(0xFF991B1B));
       label = 'Out of Stock';
     } else if (currentStock <= minStock) {
-      style = const _Style(bg: Color(0xFFFFFBEB), text: Color(0xFF92400E));
+      style = const _Style(bg: AppTheme.warningLight, text: Color(0xFF92400E));
       label = 'Low Stock';
     } else {
-      style = const _Style(bg: Color(0xFFECFDF5), text: Color(0xFF065F46));
+      style = const _Style(bg: AppTheme.successLight, text: Color(0xFF065F46));
       label = 'In Stock';
     }
     return Container(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/customer_providers.dart';
@@ -77,7 +78,7 @@ class _CustomerProductDetailScreenState extends ConsumerState<CustomerProductDet
               color: Colors.white,
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(p.sku, style: const TextStyle(fontFamily: 'Consolas', fontFamilyFallback: ['Courier New', 'monospace'], fontSize: 12, color: CcColors.light)),
+                Text(p.sku, style: const TextStyle(fontFamily: AppTheme.monoFamily, fontSize: 12, color: CcColors.light)),
                 const SizedBox(height: 4),
                 Text(p.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: CcColors.text)),
                 if (supplier.isNotEmpty) ...[

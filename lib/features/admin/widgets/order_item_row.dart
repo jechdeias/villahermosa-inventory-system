@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 class OrderItemRow extends StatelessWidget {
   const OrderItemRow({
@@ -30,12 +31,12 @@ class OrderItemRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF111827),
+                    color: AppTheme.textPrimary,
                   ),
                 ),
                 Text(
                   '$quantity × ₱${unitPrice.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
+                  style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
                 ),
               ],
             ),
@@ -45,7 +46,7 @@ class OrderItemRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF111827),
+              color: AppTheme.textPrimary,
             ),
           ),
           const SizedBox(width: 4),
@@ -53,7 +54,7 @@ class OrderItemRow extends StatelessWidget {
             onTap: onRemove,
             child: const Padding(
               padding: EdgeInsets.all(4),
-              child: Icon(Icons.close, size: 14, color: Color(0xFF9CA3AF)),
+              child: Icon(Icons.close, size: 14, color: AppTheme.textLight),
             ),
           ),
         ],

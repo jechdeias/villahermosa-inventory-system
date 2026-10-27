@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../admin/providers/products_provider.dart';
 import '../providers/sales_providers.dart';
+import '../../../core/theme/app_theme.dart';
 
 Future<void> showNewOrderFlow(BuildContext context) {
   return showModalBottomSheet(
@@ -201,7 +202,7 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
       child: Row(children: [
         const Expanded(
-          child: Text('New Order', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          child: Text('New Order', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
         ),
         IconButton(onPressed: onClose, icon: const Icon(Icons.close)),
       ]),
@@ -224,19 +225,19 @@ class _StepIndicator extends StatelessWidget {
           final active = i == step;
           final completed = i < step;
           final color = active
-              ? const Color(0xFF1E1E1E)
-              : (completed ? const Color(0xFF059669) : const Color(0xFF9CA3AF));
+              ? AppTheme.primary
+              : (completed ? AppTheme.success : AppTheme.textLight);
           return Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: active ? const Color(0xFF1E1E1E) : Colors.transparent, width: 2)),
+                border: Border(bottom: BorderSide(color: active ? AppTheme.primary : Colors.transparent, width: 2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (completed) ...[
-                    const Icon(Icons.check_circle, size: 14, color: Color(0xFF059669)),
+                    const Icon(Icons.check_circle, size: 14, color: AppTheme.success),
                     const SizedBox(width: 4),
                   ],
                   Text(_labels[i],
@@ -267,14 +268,14 @@ class _SearchField extends StatelessWidget {
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
-          prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF9CA3AF)),
+          hintStyle: const TextStyle(fontSize: 14, color: AppTheme.textLight),
+          prefixIcon: const Icon(Icons.search, size: 18, color: AppTheme.textLight),
           filled: true,
           fillColor: const Color(0xFFF9FAFB),
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF1E1E1E))),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.border)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.primary)),
         ),
       ),
     );
@@ -319,7 +320,7 @@ class _StoreStepState extends ConsumerState<_StoreStep> {
         ),
         Expanded(
           child: filtered.isEmpty
-              ? const Center(child: Text('No stores found', style: TextStyle(color: Color(0xFF9CA3AF))))
+              ? const Center(child: Text('No stores found', style: TextStyle(color: AppTheme.textLight)))
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: filtered.length,
@@ -336,13 +337,13 @@ class _StoreStepState extends ConsumerState<_StoreStep> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(salesDisplayStoreName(c),
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                                 const SizedBox(height: 2),
-                                Text(c.barangay ?? c.town ?? '', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                                Text(c.barangay ?? c.town ?? '', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                               ],
                             ),
                           ),
-                          if (isSelected) const Icon(Icons.check_circle, color: Color(0xFF059669)),
+                          if (isSelected) const Icon(Icons.check_circle, color: AppTheme.success),
                         ]),
                       ),
                     );
@@ -408,9 +409,9 @@ class _ItemsStepState extends ConsumerState<_ItemsStep> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(p.sku, style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF9CA3AF))),
-                          Text(p.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF111827))),
-                          Text('₱${p.unitPrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                          Text(p.sku, style: const TextStyle(fontSize: 11, fontFamily: AppTheme.monoFamily, color: AppTheme.textLight)),
+                          Text(p.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.textPrimary)),
+                          Text('₱${p.unitPrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
                         ],
                       ),
                     ),
@@ -445,11 +446,11 @@ class _QtyButton extends StatelessWidget {
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: filled ? const Color(0xFF1E1E1E) : Colors.white,
-          border: filled ? null : Border.all(color: const Color(0xFFE5E7EB)),
+          color: filled ? AppTheme.primary : Colors.white,
+          border: filled ? null : Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Icon(icon, size: 16, color: filled ? Colors.white : const Color(0xFF6B7280)),
+        child: Icon(icon, size: 16, color: filled ? Colors.white : AppTheme.textMuted),
       ),
     );
   }
@@ -477,23 +478,23 @@ class _ReviewStep extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       children: [
         Text(salesDisplayStoreName(customer),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
         const SizedBox(height: 12),
         for (final line in cart.values)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(children: [
               Expanded(child: Text('${line.product.name} × ${line.quantity}', style: const TextStyle(fontSize: 13, color: Color(0xFF374151)))),
-              Text('₱${line.subtotal.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13, color: Color(0xFF111827))),
+              Text('₱${line.subtotal.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary)),
             ]),
           ),
         const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1)),
         Row(children: [
-          const Expanded(child: Text('Total', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF111827)))),
-          Text('₱${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+          const Expanded(child: Text('Total', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textPrimary))),
+          Text('₱${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         ]),
         const SizedBox(height: 20),
-        const Text('Payment Method', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+        const Text('Payment Method', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
         const SizedBox(height: 8),
         Row(
           children: ['Cash', 'Credit', 'GCash'].map((m) {
@@ -508,8 +509,8 @@ class _ReviewStep extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: selected ? const Color(0xFF1E1E1E) : Colors.white,
-                      border: Border.all(color: selected ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+                      color: selected ? AppTheme.primary : Colors.white,
+                      border: Border.all(color: selected ? AppTheme.primary : AppTheme.border),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(m,
@@ -550,7 +551,7 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.of(context).padding.bottom),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE5E7EB)))),
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.border))),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -558,8 +559,8 @@ class _BottomBar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(children: [
-                const Text('Total: ', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
-                Text('₱${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                const Text('Total: ', style: TextStyle(fontSize: 14, color: AppTheme.textMuted)),
+                Text('₱${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               ]),
             ),
           SizedBox(
@@ -568,7 +569,7 @@ class _BottomBar extends StatelessWidget {
             child: ElevatedButton(
               onPressed: !canProceed || saving ? null : (step < 2 ? onNext : onSubmit),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: const Color(0xFFD1D5DB),
                 elevation: 0,
@@ -582,7 +583,7 @@ class _BottomBar extends StatelessWidget {
           if (step == 2)
             TextButton(
               onPressed: saving ? null : onSaveDraft,
-              child: const Text('Save Draft', style: TextStyle(color: Color(0xFF6B7280))),
+              child: const Text('Save Draft', style: TextStyle(color: AppTheme.textMuted)),
             ),
         ],
       ),

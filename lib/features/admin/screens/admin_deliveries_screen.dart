@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
@@ -10,6 +12,7 @@ import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
 import '../widgets/route_detail_panel.dart';
 import '../widgets/route_status_badge.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminDeliveriesScreen extends ConsumerStatefulWidget {
   const AdminDeliveriesScreen({super.key, required this.database, required this.syncManager});
@@ -151,7 +154,9 @@ class _RoutesListColumn extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allRoutes = ref.watch(deliveryRoutesStreamProvider).value ?? [];
+    final routesAsync = ref.watch(deliveryRoutesStreamProvider);
+    if (isFirstLoad(routesAsync)) return const ShimmerTablePage(statCards: 4);
+    final allRoutes = routesAsync.value ?? [];
     final allOrders = ref.watch(ordersStreamProvider).value ?? [];
     final now = DateTime.now();
 
@@ -189,9 +194,9 @@ class _RoutesListColumn extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Routes & Delivery Management',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
               SizedBox(height: 4),
-              Text('Organize delivery routes and schedules', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+              Text('Organize delivery routes and schedules', style: TextStyle(fontSize: 14, color: AppTheme.textMuted)),
             ],
           ),
         ),
@@ -200,7 +205,7 @@ class _RoutesListColumn extends ConsumerWidget {
           icon: const Icon(Icons.add, size: 16),
           label: const Text('Add Route'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E1E1E),
+            backgroundColor: AppTheme.primary,
             foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -217,7 +222,7 @@ class _RoutesListColumn extends ConsumerWidget {
       final isNarrow = constraints.maxWidth < 500;
       final cards = [
         OrdersStatCard(title: 'Total Routes', value: '$total', subtitle: 'Coverage areas'),
-        OrdersStatCard(title: 'Active Routes', value: '$active', subtitle: 'Running smoothly', valueColor: const Color(0xFF059669)),
+        OrdersStatCard(title: 'Active Routes', value: '$active', subtitle: 'Running smoothly', valueColor: AppTheme.success),
         OrdersStatCard(title: 'Total Customers', value: '$customers', subtitle: 'Across all routes'),
         OrdersStatCard(title: 'Deliveries Today', value: '$today', subtitle: 'Scheduled for today'),
       ];
@@ -246,7 +251,7 @@ class _RoutesListColumn extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -285,11 +290,11 @@ class _RoutesListColumn extends ConsumerWidget {
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search routes...',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-                  prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF9CA3AF)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF6B7280))),
+                  hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+                  prefixIcon: const Icon(Icons.search, size: 16, color: AppTheme.textLight),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.textMuted)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   filled: true,
                   fillColor: const Color(0xFFF9FAFB),
@@ -300,8 +305,8 @@ class _RoutesListColumn extends ConsumerWidget {
             OutlinedButton(
               onPressed: () {},
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF6B7280),
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                foregroundColor: AppTheme.textMuted,
+                side: const BorderSide(color: AppTheme.border),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                 minimumSize: const Size(0, 34),
@@ -310,9 +315,9 @@ class _RoutesListColumn extends ConsumerWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.tune, size: 16, color: Color(0xFF6B7280)),
+                  Icon(Icons.tune, size: 16, color: AppTheme.textMuted),
                   SizedBox(width: 6),
-                  Text('Filter', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                  Text('Filter', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                 ],
               ),
             ),
@@ -327,7 +332,7 @@ class _RoutesListColumn extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
         color: Color(0xFFF9FAFB),
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB)), bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(top: BorderSide(color: AppTheme.border), bottom: BorderSide(color: AppTheme.border)),
       ),
       child: const Row(children: [
         _HeaderCell('ROUTE NAME', flex: 2),
@@ -341,18 +346,11 @@ class _RoutesListColumn extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(children: [
-        Icon(Icons.location_on_outlined, size: 40, color: Colors.grey.shade300),
-        const SizedBox(height: 12),
-        const Text('No routes found', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
-        const SizedBox(height: 4),
-        const Text('Use "Add Route" to create your first delivery route', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
-      ]),
-    );
-  }
+  Widget _buildEmptyState() => const EmptyState(
+        icon: Icons.local_shipping_outlined,
+        title: 'No routes found',
+        message: 'Use "Add Route" to create your first delivery route',
+      );
 }
 
 // ── Route Row ─────────────────────────────────────────────────────────────────
@@ -373,7 +371,7 @@ class _RouteRow extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF9FAFB) : Colors.white,
-          border: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+          border: const Border(bottom: BorderSide(color: AppTheme.border)),
         ),
         child: Row(
           children: [
@@ -382,11 +380,11 @@ class _RouteRow extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF9CA3AF)),
+                  const Icon(Icons.location_on_outlined, size: 14, color: AppTheme.textLight),
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(route.routeName,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
                         overflow: TextOverflow.ellipsis),
                   ),
                 ],
@@ -399,12 +397,12 @@ class _RouteRow extends ConsumerWidget {
             Expanded(
               flex: 2,
               child: Text(route.assignedRepName ?? 'Unassigned',
-                  style: TextStyle(fontSize: 12, color: route.assignedRepName == null ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), fontStyle: route.assignedRepName == null ? FontStyle.italic : FontStyle.normal),
+                  style: TextStyle(fontSize: 12, color: route.assignedRepName == null ? AppTheme.textLight : AppTheme.textMuted, fontStyle: route.assignedRepName == null ? FontStyle.italic : FontStyle.normal),
                   overflow: TextOverflow.ellipsis),
             ),
             Expanded(
               flex: 2,
-              child: Text(route.deliveryDays.replaceAll(',', ', '), style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+              child: Text(route.deliveryDays.replaceAll(',', ', '), style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
             ),
             Expanded(
               flex: 1,
@@ -440,18 +438,18 @@ class _RouteMobileCard extends ConsumerWidget {
     return MobileListCard(
       onTap: () => ref.read(selectedDeliveryRouteProvider.notifier).state = route,
       primary: Row(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF9CA3AF)),
+        const Icon(Icons.location_on_outlined, size: 14, color: AppTheme.textLight),
         const SizedBox(width: 4),
         Flexible(
           child: Text(route.routeName,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
               overflow: TextOverflow.ellipsis),
         ),
       ]),
       badge: RouteStatusBadge(status: route.status),
       secondary: MobileCardMuted('${route.municipality} · ${route.assignedRepName ?? 'Unassigned'}'),
       valueLeft: Text('${route.customerCount} customers',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
       valueRight: MobileCardMuted(route.deliveryDays.replaceAll(',', ', ')),
       actions: [
         MobileCardAction(
@@ -475,7 +473,7 @@ class _HeaderCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
-      child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5)),
+      child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.5)),
     );
   }
 }
@@ -510,7 +508,7 @@ class _ActionIconButtonState extends State<_ActionIconButton> {
               color: _hovered ? const Color(0xFFF3F4F6) : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Icon(widget.icon, size: 15, color: _hovered ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
+            child: Icon(widget.icon, size: 15, color: _hovered ? AppTheme.textMuted : AppTheme.textLight),
           ),
         ),
       ),

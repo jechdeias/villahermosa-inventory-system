@@ -5,6 +5,7 @@ import '../providers/sales_providers.dart';
 import '../widgets/new_order_flow.dart';
 import '../widgets/record_payment_sheet.dart';
 import '../widgets/sales_shell.dart';
+import '../../../core/theme/app_theme.dart';
 
 class SalesHomeScreen extends ConsumerWidget {
   const SalesHomeScreen({super.key});
@@ -52,7 +53,7 @@ class _TopBar extends ConsumerWidget {
           Expanded(
             child: Text(
               '${_greeting()}, ${rep?.firstName ?? ''}',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -74,7 +75,7 @@ class _SyncChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isOnline ? const Color(0xFF059669) : const Color(0xFFD97706);
+    final color = isOnline ? AppTheme.success : AppTheme.warning;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -109,23 +110,23 @@ class _RouteSummaryCard extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(route?.routeName ?? 'No route assigned',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           const SizedBox(height: 2),
-          Text('Today: $dateStr', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+          Text('Today: $dateStr', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
           const SizedBox(height: 14),
           Row(children: [
-            Expanded(child: _RouteStat(label: 'Stores', value: progress['total']!, color: const Color(0xFF111827))),
+            Expanded(child: _RouteStat(label: 'Stores', value: progress['total']!, color: AppTheme.textPrimary)),
             const _VDivider(),
-            Expanded(child: _RouteStat(label: 'Visited', value: progress['visited']!, color: const Color(0xFF059669))),
+            Expanded(child: _RouteStat(label: 'Visited', value: progress['visited']!, color: AppTheme.success)),
             const _VDivider(),
-            Expanded(child: _RouteStat(label: 'Remaining', value: progress['remaining']!, color: const Color(0xFFD97706))),
+            Expanded(child: _RouteStat(label: 'Remaining', value: progress['remaining']!, color: AppTheme.warning)),
           ]),
         ],
       ),
@@ -136,7 +137,7 @@ class _RouteSummaryCard extends ConsumerWidget {
 class _VDivider extends StatelessWidget {
   const _VDivider();
   @override
-  Widget build(BuildContext context) => Container(width: 1, height: 32, color: const Color(0xFFE5E7EB));
+  Widget build(BuildContext context) => Container(width: 1, height: 32, color: AppTheme.border);
 }
 
 class _RouteStat extends StatelessWidget {
@@ -150,7 +151,7 @@ class _RouteStat extends StatelessWidget {
     return Column(children: [
       Text('$value', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
       const SizedBox(height: 2),
-      Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+      Text(label, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
     ]);
   }
 }
@@ -170,19 +171,19 @@ class _TodayProgress extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Today's Progress", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          const Text("Today's Progress", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: value,
               minHeight: 8,
-              color: const Color(0xFF059669),
-              backgroundColor: const Color(0xFFE5E7EB),
+              color: AppTheme.success,
+              backgroundColor: AppTheme.border,
             ),
           ),
           const SizedBox(height: 6),
-          Text('$visited of $total stores visited', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+          Text('$visited of $total stores visited', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
         ],
       ),
     );
@@ -254,16 +255,16 @@ class _QuickActionCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: const Color(0xFF1E1E1E)),
+            Icon(icon, size: 24, color: AppTheme.primary),
             const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF111827))),
+            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textPrimary)),
           ],
         ),
       ),
@@ -283,12 +284,12 @@ class _RecentActivity extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Recent Activity', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          const Text('Recent Activity', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           const SizedBox(height: 10),
           if (activity.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('No activity yet today', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+              child: Text('No activity yet today', style: TextStyle(fontSize: 12, color: AppTheme.textLight)),
             )
           else
             ...activity.map((a) => Padding(
@@ -298,7 +299,7 @@ class _RecentActivity extends ConsumerWidget {
                       child: RichText(
                         overflow: TextOverflow.ellipsis,
                         text: TextSpan(
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF111827)),
+                          style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
                           children: [
                             TextSpan(text: '${a.storeName} ', style: const TextStyle(fontWeight: FontWeight.w500)),
                             TextSpan(text: '— ${a.action}', style: TextStyle(color: a.color)),
@@ -307,7 +308,7 @@ class _RecentActivity extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(_relativeTime(a.time), style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+                    Text(_relativeTime(a.time), style: const TextStyle(fontSize: 12, color: AppTheme.textLight)),
                   ]),
                 )),
         ],

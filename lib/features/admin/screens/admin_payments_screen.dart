@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
@@ -7,6 +9,7 @@ import '../providers/payments_provider.dart';
 import '../widgets/mobile_list_card.dart';
 import '../widgets/payment_status_badge.dart';
 import '../widgets/payment_detail_panel.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminPaymentsScreen extends ConsumerStatefulWidget {
   const AdminPaymentsScreen({
@@ -39,7 +42,7 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
       database: widget.database,
       selectedRoute: '/admin/payments',
       child: Scaffold(
-        backgroundColor: const Color(0xFFF4F4F4),
+        backgroundColor: AppTheme.background,
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -61,7 +64,7 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                 width: 360,
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  border: Border(left: BorderSide(color: Color(0xFFE5E7EB))),
+                  border: Border(left: BorderSide(color: AppTheme.border)),
                 ),
                 child: PaymentDetailPanel(payment: selected),
               ),
@@ -78,10 +81,10 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
           children: [
             Text('Payments',
                 style: TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                    fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
             SizedBox(height: 2),
             Text('Track and manage all customer payments',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
           ],
         ),
       );
@@ -105,19 +108,19 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
           _StatCard(
             label: 'Outstanding',
             value: '₱${_fmt(outstanding)}',
-            valueColor: const Color(0xFFDC2626),
+            valueColor: AppTheme.error,
             sub: '● Unpaid + Partial',
           ),
           _StatCard(
             label: 'Paid',
             value: '$paidCount',
-            valueColor: const Color(0xFF059669),
+            valueColor: AppTheme.success,
             sub: '● Fully settled',
           ),
           _StatCard(
             label: 'On Credit',
             value: '$creditCount',
-            valueColor: const Color(0xFF2563EB),
+            valueColor: AppTheme.info,
             sub: '● Credit term orders',
           ),
         ];
@@ -149,7 +152,7 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
         margin: const EdgeInsets.fromLTRB(20, 14, 20, 0),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -195,7 +198,7 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: active ? const Color(0xFF1E1E1E) : Colors.transparent,
+                    color: active ? AppTheme.primary : Colors.transparent,
                     width: 2,
                   ),
                 ),
@@ -205,7 +208,7 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: active ? FontWeight.w600 : FontWeight.normal,
-                  color: active ? const Color(0xFF111827) : const Color(0xFF6B7280),
+                  color: active ? AppTheme.textPrimary : AppTheme.textMuted,
                 ),
               ),
             ),
@@ -230,17 +233,17 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search by order #, store, or rep...',
                     hintStyle:
-                        const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                        const TextStyle(fontSize: 13, color: AppTheme.textLight),
                     prefixIcon: const Icon(Icons.search,
-                        size: 16, color: Color(0xFF9CA3AF)),
+                        size: 16, color: AppTheme.textLight),
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderSide: const BorderSide(color: AppTheme.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderSide: const BorderSide(color: AppTheme.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
@@ -256,7 +259,7 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
               icon: const Icon(Icons.tune, size: 14),
               label: const Text('Filter', style: TextStyle(fontSize: 13)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                side: const BorderSide(color: AppTheme.border),
                 foregroundColor: const Color(0xFF374151),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -268,7 +271,7 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
               icon: const Icon(Icons.add, size: 14),
               label: const Text('Record Payment', style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding:
@@ -299,19 +302,14 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
 
   Widget _tableBody(BuildContext context) {
     final list = ref.watch(filteredPaymentsProvider);
-    if (ref.watch(paymentsStreamProvider).isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator()),
-      );
+    if (isFirstLoad(ref.watch(paymentsStreamProvider))) {
+      return Column(children: [for (var i = 0; i < 6; i++) const ShimmerTableRow()]);
     }
     if (list.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(
-          child: Text('No payments found',
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 13)),
-        ),
+      return const EmptyState(
+        icon: Icons.payments_outlined,
+        title: 'No payments yet',
+        message: 'Payments will appear here when orders are collected',
       );
     }
     return LayoutBuilder(builder: (context, constraints) {
@@ -393,23 +391,23 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
           const SizedBox(height: 4),
           Text(value,
               style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: valueColor ?? const Color(0xFF111827))),
+                  color: valueColor ?? AppTheme.textPrimary)),
           const SizedBox(height: 2),
           Text(sub,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
         ],
       ),
     );
@@ -428,7 +426,7 @@ class _ColHead extends StatelessWidget {
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF6B7280),
+          color: AppTheme.textMuted,
           letterSpacing: 0.3,
         ),
       );
@@ -475,7 +473,7 @@ class _PaymentRowState extends State<_PaymentRow> {
                           style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              fontFamily: 'monospace')),
+                              fontFamily: AppTheme.monoFamily)),
                     ),
                     Expanded(
                       child: Text(p.storeName,
@@ -486,7 +484,7 @@ class _PaymentRowState extends State<_PaymentRow> {
                       width: 120,
                       child: Text(p.salesRepName,
                           style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF6B7280)),
+                              fontSize: 12, color: AppTheme.textMuted),
                           overflow: TextOverflow.ellipsis),
                     ),
                     SizedBox(
@@ -501,7 +499,7 @@ class _PaymentRowState extends State<_PaymentRow> {
                           style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF059669))),
+                              color: AppTheme.success)),
                     ),
                     SizedBox(
                       width: 80,
@@ -513,20 +511,20 @@ class _PaymentRowState extends State<_PaymentRow> {
                                   ? FontWeight.w700
                                   : FontWeight.normal,
                               color: p.balance > 0
-                                  ? const Color(0xFFDC2626)
-                                  : const Color(0xFF6B7280))),
+                                  ? AppTheme.error
+                                  : AppTheme.textMuted)),
                     ),
                     SizedBox(
                       width: 80,
                       child: Text(p.paymentMethod ?? '—',
                           style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF6B7280))),
+                              fontSize: 12, color: AppTheme.textMuted)),
                     ),
                     SizedBox(
                       width: 90,
                       child: Text(_fmtDate(p.paymentDate),
                           style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF6B7280))),
+                              fontSize: 12, color: AppTheme.textMuted)),
                     ),
                     SizedBox(
                       width: 110,
@@ -538,7 +536,7 @@ class _PaymentRowState extends State<_PaymentRow> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.visibility_outlined, size: 16),
-                            color: const Color(0xFF6B7280),
+                            color: AppTheme.textMuted,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
                                 minWidth: 28, minHeight: 28),
@@ -546,7 +544,7 @@ class _PaymentRowState extends State<_PaymentRow> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.receipt_outlined, size: 16),
-                            color: const Color(0xFF6B7280),
+                            color: AppTheme.textMuted,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
                                 minWidth: 28, minHeight: 28),
@@ -589,19 +587,19 @@ class _PaymentMobileCard extends StatelessWidget {
       onTap: onTap,
       primary: Text(p.orderCode,
           style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary)),
       badge: PaymentStatusBadge(status: p.status),
       secondary: MobileCardMuted('${p.storeName} · ${p.salesRepName}'),
       valueLeft: Text('Order ₱${_PaymentRowState._fmt(p.orderAmount)}',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
       valueRight: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text('Paid ₱${_PaymentRowState._fmt(p.amountPaid)}',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF059669))),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.success)),
           if (p.balance > 0)
             Text('Bal ₱${_PaymentRowState._fmt(p.balance)}',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.error)),
         ],
       ),
       actions: [MobileCardAction(label: 'View', onPressed: onTap)],

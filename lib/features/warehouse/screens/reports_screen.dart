@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class WarehouseReportsScreen extends ConsumerWidget {
   const WarehouseReportsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (isFirstLoad(ref.watch(stockMovementsStreamProvider))) return const WhLoadingShell(route: WhRoutes.reports, statCards: 3);
     final movements = ref.watch(stockMovementsStreamProvider).value ?? [];
     final orders = ref.watch(ordersStreamProvider).value ?? [];
     final routes = (ref.watch(deliveryRoutesStreamProvider).value ?? []).where((r) => r.status == 'active').toList();
@@ -93,7 +96,7 @@ class WarehouseReportsScreen extends ConsumerWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const WhCardTitle('Daily Loading Summary'),
             if (summary.isEmpty)
-              const WhEmpty('No prepared orders in the last 7 days')
+              const WhEmpty('Prepared orders from the last 7 days will appear here', title: 'No loading activity', icon: Icons.local_shipping_outlined)
             else
               WhTableScroll(
                 minWidth: 460,
@@ -141,7 +144,7 @@ class WarehouseReportsScreen extends ConsumerWidget {
                                 Container(
                                   height: (values[i] / maxV) * 140 + (values[i] > 0 ? 2 : 0),
                                   decoration: BoxDecoration(
-                                    color: i == days.length - 1 ? const Color(0xFF6B7280) : WhColors.primary,
+                                    color: i == days.length - 1 ? AppTheme.textMuted : WhColors.primary,
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                                   ),
                                 ),
@@ -165,7 +168,7 @@ class WarehouseReportsScreen extends ConsumerWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const WhCardTitle('Top Products (Stock Movement)', trailing: Text('Units this week', style: TextStyle(fontSize: 12, color: WhColors.muted))),
         if (top.isEmpty)
-          const WhEmpty('No stock movement in the last 7 days')
+          const WhEmpty('Stock in and out from the last 7 days will appear here', title: 'No stock movement', icon: Icons.bar_chart_outlined)
         else
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),

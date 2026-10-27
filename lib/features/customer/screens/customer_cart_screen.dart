@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/cart_item_card.dart';
@@ -106,12 +107,12 @@ class _CustomerCartScreenState extends ConsumerState<CustomerCartScreen> {
         CcTitleBar(title: 'My Cart', trailing: Text('$count ${count == 1 ? 'item' : 'items'}', style: const TextStyle(fontSize: 16, color: CcColors.muted))),
         if (items.isEmpty)
           Expanded(
-            child: CcEmptyState(
-              icon: Icons.shopping_bag_outlined,
+            child: EmptyState(
+              icon: Icons.shopping_cart_outlined,
               title: 'Your cart is empty',
-              message: 'Add products from the shop and they will show up here.',
+              message: 'Add products from the shop and they will show up here',
               actionLabel: 'Start Shopping',
-              onAction: () => Navigator.pushReplacementNamed(context, CustomerRoutes.shop),
+              action: () => Navigator.pushReplacementNamed(context, CustomerRoutes.shop),
             ),
           )
         else ...[

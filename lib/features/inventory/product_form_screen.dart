@@ -150,7 +150,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isNew ? 'Product added successfully!' : 'Product updated successfully!'),
-            backgroundColor: AppTheme.accentColor,
+            backgroundColor: LegacyAppTheme.accentColor,
           ),
         );
         Navigator.of(context).pop(true);
@@ -158,7 +158,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
+          SnackBar(content: Text('Error: $e'), backgroundColor: LegacyAppTheme.errorColor),
         );
       }
     } finally {
@@ -171,9 +171,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     final isEditing = widget.productId != null;
 
     return Scaffold(
-      backgroundColor: AppTheme.lightBackground,
+      backgroundColor: LegacyAppTheme.lightBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.darkNavigation,
+        backgroundColor: LegacyAppTheme.darkNavigation,
         title: Text(
           isEditing ? 'Edit Product' : 'Add Product',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
@@ -239,7 +239,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveProduct,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: LegacyAppTheme.primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -264,8 +264,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   Widget _buildSectionHeader(String title) => Text(
       title,
-      style: AppTheme.headingMedium.copyWith(
-        color: AppTheme.primaryColor,
+      style: LegacyAppTheme.headingMedium.copyWith(
+        color: LegacyAppTheme.primaryColor,
       ),
     );
 
@@ -468,7 +468,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               Navigator.of(context).pop();
               _deleteProduct();
             },
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            style: TextButton.styleFrom(foregroundColor: LegacyAppTheme.errorColor),
             child: const Text('Delete'),
           ),
         ],
@@ -488,14 +488,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Product deleted successfully!'), backgroundColor: AppTheme.errorColor),
+          const SnackBar(content: Text('Product deleted successfully!'), backgroundColor: LegacyAppTheme.errorColor),
         );
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
+          SnackBar(content: Text('Error: $e'), backgroundColor: LegacyAppTheme.errorColor),
         );
       }
     } finally {

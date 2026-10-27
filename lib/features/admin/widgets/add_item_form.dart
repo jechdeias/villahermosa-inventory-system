@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/orders_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AddItemForm extends ConsumerStatefulWidget {
   const AddItemForm({super.key, required this.onAdd});
@@ -60,7 +61,7 @@ class _AddItemFormState extends ConsumerState<AddItemForm> {
         label: const Text('Add Item'),
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF374151),
-          side: const BorderSide(color: Color(0xFFE5E7EB)),
+          side: const BorderSide(color: AppTheme.border),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           minimumSize: const Size(double.infinity, 36),
           textStyle: const TextStyle(fontSize: 13),
@@ -74,7 +75,7 @@ class _AddItemFormState extends ConsumerState<AddItemForm> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAFB),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
@@ -118,11 +119,11 @@ class _AddItemFormState extends ConsumerState<AddItemForm> {
           const SizedBox(height: 6),
           Row(children: [
             const Text('Subtotal: ',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
             Text(
               '₱${_subtotal.toStringAsFixed(0)}',
               style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                  fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
             ),
           ]),
           const SizedBox(height: 8),
@@ -131,8 +132,8 @@ class _AddItemFormState extends ConsumerState<AddItemForm> {
               child: OutlinedButton(
                 onPressed: _cancelForm,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
-                  foregroundColor: const Color(0xFF6B7280),
+                  side: const BorderSide(color: AppTheme.border),
+                  foregroundColor: AppTheme.textMuted,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   textStyle: const TextStyle(fontSize: 12),
                 ),
@@ -144,7 +145,7 @@ class _AddItemFormState extends ConsumerState<AddItemForm> {
               child: ElevatedButton(
                 onPressed: _addItem,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E1E1E),
+                  backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -161,13 +162,13 @@ class _AddItemFormState extends ConsumerState<AddItemForm> {
 
   InputDecoration _dec(String label) => InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+        labelStyle: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+            borderSide: const BorderSide(color: AppTheme.border)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+            borderSide: const BorderSide(color: AppTheme.border)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
             borderSide: const BorderSide(color: Color(0xFF374151))),

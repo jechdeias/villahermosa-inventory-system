@@ -9,6 +9,7 @@ import '../../../core/theme/villahermosa_theme.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../widgets/mobile_list_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 class UserAccountsScreen extends StatefulWidget {
   const UserAccountsScreen({
@@ -160,7 +161,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFFDC2626)),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.error),
             child: const Text('Deactivate'),
           ),
         ],
@@ -183,24 +184,24 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280), fontWeight: FontWeight.w500)),
+            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
           Text(value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           const SizedBox(height: 3),
           Row(children: [
             Container(width: 6, height: 6,
               decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
             const SizedBox(width: 4),
             Expanded(child: Text(sub,
-              style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
+              style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
               overflow: TextOverflow.ellipsis)),
           ]),
         ],
@@ -214,15 +215,15 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     String label;
     switch (role) {
       case 'admin':
-        bg = const Color(0xFFEFF6FF); fg = const Color(0xFF1E40AF); label = 'Admin';
+        bg = AppTheme.infoLight; fg = const Color(0xFF1E40AF); label = 'Admin';
       case 'sales_rep':
         bg = const Color(0xFFF0FDF4); fg = const Color(0xFF166534); label = 'Sales Rep';
       case 'warehouse':
-        bg = const Color(0xFFFFFBEB); fg = const Color(0xFF92400E); label = 'Warehouse';
+        bg = AppTheme.warningLight; fg = const Color(0xFF92400E); label = 'Warehouse';
       case 'customer':
         bg = const Color(0xFFF3F4F6); fg = const Color(0xFF374151); label = 'Customer';
       case 'pending':
-        bg = const Color(0xFFFEF2F2); fg = const Color(0xFF991B1B); label = 'Pending';
+        bg = AppTheme.errorLight; fg = const Color(0xFF991B1B); label = 'Pending';
       default:
         bg = const Color(0xFFF3F4F6); fg = const Color(0xFF374151); label = role;
     }
@@ -236,7 +237,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   // ─── STATUS BADGE ───────────────────────────────
 
   Widget _statusBadge(bool isActive) {
-    final bg = isActive ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2);
+    final bg = isActive ? AppTheme.successLight : AppTheme.errorLight;
     final fg = isActive ? const Color(0xFF065F46) : const Color(0xFF991B1B);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -260,7 +261,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     return Container(
       height: 40,
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppTheme.border)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -275,7 +276,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: selected ? const Color(0xFF111827) : Colors.transparent,
+                      color: selected ? AppTheme.textPrimary : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -286,7 +287,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                      color: selected ? const Color(0xFF111827) : const Color(0xFF6B7280),
+                      color: selected ? AppTheme.textPrimary : AppTheme.textMuted,
                     )),
                 ]),
               ),
@@ -307,22 +308,22 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         style: const TextStyle(fontSize: 13),
         decoration: InputDecoration(
           hintText: 'Search users...',
-          hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-          prefixIcon: const Icon(Icons.search_outlined, size: 16, color: Color(0xFF9CA3AF)),
+          hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+          prefixIcon: const Icon(Icons.search_outlined, size: 16, color: AppTheme.textLight),
           filled: true,
           fillColor: const Color(0xFFF9FAFB),
           contentPadding: EdgeInsets.zero,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            borderSide: const BorderSide(color: AppTheme.border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            borderSide: const BorderSide(color: AppTheme.border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFF111827), width: 1.5),
+            borderSide: const BorderSide(color: AppTheme.textPrimary, width: 1.5),
           ),
         ),
       ),
@@ -333,7 +334,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       label: const Text('Filter', style: TextStyle(fontSize: 13)),
       style: OutlinedButton.styleFrom(
         foregroundColor: const Color(0xFF374151),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: const BorderSide(color: AppTheme.border),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         minimumSize: const Size(0, 36),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -344,7 +345,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       icon: const Icon(Icons.add, size: 14, color: Colors.white),
       label: const Text('Add User', style: TextStyle(fontSize: 13, color: Colors.white)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: AppTheme.primary,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         minimumSize: const Size(0, 36),
@@ -376,7 +377,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   // ─── TABLE ──────────────────────────────────────
 
   static const _colHeader = TextStyle(
-    fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF6B7280),
+    fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textMuted,
     letterSpacing: 0.5,
   );
 
@@ -411,14 +412,14 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
           child: Row(children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor: const Color(0xFF1E1E1E),
+              backgroundColor: AppTheme.primary,
               child: Text(initials,
                 style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(name,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF111827), fontWeight: FontWeight.w500),
+                style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
                 overflow: TextOverflow.ellipsis),
             ),
           ]),
@@ -427,7 +428,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         Expanded(
           flex: 3,
           child: Text(user.email,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
             overflow: TextOverflow.ellipsis),
         ),
         // ROLE badge
@@ -438,7 +439,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         Expanded(
           flex: 2,
           child: Text(_formatDate(user.createdAt),
-            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+            style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
         ),
         // ACTIONS
         SizedBox(
@@ -447,7 +448,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
             _actionBtn(Icons.visibility_outlined, 'View', () => _showUserDetails(user)),
             _actionBtn(Icons.edit_outlined, 'Edit', () => _editUser(user)),
             _actionBtn(Icons.person_off_outlined, 'Deactivate', () => _deactivateUser(user),
-              color: const Color(0xFFDC2626)),
+              color: AppTheme.error),
           ]),
         ),
       ]),
@@ -462,14 +463,14 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       primary: Row(children: [
         CircleAvatar(
           radius: 14,
-          backgroundColor: const Color(0xFF1E1E1E),
+          backgroundColor: AppTheme.primary,
           child: Text(initials,
               style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(name,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF111827), fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis),
         ),
       ]),
@@ -481,7 +482,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         MobileCardAction(label: 'Edit', onPressed: () => _editUser(user)),
         MobileCardAction(
           label: 'Deactivate',
-          color: const Color(0xFFDC2626),
+          color: AppTheme.error,
           onPressed: () => _deactivateUser(user),
         ),
       ],
@@ -496,7 +497,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         borderRadius: BorderRadius.circular(4),
         child: Padding(
           padding: const EdgeInsets.all(4),
-          child: Icon(icon, size: 16, color: color ?? const Color(0xFF6B7280)),
+          child: Icon(icon, size: 16, color: color ?? AppTheme.textMuted),
         ),
       ),
     );
@@ -514,7 +515,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       database: widget.database,
       selectedRoute: '/admin/users',
       child: Scaffold(
-        backgroundColor: const Color(0xFFF4F4F4),
+        backgroundColor: AppTheme.background,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -523,17 +524,17 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
               children: [
                 // ── Header ──
                 const Text('User Accounts',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                 const SizedBox(height: 2),
                 const Text('Manage user access and security settings.',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                  style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                 const SizedBox(height: 20),
 
                 // ── Stat Cards ──
                 LayoutBuilder(builder: (context, constraints) {
                   final cards = [
                     _statCard(label: 'Total Users', value: totalUsers.toString(),
-                        dotColor: const Color(0xFF6B7280), sub: 'registered accounts'),
+                        dotColor: AppTheme.textMuted, sub: 'registered accounts'),
                     _statCard(label: 'Active Users', value: activeUsers.toString(),
                         dotColor: const Color(0xFF10B981), sub: 'currently active'),
                     _statCard(label: 'Administrators', value: adminCount.toString(),
@@ -573,7 +574,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      border: Border.all(color: AppTheme.border),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: ClipRRect(
@@ -583,13 +584,13 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
                         return Column(children: [
                           if (!isMobile) ...[
                             _buildTableHeader(),
-                            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                            const Divider(height: 1, color: AppTheme.border),
                           ],
                           Expanded(
                             child: _filteredUsers.isEmpty
                               ? const Center(
                                   child: Text('No users found.',
-                                    style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+                                    style: TextStyle(fontSize: 13, color: AppTheme.textLight)),
                                 )
                               : SingleChildScrollView(
                                   padding: isMobile ? const EdgeInsets.symmetric(vertical: 4) : EdgeInsets.zero,

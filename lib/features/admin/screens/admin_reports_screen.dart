@@ -9,6 +9,7 @@ import '../../../core/widgets/responsive_shell.dart';
 import '../providers/reports_provider.dart';
 import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminReportsScreen extends ConsumerWidget {
   const AdminReportsScreen({super.key, required this.database, required this.syncManager});
@@ -52,9 +53,9 @@ class _Header extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: const [
-        Text('Reports', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+        Text('Reports', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         SizedBox(height: 4),
-        Text('Sales, inventory, and payment insights', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        Text('Sales, inventory, and payment insights', style: TextStyle(fontSize: 14, color: AppTheme.textMuted)),
       ],
     );
   }
@@ -70,7 +71,7 @@ class _Toolbar extends ConsumerWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: isNarrow
@@ -108,13 +109,13 @@ class _RangeSelector extends ConsumerWidget {
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF1E1E1E),
+            primary: AppTheme.primary,
             onPrimary: Colors.white,
             surface: Colors.white,
-            onSurface: Color(0xFF111827),
+            onSurface: AppTheme.textPrimary,
           ),
           textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF1E1E1E)),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.primary),
           ),
         ),
         child: child!,
@@ -132,7 +133,7 @@ class _RangeSelector extends ConsumerWidget {
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -146,7 +147,7 @@ class _RangeSelector extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFF1E1E1E) : Colors.transparent,
+                color: isActive ? AppTheme.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
@@ -154,14 +155,14 @@ class _RangeSelector extends ConsumerWidget {
                 children: [
                   if (r == ReportsRange.custom) ...[
                     Icon(Icons.calendar_today_outlined,
-                        size: 11, color: isActive ? Colors.white : const Color(0xFF6B7280)),
+                        size: 11, color: isActive ? Colors.white : AppTheme.textMuted),
                     const SizedBox(width: 4),
                   ],
                   Text(_labels[r]!,
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: isActive ? Colors.white : const Color(0xFF6B7280))),
+                          color: isActive ? Colors.white : AppTheme.textMuted)),
                 ],
               ),
             ),
@@ -219,7 +220,7 @@ class _ExportButton extends ConsumerWidget {
       icon: const Icon(Icons.file_download_outlined, size: 16),
       label: const Text('Export Report'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -249,14 +250,14 @@ class _StatsRow extends ConsumerWidget {
     final growthColor = growthRate == null
         ? null
         : growthRate >= 0
-            ? const Color(0xFF059669)
-            : const Color(0xFFDC2626);
+            ? AppTheme.success
+            : AppTheme.error;
 
     final cards = [
       OrdersStatCard(title: 'Total Revenue', value: _peso(revenue), subtitle: '${stats['orderCount']} orders'),
-      OrdersStatCard(title: 'Collected', value: _peso(collected), subtitle: 'Payments received', valueColor: const Color(0xFF059669)),
-      OrdersStatCard(title: 'Outstanding', value: _peso(outstanding), subtitle: 'Unpaid / partial', valueColor: const Color(0xFFDC2626)),
-      OrdersStatCard(title: 'Low Stock Alerts', value: '${stats['lowStockCount']}', subtitle: 'Need restocking', valueColor: const Color(0xFFD97706)),
+      OrdersStatCard(title: 'Collected', value: _peso(collected), subtitle: 'Payments received', valueColor: AppTheme.success),
+      OrdersStatCard(title: 'Outstanding', value: _peso(outstanding), subtitle: 'Unpaid / partial', valueColor: AppTheme.error),
+      OrdersStatCard(title: 'Low Stock Alerts', value: '${stats['lowStockCount']}', subtitle: 'Need restocking', valueColor: AppTheme.warning),
       OrdersStatCard(title: 'Avg Order Value', value: _peso(avgOrderValue), subtitle: 'Per transaction'),
       OrdersStatCard(title: 'Growth Rate', value: growthLabel, subtitle: 'vs. previous period', valueColor: growthColor),
     ];
@@ -327,13 +328,13 @@ class _ChartsSection extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
             const SizedBox(height: 10),
             chart,
           ],
@@ -347,7 +348,7 @@ class _EmptyChartState extends StatelessWidget {
   Widget build(BuildContext context) => const SizedBox(
         height: 160,
         child: Center(
-          child: Text('No data for this period', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+          child: Text('No data for this period', style: TextStyle(fontSize: 12, color: AppTheme.textLight)),
         ),
       );
 }
@@ -369,12 +370,12 @@ class _SalesTrendChart extends ConsumerWidget {
             LineChartBarData(
               spots: [for (var i = 0; i < points.length; i++) FlSpot(i.toDouble(), points[i].total)],
               isCurved: true,
-              color: const Color(0xFF1E1E1E),
+              color: AppTheme.primary,
               barWidth: 1.5,
               dotData: FlDotData(
                 show: true,
                 getDotPainter: (spot, pct, bar, idx) =>
-                    FlDotCirclePainter(radius: 3, color: const Color(0xFF1E1E1E), strokeWidth: 0),
+                    FlDotCirclePainter(radius: 3, color: AppTheme.primary, strokeWidth: 0),
               ),
               belowBarData: BarAreaData(show: false),
             ),
@@ -387,7 +388,7 @@ class _SalesTrendChart extends ConsumerWidget {
                 getTitlesWidget: (val, meta) {
                   final idx = val.toInt();
                   if (idx < 0 || idx >= points.length) return const SizedBox();
-                  return Text(points[idx].label, style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280)));
+                  return Text(points[idx].label, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted));
                 },
               ),
             ),
@@ -404,7 +405,7 @@ class _SalesTrendChart extends ConsumerWidget {
 }
 
 class _OrderStatusChart extends ConsumerWidget {
-  static const _palette = [Color(0xFF1E1E1E), Color(0xFF6B7280), Color(0xFFD1D5DB), Color(0xFFE5E7EB), Color(0xFF9CA3AF)];
+  static const _palette = [AppTheme.primary, AppTheme.textMuted, Color(0xFFD1D5DB), AppTheme.border, AppTheme.textLight];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -442,8 +443,8 @@ class _OrderStatusChart extends ConsumerWidget {
             child: Row(children: [
               Container(width: 8, height: 8, decoration: BoxDecoration(color: _palette[i % _palette.length], shape: BoxShape.circle)),
               const SizedBox(width: 6),
-              Expanded(child: Text('$label (${d.count})', style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280)))),
-              Text('$pct%', style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280))),
+              Expanded(child: Text('$label (${d.count})', style: const TextStyle(fontSize: 10, color: AppTheme.textMuted))),
+              Text('$pct%', style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
             ]),
           );
         }),
@@ -469,7 +470,7 @@ class _StockByCategoryChart extends ConsumerWidget {
               BarChartGroupData(x: i, barRods: [
                 BarChartRodData(
                   toY: data[i].stock.toDouble(),
-                  color: const Color(0xFF1E1E1E).withValues(alpha: 1 - (i * 0.12).clamp(0, 0.6)),
+                  color: AppTheme.primary.withValues(alpha: 1 - (i * 0.12).clamp(0, 0.6)),
                   width: 20,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                 ),
@@ -486,7 +487,7 @@ class _StockByCategoryChart extends ConsumerWidget {
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(data[idx].category,
-                        style: const TextStyle(fontSize: 9, color: Color(0xFF6B7280)), textAlign: TextAlign.center),
+                        style: const TextStyle(fontSize: 9, color: AppTheme.textMuted), textAlign: TextAlign.center),
                   );
                 },
               ),
@@ -512,7 +513,7 @@ class _TopProductsCard extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -520,22 +521,22 @@ class _TopProductsCard extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: const Text('Top Products', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            child: const Text('Top Products', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           ),
           if (products.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 32),
-              child: Center(child: Text('No sales in this period', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)))),
+              child: Center(child: Text('No sales in this period', style: TextStyle(fontSize: 12, color: AppTheme.textLight))),
             )
           else
             LayoutBuilder(builder: (context, constraints) {
               if (constraints.maxWidth < 600) {
                 return Column(children: products.map((p) => MobileListCard(
                   primary: Text(p.sku,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary)),
                   secondary: MobileCardMuted(p.name),
                   valueLeft: Text('${p.quantity} sold',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                   valueRight: MobileCardMuted('₱${p.revenue.toStringAsFixed(0)}'),
                 )).toList());
               }
@@ -544,24 +545,24 @@ class _TopProductsCard extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: const BoxDecoration(
                     color: Color(0xFFF9FAFB),
-                    border: Border(top: BorderSide(color: Color(0xFFE5E7EB)), bottom: BorderSide(color: Color(0xFFE5E7EB))),
+                    border: Border(top: BorderSide(color: AppTheme.border), bottom: BorderSide(color: AppTheme.border)),
                   ),
                   child: const Row(children: [
-                    Expanded(flex: 1, child: Text('SKU', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
-                    Expanded(flex: 3, child: Text('PRODUCT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
-                    Expanded(flex: 1, child: Text('QTY SOLD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
-                    Expanded(flex: 1, child: Text('REVENUE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5))),
+                    Expanded(flex: 1, child: Text('SKU', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.5))),
+                    Expanded(flex: 3, child: Text('PRODUCT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.5))),
+                    Expanded(flex: 1, child: Text('QTY SOLD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.5))),
+                    Expanded(flex: 1, child: Text('REVENUE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.5))),
                   ]),
                 ),
                 for (final p in products)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+                    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
                     child: Row(children: [
-                      Expanded(flex: 1, child: Text(p.sku, style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: Color(0xFF111827)))),
+                      Expanded(flex: 1, child: Text(p.sku, style: const TextStyle(fontSize: 12, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary))),
                       Expanded(flex: 3, child: Text(p.name, style: const TextStyle(fontSize: 12, color: Color(0xFF374151)), overflow: TextOverflow.ellipsis)),
-                      Expanded(flex: 1, child: Text('${p.quantity}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827)))),
-                      Expanded(flex: 1, child: Text('₱${p.revenue.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)))),
+                      Expanded(flex: 1, child: Text('${p.quantity}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary))),
+                      Expanded(flex: 1, child: Text('₱${p.revenue.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted))),
                     ]),
                   ),
               ]);

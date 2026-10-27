@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// App Theme Configuration
 /// Central theme definitions for the Villahermasa Inventory System
-class AppTheme {
+class LegacyAppTheme {
   // Original Colors
   static const Color primaryColor = Color(0xFF424242);
   static const Color accentColor = Color(0xFF757575);

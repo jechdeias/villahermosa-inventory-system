@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
@@ -97,6 +98,7 @@ class _WarehouseStockMovementScreenState extends ConsumerState<WarehouseStockMov
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstLoad(ref.watch(productsStreamProvider))) return const WhLoadingShell(route: WhRoutes.stockMovement);
     final products = ref.watch(productsStreamProvider).value ?? [];
     final movements = <StockMovement>[...(ref.watch(stockMovementsStreamProvider).value ?? [])]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -230,7 +232,7 @@ class _WarehouseStockMovementScreenState extends ConsumerState<WarehouseStockMov
         children: [
           const WhCardTitle('Recent Movements', trailing: Text('Today', style: TextStyle(fontSize: 12, color: WhColors.muted))),
           if (recent.isEmpty)
-            const WhEmpty('No movements recorded yet')
+            const WhEmpty('Stock in and out will show up here', title: 'No movements yet', icon: Icons.swap_vert)
           else
             for (final m in recent)
               Container(

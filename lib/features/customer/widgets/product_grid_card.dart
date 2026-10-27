@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/database/app_database.dart';
 import 'customer_common.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Big initial letter on a grey tile — stands in for a product photo.
 class ProductImagePlaceholder extends StatelessWidget {
@@ -82,7 +83,7 @@ class ProductGridCard extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: CcColors.primary,
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor: const Color(0xFFE5E7EB),
+                          disabledBackgroundColor: AppTheme.border,
                           disabledForegroundColor: CcColors.light,
                           elevation: 0,
                           padding: EdgeInsets.zero,

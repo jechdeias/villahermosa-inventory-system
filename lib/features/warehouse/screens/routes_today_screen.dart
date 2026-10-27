@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
@@ -17,6 +18,7 @@ class _WarehouseRoutesTodayScreenState extends ConsumerState<WarehouseRoutesToda
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstLoad(ref.watch(deliveryRoutesStreamProvider))) return const WhLoadingShell(route: WhRoutes.routesToday, statCards: 3);
     final routes = (ref.watch(deliveryRoutesStreamProvider).value ?? []).where((r) => r.status == 'active').toList();
     final orders = ref.watch(ordersStreamProvider).value ?? [];
     final lines = ref.watch(orderLinesByOrderProvider);
@@ -67,7 +69,7 @@ class _WarehouseRoutesTodayScreenState extends ConsumerState<WarehouseRoutesToda
           WhStatCard(label: 'Stores to Visit', value: '$stores', sub: 'Stops scheduled today', dotColor: WhColors.green),
         ]),
         if (routes.isEmpty)
-          const WhCard(child: WhEmpty('No active routes. Add or activate a route in Admin → Deliveries.'))
+          const WhCard(child: WhEmpty('Add or activate a route in Admin → Deliveries', title: 'No active routes', icon: Icons.map_outlined))
         else
           for (final r in routes)
             Padding(
@@ -127,7 +129,7 @@ class _WarehouseRoutesTodayScreenState extends ConsumerState<WarehouseRoutesToda
           ),
           if (open)
             if (byStore.isEmpty)
-              const Padding(padding: EdgeInsets.only(bottom: 8), child: WhEmpty('No orders on this route today'))
+              const Padding(padding: EdgeInsets.only(bottom: 8), child: WhEmpty('Orders for this route will appear here', title: 'No orders today', icon: Icons.receipt_long_outlined))
             else
               Container(
                 decoration: const BoxDecoration(border: Border(top: BorderSide(color: WhColors.border))),

@@ -5,6 +5,7 @@ import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../providers/settings_provider.dart';
 import '../services/backup_service.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminSettingsScreen extends ConsumerWidget {
   const AdminSettingsScreen({super.key, required this.database, required this.syncManager});
@@ -48,9 +49,9 @@ class _Header extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: const [
-        Text('Settings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+        Text('Settings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         SizedBox(height: 4),
-        Text('Configure system preferences and sync', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        Text('Configure system preferences and sync', style: TextStyle(fontSize: 14, color: AppTheme.textMuted)),
       ],
     );
   }
@@ -70,7 +71,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -90,16 +91,16 @@ class _SectionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                    Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                     const SizedBox(height: 2),
-                    Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                    Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                   ],
                 ),
               ),
             ]),
           ),
           for (final row in rows) ...[
-            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+            const Divider(height: 1, color: AppTheme.border),
             row,
           ],
         ],
@@ -123,9 +124,9 @@ class _SettingRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               const SizedBox(height: 2),
-              Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
             ],
           ),
         ),
@@ -147,7 +148,7 @@ class _BlackSwitch extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       activeThumbColor: Colors.white,
-      activeTrackColor: const Color(0xFF1E1E1E),
+      activeTrackColor: AppTheme.primary,
       inactiveThumbColor: Colors.white,
       inactiveTrackColor: const Color(0xFFD1D5DB),
       trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
@@ -166,9 +167,9 @@ class _PrimaryButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: loading ? null : onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
-        disabledBackgroundColor: const Color(0xFF9CA3AF),
+        disabledBackgroundColor: AppTheme.textLight,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
@@ -246,7 +247,7 @@ class _SyncSettingsCardState extends ConsumerState<_SyncSettingsCard> {
           padding: EdgeInsets.fromLTRB(16, 12, 16, 14),
           child: Text(
             'Sync also runs automatically on login and right after every change you make — this only covers app startup.',
-            style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+            style: TextStyle(fontSize: 11, color: AppTheme.textLight),
           ),
         ),
       ],
@@ -331,9 +332,9 @@ class _AboutCard extends ConsumerWidget {
             error: (_, _) => 'Unknown',
           ),
           dotColor: online.when(
-            data: (isOnline) => isOnline ? const Color(0xFF059669) : const Color(0xFFDC2626),
-            loading: () => const Color(0xFF9CA3AF),
-            error: (_, _) => const Color(0xFF9CA3AF),
+            data: (isOnline) => isOnline ? AppTheme.success : AppTheme.error,
+            loading: () => AppTheme.textLight,
+            error: (_, _) => AppTheme.textLight,
           ),
         ),
       ],
@@ -352,13 +353,13 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
         Row(mainAxisSize: MainAxisSize.min, children: [
           if (dotColor != null) ...[
             Container(width: 7, height: 7, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
             const SizedBox(width: 6),
           ],
-          Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+          Text(value, style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
         ]),
       ]),
     );

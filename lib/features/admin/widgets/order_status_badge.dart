@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 class OrderStatusBadge extends StatelessWidget {
   const OrderStatusBadge({super.key, required this.status});
   final String status;
 
   static _Style _styleFor(String s) => switch (s) {
-    'pending'   => const _Style(bg: Color(0xFFFFFBEB), text: Color(0xFF92400E), icon: Icons.access_time),
-    'completed' => const _Style(bg: Color(0xFFECFDF5), text: Color(0xFF065F46), icon: Icons.check_circle_outline),
-    'cancelled' => const _Style(bg: Color(0xFFFEF2F2), text: Color(0xFF991B1B), icon: Icons.cancel_outlined),
-    _           => const _Style(bg: Color(0xFFF3F4F6), text: Color(0xFF6B7280), icon: Icons.help_outline),
+    'pending'   => const _Style(bg: AppTheme.warningLight, text: Color(0xFF92400E), icon: Icons.access_time),
+    'completed' => const _Style(bg: AppTheme.successLight, text: Color(0xFF065F46), icon: Icons.check_circle_outline),
+    'cancelled' => const _Style(bg: AppTheme.errorLight, text: Color(0xFF991B1B), icon: Icons.cancel_outlined),
+    _           => const _Style(bg: Color(0xFFF3F4F6), text: AppTheme.textMuted, icon: Icons.help_outline),
   };
 
   @override

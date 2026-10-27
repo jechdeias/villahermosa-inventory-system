@@ -10,12 +10,12 @@ class AccountPendingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightBackground,
+      backgroundColor: LegacyAppTheme.lightBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.primaryColor),
+          icon: const Icon(Icons.arrow_back, color: LegacyAppTheme.primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -35,7 +35,7 @@ class AccountPendingScreen extends StatelessWidget {
                     height: 80,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      color: LegacyAppTheme.primaryColor.withValues(alpha: 0.1),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -53,7 +53,7 @@ class AccountPendingScreen extends StatelessWidget {
                   Text(
                     'Villahermosa Inventory System',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppTheme.primaryColor,
+                      color: LegacyAppTheme.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
@@ -64,7 +64,7 @@ class AccountPendingScreen extends StatelessWidget {
                   Text(
                     'Account Pending',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.warningColor,
+                      color: LegacyAppTheme.warningColor,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
@@ -95,7 +95,7 @@ class AccountPendingScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: LegacyAppTheme.primaryColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(

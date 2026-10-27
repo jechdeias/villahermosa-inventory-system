@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/customers_provider.dart';
 import '../services/customers_service.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AddCustomerPanel extends ConsumerStatefulWidget {
   const AddCustomerPanel({super.key, required this.onClose, this.editing});
@@ -100,7 +101,7 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(left: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(left: BorderSide(color: AppTheme.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -158,25 +159,25 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
 
   Widget _buildHeader() => Container(
     padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
     child: Row(children: [
       Expanded(
         child: Text(_isEditing ? 'Edit Customer' : 'Add Customer',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
       ),
-      GestureDetector(onTap: widget.onClose, child: const Icon(Icons.close, size: 18, color: Color(0xFF6B7280))),
+      GestureDetector(onTap: widget.onClose, child: const Icon(Icons.close, size: 18, color: AppTheme.textMuted)),
     ]),
   );
 
   Widget _buildFooter() => Container(
     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
-    decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE5E7EB)))),
+    decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.border))),
     child: Row(children: [
       Expanded(
         child: OutlinedButton(
           onPressed: _saving ? null : widget.onClose,
           style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Color(0xFFE5E7EB)),
+            side: const BorderSide(color: AppTheme.border),
             foregroundColor: const Color(0xFF374151),
             padding: const EdgeInsets.symmetric(vertical: 10),
           ),
@@ -188,7 +189,7 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
         child: ElevatedButton(
           onPressed: _saving ? null : _save,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E1E1E),
+            backgroundColor: AppTheme.primary,
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -203,15 +204,15 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
 
   Widget _sectionLabel(String label) => Text(
     label,
-    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.8),
+    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.8),
   );
 
   InputDecoration _dec(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF6B7280))),
+    hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.textMuted)),
     contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
   );
 }

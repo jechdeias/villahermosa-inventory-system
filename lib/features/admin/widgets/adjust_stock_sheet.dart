@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 import '../services/products_service.dart';
+import '../../../core/theme/app_theme.dart';
 
 const _reasons = ['Delivery', 'Sale', 'Damage', 'Adjustment'];
 
@@ -89,12 +90,12 @@ class _AdjustStockSheetState extends ConsumerState<_AdjustStockSheet> {
             Center(
               child: Container(
                 width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             Text(
               'Adjust Stock for ${widget.product.name}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
             ),
             const SizedBox(height: 16),
             Row(children: [
@@ -127,7 +128,7 @@ class _AdjustStockSheetState extends ConsumerState<_AdjustStockSheet> {
             ElevatedButton(
               onPressed: _saving ? null : _save,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -149,8 +150,8 @@ class _AdjustStockSheetState extends ConsumerState<_AdjustStockSheet> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF1E1E1E) : Colors.white,
-          border: Border.all(color: active ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+          color: active ? AppTheme.primary : Colors.white,
+          border: Border.all(color: active ? AppTheme.primary : AppTheme.border),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(label,
@@ -162,10 +163,10 @@ class _AdjustStockSheetState extends ConsumerState<_AdjustStockSheet> {
 
   InputDecoration _dec(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF6B7280))),
+    hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.textMuted)),
     contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
   );
 }

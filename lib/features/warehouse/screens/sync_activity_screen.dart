@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/settings/app_settings.dart';
@@ -51,6 +52,7 @@ class _WarehouseSyncActivityScreenState extends ConsumerState<WarehouseSyncActiv
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstLoad(ref.watch(stockMovementsStreamProvider))) return const WhLoadingShell(route: WhRoutes.sync, statCards: 4);
     final movements = ref.watch(stockMovementsStreamProvider).value ?? [];
     final orders = ref.watch(ordersStreamProvider).value ?? [];
     final products = ref.watch(productsStreamProvider).value ?? [];
@@ -156,7 +158,7 @@ class _WarehouseSyncActivityScreenState extends ConsumerState<WarehouseSyncActiv
             if (_lastError != null)
               WhActivityLogEntry(kind: WhActivityKind.error, title: 'Sync failed', description: _lastError!, by: 'By: System • just now'),
             if (entries.isEmpty && _lastError == null)
-              const WhEmpty('No activity yet')
+              const WhEmpty('Stock movements, prepared orders and alerts will show up here', title: 'No activity yet', icon: Icons.history)
             else
               for (final e in entries.take(12)) e.build(),
           ]),

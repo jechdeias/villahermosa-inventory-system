@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../providers/delivery_routes_provider.dart';
 import '../services/delivery_routes_service.dart';
 import 'route_status_badge.dart';
+import '../../../core/theme/app_theme.dart';
 
 const _statusCycle = ['active', 'on_hold', 'inactive'];
 
@@ -31,10 +32,10 @@ class RouteDetailPanel extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildSection('ROUTE INFO', [
-                    _row('Municipality', Text(route.municipality, style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
-                    _row('Assigned Rep', Text(route.assignedRepName ?? 'Unassigned', style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
-                    _row('Delivery Days', Text(route.deliveryDays.replaceAll(',', ', '), style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
-                    _row('Customers', Text('${route.customerCount}', style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
+                    _row('Municipality', Text(route.municipality, style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
+                    _row('Assigned Rep', Text(route.assignedRepName ?? 'Unassigned', style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
+                    _row('Delivery Days', Text(route.deliveryDays.replaceAll(',', ', '), style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
+                    _row('Customers', Text('${route.customerCount}', style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
                     _row('Status', RouteStatusBadge(status: route.status)),
                   ]),
                   _buildOrdersSection(db),
@@ -51,28 +52,28 @@ class RouteDetailPanel extends ConsumerWidget {
   Widget _buildOrdersSection(AppDatabase db) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('RECENT ORDERS ON THIS ROUTE',
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.8)),
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.8)),
           const SizedBox(height: 12),
           FutureBuilder<List<Order>>(
             future: db.getOrdersByRouteName(route.routeName),
             builder: (context, snap) {
               final orders = snap.data ?? [];
               if (orders.isEmpty) {
-                return const Text('No orders on this route yet', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)));
+                return const Text('No orders on this route yet', style: TextStyle(fontSize: 12, color: AppTheme.textLight));
               }
               return Column(
                 children: orders.take(5).map((o) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(children: [
                     Expanded(
-                      child: Text(o.orderNumber, style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: Color(0xFF111827))),
+                      child: Text(o.orderNumber, style: const TextStyle(fontSize: 12, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary)),
                     ),
-                    Text('₱${_fmt(o.totalAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                    Text('₱${_fmt(o.totalAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                   ]),
                 )).toList(),
               );
@@ -85,20 +86,20 @@ class RouteDetailPanel extends ConsumerWidget {
 
   Widget _buildHeader() => Container(
     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
     child: Row(children: [
-      Expanded(child: Text(route.routeName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827)))),
-      GestureDetector(onTap: onClose, child: const Icon(Icons.close, size: 18, color: Color(0xFF6B7280))),
+      Expanded(child: Text(route.routeName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary))),
+      GestureDetector(onTap: onClose, child: const Icon(Icons.close, size: 18, color: AppTheme.textMuted)),
     ]),
   );
 
   Widget _buildSection(String title, List<Widget> rows) => Container(
     padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.8)),
+        Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.8)),
         const SizedBox(height: 12),
         ...rows,
       ],
@@ -110,7 +111,7 @@ class RouteDetailPanel extends ConsumerWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 110, child: Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)))),
+        SizedBox(width: 110, child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textMuted))),
         Expanded(child: value),
       ],
     ),
@@ -120,13 +121,13 @@ class RouteDetailPanel extends ConsumerWidget {
     final nextStatus = _statusCycle[(_statusCycle.indexOf(route.status) + 1) % _statusCycle.length];
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE5E7EB)))),
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.border))),
       child: Row(children: [
         Expanded(
           child: OutlinedButton(
             onPressed: onEdit,
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFE5E7EB)),
+              side: const BorderSide(color: AppTheme.border),
               foregroundColor: const Color(0xFF374151),
               padding: const EdgeInsets.symmetric(vertical: 10),
             ),
@@ -142,7 +143,7 @@ class RouteDetailPanel extends ConsumerWidget {
               onClose();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E1E1E),
+              backgroundColor: AppTheme.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 10),

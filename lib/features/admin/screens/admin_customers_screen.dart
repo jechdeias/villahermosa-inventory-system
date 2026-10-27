@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
@@ -9,6 +11,7 @@ import '../widgets/customer_channel_badge.dart';
 import '../widgets/customer_detail_panel.dart';
 import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminCustomersScreen extends ConsumerStatefulWidget {
   const AdminCustomersScreen({super.key, required this.database, required this.syncManager});
@@ -143,7 +146,9 @@ class _CustomersListColumn extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allCustomers = ref.watch(customersStreamProvider).value ?? [];
+    final customersAsync = ref.watch(customersStreamProvider);
+    if (isFirstLoad(customersAsync)) return const ShimmerTablePage(statCards: 4);
+    final allCustomers = customersAsync.value ?? [];
 
     final totalCount = allCustomers.length;
     final activeCount = allCustomers.where((c) => c.status == 'active').length;
@@ -170,10 +175,10 @@ class _CustomersListColumn extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Customers & Stores',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         const SizedBox(height: 4),
         const Text('Manage your customer database',
-            style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+            style: TextStyle(fontSize: 14, color: AppTheme.textMuted)),
       ],
     );
   }
@@ -183,7 +188,7 @@ class _CustomersListColumn extends ConsumerWidget {
       final isNarrow = constraints.maxWidth < 500;
       final cards = [
         OrdersStatCard(title: 'Total Stores', value: '$total', subtitle: 'All channels'),
-        OrdersStatCard(title: 'Active Stores', value: '$active', subtitle: 'Currently serving', valueColor: const Color(0xFF059669)),
+        OrdersStatCard(title: 'Active Stores', value: '$active', subtitle: 'Currently serving', valueColor: AppTheme.success),
         OrdersStatCard(title: 'Towns Covered', value: '$towns', subtitle: 'Marinduque municipalities'),
         OrdersStatCard(title: 'Store Channels', value: '$channels', subtitle: 'Types of stores'),
       ];
@@ -219,7 +224,7 @@ class _CustomersListColumn extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -248,7 +253,7 @@ class _CustomersListColumn extends ConsumerWidget {
 
   Widget _buildTabBar(WidgetRef ref, String? tab, List<_Tab> tabs) {
     return Container(
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -259,7 +264,7 @@ class _CustomersListColumn extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: isActive ? const Color(0xFF111827) : Colors.transparent, width: 2)),
+                  border: Border(bottom: BorderSide(color: isActive ? AppTheme.textPrimary : Colors.transparent, width: 2)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -268,16 +273,16 @@ class _CustomersListColumn extends ConsumerWidget {
                         style: TextStyle(
                             fontSize: 13,
                             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                            color: isActive ? const Color(0xFF111827) : const Color(0xFF6B7280))),
+                            color: isActive ? AppTheme.textPrimary : AppTheme.textMuted)),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
+                        color: isActive ? AppTheme.textPrimary : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text('${t.count}',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isActive ? Colors.white : const Color(0xFF6B7280))),
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isActive ? Colors.white : AppTheme.textMuted)),
                     ),
                   ],
                 ),
@@ -304,11 +309,11 @@ class _CustomersListColumn extends ConsumerWidget {
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search customers...',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-                  prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF9CA3AF)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF6B7280))),
+                  hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+                  prefixIcon: const Icon(Icons.search, size: 16, color: AppTheme.textLight),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.textMuted)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   filled: true,
                   fillColor: const Color(0xFFF9FAFB),
@@ -327,9 +332,9 @@ class _CustomersListColumn extends ConsumerWidget {
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: filterActive ? const Color(0xFF2563EB) : const Color(0xFF6B7280),
-                backgroundColor: filterActive ? const Color(0xFFEFF6FF) : null,
-                side: BorderSide(color: filterActive ? const Color(0xFF2563EB) : const Color(0xFFE5E7EB)),
+                foregroundColor: filterActive ? AppTheme.info : AppTheme.textMuted,
+                backgroundColor: filterActive ? AppTheme.infoLight : null,
+                side: BorderSide(color: filterActive ? AppTheme.info : AppTheme.border),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                 minimumSize: const Size(0, 34),
@@ -338,12 +343,12 @@ class _CustomersListColumn extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.tune, size: 16, color: filterActive ? const Color(0xFF2563EB) : const Color(0xFF6B7280)),
+                  Icon(Icons.tune, size: 16, color: filterActive ? AppTheme.info : AppTheme.textMuted),
                   const SizedBox(width: 6),
-                  Text('Filter', style: TextStyle(fontSize: 12, color: filterActive ? const Color(0xFF2563EB) : const Color(0xFF6B7280))),
+                  Text('Filter', style: TextStyle(fontSize: 12, color: filterActive ? AppTheme.info : AppTheme.textMuted)),
                   if (filterActive) ...[
                     const SizedBox(width: 4),
-                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle)),
+                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppTheme.info, shape: BoxShape.circle)),
                   ],
                 ],
               ),
@@ -354,7 +359,7 @@ class _CustomersListColumn extends ConsumerWidget {
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Add Customer'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -374,7 +379,7 @@ class _CustomersListColumn extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
         color: Color(0xFFF9FAFB),
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB)), bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(top: BorderSide(color: AppTheme.border), bottom: BorderSide(color: AppTheme.border)),
       ),
       child: const Row(children: [
         _HeaderCell('STORE NAME', flex: 2),
@@ -388,17 +393,11 @@ class _CustomersListColumn extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(String? tab) {
-    final label = tab == null ? 'customers' : 'customers in $tab';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(children: [
-        Icon(Icons.storefront_outlined, size: 40, color: Colors.grey.shade300),
-        const SizedBox(height: 12),
-        Text('No $label found', style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
-      ]),
-    );
-  }
+  Widget _buildEmptyState(String? tab) => EmptyState(
+        icon: Icons.store_outlined,
+        title: 'No customers found',
+        message: 'Add customers or adjust your search',
+      );
 }
 
 // ── Customer Row ─────────────────────────────────────────────────────────────
@@ -419,13 +418,13 @@ class _CustomerRow extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF9FAFB) : Colors.white,
-          border: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+          border: const Border(bottom: BorderSide(color: AppTheme.border)),
         ),
         child: Row(
           children: [
             Expanded(
               flex: 2,
-              child: Text(customer.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827)), overflow: TextOverflow.ellipsis),
+              child: Text(customer.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary), overflow: TextOverflow.ellipsis),
             ),
             Expanded(
               flex: 2,
@@ -433,24 +432,24 @@ class _CustomerRow extends ConsumerWidget {
             ),
             Expanded(
               flex: 2,
-              child: Text(customer.barangay ?? '—', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+              child: Text(customer.barangay ?? '—', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
             ),
             Expanded(
               flex: 2,
-              child: Text(customer.town ?? '—', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+              child: Text(customer.town ?? '—', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
             ),
             Expanded(
               flex: 2,
               child: customer.channel != null
                   ? CustomerChannelBadge(channel: customer.channel!)
-                  : const Text('—', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+                  : const Text('—', style: TextStyle(fontSize: 12, color: AppTheme.textLight)),
             ),
             Expanded(
               flex: 2,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 9),
                 decoration: BoxDecoration(
-                  color: customer.status == 'active' ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                  color: customer.status == 'active' ? AppTheme.successLight : AppTheme.errorLight,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -494,11 +493,11 @@ class _CustomerMobileCard extends ConsumerWidget {
     return MobileListCard(
       onTap: () => ref.read(selectedCustomerProvider.notifier).state = customer,
       primary: Text(customer.name,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
       badge: Container(
         padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 9),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+          color: isActive ? AppTheme.successLight : AppTheme.errorLight,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -511,7 +510,7 @@ class _CustomerMobileCard extends ConsumerWidget {
           '${customer.barangay ?? '—'}, ${customer.town ?? '—'}${customer.businessName != null ? ' · ${customer.businessName}' : ''}'),
       valueLeft: customer.channel != null
           ? CustomerChannelBadge(channel: customer.channel!)
-          : const Text('—', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+          : const Text('—', style: TextStyle(fontSize: 12, color: AppTheme.textLight)),
       valueRight: MobileCardMuted(customer.contactNumber),
       actions: [
         MobileCardAction(label: 'Edit', onPressed: onEdit),
@@ -548,9 +547,9 @@ class _CustomersFilterSheetState extends ConsumerState<_CustomersFilterSheet> {
         children: [
           Center(
             child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(2))),
+                decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
           ),
-          const Text('Filter Customers', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          const Text('Filter Customers', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           const SizedBox(height: 16),
           DropdownButtonFormField<String?>(
             initialValue: _channel,
@@ -590,7 +589,7 @@ class _CustomersFilterSheetState extends ConsumerState<_CustomersFilterSheet> {
                   ref.read(customersFilterProvider.notifier).state = CustomerFilters(channel: _channel, status: _status);
                   Navigator.pop(context);
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E1E1E), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
                 child: const Text('Apply', style: TextStyle(fontSize: 13)),
               ),
             ),
@@ -620,7 +619,7 @@ class _HeaderCell extends StatelessWidget {
     return Expanded(
       flex: flex,
       child: Text(label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5)),
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.5)),
     );
   }
 }
@@ -655,7 +654,7 @@ class _ActionIconButtonState extends State<_ActionIconButton> {
               color: _hovered ? const Color(0xFFF3F4F6) : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Icon(widget.icon, size: 15, color: _hovered ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
+            child: Icon(widget.icon, size: 15, color: _hovered ? AppTheme.textMuted : AppTheme.textLight),
           ),
         ),
       ),

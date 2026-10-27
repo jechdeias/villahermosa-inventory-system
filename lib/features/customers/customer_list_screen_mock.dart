@@ -346,9 +346,9 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: AppTheme.lightBackground,
+      backgroundColor: LegacyAppTheme.lightBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.darkNavigation,
+        backgroundColor: LegacyAppTheme.darkNavigation,
         title: const Text(
           'Customers',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
@@ -403,7 +403,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
                             });
                             _filterCustomers();
                           },
-                          backgroundColor: isSelected ? AppTheme.primaryColor : Colors.grey.shade200,
+                          backgroundColor: isSelected ? LegacyAppTheme.primaryColor : Colors.grey.shade200,
                           labelStyle: TextStyle(
                             color: isSelected ? Colors.white : Colors.black87,
                           ),
@@ -430,7 +430,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
                             });
                             _filterCustomers();
                           },
-                          backgroundColor: isSelected ? AppTheme.accentColor : Colors.grey.shade200,
+                          backgroundColor: isSelected ? LegacyAppTheme.accentColor : Colors.grey.shade200,
                           labelStyle: TextStyle(
                             color: isSelected ? Colors.white : Colors.black87,
                           ),
@@ -465,9 +465,9 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+        color: LegacyAppTheme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+        border: Border.all(color: LegacyAppTheme.primaryColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -489,14 +489,14 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
 
   Widget _buildStatCard(String title, String value, IconData icon) => Column(
       children: [
-        Icon(icon, color: AppTheme.primaryColor, size: 24),
+        Icon(icon, color: LegacyAppTheme.primaryColor, size: 24),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryColor,
+            color: LegacyAppTheme.primaryColor,
           ),
         ),
         Text(
@@ -539,7 +539,7 @@ class _CustomerListScreenMockState extends State<CustomerListScreenMock> {
           ElevatedButton(
             onPressed: _showAddCustomerDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: LegacyAppTheme.primaryColor,
               foregroundColor: Colors.white,
             ),
             child: const Text('Add Customer'),
@@ -571,7 +571,7 @@ class CustomerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final customerTypeColor = customer.customerType == 'wholesale' ? AppTheme.accentColor : AppTheme.primaryColor;
+    final customerTypeColor = customer.customerType == 'wholesale' ? LegacyAppTheme.accentColor : LegacyAppTheme.primaryColor;
     
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -666,7 +666,7 @@ class CustomerCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                      color: LegacyAppTheme.primaryColor,
                     ),
                   ),
                   Row(

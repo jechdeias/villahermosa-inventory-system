@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Shared mobile shell for the sales rep role: a bottom nav bar wrapping
 /// whichever /sales/* screen is current. Each screen builds its own top
@@ -28,14 +29,14 @@ class SalesShell extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+          border: Border(top: BorderSide(color: AppTheme.border)),
         ),
         child: SafeArea(
           top: false,
           child: Row(
             children: _items.map((item) {
               final active = currentRoute == item.route;
-              final color = active ? const Color(0xFF1E1E1E) : const Color(0xFF9CA3AF);
+              final color = active ? AppTheme.primary : AppTheme.textLight;
               return Expanded(
                 child: InkWell(
                   onTap: active

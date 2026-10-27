@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Palette shared by every customer screen.
 class CcColors {
   static const page = Color(0xFFF3F4F6);
   static const surface = Colors.white;
-  static const border = Color(0xFFE5E7EB);
-  static const text = Color(0xFF111827);
+  static const border = AppTheme.border;
+  static const text = AppTheme.textPrimary;
   static const body = Color(0xFF374151);
-  static const muted = Color(0xFF6B7280);
-  static const light = Color(0xFF9CA3AF);
-  static const primary = Color(0xFF1E1E1E);
-  static const green = Color(0xFF059669);
-  static const red = Color(0xFFDC2626);
+  static const muted = AppTheme.textMuted;
+  static const light = AppTheme.textLight;
+  static const primary = AppTheme.primary;
+  static const green = AppTheme.success;
+  static const red = AppTheme.error;
   static const amber = Color(0xFFB45309);
-  static const blue = Color(0xFF2563EB);
+  static const blue = AppTheme.info;
   static const imageBg = Color(0xFFEDEEF0);
 }
 
@@ -77,10 +78,10 @@ class CcBadge extends StatelessWidget {
   /// Badge styled from a status word (In Stock, Processing, Collected, ...).
   factory CcBadge.status(String label) {
     final (bg, fg) = switch (label.toLowerCase()) {
-      'in stock' || 'delivered' || 'collected' || 'paid' => (const Color(0xFFECFDF5), const Color(0xFF065F46)),
-      'out of stock' || 'unpaid' => (const Color(0xFFFEF2F2), const Color(0xFFB91C1C)),
-      'processing' || 'partial' => (const Color(0xFFEFF6FF), const Color(0xFF1D4ED8)),
-      'out for delivery' || 'pending' => (const Color(0xFFFFFBEB), const Color(0xFFB45309)),
+      'in stock' || 'delivered' || 'collected' || 'paid' => (AppTheme.successLight, const Color(0xFF065F46)),
+      'out of stock' || 'unpaid' => (AppTheme.errorLight, const Color(0xFFB91C1C)),
+      'processing' || 'partial' => (AppTheme.infoLight, const Color(0xFF1D4ED8)),
+      'out for delivery' || 'pending' => (AppTheme.warningLight, const Color(0xFFB45309)),
       'cancelled' => (const Color(0xFFF3F4F6), const Color(0xFF4B5563)),
       _ => (const Color(0xFFF3F4F6), const Color(0xFF4B5563)),
     };
@@ -198,38 +199,6 @@ class CcInfoRows extends StatelessWidget {
 
 Widget ccValueText(String v, {Color color = CcColors.text}) =>
     Text(v, textAlign: TextAlign.right, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color));
-
-class CcEmptyState extends StatelessWidget {
-  const CcEmptyState({super.key, required this.icon, required this.title, required this.message, this.actionLabel, this.onAction});
-  final IconData icon;
-  final String title;
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) => Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: CcColors.border)),
-              child: Icon(icon, size: 40, color: CcColors.muted),
-            ),
-            const SizedBox(height: 20),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: CcColors.text)),
-            const SizedBox(height: 8),
-            Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: CcColors.muted, height: 1.4)),
-            if (actionLabel != null) ...[
-              const SizedBox(height: 20),
-              CcPrimaryButton(label: actionLabel!, onPressed: onAction, expand: false, height: 48),
-            ],
-          ]),
-        ),
-      );
-}
 
 /// White page title bar used by the tab screens (no back arrow).
 class CcTitleBar extends StatelessWidget {

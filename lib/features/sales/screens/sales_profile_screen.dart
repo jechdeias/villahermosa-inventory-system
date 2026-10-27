@@ -5,6 +5,7 @@ import '../../../core/settings/app_settings.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../providers/sales_providers.dart';
 import '../widgets/sales_shell.dart';
+import '../../../core/theme/app_theme.dart';
 
 class SalesProfileScreen extends ConsumerStatefulWidget {
   const SalesProfileScreen({super.key});
@@ -35,13 +36,13 @@ class _SalesProfileScreenState extends ConsumerState<SalesProfileScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
-        content: const Text('Are you sure you want to logout?', style: TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+        title: const Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+        content: const Text('Are you sure you want to logout?', style: TextStyle(fontSize: 13, color: AppTheme.textMuted)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -52,7 +53,7 @@ class _SalesProfileScreenState extends ConsumerState<SalesProfileScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E1E1E),
+              backgroundColor: AppTheme.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -80,7 +81,7 @@ class _SalesProfileScreenState extends ConsumerState<SalesProfileScreen> {
             Container(
               width: 56,
               height: 56,
-              decoration: const BoxDecoration(color: Color(0xFF1E1E1E), shape: BoxShape.circle),
+              decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
               alignment: Alignment.center,
               child: Text(
                 (rep?.firstName.isNotEmpty ?? false) ? rep!.firstName[0].toUpperCase() : '?',
@@ -93,12 +94,12 @@ class _SalesProfileScreenState extends ConsumerState<SalesProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('${rep?.firstName ?? ''} ${rep?.lastName ?? ''}'.trim(),
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                   const SizedBox(height: 2),
-                  Text(rep?.email ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                  Text(rep?.email ?? '', style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
                   if (route != null) ...[
                     const SizedBox(height: 4),
-                    Text(route.routeName, style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+                    Text(route.routeName, style: const TextStyle(fontSize: 12, color: AppTheme.textLight)),
                   ],
                 ],
               ),
@@ -124,8 +125,8 @@ class _SalesProfileScreenState extends ConsumerState<SalesProfileScreen> {
                       : const Icon(Icons.sync, size: 18),
                   label: Text(_syncing ? 'Syncing…' : 'Sync Now'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF111827),
-                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    foregroundColor: AppTheme.textPrimary,
+                    side: const BorderSide(color: AppTheme.border),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
@@ -146,8 +147,8 @@ class _SalesProfileScreenState extends ConsumerState<SalesProfileScreen> {
             height: 48,
             child: OutlinedButton.icon(
               onPressed: _logout,
-              icon: const Icon(Icons.logout_outlined, color: Color(0xFFDC2626), size: 18),
-              label: const Text('Logout', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w600)),
+              icon: const Icon(Icons.logout_outlined, color: AppTheme.error, size: 18),
+              label: const Text('Logout', style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFFECACA)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -178,13 +179,13 @@ class _SectionCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           const SizedBox(height: 10),
           ...children,
         ],
@@ -203,8 +204,8 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(children: [
-        Expanded(child: Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)))),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF111827))),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textMuted))),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textPrimary)),
       ]),
     );
   }

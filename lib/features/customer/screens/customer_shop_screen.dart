@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/customer_common.dart';
@@ -22,6 +24,7 @@ class _CustomerShopScreenState extends ConsumerState<CustomerShopScreen> {
     final balance = ref.watch(customerBalanceProvider);
     final suppliers = ref.watch(supplierNamesProvider);
     final all = ref.watch(shopProductsProvider);
+    final loading = isFirstLoad(ref.watch(productsStreamProvider));
     final q = _search.trim().toLowerCase();
     final products = q.isEmpty
         ? all
@@ -95,12 +98,30 @@ class _CustomerShopScreenState extends ConsumerState<CustomerShopScreen> {
                     ]),
                   ),
                 ),
-                if (products.isEmpty)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Center(child: Text('No products found', style: TextStyle(fontSize: 14, color: CcColors.muted))),
+                if (loading)
+                  const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    sliver: SliverToBoxAdapter(
+                      child: Row(children: [
+                        Expanded(child: ShimmerBox(width: double.infinity, height: 280, borderRadius: 12)),
+                        SizedBox(width: 12),
+                        Expanded(child: ShimmerBox(width: double.infinity, height: 280, borderRadius: 12)),
+                      ]),
                     ),
+                  )
+                else if (products.isEmpty)
+                  SliverToBoxAdapter(
+                    child: all.isEmpty
+                        ? const EmptyState(
+                            icon: Icons.inventory_2_outlined,
+                            title: 'No products available',
+                            message: 'Products will appear here when the catalog is loaded',
+                          )
+                        : const EmptyState(
+                            icon: Icons.search_off_outlined,
+                            title: 'No products found',
+                            message: 'Try a different search',
+                          ),
                   )
                 else
                   SliverPadding(

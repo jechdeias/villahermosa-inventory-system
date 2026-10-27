@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/orders_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 class OrdersFilterSheet extends ConsumerStatefulWidget {
   const OrdersFilterSheet({super.key});
@@ -140,7 +141,7 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
         width: 36,
         height: 4,
         decoration: BoxDecoration(
-          color: const Color(0xFFE5E7EB),
+          color: AppTheme.border,
           borderRadius: BorderRadius.circular(2),
         ),
       );
@@ -153,11 +154,11 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827))),
+                    color: AppTheme.textPrimary)),
           ),
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.close, size: 18, color: Color(0xFF6B7280)),
+            child: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),
           ),
         ]),
       );
@@ -176,7 +177,7 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
             style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF6B7280))),
+                color: AppTheme.textMuted)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -198,12 +199,12 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
                     horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: active
-                      ? const Color(0xFF1E1E1E)
+                      ? AppTheme.primary
                       : Colors.transparent,
                   border: Border.all(
                     color: active
-                        ? const Color(0xFF1E1E1E)
-                        : const Color(0xFFE5E7EB),
+                        ? AppTheme.primary
+                        : AppTheme.border,
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -213,7 +214,7 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
                     fontSize: 12,
                     color: active
                         ? Colors.white
-                        : const Color(0xFF6B7280),
+                        : AppTheme.textMuted,
                   ),
                 ),
               ),
@@ -237,7 +238,7 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
           const SizedBox(height: 6),
           Text(
             '${_fmtDate(_dateFrom)} — ${_fmtDate(_dateTo)}',
-            style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
           ),
         ],
       ],
@@ -260,7 +261,7 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
         padding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(6),
           color: Colors.white,
         ),
@@ -271,13 +272,13 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
               style: TextStyle(
                 fontSize: 13,
                 color: value != null
-                    ? const Color(0xFF111827)
-                    : const Color(0xFF9CA3AF),
+                    ? AppTheme.textPrimary
+                    : AppTheme.textLight,
               ),
             ),
           ),
           const Icon(Icons.calendar_today_outlined,
-              size: 14, color: Color(0xFF9CA3AF)),
+              size: 14, color: AppTheme.textLight),
         ]),
       ),
     );
@@ -327,14 +328,14 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
   Widget _footer() => Container(
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 20),
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+          border: Border(top: BorderSide(color: AppTheme.border)),
         ),
         child: Row(children: [
           Expanded(
             child: OutlinedButton(
               onPressed: _reset,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                side: const BorderSide(color: AppTheme.border),
                 foregroundColor: const Color(0xFF374151),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
@@ -351,7 +352,7 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
               label: const Text('Apply Filters',
                   style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -364,13 +365,13 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
   InputDecoration _dec(String label) => InputDecoration(
         labelText: label,
         labelStyle:
-            const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+            const TextStyle(fontSize: 12, color: AppTheme.textMuted),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+            borderSide: const BorderSide(color: AppTheme.border)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+            borderSide: const BorderSide(color: AppTheme.border)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
             borderSide: const BorderSide(color: Color(0xFF374151))),

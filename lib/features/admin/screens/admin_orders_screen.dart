@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
@@ -13,6 +15,7 @@ import '../widgets/order_item_row.dart';
 import '../widgets/order_status_badge.dart';
 import '../widgets/orders_filter_sheet.dart';
 import '../widgets/orders_stat_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminOrdersScreen extends ConsumerStatefulWidget {
   const AdminOrdersScreen({
@@ -152,6 +155,7 @@ class _OrdersListColumn extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ordersAsync = ref.watch(ordersStreamProvider);
+    if (isFirstLoad(ordersAsync)) return const ShimmerTablePage(statCards: 5);
     final allOrders = ordersAsync.value ?? [];
 
     final totalCount = allOrders.length;
@@ -183,12 +187,12 @@ class _OrdersListColumn extends ConsumerWidget {
       children: [
         const Text(
           'Orders Management',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
         ),
         const SizedBox(height: 4),
         Text(
           'Track and manage customer orders',
-          style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+          style: const TextStyle(fontSize: 14, color: AppTheme.textMuted),
         ),
       ],
     );
@@ -204,19 +208,19 @@ class _OrdersListColumn extends ConsumerWidget {
             Row(children: [
               Expanded(child: OrdersStatCard(
                 title: 'Total Orders', value: '$total',
-                subtitle: 'This period', valueColor: const Color(0xFF111827),
+                subtitle: 'This period', valueColor: AppTheme.textPrimary,
               )),
               const SizedBox(width: 12),
               Expanded(child: OrdersStatCard(
                 title: 'Pending', value: '$pending',
-                subtitle: 'Awaiting dispatch', valueColor: const Color(0xFFD97706),
+                subtitle: 'Awaiting dispatch', valueColor: AppTheme.warning,
               )),
             ]),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(child: OrdersStatCard(
                 title: 'Completed', value: '$completed',
-                subtitle: 'Delivered', valueColor: const Color(0xFF059669),
+                subtitle: 'Delivered', valueColor: AppTheme.success,
               )),
               const SizedBox(width: 12),
               Expanded(child: OrdersStatCard(
@@ -230,17 +234,17 @@ class _OrdersListColumn extends ConsumerWidget {
       return Row(children: [
         Expanded(child: OrdersStatCard(
           title: 'Total Orders', value: '$total',
-          subtitle: 'This period', valueColor: const Color(0xFF111827),
+          subtitle: 'This period', valueColor: AppTheme.textPrimary,
         )),
         const SizedBox(width: 12),
         Expanded(child: OrdersStatCard(
           title: 'Pending', value: '$pending',
-          subtitle: 'Awaiting dispatch', valueColor: const Color(0xFFD97706),
+          subtitle: 'Awaiting dispatch', valueColor: AppTheme.warning,
         )),
         const SizedBox(width: 12),
         Expanded(child: OrdersStatCard(
           title: 'Completed', value: '$completed',
-          subtitle: 'Delivered', valueColor: const Color(0xFF059669),
+          subtitle: 'Delivered', valueColor: AppTheme.success,
         )),
         const SizedBox(width: 12),
         Expanded(child: OrdersStatCard(
@@ -266,7 +270,7 @@ class _OrdersListColumn extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -296,7 +300,7 @@ class _OrdersListColumn extends ConsumerWidget {
   Widget _buildTabBar(WidgetRef ref, String? tab, List<_Tab> tabs) {
     return Container(
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppTheme.border)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -310,7 +314,7 @@ class _OrdersListColumn extends ConsumerWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: isActive ? const Color(0xFF111827) : Colors.transparent,
+                      color: isActive ? AppTheme.textPrimary : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -323,14 +327,14 @@ class _OrdersListColumn extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                        color: isActive ? const Color(0xFF111827) : const Color(0xFF6B7280),
+                        color: isActive ? AppTheme.textPrimary : AppTheme.textMuted,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
+                        color: isActive ? AppTheme.textPrimary : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -338,7 +342,7 @@ class _OrdersListColumn extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: isActive ? Colors.white : const Color(0xFF6B7280),
+                          color: isActive ? Colors.white : AppTheme.textMuted,
                         ),
                       ),
                     ),
@@ -367,19 +371,19 @@ class _OrdersListColumn extends ConsumerWidget {
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search orders, stores, routes...',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-                  prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF9CA3AF)),
+                  hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+                  prefixIcon: const Icon(Icons.search, size: 16, color: AppTheme.textLight),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: const BorderSide(color: AppTheme.border),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: const BorderSide(color: AppTheme.border),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
-                    borderSide: const BorderSide(color: Color(0xFF6B7280)),
+                    borderSide: const BorderSide(color: AppTheme.textMuted),
                   ),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   filled: true,
@@ -400,15 +404,15 @@ class _OrdersListColumn extends ConsumerWidget {
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: filterActive
-                    ? const Color(0xFF2563EB)
-                    : const Color(0xFF6B7280),
+                    ? AppTheme.info
+                    : AppTheme.textMuted,
                 backgroundColor: filterActive
-                    ? const Color(0xFFEFF6FF)
+                    ? AppTheme.infoLight
                     : null,
                 side: BorderSide(
                   color: filterActive
-                      ? const Color(0xFF2563EB)
-                      : const Color(0xFFE5E7EB),
+                      ? AppTheme.info
+                      : AppTheme.border,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -422,22 +426,22 @@ class _OrdersListColumn extends ConsumerWidget {
                 children: [
                   Icon(Icons.tune, size: 16,
                       color: filterActive
-                          ? const Color(0xFF2563EB)
-                          : const Color(0xFF6B7280)),
+                          ? AppTheme.info
+                          : AppTheme.textMuted),
                   const SizedBox(width: 6),
                   Text('Filter',
                       style: TextStyle(
                           fontSize: 12,
                           color: filterActive
-                              ? const Color(0xFF2563EB)
-                              : const Color(0xFF6B7280))),
+                              ? AppTheme.info
+                              : AppTheme.textMuted)),
                   if (filterActive) ...[
                     const SizedBox(width: 4),
                     Container(
                       width: 6,
                       height: 6,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF2563EB),
+                        color: AppTheme.info,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -451,7 +455,7 @@ class _OrdersListColumn extends ConsumerWidget {
               icon: const Icon(Icons.add, size: 16),
               label: const Text('New Order'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -477,8 +481,8 @@ class _OrdersListColumn extends ConsumerWidget {
       decoration: const BoxDecoration(
         color: Color(0xFFF9FAFB),
         border: Border(
-          top: BorderSide(color: Color(0xFFE5E7EB)),
-          bottom: BorderSide(color: Color(0xFFE5E7EB)),
+          top: BorderSide(color: AppTheme.border),
+          bottom: BorderSide(color: AppTheme.border),
         ),
       ),
       child: const Row(children: [
@@ -495,18 +499,11 @@ class _OrdersListColumn extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(String? tab) {
-    final label = tab == null ? 'orders' : '$tab orders';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(children: [
-        Icon(Icons.receipt_long_outlined, size: 40, color: Colors.grey.shade300),
-        const SizedBox(height: 12),
-        Text('No $label found',
-            style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
-      ]),
-    );
-  }
+  Widget _buildEmptyState(String? tab) => EmptyState(
+        icon: Icons.receipt_long_outlined,
+        title: tab == null ? 'No orders yet' : 'No $tab orders',
+        message: tab == null ? 'Orders created by sales reps will appear here' : 'Try another tab or adjust your search',
+      );
 
   static String _formatAbbrev(double v) {
     if (v >= 1000000) return '₱${(v / 1000000).toStringAsFixed(1)}M';
@@ -533,7 +530,7 @@ class _OrderRow extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF9FAFB) : Colors.white,
-          border: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+          border: const Border(bottom: BorderSide(color: AppTheme.border)),
         ),
         child: Row(
           children: [
@@ -544,8 +541,8 @@ class _OrderRow extends ConsumerWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  fontFamily: 'monospace',
-                  color: Color(0xFF111827),
+                  fontFamily: AppTheme.monoFamily,
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ),
@@ -561,7 +558,7 @@ class _OrderRow extends ConsumerWidget {
               flex: 2,
               child: Text(
                 order.routeName ?? '—',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -569,7 +566,7 @@ class _OrderRow extends ConsumerWidget {
               flex: 2,
               child: Text(
                 order.salesRepName ?? '—',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -584,14 +581,14 @@ class _OrderRow extends ConsumerWidget {
               flex: 2,
               child: Text(
                 _formatFull(order.totalAmount),
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
               ),
             ),
             Expanded(
               flex: 2,
               child: Text(
                 _formatDate(order.createdAt),
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
               ),
             ),
             Expanded(
@@ -619,8 +616,8 @@ class _OrderRow extends ConsumerWidget {
                     icon: Icons.delete_outline,
                     tooltip: order.status == 'cancelled' ? 'Restore' : 'Cancel',
                     hoverColor: order.status == 'cancelled'
-                        ? const Color(0xFF2563EB)
-                        : const Color(0xFFDC2626),
+                        ? AppTheme.info
+                        : AppTheme.error,
                     onTap: () async {
                       if (order.status == 'cancelled') {
                         await service.restoreOrder(order.uuid);
@@ -666,12 +663,12 @@ class _OrderMobileCard extends ConsumerWidget {
       onTap: () => ref.read(selectedOrderProvider.notifier).state = order,
       primary: Text(order.orderNumber,
           style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary)),
       badge: OrderStatusBadge(status: order.status),
       secondary: MobileCardMuted(
           '${order.storeName ?? order.customerId} · ${order.routeName ?? '—'} · ${order.salesRepName ?? '—'}'),
       valueLeft: Text(_OrderRow._formatFull(order.totalAmount),
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
       valueRight: MobileCardMuted(_OrderRow._formatDate(order.createdAt)),
       actions: [
         MobileCardAction(
@@ -706,7 +703,7 @@ class _HeaderCell extends StatelessWidget {
         style: const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF9CA3AF),
+          color: AppTheme.textLight,
           letterSpacing: 0.5,
         ),
       ),
@@ -719,7 +716,7 @@ class _ActionIconButton extends StatefulWidget {
     required this.icon,
     required this.onTap,
     this.tooltip = '',
-    this.hoverColor = const Color(0xFF6B7280),
+    this.hoverColor = AppTheme.textMuted,
   });
   final IconData icon;
   final VoidCallback onTap;
@@ -750,7 +747,7 @@ class _ActionIconButtonState extends State<_ActionIconButton> {
               color: _hovered ? const Color(0xFFF3F4F6) : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Icon(widget.icon, size: 15, color: _hovered ? widget.hoverColor : const Color(0xFF9CA3AF)),
+            child: Icon(widget.icon, size: 15, color: _hovered ? widget.hoverColor : AppTheme.textLight),
           ),
         ),
       ),
@@ -900,7 +897,7 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(left: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(left: BorderSide(color: AppTheme.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -951,14 +948,14 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF111827))),
+                                color: AppTheme.textPrimary)),
                       ),
                       Text(
                         '₱${_fmtNum(_total)}',
                         style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF111827)),
+                            color: AppTheme.textPrimary),
                       ),
                     ]),
                   ],
@@ -985,7 +982,7 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
         padding:
             const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+          border: Border(bottom: BorderSide(color: AppTheme.border)),
         ),
         child: Row(children: [
           const Expanded(
@@ -993,12 +990,12 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827))),
+                    color: AppTheme.textPrimary)),
           ),
           GestureDetector(
             onTap: widget.onClose,
             child: const Icon(Icons.close,
-                size: 18, color: Color(0xFF6B7280)),
+                size: 18, color: AppTheme.textMuted),
           ),
         ]),
       );
@@ -1007,14 +1004,14 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
         padding:
             const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+          border: Border(top: BorderSide(color: AppTheme.border)),
         ),
         child: Row(children: [
           Expanded(
             child: OutlinedButton(
               onPressed: _saving ? null : widget.onClose,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                side: const BorderSide(color: AppTheme.border),
                 foregroundColor: const Color(0xFF374151),
                 padding: const EdgeInsets.symmetric(vertical: 10),
               ),
@@ -1037,7 +1034,7 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
               label: const Text('Save Order',
                   style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1105,7 +1102,7 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
           padding: const EdgeInsets.symmetric(
               horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: AppTheme.border),
             borderRadius: BorderRadius.circular(6),
             color: Colors.white,
           ),
@@ -1116,11 +1113,11 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
                 '${_selectedDate.month.toString().padLeft(2, '0')}/'
                 '${_selectedDate.year}',
                 style: const TextStyle(
-                    fontSize: 13, color: Color(0xFF111827)),
+                    fontSize: 13, color: AppTheme.textPrimary),
               ),
             ),
             const Icon(Icons.calendar_today_outlined,
-                size: 14, color: Color(0xFF9CA3AF)),
+                size: 14, color: AppTheme.textLight),
           ]),
         ),
       );
@@ -1130,22 +1127,22 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
         style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF9CA3AF),
+            color: AppTheme.textLight,
             letterSpacing: 0.8),
       );
 
   InputDecoration _dec(String hint) => InputDecoration(
         hintText: hint,
         hintStyle:
-            const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+            const TextStyle(fontSize: 13, color: AppTheme.textLight),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
             borderSide:
-                const BorderSide(color: Color(0xFFE5E7EB))),
+                const BorderSide(color: AppTheme.border)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
             borderSide:
-                const BorderSide(color: Color(0xFFE5E7EB))),
+                const BorderSide(color: AppTheme.border)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
             borderSide:

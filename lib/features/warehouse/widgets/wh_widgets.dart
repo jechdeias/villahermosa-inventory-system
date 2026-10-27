@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Design tokens shared by every warehouse screen — same palette as admin.
 class WhColors {
-  static const sidebar = Color(0xFF1E1E1E);
-  static const page = Color(0xFFF4F4F4);
+  static const sidebar = AppTheme.primary;
+  static const page = AppTheme.background;
   static const surface = Colors.white;
-  static const border = Color(0xFFE5E7EB);
-  static const text = Color(0xFF111827);
-  static const muted = Color(0xFF6B7280);
+  static const border = AppTheme.border;
+  static const text = AppTheme.textPrimary;
+  static const muted = AppTheme.textMuted;
   static const hover = Color(0xFFFAFAFA);
   static const chip = Color(0xFFF9FAFB);
-  static const green = Color(0xFF059669);
-  static const amber = Color(0xFFD97706);
-  static const red = Color(0xFFDC2626);
-  static const blue = Color(0xFF2563EB);
-  static const primary = Color(0xFF1E1E1E);
+  static const green = AppTheme.success;
+  static const amber = AppTheme.warning;
+  static const red = AppTheme.error;
+  static const blue = AppTheme.info;
+  static const primary = AppTheme.primary;
 }
 
 String timeAgo(DateTime t) {
@@ -460,13 +462,13 @@ class WhStatusBadge extends StatelessWidget {
 
   static (Color, Color) _colors(String s) => switch (s.toLowerCase()) {
         'pending' || 'low stock' || 'expired' || 'warning' || 'scheduled' || 'not started' || 'loading' =>
-          (const Color(0xFFFFFBEB), const Color(0xFF92400E)),
+          (AppTheme.warningLight, const Color(0xFF92400E)),
         'received' || 'ready' || 'completed' || 'in stock' || 'loaded' || 'success' || 'dispatched' =>
-          (const Color(0xFFECFDF5), const Color(0xFF065F46)),
+          (AppTheme.successLight, const Color(0xFF065F46)),
         'returned' => (const Color(0xFFF0FDF4), const Color(0xFF166534)),
-        'processing' || 'in progress' => (const Color(0xFFEFF6FF), const Color(0xFF1E40AF)),
-        'cancelled' || 'out of stock' || 'damaged' || 'error' => (const Color(0xFFFEF2F2), const Color(0xFF991B1B)),
-        _ => (const Color(0xFFF3F4F6), const Color(0xFF6B7280)),
+        'processing' || 'in progress' => (AppTheme.infoLight, const Color(0xFF1E40AF)),
+        'cancelled' || 'out of stock' || 'damaged' || 'error' => (AppTheme.errorLight, const Color(0xFF991B1B)),
+        _ => (const Color(0xFFF3F4F6), AppTheme.textMuted),
       };
 
   @override
@@ -491,7 +493,7 @@ class WhMovementBadge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 9),
         decoration: BoxDecoration(
-          color: isIn ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+          color: isIn ? AppTheme.successLight : AppTheme.errorLight,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(isIn ? 'IN' : 'OUT',
@@ -619,18 +621,20 @@ class WhCardHeader extends StatelessWidget {
       );
 }
 
+/// Empty state used inside warehouse cards and tables. With only a message it
+/// reads as the title; pass [title] (+ [icon]) for the full treatment.
 class WhEmpty extends StatelessWidget {
-  const WhEmpty(this.message, {super.key});
+  const WhEmpty(this.message, {super.key, this.title, this.icon = Icons.inbox_outlined});
   final String message;
+  final String? title;
+  final IconData icon;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 18),
-        child: Center(child: Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: WhColors.muted))),
-      );
+  Widget build(BuildContext context) =>
+      EmptyState(icon: icon, title: title ?? message, message: title == null ? '' : message);
 }
 
-const whMono = TextStyle(fontFamily: 'Consolas', fontFamilyFallback: ['Courier New', 'monospace'], fontSize: 12, color: WhColors.text);
+const whMono = TextStyle(fontFamily: AppTheme.monoFamily, fontSize: 12, color: WhColors.text);
 
 // ── Domain-specific rows ──────────────────────────────────────────────────────
 
@@ -700,7 +704,7 @@ class WhPicklistItemRow extends StatelessWidget {
                 if (low)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: AppTheme.errorLight, borderRadius: BorderRadius.circular(20)),
                     child: const Text('Low', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF991B1B))),
                   ),
               ],
@@ -794,10 +798,10 @@ class WhActivityLogEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg, icon, label, status) = switch (kind) {
-      WhActivityKind.success => (const Color(0xFFECFDF5), WhColors.green, Icons.check, 'Success', 'success'),
-      WhActivityKind.warning => (const Color(0xFFFFFBEB), WhColors.amber, Icons.warning_amber_rounded, 'Warning', 'warning'),
-      WhActivityKind.error => (const Color(0xFFFEF2F2), WhColors.red, Icons.close, 'Error', 'error'),
-      WhActivityKind.info => (const Color(0xFFEFF6FF), WhColors.blue, Icons.info_outline, 'Info', 'processing'),
+      WhActivityKind.success => (AppTheme.successLight, WhColors.green, Icons.check, 'Success', 'success'),
+      WhActivityKind.warning => (AppTheme.warningLight, WhColors.amber, Icons.warning_amber_rounded, 'Warning', 'warning'),
+      WhActivityKind.error => (AppTheme.errorLight, WhColors.red, Icons.close, 'Error', 'error'),
+      WhActivityKind.info => (AppTheme.infoLight, WhColors.blue, Icons.info_outline, 'Info', 'processing'),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),

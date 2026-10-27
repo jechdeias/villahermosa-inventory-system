@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
@@ -10,6 +12,7 @@ import '../widgets/mobile_list_card.dart';
 import '../widgets/product_detail_panel.dart';
 import '../widgets/product_status_badge.dart';
 import '../widgets/orders_stat_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminProductsScreen extends ConsumerStatefulWidget {
   const AdminProductsScreen({super.key, required this.database, required this.syncManager});
@@ -146,7 +149,9 @@ class _ProductsListColumn extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allProducts = ref.watch(productsStreamProvider).value ?? [];
+    final productsAsync = ref.watch(productsStreamProvider);
+    if (isFirstLoad(productsAsync)) return const ShimmerTablePage(statCards: 3);
+    final allProducts = productsAsync.value ?? [];
 
     final totalCount = allProducts.length;
     final lowStockCount = allProducts.where((p) => p.currentStock <= p.minStock).length;
@@ -172,10 +177,10 @@ class _ProductsListColumn extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Inventory Management',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         const SizedBox(height: 4),
         const Text('Monitor and manage product stock levels',
-            style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+            style: TextStyle(fontSize: 14, color: AppTheme.textMuted)),
       ],
     );
   }
@@ -185,7 +190,7 @@ class _ProductsListColumn extends ConsumerWidget {
       final isNarrow = constraints.maxWidth < 500;
       final cards = [
         OrdersStatCard(title: 'Total Products', value: '$total', subtitle: 'SKUs tracked'),
-        OrdersStatCard(title: 'Low Stock Items', value: '$lowStock', subtitle: 'Below threshold', valueColor: const Color(0xFFD97706)),
+        OrdersStatCard(title: 'Low Stock Items', value: '$lowStock', subtitle: 'Below threshold', valueColor: AppTheme.warning),
         OrdersStatCard(title: 'Total Inventory Value', value: _formatAbbrev(totalValue), subtitle: 'Stock on hand'),
       ];
       if (isNarrow) {
@@ -223,7 +228,7 @@ class _ProductsListColumn extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -252,7 +257,7 @@ class _ProductsListColumn extends ConsumerWidget {
 
   Widget _buildTabBar(WidgetRef ref, String? tab, List<_Tab> tabs) {
     return Container(
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -265,7 +270,7 @@ class _ProductsListColumn extends ConsumerWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: isActive ? const Color(0xFF111827) : Colors.transparent,
+                      color: isActive ? AppTheme.textPrimary : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -277,19 +282,19 @@ class _ProductsListColumn extends ConsumerWidget {
                         style: TextStyle(
                             fontSize: 13,
                             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                            color: isActive ? const Color(0xFF111827) : const Color(0xFF6B7280))),
+                            color: isActive ? AppTheme.textPrimary : AppTheme.textMuted)),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
+                        color: isActive ? AppTheme.textPrimary : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text('${t.count}',
                           style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: isActive ? Colors.white : const Color(0xFF6B7280))),
+                              color: isActive ? Colors.white : AppTheme.textMuted)),
                     ),
                   ],
                 ),
@@ -316,11 +321,11 @@ class _ProductsListColumn extends ConsumerWidget {
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search products...',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-                  prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF9CA3AF)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF6B7280))),
+                  hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+                  prefixIcon: const Icon(Icons.search, size: 16, color: AppTheme.textLight),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.textMuted)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   filled: true,
                   fillColor: const Color(0xFFF9FAFB),
@@ -339,9 +344,9 @@ class _ProductsListColumn extends ConsumerWidget {
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: filterActive ? const Color(0xFF2563EB) : const Color(0xFF6B7280),
-                backgroundColor: filterActive ? const Color(0xFFEFF6FF) : null,
-                side: BorderSide(color: filterActive ? const Color(0xFF2563EB) : const Color(0xFFE5E7EB)),
+                foregroundColor: filterActive ? AppTheme.info : AppTheme.textMuted,
+                backgroundColor: filterActive ? AppTheme.infoLight : null,
+                side: BorderSide(color: filterActive ? AppTheme.info : AppTheme.border),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                 minimumSize: const Size(0, 34),
@@ -350,12 +355,12 @@ class _ProductsListColumn extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.tune, size: 16, color: filterActive ? const Color(0xFF2563EB) : const Color(0xFF6B7280)),
+                  Icon(Icons.tune, size: 16, color: filterActive ? AppTheme.info : AppTheme.textMuted),
                   const SizedBox(width: 6),
-                  Text('Filter', style: TextStyle(fontSize: 12, color: filterActive ? const Color(0xFF2563EB) : const Color(0xFF6B7280))),
+                  Text('Filter', style: TextStyle(fontSize: 12, color: filterActive ? AppTheme.info : AppTheme.textMuted)),
                   if (filterActive) ...[
                     const SizedBox(width: 4),
-                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle)),
+                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppTheme.info, shape: BoxShape.circle)),
                   ],
                 ],
               ),
@@ -366,7 +371,7 @@ class _ProductsListColumn extends ConsumerWidget {
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Add Product'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -386,7 +391,7 @@ class _ProductsListColumn extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
         color: Color(0xFFF9FAFB),
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB)), bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(top: BorderSide(color: AppTheme.border), bottom: BorderSide(color: AppTheme.border)),
       ),
       child: const Row(children: [
         _HeaderCell('PRODUCT CODE', flex: 2),
@@ -401,17 +406,11 @@ class _ProductsListColumn extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(String? tab) {
-    final label = tab == null ? 'products' : '$tab products';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(children: [
-        Icon(Icons.inventory_2_outlined, size: 40, color: Colors.grey.shade300),
-        const SizedBox(height: 12),
-        Text('No $label found', style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
-      ]),
-    );
-  }
+  Widget _buildEmptyState(String? tab) => EmptyState(
+        icon: Icons.inventory_2_outlined,
+        title: 'No products found',
+        message: 'Add products or adjust your filter',
+      );
 
   static String _formatAbbrev(double v) {
     if (v >= 1000000) return '₱${(v / 1000000).toStringAsFixed(1)}M';
@@ -441,15 +440,15 @@ class _ProductRow extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? const Color(0xFFF9FAFB)
-              : (isLowStock ? const Color(0xFFFFFBEB) : Colors.white),
-          border: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+              : (isLowStock ? AppTheme.warningLight : Colors.white),
+          border: const Border(bottom: BorderSide(color: AppTheme.border)),
         ),
         child: Row(
           children: [
             Expanded(
               flex: 2,
               child: Text(product.sku,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary)),
             ),
             Expanded(
               flex: 3,
@@ -457,11 +456,11 @@ class _ProductRow extends ConsumerWidget {
             ),
             Expanded(
               flex: 2,
-              child: Text(supplierName, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+              child: Text(supplierName, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
             ),
             Expanded(
               flex: 2,
-              child: Text(product.category, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+              child: Text(product.category, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
             ),
             Expanded(
               flex: 1,
@@ -469,22 +468,22 @@ class _ProductRow extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isLowStock) ...[
-                    const Icon(Icons.warning_amber_outlined, size: 12, color: Color(0xFFD97706)),
+                    const Icon(Icons.warning_amber_outlined, size: 12, color: AppTheme.warning),
                     const SizedBox(width: 2),
                   ],
                   Text('${product.currentStock}',
                       style: TextStyle(
                           fontSize: 12,
                           color: product.currentStock <= 0
-                              ? const Color(0xFFDC2626)
-                              : (isLowStock ? const Color(0xFFD97706) : const Color(0xFF111827)))),
+                              ? AppTheme.error
+                              : (isLowStock ? AppTheme.warning : AppTheme.textPrimary))),
                 ],
               ),
             ),
             Expanded(
               flex: 2,
               child: Text('₱${product.unitPrice.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
             ),
             Expanded(
               flex: 2,
@@ -498,13 +497,13 @@ class _ProductRow extends ConsumerWidget {
                   _ActionIconButton(
                     icon: Icons.add,
                     tooltip: 'Add stock',
-                    hoverColor: const Color(0xFF059669),
+                    hoverColor: AppTheme.success,
                     onTap: () => showAdjustStockSheet(context, product),
                   ),
                   _ActionIconButton(
                     icon: Icons.remove,
                     tooltip: 'Remove stock',
-                    hoverColor: const Color(0xFFDC2626),
+                    hoverColor: AppTheme.error,
                     onTap: () => showAdjustStockSheet(context, product),
                   ),
                   _ActionIconButton(
@@ -533,35 +532,35 @@ class _ProductMobileCard extends ConsumerWidget {
     final supplierName = ref.watch(supplierNameProvider(product.supplierId));
     final isLowStock = product.currentStock <= product.minStock;
     final stockColor = product.currentStock <= 0
-        ? const Color(0xFFDC2626)
-        : (isLowStock ? const Color(0xFFD97706) : const Color(0xFF111827));
+        ? AppTheme.error
+        : (isLowStock ? AppTheme.warning : AppTheme.textPrimary);
 
     return MobileListCard(
       onTap: () => ref.read(selectedProductProvider.notifier).state = product,
       primary: Text(product.sku,
           style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary)),
       badge: ProductStatusBadge(currentStock: product.currentStock, minStock: product.minStock),
       secondary: MobileCardMuted('${product.name} · $supplierName'),
       valueLeft: Row(mainAxisSize: MainAxisSize.min, children: [
         if (isLowStock) ...[
-          const Icon(Icons.warning_amber_outlined, size: 13, color: Color(0xFFD97706)),
+          const Icon(Icons.warning_amber_outlined, size: 13, color: AppTheme.warning),
           const SizedBox(width: 4),
         ],
         Text('${product.currentStock} in stock',
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: stockColor)),
       ]),
       valueRight: Text('₱${product.unitPrice.toStringAsFixed(0)}',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
       actions: [
         MobileCardAction(
           label: '+ Stock',
-          color: const Color(0xFF059669),
+          color: AppTheme.success,
           onPressed: () => showAdjustStockSheet(context, product),
         ),
         MobileCardAction(
           label: '- Stock',
-          color: const Color(0xFFDC2626),
+          color: AppTheme.error,
           onPressed: () => showAdjustStockSheet(context, product),
         ),
         MobileCardAction(
@@ -598,9 +597,9 @@ class _ProductsFilterSheetState extends ConsumerState<_ProductsFilterSheet> {
         children: [
           Center(
             child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(2))),
+                decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
           ),
-          const Text('Filter Products', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+          const Text('Filter Products', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           const SizedBox(height: 16),
           DropdownButtonFormField<int?>(
             initialValue: _supplierId,
@@ -640,7 +639,7 @@ class _ProductsFilterSheetState extends ConsumerState<_ProductsFilterSheet> {
                       ProductFilters(supplierId: _supplierId, lowStockOnly: _lowStockOnly);
                   Navigator.pop(context);
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E1E1E), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
                 child: const Text('Apply', style: TextStyle(fontSize: 13)),
               ),
             ),
@@ -670,13 +669,13 @@ class _HeaderCell extends StatelessWidget {
     return Expanded(
       flex: flex,
       child: Text(label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5)),
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.5)),
     );
   }
 }
 
 class _ActionIconButton extends StatefulWidget {
-  const _ActionIconButton({required this.icon, required this.onTap, this.tooltip = '', this.hoverColor = const Color(0xFF6B7280)});
+  const _ActionIconButton({required this.icon, required this.onTap, this.tooltip = '', this.hoverColor = AppTheme.textMuted});
   final IconData icon;
   final VoidCallback onTap;
   final String tooltip;
@@ -706,7 +705,7 @@ class _ActionIconButtonState extends State<_ActionIconButton> {
               color: _hovered ? const Color(0xFFF3F4F6) : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Icon(widget.icon, size: 15, color: _hovered ? widget.hoverColor : const Color(0xFF9CA3AF)),
+            child: Icon(widget.icon, size: 15, color: _hovered ? widget.hoverColor : AppTheme.textLight),
           ),
         ),
       ),

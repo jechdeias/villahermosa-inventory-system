@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CustomerChannelBadge extends StatelessWidget {
   const CustomerChannelBadge({super.key, required this.channel});
@@ -6,7 +7,7 @@ class CustomerChannelBadge extends StatelessWidget {
 
   static const Map<String, _Style> _styles = {
     'Sari-Sari Store': _Style(bg: Color(0xFFF3F4F6), text: Color(0xFF374151)),
-    'Mini Mart': _Style(bg: Color(0xFFEFF6FF), text: Color(0xFF1E40AF)),
+    'Mini Mart': _Style(bg: AppTheme.infoLight, text: Color(0xFF1E40AF)),
     'Grocery Store': _Style(bg: Color(0xFFF0FDF4), text: Color(0xFF166534)),
     'Supermarket': _Style(bg: Color(0xFFFDF4FF), text: Color(0xFF7C3AED)),
     'Wholesaler': _Style(bg: Color(0xFFFFF7ED), text: Color(0xFFC2410C)),

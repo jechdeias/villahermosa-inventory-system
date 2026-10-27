@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../providers/warehouse_providers.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class WarehouseDashboardScreen extends ConsumerWidget {
   const WarehouseDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (isFirstLoad(ref.watch(ordersStreamProvider))) return const WhLoadingShell(route: WhRoutes.dashboard, statCards: 4);
     final orders = ref.watch(ordersStreamProvider).value ?? [];
     final routes = ref.watch(deliveryRoutesStreamProvider).value ?? [];
     final lowStock = ref.watch(lowStockProductsProvider);
@@ -78,7 +81,7 @@ class _SyncChip extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(color: ok ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(color: ok ? AppTheme.successLight : AppTheme.warningLight, borderRadius: BorderRadius.circular(20)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
             const SizedBox(width: 6),
@@ -123,7 +126,7 @@ class _RecentActivityCard extends ConsumerWidget {
           m.createdAt,
           m.movementType == 'in' ? Icons.south : Icons.north,
           m.movementType == 'in' ? WhColors.blue : WhColors.red,
-          m.movementType == 'in' ? const Color(0xFFEFF6FF) : const Color(0xFFFEF2F2),
+          m.movementType == 'in' ? AppTheme.infoLight : AppTheme.errorLight,
           m.movementType == 'in' ? 'Stock-in: ${m.quantity} × ${nameOf(m.productId)}' : 'Stock-out: ${m.quantity} × ${nameOf(m.productId)}',
           [m.reason, if ((m.referenceId ?? '').isNotEmpty) m.referenceId!, 'by ${m.userName}'].join(' · '),
         ),
@@ -133,7 +136,7 @@ class _RecentActivityCard extends ConsumerWidget {
             o.packedAt ?? o.updatedAt,
             whOrderStatus(o) == 'ready' ? Icons.check : Icons.local_shipping_outlined,
             whOrderStatus(o) == 'ready' ? WhColors.green : WhColors.amber,
-            whOrderStatus(o) == 'ready' ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB),
+            whOrderStatus(o) == 'ready' ? AppTheme.successLight : AppTheme.warningLight,
             'Order ${o.orderNumber} ${whOrderStatus(o) == 'ready' ? 'prepared' : 'dispatched'}',
             [o.storeName ?? '', if ((o.routeName ?? '').isNotEmpty) o.routeName!].where((s) => s.isNotEmpty).join(' · '),
           ),
@@ -150,7 +153,7 @@ class _RecentActivityCard extends ConsumerWidget {
                 child: const Text('View all', style: TextStyle(fontSize: 12, color: WhColors.text, decoration: TextDecoration.underline)),
               )),
           if (recent.isEmpty)
-            const WhEmpty('No activity yet')
+            const WhEmpty('Stock movements and prepared orders will show up here', title: 'No activity yet', icon: Icons.history)
           else
             for (final a in recent)
               WhRecentActivityRow(icon: a.icon, iconColor: a.color, iconBg: a.bg, title: a.title, subtitle: a.subtitle, time: timeAgo(a.time)),
@@ -179,7 +182,7 @@ class _TodayRoutesCard extends StatelessWidget {
                 child: const Text('Open Routes Today', style: TextStyle(fontSize: 12, color: WhColors.text, decoration: TextDecoration.underline)),
               )),
           if (active.isEmpty)
-            const WhEmpty('No active routes')
+            const WhEmpty('Activate a route in Admin → Deliveries', title: 'No active routes', icon: Icons.map_outlined)
           else
             WhTableScroll(
               minWidth: 460,
@@ -274,7 +277,7 @@ class _LowStockCard extends StatelessWidget {
                   child: Text('See all ${items.length}', style: const TextStyle(fontSize: 12, color: WhColors.text, decoration: TextDecoration.underline)),
                 )),
             if (items.isEmpty)
-              const WhEmpty('Nothing is running low')
+              const WhEmpty('Nothing is running low', title: 'Stock levels look good', icon: Icons.check_circle_outline)
             else
               for (final p in items.take(4))
                 Container(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/customer_common.dart';
@@ -10,7 +12,8 @@ class CustomerPaymentsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final payments = [...(ref.watch(customerPaymentsProvider).value ?? [])]..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+    final paymentsAsync = ref.watch(customerPaymentsProvider);
+    final payments = [...(paymentsAsync.value ?? [])]..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
     final balance = ref.watch(customerBalanceProvider);
     final paid = payments.fold<double>(0, (s, p) => s + p.amountPaid);
 
@@ -35,8 +38,16 @@ class CustomerPaymentsScreen extends ConsumerWidget {
               const SizedBox(height: 22),
               const Text('Payment History', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: CcColors.text)),
               const SizedBox(height: 10),
-              if (payments.isEmpty)
-                const CcCard(child: Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: Text('No payments recorded yet', style: TextStyle(fontSize: 14, color: CcColors.muted)))))
+              if (isFirstLoad(paymentsAsync))
+                const Column(children: [ShimmerListCard(height: 84), SizedBox(height: 12), ShimmerListCard(height: 84), SizedBox(height: 12), ShimmerListCard(height: 84)])
+              else if (payments.isEmpty)
+                const CcCard(
+                  child: EmptyState(
+                    icon: Icons.payments_outlined,
+                    title: 'No payments yet',
+                    message: 'Payments will appear here when your sales rep collects them',
+                  ),
+                )
               else
                 CcCard(
                   padding: EdgeInsets.zero,

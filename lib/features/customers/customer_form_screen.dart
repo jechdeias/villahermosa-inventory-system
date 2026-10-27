@@ -138,7 +138,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isNew ? 'Customer added successfully!' : 'Customer updated successfully!'),
-            backgroundColor: AppTheme.accentColor,
+            backgroundColor: LegacyAppTheme.accentColor,
           ),
         );
         Navigator.of(context).pop(true);
@@ -146,7 +146,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
+          SnackBar(content: Text('Error: $e'), backgroundColor: LegacyAppTheme.errorColor),
         );
       }
     } finally {
@@ -159,9 +159,9 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     final isEditing = widget.customerId != null;
 
     return Scaffold(
-      backgroundColor: AppTheme.lightBackground,
+      backgroundColor: LegacyAppTheme.lightBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.darkNavigation,
+        backgroundColor: LegacyAppTheme.darkNavigation,
         title: Text(
           isEditing ? 'Edit Customer' : 'Add Customer',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
@@ -220,7 +220,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveCustomer,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: LegacyAppTheme.primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -245,8 +245,8 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
 
   Widget _buildSectionHeader(String title) => Text(
       title,
-      style: AppTheme.headingMedium.copyWith(
-        color: AppTheme.primaryColor,
+      style: LegacyAppTheme.headingMedium.copyWith(
+        color: LegacyAppTheme.primaryColor,
       ),
     );
 
@@ -412,7 +412,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               Navigator.of(context).pop();
               _deleteCustomer();
             },
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            style: TextButton.styleFrom(foregroundColor: LegacyAppTheme.errorColor),
             child: const Text('Delete'),
           ),
         ],
@@ -432,7 +432,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Customer deleted successfully!'),
-            backgroundColor: AppTheme.errorColor,
+            backgroundColor: LegacyAppTheme.errorColor,
           ),
         );
         Navigator.of(context).pop(true);
@@ -440,7 +440,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
+          SnackBar(content: Text('Error: $e'), backgroundColor: LegacyAppTheme.errorColor),
         );
       }
     } finally {

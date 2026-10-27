@@ -91,9 +91,9 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: AppTheme.lightBackground,
+      backgroundColor: LegacyAppTheme.lightBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.darkNavigation,
+        backgroundColor: LegacyAppTheme.darkNavigation,
         title: const Text(
           'Dashboard',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
@@ -155,28 +155,28 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       children: [
         Text(
           'Business Overview',
-          style: AppTheme.headingMedium.copyWith(
-            color: AppTheme.primaryColor,
+          style: LegacyAppTheme.headingMedium.copyWith(
+            color: LegacyAppTheme.primaryColor,
           ),
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildMetricCard('Total Products', _totalProducts.toString(), Icons.inventory_2, AppTheme.primaryColor)),
+            Expanded(child: _buildMetricCard('Total Products', _totalProducts.toString(), Icons.inventory_2, LegacyAppTheme.primaryColor)),
             const SizedBox(width: 12),
-            Expanded(child: _buildMetricCard('Total Customers', _totalCustomers.toString(), Icons.people, AppTheme.accentColor)),
+            Expanded(child: _buildMetricCard('Total Customers', _totalCustomers.toString(), Icons.people, LegacyAppTheme.accentColor)),
             const SizedBox(width: 12),
-            Expanded(child: _buildMetricCard('Low Stock', _lowStockProducts.toString(), Icons.warning, AppTheme.warningColor)),
+            Expanded(child: _buildMetricCard('Low Stock', _lowStockProducts.toString(), Icons.warning, LegacyAppTheme.warningColor)),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _buildMetricCard('Inventory Value', '₱${_totalInventoryValue.toStringAsFixed(0)}', Icons.account_balance, AppTheme.primaryColor)),
+            Expanded(child: _buildMetricCard('Inventory Value', '₱${_totalInventoryValue.toStringAsFixed(0)}', Icons.account_balance, LegacyAppTheme.primaryColor)),
             const SizedBox(width: 12),
-            Expanded(child: _buildMetricCard('Credit Exposure', '₱${_totalCreditExposure.toStringAsFixed(0)}', Icons.credit_card, AppTheme.warningColor)),
+            Expanded(child: _buildMetricCard('Credit Exposure', '₱${_totalCreditExposure.toStringAsFixed(0)}', Icons.credit_card, LegacyAppTheme.warningColor)),
             const SizedBox(width: 12),
-            Expanded(child: _buildMetricCard('Wholesale', _wholesaleCustomers.toString(), Icons.store, AppTheme.accentColor)),
+            Expanded(child: _buildMetricCard('Wholesale', _wholesaleCustomers.toString(), Icons.store, LegacyAppTheme.accentColor)),
           ],
         ),
       ],
@@ -221,8 +221,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
           children: [
             Text(
               'Customers by Municipality',
-              style: AppTheme.headingSmall.copyWith(
-                color: AppTheme.primaryColor,
+              style: LegacyAppTheme.headingSmall.copyWith(
+                color: LegacyAppTheme.primaryColor,
               ),
             ),
             const SizedBox(height: 16),
@@ -243,8 +243,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
           children: [
             Text(
               'Store Type Distribution',
-              style: AppTheme.headingSmall.copyWith(
-                color: AppTheme.primaryColor,
+              style: LegacyAppTheme.headingSmall.copyWith(
+                color: LegacyAppTheme.primaryColor,
               ),
             ),
             const SizedBox(height: 16),
@@ -324,21 +324,21 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.warningColor.withValues(alpha: 0.1),
+          color: LegacyAppTheme.warningColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppTheme.warningColor.withValues(alpha: 0.3)),
+          border: Border.all(color: LegacyAppTheme.warningColor.withValues(alpha: 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.warning, color: AppTheme.warningColor),
+                const Icon(Icons.warning, color: LegacyAppTheme.warningColor),
                 const SizedBox(width: 8),
                 Text(
                   '$_lowStockProducts products need restocking',
                   style: const TextStyle(
-                    color: AppTheme.warningColor,
+                    color: LegacyAppTheme.warningColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -391,8 +391,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       children: [
         Text(
           'Quick Actions',
-          style: AppTheme.headingMedium.copyWith(
-            color: AppTheme.primaryColor,
+          style: LegacyAppTheme.headingMedium.copyWith(
+            color: LegacyAppTheme.primaryColor,
           ),
         ),
         const SizedBox(height: 16),
@@ -402,7 +402,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
               child: _buildActionButton(
                 'Add Product',
                 Icons.add_shopping_cart,
-                AppTheme.primaryColor,
+                LegacyAppTheme.primaryColor,
                 () {
                   // TODO: Navigate to add product
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -416,7 +416,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
               child: _buildActionButton(
                 'Add Customer',
                 Icons.person_add,
-                AppTheme.accentColor,
+                LegacyAppTheme.accentColor,
                 () {
                   // TODO: Navigate to add customer
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -477,8 +477,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
           children: [
             Text(
               'Recent Activity',
-              style: AppTheme.headingMedium.copyWith(
-                color: AppTheme.primaryColor,
+              style: LegacyAppTheme.headingMedium.copyWith(
+                color: LegacyAppTheme.primaryColor,
               ),
             ),
             const SizedBox(height: 16),

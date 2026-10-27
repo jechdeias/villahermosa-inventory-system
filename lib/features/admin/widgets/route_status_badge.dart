@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 class RouteStatusBadge extends StatelessWidget {
   const RouteStatusBadge({super.key, required this.status});
   final String status;
 
   static _Style _styleFor(String s) => switch (s) {
-    'active'   => const _Style(bg: Color(0xFFECFDF5), text: Color(0xFF065F46), label: 'Active'),
-    'on_hold'  => const _Style(bg: Color(0xFFFFFBEB), text: Color(0xFF92400E), label: 'On Hold'),
-    'inactive' => const _Style(bg: Color(0xFFF3F4F6), text: Color(0xFF6B7280), label: 'Inactive'),
-    _          => const _Style(bg: Color(0xFFF3F4F6), text: Color(0xFF6B7280), label: 'Unknown'),
+    'active'   => const _Style(bg: AppTheme.successLight, text: Color(0xFF065F46), label: 'Active'),
+    'on_hold'  => const _Style(bg: AppTheme.warningLight, text: Color(0xFF92400E), label: 'On Hold'),
+    'inactive' => const _Style(bg: Color(0xFFF3F4F6), text: AppTheme.textMuted, label: 'Inactive'),
+    _          => const _Style(bg: Color(0xFFF3F4F6), text: AppTheme.textMuted, label: 'Unknown'),
   };
 
   @override

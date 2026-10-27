@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key, required this.database, required this.syncManager});
@@ -147,7 +148,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   Widget build(BuildContext context) {
     final isNarrow = MediaQuery.of(context).size.width < 700;
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      backgroundColor: AppTheme.background,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,10 +190,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF111827))),
+                          color: AppTheme.textPrimary)),
                   SizedBox(height: 2),
                   Text('System overview and analytics',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                      style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                 ],
               ),
             ),
@@ -203,17 +204,17 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(color: AppTheme.border),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.calendar_today_outlined,
-                          size: 12, color: Color(0xFF6B7280)),
+                          size: 12, color: AppTheme.textMuted),
                       SizedBox(width: 6),
                       Text('Last 30 days',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                          style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                     ],
                   ),
                 ),
@@ -226,11 +227,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     height: 30,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      border: Border.all(color: AppTheme.border),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child:
-                        const Icon(Icons.refresh, size: 14, color: Color(0xFF6B7280)),
+                        const Icon(Icons.refresh, size: 14, color: AppTheme.textMuted),
                   ),
                 ),
               ],
@@ -249,17 +250,17 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
     final cards = [
       _statCard(label: 'Total Customers', value: '$_totalCustomers',
-          dotColor: const Color(0xFF059669), sub: 'Active stores'),
+          dotColor: AppTheme.success, sub: 'Active stores'),
       _statCard(label: 'Products', value: '$_totalProducts',
-          dotColor: const Color(0xFFD97706), sub: 'Low stock: $_lowStockCount'),
+          dotColor: AppTheme.warning, sub: 'Low stock: $_lowStockCount'),
       _statCard(
           label: 'Orders',
           value: '$_totalOrders',
-          valueColor: _pendingOrders > 0 ? const Color(0xFFD97706) : null,
-          dotColor: const Color(0xFFD97706),
+          valueColor: _pendingOrders > 0 ? AppTheme.warning : null,
+          dotColor: AppTheme.warning,
           sub: 'Pending: $_pendingOrders'),
       _statCard(label: 'Total Value', value: totalStr,
-          dotColor: const Color(0xFF059669), sub: '$colStr collected'),
+          dotColor: AppTheme.success, sub: '$colStr collected'),
     ];
 
     return Padding(
@@ -301,7 +302,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -310,14 +311,14 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             Text(label,
                 style: const TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF6B7280),
+                    color: AppTheme.textMuted,
                     fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
             Text(value,
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: valueColor ?? const Color(0xFF111827))),
+                    color: valueColor ?? AppTheme.textPrimary)),
             const SizedBox(height: 3),
             Row(children: [
               Container(
@@ -328,7 +329,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(sub,
-                    style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
+                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
                     overflow: TextOverflow.ellipsis),
               ),
             ]),
@@ -340,7 +341,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -353,14 +354,14 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF111827))),
+                        color: AppTheme.textPrimary)),
                 GestureDetector(
                   onTap: () {},
                   child: const Row(children: [
                     Text('View All',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                        style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                     SizedBox(width: 2),
-                    Icon(Icons.chevron_right, size: 14, color: Color(0xFF6B7280)),
+                    Icon(Icons.chevron_right, size: 14, color: AppTheme.textMuted),
                   ]),
                 ),
               ],
@@ -389,7 +390,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     child: Center(
                         child: Text('No recent activity',
                             style: TextStyle(
-                                fontSize: 12, color: Color(0xFF6B7280)))),
+                                fontSize: 12, color: AppTheme.textMuted))),
                   );
                 }
                 return Column(
@@ -421,12 +422,12 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             width: 100,
             child: Row(children: [
               const Icon(Icons.access_time_outlined,
-                  size: 12, color: Color(0xFF9CA3AF)),
+                  size: 12, color: AppTheme.textLight),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(_formatRelativeTime(time),
                     style: const TextStyle(
-                        fontSize: 11, color: Color(0xFF6B7280)),
+                        fontSize: 11, color: AppTheme.textMuted),
                     overflow: TextOverflow.ellipsis),
               ),
             ]),
@@ -437,7 +438,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827)),
+                    color: AppTheme.textPrimary),
                 overflow: TextOverflow.ellipsis),
           ),
           SizedBox(
@@ -450,7 +451,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           Expanded(
             child: Text(details,
                 style:
-                    const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                    const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                 overflow: TextOverflow.ellipsis),
           ),
         ]),
@@ -460,7 +461,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -470,7 +471,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827))),
+                    color: AppTheme.textPrimary)),
             const SizedBox(height: 12),
             GridView.count(
               crossAxisCount: 2,
@@ -497,7 +498,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: const Color(0xFFF9FAFB),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: AppTheme.border),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -507,7 +508,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
+                  color: AppTheme.primary,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(icon, color: Colors.white, size: 14),
@@ -517,7 +518,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF111827))),
+                      color: AppTheme.textPrimary)),
             ],
           ),
         ),
@@ -553,7 +554,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppTheme.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -563,7 +564,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827))),
+                    color: AppTheme.textPrimary)),
             const SizedBox(height: 10),
             chart,
           ],
@@ -585,13 +586,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   FlSpot(5, 67),
                 ],
                 isCurved: true,
-                color: const Color(0xFF1E1E1E),
+                color: AppTheme.primary,
                 barWidth: 1.5,
                 dotData: FlDotData(
                   show: true,
                   getDotPainter: (spot, pct, bar, idx) => FlDotCirclePainter(
                     radius: 3,
-                    color: const Color(0xFF1E1E1E),
+                    color: AppTheme.primary,
                     strokeWidth: 0,
                   ),
                 ),
@@ -609,7 +610,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     if (idx < 0 || idx >= months.length) return const SizedBox();
                     return Text(months[idx],
                         style: const TextStyle(
-                            fontSize: 10, color: Color(0xFF6B7280)));
+                            fontSize: 10, color: AppTheme.textMuted));
                   },
                 ),
               ),
@@ -628,10 +629,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget _donutChart() {
     const data = [
-      ('Delivered', 45, Color(0xFF1E1E1E)),
-      ('Processing', 28, Color(0xFF6B7280)),
+      ('Delivered', 45, AppTheme.primary),
+      ('Processing', 28, AppTheme.textMuted),
       ('Pending', 12, Color(0xFFD1D5DB)),
-      ('Cancelled', 4, Color(0xFFE5E7EB)),
+      ('Cancelled', 4, AppTheme.border),
     ];
     final total = data.fold(0, (s, d) => s + d.$2);
 
@@ -669,10 +670,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               Expanded(
                   child: Text('${d.$1} (${d.$2})',
                       style: const TextStyle(
-                          fontSize: 10, color: Color(0xFF6B7280)))),
+                          fontSize: 10, color: AppTheme.textMuted))),
               Text('$pct%',
                   style: const TextStyle(
-                      fontSize: 10, color: Color(0xFF6B7280))),
+                      fontSize: 10, color: AppTheme.textMuted)),
             ]),
           );
         }),
@@ -694,7 +695,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 barRods: [
                   BarChartRodData(
                     toY: vals[i],
-                    color: const Color(0xFF1E1E1E).withValues(alpha: opacities[i]),
+                    color: AppTheme.primary.withValues(alpha: opacities[i]),
                     width: 20,
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(4)),
@@ -713,7 +714,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(cats[idx],
                         style: const TextStyle(
-                            fontSize: 9, color: Color(0xFF6B7280)),
+                            fontSize: 9, color: AppTheme.textMuted),
                         textAlign: TextAlign.center),
                   );
                 },
@@ -743,6 +744,6 @@ class _ColHead extends StatelessWidget {
       style: const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF6B7280),
+          color: AppTheme.textMuted,
           letterSpacing: 0.3));
 }

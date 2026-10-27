@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../theme/villahermosa_theme.dart';
+import '../theme/app_theme.dart';
 
 class ResponsiveShell extends StatefulWidget {
   const ResponsiveShell({
@@ -83,11 +84,11 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
         title: const Text('Logout',
           style: TextStyle(fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF111827))),
+            color: AppTheme.textPrimary)),
         content: const Text(
           'Are you sure you want to logout?',
           style: TextStyle(fontSize: 13,
-            color: Color(0xFF6B7280))),
+            color: AppTheme.textMuted)),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12)),
         actions: [
@@ -95,7 +96,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel',
               style: TextStyle(
-                color: Color(0xFF6B7280)))),
+                color: AppTheme.textMuted))),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
@@ -108,7 +109,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor:
-                const Color(0xFF1E1E1E),
+                AppTheme.sidebarBg,
               foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -145,16 +146,16 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeInOut,
                   width: _sidebarExpanded ? 256 : 64,
-                  color: const Color(0xFF1E1E1E),
+                  color: AppTheme.sidebarBg,
                   child: Column(
                     children: [
                       // Header space (72px) - hamburger floats over this
                       const SizedBox(height: 72),
                       const Divider(
-                        color: Color(0xFF2A2A2A), height: 1),
+                        color: AppTheme.sidebarActive, height: 1),
                       Expanded(child: _buildNavItems()),
                       const Divider(
-                        color: Color(0xFF2A2A2A), height: 1),
+                        color: AppTheme.sidebarActive, height: 1),
                       _buildLogout(),
                     ],
                   ),
@@ -193,7 +194,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     color:
-                                      Color(0xFF8A8A8A)),
+                                      AppTheme.sidebarText),
                                   overflow:
                                     TextOverflow.ellipsis),
                               ],
@@ -225,7 +226,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           // Main content
           Expanded(
             child: Container(
-              color: const Color(0xFFF4F4F4),
+              color: AppTheme.background,
               child: widget.child,
             ),
           ),
@@ -247,7 +248,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
   Widget _buildNavItem(NavigationItem item, bool active) {
     final color = active
       ? Colors.white
-      : const Color(0xFF8A8A8A);
+      : AppTheme.sidebarText;
 
     if (_sidebarExpanded) {
       return InkWell(
@@ -257,7 +258,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           height: 48,
           decoration: BoxDecoration(
             color: active
-              ? const Color(0xFF2A2A2A)
+              ? AppTheme.sidebarActive
               : Colors.transparent,
             border: Border(
               left: BorderSide(
@@ -291,7 +292,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           child: Container(
             height: 48,
             color: active
-              ? const Color(0xFF2A2A2A)
+              ? AppTheme.sidebarActive
               : Colors.transparent,
             child: Center(
               child: Icon(item.icon,
@@ -313,12 +314,12 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             children: [
               const SizedBox(width: 12),
               const Icon(Icons.logout_outlined,
-                size: 20, color: Color(0xFF8A8A8A)),
+                size: 20, color: AppTheme.sidebarText),
               const SizedBox(width: 12),
               const Text('Logout',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF8A8A8A))),
+                  color: AppTheme.sidebarText)),
               const SizedBox(width: 8),
             ],
           ),
@@ -334,7 +335,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             child: Center(
               child: Icon(Icons.logout_outlined,
                 size: 22,
-                color: Color(0xFF8A8A8A)),
+                color: AppTheme.sidebarText),
             ),
           ),
         ),
@@ -495,8 +496,8 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.logout_outlined, color: Color(0xFF8A8A8A)),
-                  title: const Text('Logout', style: TextStyle(color: Color(0xFF8A8A8A))),
+                  leading: const Icon(Icons.logout_outlined, color: AppTheme.sidebarText),
+                  title: const Text('Logout', style: TextStyle(color: AppTheme.sidebarText)),
                   onTap: () {
                     Navigator.pop(context);
                     _logout();

@@ -36,12 +36,12 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightBackground,
+      backgroundColor: LegacyAppTheme.lightBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.primaryColor),
+          icon: const Icon(Icons.arrow_back, color: LegacyAppTheme.primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -66,7 +66,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   Text(
                     'Create Account',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.primaryColor,
+                      color: LegacyAppTheme.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
@@ -243,7 +243,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       return ElevatedButton(
                         onPressed: _authViewModel.isLoading ? null : _handleSignup,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: LegacyAppTheme.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -272,7 +272,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     },
                     child: Text(
                       'Already have an account? Sign in',
-                      style: TextStyle(color: AppTheme.primaryColor),
+                      style: TextStyle(color: LegacyAppTheme.primaryColor),
                     ),
                   ),
                 ],
@@ -306,7 +306,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Account created successfully! You can now log in.'),
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: LegacyAppTheme.primaryColor,
           ),
         );
         Navigator.pop(context);

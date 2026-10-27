@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
@@ -39,6 +40,7 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstLoad(ref.watch(deliveryRoutesStreamProvider))) return const WhLoadingShell(route: WhRoutes.dispatch);
     final routes = (ref.watch(deliveryRoutesStreamProvider).value ?? []).toList();
     final orders = ref.watch(ordersStreamProvider).value ?? [];
     final byOrder = ref.watch(orderLinesByOrderProvider);
@@ -62,7 +64,7 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
               children: [
                 const WhCardTitle('Routes'),
                 if (routes.isEmpty)
-                  const WhEmpty('No delivery routes yet')
+                  const WhEmpty('Routes added in Admin → Deliveries will appear here', title: 'No delivery routes yet', icon: Icons.local_shipping_outlined)
                 else
                   Padding(
                     padding: const EdgeInsets.all(12),
@@ -88,7 +90,7 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
             ),
           ),
           main: selected == null
-              ? const WhCard(child: WhEmpty('Select a route to see its loading list'))
+              ? const WhCard(child: WhEmpty('Pick a route on the left to see its loading list', title: 'Select a route', icon: Icons.local_shipping_outlined))
               : _detail(selected, orders, byOrder),
         ),
       ]),
@@ -133,9 +135,12 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
             ],
           ),
           if (rows.isEmpty)
-            WhEmpty(waiting > 0
-                ? '$waiting ${waiting == 1 ? 'order is' : 'orders are'} still being prepared. Complete them in Prepare Orders to load them here.'
-                : 'No prepared orders for this route yet.')
+            WhEmpty(
+                waiting > 0
+                    ? '$waiting ${waiting == 1 ? 'order is' : 'orders are'} still being prepared. Complete them in Prepare Orders to load them here.'
+                    : 'Prepared orders for this route will appear here',
+                title: 'Nothing to load yet',
+                icon: Icons.inventory_2_outlined)
           else
             WhTableScroll(
               minWidth: 620,

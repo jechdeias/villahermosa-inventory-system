@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../admin/widgets/order_status_badge.dart';
 import '../providers/sales_providers.dart';
 import '../widgets/new_order_flow.dart';
 import '../widgets/sales_shell.dart';
+import '../../../core/theme/app_theme.dart';
 
 class SalesOrdersScreen extends ConsumerStatefulWidget {
   const SalesOrdersScreen({super.key});
@@ -18,7 +21,8 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final orders = ref.watch(salesRepOrdersProvider).value ?? [];
+    final ordersAsync = ref.watch(salesRepOrdersProvider);
+    final orders = ordersAsync.value ?? [];
     final filtered = _filter == 'all' ? orders : orders.where((o) => o.status == _filter).toList();
 
     final tabs = [
@@ -37,11 +41,11 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Row(children: [
               const Expanded(
-                child: Text('Orders', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                child: Text('Orders', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               ),
               IconButton(
                 onPressed: () => showNewOrderFlow(context),
-                icon: const Icon(Icons.add_circle, color: Color(0xFF1E1E1E), size: 28),
+                icon: const Icon(Icons.add_circle, color: AppTheme.primary, size: 28),
               ),
             ]),
           ),
@@ -61,7 +65,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: active ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                      color: active ? AppTheme.primary : const Color(0xFFF3F4F6),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     alignment: Alignment.center,
@@ -69,19 +73,27 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: active ? Colors.white : const Color(0xFF6B7280))),
+                            color: active ? Colors.white : AppTheme.textMuted)),
                   ),
                 );
               },
             ),
           ),
           Expanded(
-            child: filtered.isEmpty
-                ? const Center(child: Text('No orders yet', style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))))
+            child: isFirstLoad(ordersAsync)
+                ? const ShimmerCardList(padding: EdgeInsets.fromLTRB(20, 4, 20, 16), cardHeight: 72)
+                : filtered.isEmpty
+                ? EmptyState(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'No orders today',
+                    message: 'Tap New Order to create your first order',
+                    action: () => showNewOrderFlow(context),
+                    actionLabel: 'New Order',
+                  )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
                     itemCount: filtered.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                    separatorBuilder: (_, _) => const Divider(height: 1, color: AppTheme.border),
                     itemBuilder: (context, i) => _OrderRow(order: filtered[i]),
                   ),
           ),
@@ -105,10 +117,10 @@ class _OrderRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(order.storeName ?? 'Unknown store',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               const SizedBox(height: 2),
               Text('${order.orderNumber} · ${order.itemCount} items',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
             ],
           ),
         ),
@@ -116,7 +128,7 @@ class _OrderRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text('₱${order.totalAmount.toStringAsFixed(0)}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
             const SizedBox(height: 4),
             OrderStatusBadge(status: order.status),
           ],

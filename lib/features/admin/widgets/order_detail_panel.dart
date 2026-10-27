@@ -4,6 +4,7 @@ import '../../../core/database/app_database.dart';
 import '../providers/orders_provider.dart';
 import '../services/orders_service.dart';
 import 'order_status_badge.dart';
+import '../../../core/theme/app_theme.dart';
 
 class OrderDetailPanel extends ConsumerWidget {
   const OrderDetailPanel({super.key, required this.onClose});
@@ -30,18 +31,18 @@ class OrderDetailPanel extends ConsumerWidget {
                 children: [
                   _buildSection('ORDER INFO', [
                     _buildInfoRow('Order Number', Text(order.orderNumber,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace'))),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: AppTheme.monoFamily))),
                     _buildInfoRow('Status', OrderStatusBadge(status: order.status)),
                     _buildInfoRow('Date', Text(_formatDate(order.createdAt),
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
+                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
                   ]),
                   _buildSection('STORE & ROUTE', [
                     _buildInfoRow('Store', Text(order.storeName ?? order.customerId,
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
+                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
                     _buildInfoRow('Route', Text(order.routeName ?? '—',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
+                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
                     _buildInfoRow('Sales Rep', Text(order.salesRepName ?? '—',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
+                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
                   ]),
                   _buildItemsSection(order, itemsAsync),
                 ],
@@ -58,19 +59,19 @@ class OrderDetailPanel extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppTheme.border)),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               'Order ${order.orderNumber}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
             ),
           ),
           GestureDetector(
             onTap: onClose,
-            child: const Icon(Icons.close, size: 18, color: Color(0xFF6B7280)),
+            child: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),
           ),
         ],
       ),
@@ -81,7 +82,7 @@ class OrderDetailPanel extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppTheme.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +90,7 @@ class OrderDetailPanel extends ConsumerWidget {
           Text(title,
               style: const TextStyle(
                   fontSize: 10, fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF), letterSpacing: 0.8)),
+                  color: AppTheme.textLight, letterSpacing: 0.8)),
           const SizedBox(height: 12),
           ...rows,
         ],
@@ -106,7 +107,7 @@ class OrderDetailPanel extends ConsumerWidget {
           SizedBox(
             width: 110,
             child: Text(label,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
           ),
           Expanded(child: value),
         ],
@@ -118,7 +119,7 @@ class OrderDetailPanel extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppTheme.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,21 +127,21 @@ class OrderDetailPanel extends ConsumerWidget {
           Text('ITEMS (${order.itemCount} TOTAL)',
               style: const TextStyle(
                   fontSize: 10, fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF), letterSpacing: 0.8)),
+                  color: AppTheme.textLight, letterSpacing: 0.8)),
           const SizedBox(height: 12),
           // column headers
           const Row(children: [
             Expanded(child: Text('PRODUCT',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF9CA3AF)))),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.textLight))),
             SizedBox(width: 36, child: Text('QTY',
                 textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF9CA3AF)))),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.textLight))),
             SizedBox(width: 52, child: Text('PRICE',
                 textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF9CA3AF)))),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.textLight))),
             SizedBox(width: 60, child: Text('SUB',
                 textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF9CA3AF)))),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.textLight))),
           ]),
           const Divider(height: 12),
           itemsAsync.when(
@@ -149,7 +150,7 @@ class OrderDetailPanel extends ConsumerWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )),
             error: (e, _) => Text('Error: $e',
-                style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626))),
+                style: const TextStyle(fontSize: 12, color: AppTheme.error)),
             data: (items) => Column(
               children: items.map((item) => _buildItemRow(item)).toList(),
             ),
@@ -158,10 +159,10 @@ class OrderDetailPanel extends ConsumerWidget {
           Row(children: [
             const Expanded(
               child: Text('Total Amount',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
             ),
             Text('₱${_formatNum(order.totalAmount)}',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
           ]),
         ],
       ),
@@ -174,25 +175,25 @@ class OrderDetailPanel extends ConsumerWidget {
       child: Row(children: [
         Expanded(
           child: Text(item.productName,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
         ),
         SizedBox(
           width: 36,
           child: Text('${item.quantity}',
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF111827))),
+              style: const TextStyle(fontSize: 12, color: AppTheme.textPrimary)),
         ),
         SizedBox(
           width: 52,
           child: Text('₱${item.unitPrice.toStringAsFixed(0)}',
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
         ),
         SizedBox(
           width: 60,
           child: Text('₱${_formatNum(item.subtotal)}',
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
         ),
       ]),
     );
@@ -202,7 +203,7 @@ class OrderDetailPanel extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(top: BorderSide(color: AppTheme.border)),
       ),
       child: Row(
         children: [
@@ -210,7 +211,7 @@ class OrderDetailPanel extends ConsumerWidget {
             child: OutlinedButton(
               onPressed: onClose,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                side: const BorderSide(color: AppTheme.border),
                 foregroundColor: const Color(0xFF374151),
                 padding: const EdgeInsets.symmetric(vertical: 10),
               ),
@@ -227,7 +228,7 @@ class OrderDetailPanel extends ConsumerWidget {
                   onClose();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E1E1E),
+                  backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                 ),
@@ -245,7 +246,7 @@ class OrderDetailPanel extends ConsumerWidget {
                   onClose();
                 },
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  side: const BorderSide(color: AppTheme.border),
                   foregroundColor: const Color(0xFF374151),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                 ),

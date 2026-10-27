@@ -85,9 +85,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: AppTheme.lightBackground,
+      backgroundColor: LegacyAppTheme.lightBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.darkNavigation,
+        backgroundColor: LegacyAppTheme.darkNavigation,
         title: const Text(
           'Products',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
@@ -142,7 +142,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             });
                             _filterProducts();
                           },
-                          backgroundColor: isSelected ? AppTheme.primaryColor : Colors.grey.shade200,
+                          backgroundColor: isSelected ? LegacyAppTheme.primaryColor : Colors.grey.shade200,
                           labelStyle: TextStyle(
                             color: isSelected ? Colors.white : Colors.black87,
                           ),
@@ -237,7 +237,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ElevatedButton(
             onPressed: _showAddProductDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: LegacyAppTheme.primaryColor,
               foregroundColor: Colors.white,
             ),
             child: const Text('Add Product'),
@@ -355,7 +355,7 @@ class ProductCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                      color: LegacyAppTheme.primaryColor,
                     ),
                   ),
                   Row(

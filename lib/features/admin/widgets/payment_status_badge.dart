@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 class PaymentStatusBadge extends StatelessWidget {
   const PaymentStatusBadge({super.key, required this.status});
@@ -7,11 +8,11 @@ class PaymentStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg, icon, label) = switch (status) {
-      'paid'    => (const Color(0xFFECFDF5), const Color(0xFF065F46), Icons.check_circle_outline,      'Paid'),
-      'partial' => (const Color(0xFFFFFBEB), const Color(0xFF92400E), Icons.access_time,               'Partial'),
-      'unpaid'  => (const Color(0xFFFEF2F2), const Color(0xFF991B1B), Icons.error_outline,             'Unpaid'),
-      'credit'  => (const Color(0xFFEFF6FF), const Color(0xFF1E40AF), Icons.calendar_today_outlined,   'On Credit'),
-      _         => (const Color(0xFFF3F4F6), const Color(0xFF6B7280), Icons.help_outline,              status),
+      'paid'    => (AppTheme.successLight, const Color(0xFF065F46), Icons.check_circle_outline,      'Paid'),
+      'partial' => (AppTheme.warningLight, const Color(0xFF92400E), Icons.access_time,               'Partial'),
+      'unpaid'  => (AppTheme.errorLight, const Color(0xFF991B1B), Icons.error_outline,             'Unpaid'),
+      'credit'  => (AppTheme.infoLight, const Color(0xFF1E40AF), Icons.calendar_today_outlined,   'On Credit'),
+      _         => (const Color(0xFFF3F4F6), AppTheme.textMuted, Icons.help_outline,              status),
     };
 
     return Container(

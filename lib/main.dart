@@ -33,6 +33,7 @@ import 'features/warehouse/screens/routes_today_screen.dart';
 import 'features/warehouse/screens/returns_screen.dart';
 import 'features/warehouse/screens/reports_screen.dart';
 import 'features/warehouse/screens/sync_activity_screen.dart';
+import 'core/theme/app_theme.dart';
 import 'features/customer/screens/customer_shop_screen.dart';
 import 'features/customer/screens/customer_orders_screen.dart';
 import 'features/customer/screens/customer_cart_screen.dart';
@@ -126,16 +127,9 @@ class VillahermosaInventoryApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Villahermosa Inventory System',
+    title: 'Villahermosa',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      primarySwatch: Colors.grey,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF424242),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-    ),
+    theme: AppTheme.lightTheme,
     routes: {
       '/': (context) => AuthScreen(database: database),
       '/login': (context) => LoginScreen(database: database),

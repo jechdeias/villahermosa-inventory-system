@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/sales_providers.dart';
 import '../widgets/customer_detail_sheet.dart';
 import '../widgets/sales_shell.dart';
+import '../../../core/theme/app_theme.dart';
 
 class SalesCustomersScreen extends ConsumerStatefulWidget {
   const SalesCustomersScreen({super.key});
@@ -17,6 +20,7 @@ class _SalesCustomersScreenState extends ConsumerState<SalesCustomersScreen> {
   @override
   Widget build(BuildContext context) {
     final customers = ref.watch(myCustomersProvider);
+    final loading = isFirstLoad(ref.watch(salesRepOrdersProvider));
     final paymentsList = ref.watch(salesRepPaymentsProvider).value ?? [];
     final q = _query.toLowerCase();
     final filtered = q.isEmpty
@@ -36,7 +40,7 @@ class _SalesCustomersScreenState extends ConsumerState<SalesCustomersScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('My Customers',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 44,
@@ -45,13 +49,13 @@ class _SalesCustomersScreenState extends ConsumerState<SalesCustomersScreen> {
                     style: const TextStyle(fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Search stores or barangay...',
-                      hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
-                      prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF9CA3AF)),
+                      hintStyle: const TextStyle(fontSize: 14, color: AppTheme.textLight),
+                      prefixIcon: const Icon(Icons.search, size: 18, color: AppTheme.textLight),
                       filled: true,
                       fillColor: const Color(0xFFF9FAFB),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF1E1E1E))),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.border)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.border)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.primary)),
                     ),
                   ),
                 ),
@@ -59,15 +63,18 @@ class _SalesCustomersScreenState extends ConsumerState<SalesCustomersScreen> {
             ),
           ),
           Expanded(
-            child: filtered.isEmpty
-                ? const Center(
-                    child: Text('No customers yet — sell to a new store from New Order',
-                        textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+            child: loading
+                ? const ShimmerCardList(padding: EdgeInsets.fromLTRB(20, 4, 20, 16), cardHeight: 72)
+                : filtered.isEmpty
+                ? const EmptyState(
+                    icon: Icons.store_outlined,
+                    title: 'No customers on your route',
+                    message: "Customers you've visited will appear here",
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                     itemCount: filtered.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                    separatorBuilder: (_, _) => const Divider(height: 1, color: AppTheme.border),
                     itemBuilder: (context, i) {
                       final c = filtered[i];
                       final storeName = salesDisplayStoreName(c);
@@ -84,18 +91,18 @@ class _SalesCustomersScreenState extends ConsumerState<SalesCustomersScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(storeName,
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                                   const SizedBox(height: 2),
                                   Text(c.barangay ?? c.town ?? c.municipality,
-                                      style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                                 ],
                               ),
                             ),
                             if (balance > 0)
                               Text('₱${balance.toStringAsFixed(0)}',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFD97706)))
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.warning))
                             else
-                              const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
+                              const Icon(Icons.chevron_right, color: AppTheme.textLight),
                           ]),
                         ),
                       );

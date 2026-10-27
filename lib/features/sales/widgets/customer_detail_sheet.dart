@@ -4,6 +4,7 @@ import '../../../core/database/app_database.dart';
 import '../providers/sales_providers.dart';
 import 'new_order_flow.dart';
 import 'record_payment_sheet.dart';
+import '../../../core/theme/app_theme.dart';
 
 void showCustomerDetailSheet(BuildContext context, Customer customer) {
   showModalBottomSheet(
@@ -47,19 +48,19 @@ class CustomerDetailSheet extends ConsumerWidget {
             Row(children: [
               Expanded(
                 child: Text(storeName,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               ),
               IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
             ]),
             Text(customer.barangay ?? customer.town ?? customer.municipality,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
             const SizedBox(height: 16),
             Row(children: [
               Expanded(
                 child: _InfoTile(
                   label: 'Outstanding Balance',
                   value: '₱${outstanding.toStringAsFixed(0)}',
-                  color: outstanding > 0 ? const Color(0xFFD97706) : const Color(0xFF059669),
+                  color: outstanding > 0 ? AppTheme.warning : AppTheme.success,
                 ),
               ),
               const SizedBox(width: 12),
@@ -67,7 +68,7 @@ class CustomerDetailSheet extends ConsumerWidget {
                 child: _InfoTile(
                   label: 'Last Order',
                   value: lastOrder == null ? 'None' : _relativeDate(lastOrder.createdAt),
-                  color: const Color(0xFF111827),
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ]),
@@ -89,10 +90,10 @@ class CustomerDetailSheet extends ConsumerWidget {
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    side: const BorderSide(color: AppTheme.border),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('New Order', style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w600)),
+                  child: const Text('New Order', style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -106,7 +107,7 @@ class CustomerDetailSheet extends ConsumerWidget {
                           showRecordPaymentSheet(context, payment: due.isEmpty ? null : due.first);
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E1E1E),
+                    backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: const Color(0xFFD1D5DB),
                     elevation: 0,
@@ -149,7 +150,7 @@ class _InfoTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+          Text(label, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
           const SizedBox(height: 4),
           Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: color)),
         ],
@@ -168,8 +169,8 @@ class _DetailRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(children: [
-        SizedBox(width: 90, child: Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)))),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF111827)))),
+        SizedBox(width: 90, child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textMuted))),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
       ]),
     );
   }

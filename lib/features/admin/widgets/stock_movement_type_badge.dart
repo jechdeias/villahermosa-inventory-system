@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 class StockMovementTypeBadge extends StatelessWidget {
   const StockMovementTypeBadge({super.key, required this.movementType});
@@ -7,7 +8,7 @@ class StockMovementTypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIn = movementType == 'in';
-    final bg = isIn ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2);
+    final bg = isIn ? AppTheme.successLight : AppTheme.errorLight;
     final text = isIn ? const Color(0xFF065F46) : const Color(0xFF991B1B);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 9),

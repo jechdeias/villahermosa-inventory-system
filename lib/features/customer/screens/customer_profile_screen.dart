@@ -5,6 +5,7 @@ import '../../../core/auth/auth_service.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/customer_common.dart';
 import '../widgets/customer_shell.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CustomerProfileScreen extends ConsumerStatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -110,7 +111,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                       const SizedBox(height: 6),
                       Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 10, runSpacing: 4, children: [
                         if (p.ownerName.isNotEmpty) Text(p.ownerName, style: const TextStyle(fontSize: 16, color: CcColors.muted)),
-                        if (p.channel.isNotEmpty) CcBadge(p.channel, bg: const Color(0xFFEFF6FF), fg: CcColors.blue),
+                        if (p.channel.isNotEmpty) CcBadge(p.channel, bg: AppTheme.infoLight, fg: CcColors.blue),
                       ]),
                     ]),
                   ),

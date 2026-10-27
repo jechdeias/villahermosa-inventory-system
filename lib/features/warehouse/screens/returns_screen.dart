@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
@@ -136,6 +137,7 @@ class _WarehouseReturnsScreenState extends ConsumerState<WarehouseReturnsScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstLoad(ref.watch(stockMovementsStreamProvider))) return const WhLoadingShell(route: WhRoutes.returns, statCards: 3);
     final products = ref.watch(productsStreamProvider).value ?? [];
     final weekAgo = DateTime.now().subtract(const Duration(days: 7));
     final all = (ref.watch(stockMovementsStreamProvider).value ?? []).where((m) => returnTypeOf(m) != null).toList()
@@ -183,7 +185,7 @@ class _WarehouseReturnsScreenState extends ConsumerState<WarehouseReturnsScreen>
                 ]),
               ),
               if (shown.isEmpty)
-                const WhEmpty('No returns logged yet')
+                const WhEmpty('Use Log New Return when stock comes back, is damaged or expires', title: 'No returns logged yet', icon: Icons.history)
               else
                 WhTableScroll(
                   minWidth: 820,

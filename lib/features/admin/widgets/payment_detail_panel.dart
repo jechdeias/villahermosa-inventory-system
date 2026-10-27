@@ -4,6 +4,7 @@ import '../../../core/database/app_database.dart';
 import '../providers/payments_provider.dart';
 import '../services/payments_service.dart';
 import 'payment_status_badge.dart';
+import '../../../core/theme/app_theme.dart';
 
 class PaymentDetailPanel extends ConsumerStatefulWidget {
   const PaymentDetailPanel({super.key, required this.payment});
@@ -41,7 +42,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment recorded successfully'),
-            backgroundColor: Color(0xFF059669),
+            backgroundColor: AppTheme.success,
           ),
         );
       }
@@ -78,10 +79,10 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
                 _section('PAYMENT SUMMARY', [
                   _infoRow('Order Amount', '₱${_fmt(p.orderAmount)}', bold: true),
                   _infoRow('Amount Paid',  '₱${_fmt(p.amountPaid)}',
-                      color: const Color(0xFF059669), bold: true),
+                      color: AppTheme.success, bold: true),
                   _infoRow('Balance',
                       '₱${_fmt(p.balance)}',
-                      color: p.balance > 0 ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                      color: p.balance > 0 ? AppTheme.error : AppTheme.textMuted,
                       bold: p.balance > 0),
                   _infoRow('Status', '', widget: PaymentStatusBadge(status: p.status)),
                   _infoRow('Method', p.paymentMethod ?? '—'),
@@ -92,7 +93,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
                   const SizedBox(height: 16),
                   _section('RECORD NEW PAYMENT', []),
                   const SizedBox(height: 8),
-                  const Text('Amount', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                  const Text('Amount', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                   const SizedBox(height: 4),
                   SizedBox(
                     height: 34,
@@ -102,15 +103,15 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
                       style: const TextStyle(fontSize: 13),
                       decoration: InputDecoration(
                         hintText: 'Enter amount...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                        hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(6),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: const BorderSide(color: AppTheme.border),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(6),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: const BorderSide(color: AppTheme.border),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(6),
@@ -120,7 +121,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text('Payment method', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                  const Text('Payment method', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                   const SizedBox(height: 6),
                   _methodToggle(),
                 ],
@@ -141,12 +142,12 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
               child: Text(
                 'Payment — ${p.orderCode}',
                 style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                    fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
               ),
             ),
             GestureDetector(
               onTap: () => ref.read(selectedPaymentProvider.notifier).state = null,
-              child: const Icon(Icons.close, size: 18, color: Color(0xFF6B7280)),
+              child: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),
             ),
           ],
         ),
@@ -155,7 +156,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
   Widget _panelFooter(BuildContext context, bool canRecord) => Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+          border: Border(top: BorderSide(color: AppTheme.border)),
         ),
         child: Row(
           children: [
@@ -163,7 +164,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
               child: OutlinedButton(
                 onPressed: () => ref.read(selectedPaymentProvider.notifier).state = null,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  side: const BorderSide(color: AppTheme.border),
                   foregroundColor: const Color(0xFF374151),
                   padding: const EdgeInsets.symmetric(vertical: 11),
                 ),
@@ -176,7 +177,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
                 child: ElevatedButton(
                   onPressed: _saving ? null : _recordPayment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E1E1E),
+                    backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 11),
@@ -200,7 +201,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
               style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF),
+                  color: AppTheme.textLight,
                   letterSpacing: 0.8)),
           const SizedBox(height: 8),
           ...rows,
@@ -217,7 +218,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
           SizedBox(
             width: 90,
             child: Text(label,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
           ),
           Expanded(
             child: widget ??
@@ -226,8 +227,8 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
-                    color: color ?? const Color(0xFF111827),
-                    fontFamily: mono ? 'monospace' : null,
+                    color: color ?? AppTheme.textPrimary,
+                    fontFamily: mono ? AppTheme.monoFamily : null,
                   ),
                 ),
           ),
@@ -242,10 +243,10 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
           Row(
             children: [
               const Text('Payment progress',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                  style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
               const Spacer(),
               Text('$pct%',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
             ],
           ),
           const SizedBox(height: 4),
@@ -254,8 +255,8 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: const Color(0xFFE5E7EB),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF059669)),
+              backgroundColor: AppTheme.border,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.success),
             ),
           ),
         ],
@@ -271,9 +272,9 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
               height: 30,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFF1E1E1E) : Colors.transparent,
+                color: selected ? AppTheme.primary : Colors.transparent,
                 border: Border.all(
-                  color: selected ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+                  color: selected ? AppTheme.primary : AppTheme.border,
                 ),
                 borderRadius: BorderRadius.circular(6),
               ),
@@ -282,7 +283,7 @@ class _PaymentDetailPanelState extends ConsumerState<PaymentDetailPanel> {
                 m,
                 style: TextStyle(
                     fontSize: 12,
-                    color: selected ? Colors.white : const Color(0xFF6B7280)),
+                    color: selected ? Colors.white : AppTheme.textMuted),
               ),
             ),
           );

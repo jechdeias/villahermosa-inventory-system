@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class WarehouseInventoryScreen extends ConsumerStatefulWidget {
   const WarehouseInventoryScreen({super.key});
@@ -78,6 +80,7 @@ class _WarehouseInventoryScreenState extends ConsumerState<WarehouseInventoryScr
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstLoad(ref.watch(productsStreamProvider))) return const WhLoadingShell(route: WhRoutes.inventory, statCards: 3);
     final products = ref.watch(productsStreamProvider).value ?? [];
     final categories = (products.map((p) => p.category).toSet().toList()..sort());
     final q = _search.toLowerCase();
@@ -121,7 +124,7 @@ class _WarehouseInventoryScreenState extends ConsumerState<WarehouseInventoryScr
                 ]),
               ),
               if (filtered.isEmpty)
-                const WhEmpty('No products match your search')
+                const WhEmpty('Try a different search or category', title: 'No products found', icon: Icons.inventory_2_outlined)
               else
                 WhTableScroll(
                   minWidth: 760,
@@ -145,7 +148,7 @@ class _WarehouseInventoryScreenState extends ConsumerState<WarehouseInventoryScr
     return WhTableRow(
       flex: _flex,
       rightAlignLast: true,
-      highlight: low ? const Color(0xFFFFFBEB) : null,
+      highlight: low ? AppTheme.warningLight : null,
       cells: [
         Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
           Text(p.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: WhColors.text), overflow: TextOverflow.ellipsis),

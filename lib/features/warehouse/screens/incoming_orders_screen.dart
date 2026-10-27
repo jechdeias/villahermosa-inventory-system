@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
@@ -87,6 +88,7 @@ class _WarehouseIncomingOrdersScreenState extends ConsumerState<WarehouseIncomin
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstLoad(ref.watch(ordersStreamProvider))) return const WhLoadingShell(route: WhRoutes.incoming);
     final all = ref.watch(ordersStreamProvider).value ?? [];
     final q = _search.toLowerCase();
     final filtered = all.where((o) {
@@ -132,7 +134,7 @@ class _WarehouseIncomingOrdersScreenState extends ConsumerState<WarehouseIncomin
                 ]),
               ),
               if (shown.isEmpty)
-                const WhEmpty('No orders match your search')
+                WhEmpty(_search.isEmpty && _statusFilter == null ? 'Orders from sales reps will appear here' : 'Try a different search or status filter', title: _search.isEmpty && _statusFilter == null ? 'No incoming orders' : 'No orders match', icon: Icons.move_to_inbox_outlined)
               else
                 WhTableScroll(
                   minWidth: 760,

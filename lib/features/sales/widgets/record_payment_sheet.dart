@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../admin/services/payments_service.dart';
 import '../providers/sales_providers.dart';
+import '../../../core/theme/app_theme.dart';
 
 Future<void> showRecordPaymentSheet(BuildContext context, {Payment? payment}) {
   return showModalBottomSheet(
@@ -93,17 +94,17 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
           children: [
             Row(children: [
               const Expanded(
-                child: Text('Record Payment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                child: Text('Record Payment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               ),
               IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
             ]),
             const SizedBox(height: 4),
-            const Text('Store / Order', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            const Text('Store / Order', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
             const SizedBox(height: 8),
             if (outstanding.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('No outstanding balances', style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+                child: Text('No outstanding balances', style: TextStyle(fontSize: 13, color: AppTheme.textLight)),
               )
             else
               ...outstanding.map((p) {
@@ -117,7 +118,7 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: selected ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+                      border: Border.all(color: selected ? AppTheme.primary : AppTheme.border),
                       borderRadius: BorderRadius.circular(8),
                       color: selected ? const Color(0xFFF9FAFB) : Colors.white,
                     ),
@@ -126,19 +127,19 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p.storeName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
-                            Text(p.orderCode, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                            Text(p.storeName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                            Text(p.orderCode, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                           ],
                         ),
                       ),
                       Text('Bal ₱${p.balance.toStringAsFixed(0)}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFD97706))),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.warning)),
                     ]),
                   ),
                 );
               }),
             const SizedBox(height: 8),
-            const Text('Amount', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            const Text('Amount', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
             const SizedBox(height: 8),
             TextField(
               controller: _amountCtrl,
@@ -148,13 +149,13 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                 prefixText: '₱ ',
                 filled: true,
                 fillColor: const Color(0xFFF9FAFB),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF1E1E1E))),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.border)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.border)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.primary)),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Payment Method', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+            const Text('Payment Method', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
             const SizedBox(height: 8),
             Row(
               children: ['Cash', 'Credit', 'GCash'].map((m) {
@@ -169,8 +170,8 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: selected ? const Color(0xFF1E1E1E) : Colors.white,
-                          border: Border.all(color: selected ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+                          color: selected ? AppTheme.primary : Colors.white,
+                          border: Border.all(color: selected ? AppTheme.primary : AppTheme.border),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(m,
@@ -188,7 +189,7 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
               child: ElevatedButton(
                 onPressed: _selected == null || _saving ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E1E1E),
+                  backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: const Color(0xFFD1D5DB),
                   elevation: 0,

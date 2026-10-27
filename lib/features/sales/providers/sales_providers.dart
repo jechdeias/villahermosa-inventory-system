@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 import '../../admin/providers/delivery_routes_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Live online/offline status — one-shot check first, then live updates,
 /// same isOnline logic main.dart's startup sync check already uses.
@@ -145,14 +146,14 @@ final salesRecentActivityProvider = Provider<List<SalesActivityEntry>>((ref) {
         storeName: o.storeName ?? 'Unknown store',
         action: 'Order created',
         time: o.createdAt,
-        color: const Color(0xFF2563EB),
+        color: AppTheme.info,
       ),
     for (final p in paymentsList)
       SalesActivityEntry(
         storeName: p.storeName,
         action: 'Payment collected',
         time: p.paymentDate,
-        color: const Color(0xFF059669),
+        color: AppTheme.success,
       ),
   ];
   entries.sort((a, b) => b.time.compareTo(a.time));

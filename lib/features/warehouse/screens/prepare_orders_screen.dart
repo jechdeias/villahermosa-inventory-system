@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class WarehousePrepareOrdersScreen extends ConsumerStatefulWidget {
   const WarehousePrepareOrdersScreen({super.key});
@@ -38,6 +40,7 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstLoad(ref.watch(ordersStreamProvider))) return const WhLoadingShell(route: WhRoutes.prepare);
     final orders = (ref.watch(ordersStreamProvider).value ?? []).where(needsPreparing).toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     final byOrder = ref.watch(orderLinesByOrderProvider);
@@ -58,7 +61,7 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
           sideWidth: 280,
           side: _queueCard(orders, byOrder, selected),
           main: selected == null
-              ? const WhCard(child: WhEmpty('No orders to prepare. Process an incoming order to start a picklist.'))
+              ? const WhCard(child: WhEmpty('Process an incoming order to start a picklist', title: 'No orders to prepare', icon: Icons.assignment_turned_in_outlined))
               : _picklistCard(selected, byOrder[selected.uuid] ?? [], products),
         ),
       ]),
@@ -72,11 +75,11 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
             WhCardTitle('Orders Queue',
                 trailing: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(20)),
+                  decoration: BoxDecoration(color: AppTheme.warningLight, borderRadius: BorderRadius.circular(20)),
                   child: Text('${orders.length} to prepare', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF92400E))),
                 )),
             if (orders.isEmpty)
-              const WhEmpty('Queue is empty')
+              const WhEmpty('Queue is empty', icon: Icons.assignment_turned_in_outlined)
             else
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -126,7 +129,7 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
             ],
           ),
           if (lines.isEmpty)
-            const WhEmpty('This order has no line items recorded yet.')
+            const WhEmpty('This order has no line items recorded yet', title: 'No line items', icon: Icons.list_alt_outlined)
           else
             WhTableScroll(
               minWidth: 620,
@@ -165,7 +168,7 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
                 child: LinearProgressIndicator(
                   value: lines.isEmpty ? 0 : picked / lines.length,
                   minHeight: 6,
-                  backgroundColor: const Color(0xFFE5E7EB),
+                  backgroundColor: AppTheme.border,
                   color: WhColors.primary,
                 ),
               ),

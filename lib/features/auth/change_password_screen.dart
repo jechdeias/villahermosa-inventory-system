@@ -99,7 +99,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppTheme.lightBackground,
+    backgroundColor: LegacyAppTheme.lightBackground,
     appBar: AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Shared mobile card shell for table rows across admin screens: a primary
 /// identifier + badge row, an optional muted secondary line, an optional
@@ -33,7 +34,7 @@ class MobileListCard extends StatelessWidget {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: Color(0xFFE5E7EB)),
+          side: const BorderSide(color: AppTheme.border),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -89,7 +90,7 @@ class MobileCardMuted extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(text,
-        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+        style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
         overflow: overflow);
   }
 }
@@ -107,7 +108,7 @@ class MobileCardAction extends StatelessWidget {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: color ?? const Color(0xFF374151),
-        side: BorderSide(color: color ?? const Color(0xFFE5E7EB)),
+        side: BorderSide(color: color ?? AppTheme.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         padding: const EdgeInsets.symmetric(vertical: 8),
         minimumSize: const Size(0, 32),

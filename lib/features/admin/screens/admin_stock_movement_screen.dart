@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/shimmer_loading.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
@@ -9,6 +11,7 @@ import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
 import '../widgets/record_movement_panel.dart';
 import '../widgets/stock_movement_type_badge.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminStockMovementScreen extends ConsumerStatefulWidget {
   const AdminStockMovementScreen({super.key, required this.database, required this.syncManager});
@@ -94,7 +97,9 @@ class _StockMovementListColumn extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allMovements = ref.watch(stockMovementsStreamProvider).value ?? [];
+    final movementsAsync = ref.watch(stockMovementsStreamProvider);
+    if (isFirstLoad(movementsAsync)) return const ShimmerTablePage(statCards: 4);
+    final allMovements = movementsAsync.value ?? [];
     final allProducts = ref.watch(productsStreamProvider).value ?? [];
 
     final totalCount = allMovements.length;
@@ -121,9 +126,9 @@ class _StockMovementListColumn extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Stock Movement', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+        const Text('Stock Movement', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         const SizedBox(height: 4),
-        const Text('Track inventory changes across all products', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        const Text('Track inventory changes across all products', style: TextStyle(fontSize: 14, color: AppTheme.textMuted)),
       ],
     );
   }
@@ -133,9 +138,9 @@ class _StockMovementListColumn extends ConsumerWidget {
       final isNarrow = constraints.maxWidth < 500;
       final cards = [
         OrdersStatCard(title: 'Total Movements', value: '$total', subtitle: 'This period'),
-        OrdersStatCard(title: 'Stock In', value: '$inCount', subtitle: 'Deliveries received', valueColor: const Color(0xFF059669)),
-        OrdersStatCard(title: 'Stock Out', value: '$outCount', subtitle: 'Sales and usage', valueColor: const Color(0xFFDC2626)),
-        OrdersStatCard(title: 'Low Stock Alerts', value: '$lowStock', subtitle: 'Need restocking', valueColor: const Color(0xFFD97706)),
+        OrdersStatCard(title: 'Stock In', value: '$inCount', subtitle: 'Deliveries received', valueColor: AppTheme.success),
+        OrdersStatCard(title: 'Stock Out', value: '$outCount', subtitle: 'Sales and usage', valueColor: AppTheme.error),
+        OrdersStatCard(title: 'Low Stock Alerts', value: '$lowStock', subtitle: 'Need restocking', valueColor: AppTheme.warning),
       ];
       if (isNarrow) {
         return Column(children: [
@@ -173,7 +178,7 @@ class _StockMovementListColumn extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -200,7 +205,7 @@ class _StockMovementListColumn extends ConsumerWidget {
 
   Widget _buildTabBar(WidgetRef ref, String? tab, List<_Tab> tabs) {
     return Container(
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -211,7 +216,7 @@ class _StockMovementListColumn extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: isActive ? const Color(0xFF111827) : Colors.transparent, width: 2)),
+                  border: Border(bottom: BorderSide(color: isActive ? AppTheme.textPrimary : Colors.transparent, width: 2)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -220,16 +225,16 @@ class _StockMovementListColumn extends ConsumerWidget {
                         style: TextStyle(
                             fontSize: 13,
                             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                            color: isActive ? const Color(0xFF111827) : const Color(0xFF6B7280))),
+                            color: isActive ? AppTheme.textPrimary : AppTheme.textMuted)),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
+                        color: isActive ? AppTheme.textPrimary : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text('${t.count}',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isActive ? Colors.white : const Color(0xFF6B7280))),
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isActive ? Colors.white : AppTheme.textMuted)),
                     ),
                   ],
                 ),
@@ -254,11 +259,11 @@ class _StockMovementListColumn extends ConsumerWidget {
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search by product or reference...',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-                  prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF9CA3AF)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF6B7280))),
+                  hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textLight),
+                  prefixIcon: const Icon(Icons.search, size: 16, color: AppTheme.textLight),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.border)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppTheme.textMuted)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   filled: true,
                   fillColor: const Color(0xFFF9FAFB),
@@ -271,7 +276,7 @@ class _StockMovementListColumn extends ConsumerWidget {
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Record Movement'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E1E1E),
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -291,7 +296,7 @@ class _StockMovementListColumn extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
         color: Color(0xFFF9FAFB),
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB)), bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(top: BorderSide(color: AppTheme.border), bottom: BorderSide(color: AppTheme.border)),
       ),
       child: const Row(children: [
         _HeaderCell('DATE', flex: 2),
@@ -306,16 +311,11 @@ class _StockMovementListColumn extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(String? tab) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(children: [
-        Icon(Icons.trending_up, size: 40, color: Colors.grey.shade300),
-        const SizedBox(height: 12),
-        const Text('No stock movements found', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
-      ]),
-    );
-  }
+  Widget _buildEmptyState(String? tab) => const EmptyState(
+        icon: Icons.swap_vert,
+        title: 'No stock movements yet',
+        message: 'Record a stock in or stock out to see it here',
+      );
 }
 
 // ── Movement Row ─────────────────────────────────────────────────────────────
@@ -331,17 +331,17 @@ class _MovementRow extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
       child: Row(
         children: [
           Expanded(
             flex: 2,
-            child: Text(_formatDate(movement.createdAt), style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+            child: Text(_formatDate(movement.createdAt), style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
           ),
           Expanded(
             flex: 2,
             child: Text(product?.sku ?? '—',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary)),
           ),
           Expanded(
             flex: 3,
@@ -351,19 +351,19 @@ class _MovementRow extends ConsumerWidget {
           Expanded(
             flex: 1,
             child: Text('${isIn ? '+' : '-'}${movement.quantity}',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isIn ? const Color(0xFF059669) : const Color(0xFFDC2626))),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isIn ? AppTheme.success : AppTheme.error)),
           ),
           Expanded(
             flex: 2,
-            child: Text(movement.reason, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+            child: Text(movement.reason, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
           ),
           Expanded(
             flex: 2,
-            child: Text(movement.referenceId ?? '—', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+            child: Text(movement.referenceId ?? '—', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
           ),
           Expanded(
             flex: 2,
-            child: Text(movement.userName, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+            child: Text(movement.userName, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
           ),
         ],
       ),
@@ -388,20 +388,20 @@ class _MovementMobileCard extends ConsumerWidget {
     return MobileListCard(
       primary: Text(product?.sku ?? '—',
           style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'monospace', color: Color(0xFF111827))),
+              fontSize: 13, fontWeight: FontWeight.w600, fontFamily: AppTheme.monoFamily, color: AppTheme.textPrimary)),
       badge: StockMovementTypeBadge(movementType: movement.movementType),
       secondary: MobileCardMuted('${product?.name ?? 'Unknown product'} · ${movement.reason}'),
       valueLeft: Text('${isIn ? '+' : '-'}${movement.quantity}',
           style: TextStyle(
               fontSize: 13, fontWeight: FontWeight.w600,
-              color: isIn ? const Color(0xFF059669) : const Color(0xFFDC2626))),
+              color: isIn ? AppTheme.success : AppTheme.error)),
       valueRight: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           MobileCardMuted(_MovementRow._formatDate(movement.createdAt)),
           if (movement.referenceId != null)
             Text(movement.referenceId!,
-                style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF9CA3AF))),
+                style: const TextStyle(fontSize: 11, fontFamily: AppTheme.monoFamily, color: AppTheme.textLight)),
         ],
       ),
     );
@@ -426,7 +426,7 @@ class _HeaderCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
-      child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5)),
+      child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textLight, letterSpacing: 0.5)),
     );
   }
 }
