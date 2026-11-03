@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../admin/widgets/order_status_badge.dart';
 import '../providers/sales_providers.dart';
+import '../widgets/mark_delivered_flow.dart';
 import '../widgets/new_order_flow.dart';
 import '../widgets/sales_shell.dart';
+import 'sales_order_detail_screen.dart';
+import 'sales_scan_screen.dart';
 import '../../../core/constants/order_status.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -102,15 +105,18 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
   }
 }
 
-class _OrderRow extends StatelessWidget {
+class _OrderRow extends ConsumerWidget {
   const _OrderRow({required this.order});
   final Order order;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(children: [
+  Widget build(BuildContext context, WidgetRef ref) {
+    final outForDelivery = order.status == OrderStatus.outForDelivery;
+    return InkWell(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SalesOrderDetailScreen(orderUuid: order.uuid))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +138,24 @@ class _OrderRow extends StatelessWidget {
             OrderStatusBadge(status: order.status),
           ],
         ),
-      ]),
+        if (outForDelivery)
+          PopupMenuButton<String>(
+            tooltip: 'Delivery actions',
+            icon: const Icon(Icons.more_vert, size: 20, color: AppTheme.textMuted),
+            onSelected: (v) {
+              if (v == 'mark') {
+                showMarkDeliveredFlow(context, ref, order);
+              } else {
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SalesScanScreen()));
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'mark', child: Text('Mark as Delivered')),
+              PopupMenuItem(value: 'scan', child: Text('Scan Delivery QR')),
+            ],
+          ),
+        ]),
+      ),
     );
   }
 }

@@ -392,7 +392,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Confirm order of ₱1,246?'), findsOneWidget); // 12×78 + 310
       expect(find.textContaining('Jun Mendoza'), findsOneWidget);
-      expect(find.textContaining('Thursday, Oct'), findsOneWidget);
+      // The route delivers Mon & Thu; the dialog names whichever comes next (depends on today).
+      expect(find.textContaining(ccWeekdayLong(nextDeliveryDate('Mon,Thu', DateTime.now()))), findsOneWidget);
       expect(find.text('GCash'), findsWidgets);
 
       await tester.tap(find.text('Confirm'));

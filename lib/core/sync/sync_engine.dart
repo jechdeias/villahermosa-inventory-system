@@ -122,18 +122,22 @@ class SyncEngine {
 
   
 
-  /// Delivered orders the customer never confirmed receipt of within three
-  /// days are completed automatically. The clock runs from `updatedAt` (when
-  /// the order last changed, i.e. when the rep scanned it) rather than the
-  /// order date, so an order placed long ago but delivered today isn't
-  /// completed straight away. Returns how many orders were completed.
+  /// Delivered orders the customer never confirmed within 72 hours are
+  /// completed automatically. The clock runs from the delivery time
+  /// (`actualDeliveryDate`, stamped when the delivery was confirmed) and falls
+  /// back to `updatedAt` for orders that don't have it (e.g. delivered on
+  /// another phone) — never the order date, which would complete an order
+  /// placed long ago the moment it was delivered. Local-only and idempotent,
+  /// so it is safe to run at every app start and after every pull. Returns
+  /// how many orders were completed.
   Future<int> autoConfirmDeliveries({DateTime? now}) async {
     final at = now ?? DateTime.now();
-    final cutoff = at.subtract(const Duration(days: 3));
-    final stale = await (_database.select(_database.orders)
-          ..where((o) => o.status.equals('delivered') & o.updatedAt.isSmallerThanValue(cutoff)))
-        .get();
-    for (final o in stale) {
+    final cutoff = at.subtract(const Duration(hours: 72));
+    final delivered = await (_database.select(_database.orders)..where((o) => o.status.equals('delivered'))).get();
+    var completed = 0;
+    for (final o in delivered) {
+      final deliveredAt = o.actualDeliveryDate ?? o.updatedAt;
+      if (deliveredAt.isAfter(cutoff)) continue;
       await (_database.update(_database.orders)..where((r) => r.id.equals(o.id))).write(
         OrdersCompanion(
           status: const Value('completed'),
@@ -141,9 +145,10 @@ class SyncEngine {
           updatedAt: Value(at),
         ),
       );
+      completed++;
     }
-    if (stale.isNotEmpty) debugPrint('Auto-confirmed ${stale.length} delivered order(s) older than 3 days');
-    return stale.length;
+    if (completed > 0) debugPrint('Auto-confirmed $completed delivered order(s) older than 72h');
+    return completed;
   }
 
   /// Push pending local records to Supabase

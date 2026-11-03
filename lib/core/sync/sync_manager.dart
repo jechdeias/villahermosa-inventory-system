@@ -58,6 +58,18 @@ class SyncManager {
     }
   }
 
+  /// Completes delivered orders nobody confirmed within 72h (see
+  /// SyncEngine.autoConfirmDeliveries). Local-only — needs no network or
+  /// session, so the app calls it at startup even when offline. Never throws.
+  Future<int> autoConfirmDeliveries() async {
+    try {
+      return await _syncEngine.autoConfirmDeliveries();
+    } catch (e) {
+      debugPrint('Auto-confirm deliveries failed: $e');
+      return 0;
+    }
+  }
+
   /// True only when there is an active Supabase Auth session. RLS returns
   /// zero rows to an unauthenticated client, so a pull without one would look
   /// like it worked while fetching nothing.
@@ -84,6 +96,7 @@ class SyncManager {
       debugPrint('Starting pull operation...');
       final initialCounts = await _getTotalRecordCounts();
       await _syncEngine.performPull();
+      await autoConfirmDeliveries();
       final finalCounts = await _getTotalRecordCounts();
       int recordsPulled = 0;
       finalCounts.forEach((table, count) {

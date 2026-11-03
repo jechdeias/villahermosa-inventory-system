@@ -465,6 +465,9 @@ class AppDatabase extends _$AppDatabase {
         ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)]))
       .watch();
 
+  Future<Order?> getOrderByIntId(int id) =>
+      (select(orders)..where((o) => o.id.equals(id) & o.isDeleted.equals(false))).getSingleOrNull();
+
   /// The order whose number (e.g. ORD-2408) matches [orderCode] — the value
   /// printed in the customer's delivery QR code. Case and surrounding spaces
   /// are ignored. (Orders have no separate "code" column: it's `orderNumber`.)
@@ -480,10 +483,11 @@ class AppDatabase extends _$AppDatabase {
   /// Sets an order's status by local id and flags it for sync. Delivered also
   /// stamps the actual delivery time. (The uuid-keyed [updateOrderStatus]
   /// predates this and is still used by the admin screens.)
-  Future<void> updateOrderStatusById(int id, String status) async {
+  Future<void> updateOrderStatusById(int id, String status, {String? customerNotes}) async {
     final now = DateTime.now();
     await (update(orders)..where((o) => o.id.equals(id))).write(OrdersCompanion(
       status: Value(status),
+      customerNotes: customerNotes == null ? const Value.absent() : Value(customerNotes),
       actualDeliveryDate: status == 'delivered' ? Value(now) : const Value.absent(),
       syncStatus: const Value('pending'),
       updatedAt: Value(now),

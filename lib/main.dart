@@ -90,6 +90,9 @@ void main() async {
   await authRepository.seedAdminUserIfEmpty();
   await database.seedOrdersForDemo();
   
+  // Complete stale deliveries locally — no network needed, so this runs even offline.
+  await SyncManager.instance.autoConfirmDeliveries();
+
   // Check connectivity and sync pending records on startup, unless disabled in Settings
   if (AppSettings.instance.autoSyncOnStartup) {
     try {
