@@ -2206,6 +2206,18 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
   }
 
+  /// Pull ALL users from Supabase and upsert into local DB.
+  ///
+  /// Called on fresh installs (empty local users table) so that staff accounts
+  /// stored in Supabase are available before the first [login] attempt.
+  /// No timestamp filter — always fetches the full table.
+  Future<void> bootstrapUsers() async {
+    debugPrint('🌱 bootstrapUsers: pulling all users from Supabase...');
+    // Reuse the existing pull implementation (epoch 0 → no timestamp filter)
+    await _pullUsers(DateTime.fromMillisecondsSinceEpoch(0));
+    debugPrint('🌱 bootstrapUsers: done');
+  }
+
 }
 
 

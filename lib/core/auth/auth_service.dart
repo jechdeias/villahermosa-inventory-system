@@ -102,28 +102,53 @@ class AuthService {
   Future<User?> login(String identifier, String password) async {
     try {
       debugPrint('🔐 Attempting login for: $identifier');
-      
+
+      // STEP 0 (fresh-install fix): if the local users table is empty the
+      // device has never synced. Authenticate with Supabase first so we have
+      // a session, then pull the full users table before the local login.
+      final localUserCount = await _localUserCount();
+      if (localUserCount == 0) {
+        debugPrint('📭 Fresh install detected — bootstrapping users from Supabase');
+        await _attemptSupabaseAuth(identifier, password);
+        await SyncManager.instance.bootstrapUsers();
+      }
+
       // STEP 1: Try local Drift auth first (works offline)
       final localUser = await _localLogin(identifier, password);
-      
+
       if (localUser == null) return null;
-      
-      // STEP 2: Try Supabase Auth and wait for session
-      debugPrint('🔑 Local auth succeeded, attempting Supabase Auth...');
-      await _attemptSupabaseAuth(identifier, password);
+
+      // STEP 2: Try Supabase Auth and wait for session (skip if already done)
+      if (localUserCount > 0) {
+        debugPrint('🔑 Local auth succeeded, attempting Supabase Auth...');
+        await _attemptSupabaseAuth(identifier, password);
+      }
       debugPrint('📋 Session after auth: ${Supabase.instance.client.auth.currentSession != null ? "Active" : "None"}');
-      
+
       // Pull remote data after successful login
       try {
         await SyncManager.instance.pull();
       } catch (e) {
         debugPrint('Post-login pull failed: $e');
       }
-      
+
       return localUser;
     } catch (e) {
       debugPrint('💥 Login error: $e');
       return null;
+    }
+  }
+
+  /// Returns the number of non-deleted users in the local Drift database.
+  Future<int> _localUserCount() async {
+    try {
+      final result = await _database.customSelect(
+        'SELECT COUNT(*) AS cnt FROM users WHERE is_deleted = 0',
+      ).getSingleOrNull();
+      return result?.read<int>('cnt') ?? 0;
+    } catch (e) {
+      debugPrint('⚠️ Could not count local users: $e');
+      return 0;
     }
   }
 

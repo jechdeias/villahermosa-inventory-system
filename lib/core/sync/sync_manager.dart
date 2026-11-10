@@ -146,6 +146,22 @@ class SyncManager {
     }
   }
 
+  /// Pull all users from Supabase on a fresh install (empty local DB).
+  ///
+  /// Requires an active Supabase Auth session. Never throws — login callers
+  /// should proceed even when this fails (e.g. offline).
+  Future<void> bootstrapUsers() async {
+    if (!_hasSupabaseSession) {
+      debugPrint('bootstrapUsers skipped: no active Supabase session');
+      return;
+    }
+    try {
+      await _syncEngine.bootstrapUsers();
+    } catch (e) {
+      debugPrint('bootstrapUsers failed (non-fatal): $e');
+    }
+  }
+
   Future<void> syncPendingRecords() async {
     debugPrint('Syncing all pending records...');
     await push();
