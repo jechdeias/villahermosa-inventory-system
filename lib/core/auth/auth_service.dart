@@ -247,6 +247,75 @@ class AuthService {
     }
   }
 
+  /// Called after a successful Google OAuth callback.
+  ///
+  /// Finds the user row in public.users by email. If none exists (first-ever
+  /// Google sign-in), inserts a customer-role row locally and queues a sync.
+  /// Then sets the local AuthService session so the app navigates normally.
+  Future<User?> loginWithOAuthSession(Session session) async {
+    try {
+      final email = session.user.email;
+      if (email == null) {
+        debugPrint('❌ OAuth session has no email');
+        return null;
+      }
+
+      // Pull latest user data from Supabase first (the row might not exist locally)
+      await SyncManager.instance.bootstrapUsers();
+
+      User? localUser = await _database.getUserByEmail(email);
+
+      if (localUser == null) {
+        // First-ever Google sign-in — create a local customer row
+        debugPrint('🆕 Google user not in local DB — creating customer row for $email');
+        final metadata = session.user.userMetadata ?? {};
+        final fullName = metadata['full_name'] as String? ?? '';
+        final parts = fullName.split(' ');
+        final firstName = parts.isNotEmpty ? parts.first : email.split('@').first;
+        final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+        await _database.createUser(
+          UsersCompanion.insert(
+            uuid: session.user.id, // use the real Supabase Auth id
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            passwordHash: '', // OAuth users have no local password
+            role: 'customer',
+            isActive: const Value(true),
+            isDeleted: const Value(false),
+            syncStatus: const Value('pending'),
+            createdAt: Value(DateTime.now()),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+        localUser = await _database.getUserByEmail(email);
+      }
+
+      if (localUser == null) {
+        debugPrint('❌ Could not find or create local user for OAuth email: $email');
+        return null;
+      }
+
+      // Set local session
+      _currentUser = localUser;
+      _isAuthenticated = true;
+      debugPrint('✅ OAuth local session set for ${localUser.email} (${localUser.role})');
+
+      // Pull full data now that we have a session
+      try {
+        await SyncManager.instance.pull();
+      } catch (e) {
+        debugPrint('Post-OAuth pull failed (non-fatal): $e');
+      }
+
+      return localUser;
+    } catch (e) {
+      debugPrint('💥 loginWithOAuthSession error: $e');
+      return null;
+    }
+  }
+
   /// Logout user
   Future<void> logout() async {
     try {

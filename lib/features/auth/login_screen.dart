@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 import '../../core/database/app_database.dart';
 import '../../core/auth/auth_service.dart';
@@ -37,18 +38,59 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isGoogleLoading = false;
 
   late AuthViewModel _authViewModel;
+  late final _oauthSubscription =
+      Supabase.instance.client.auth.onAuthStateChange.listen(_onAuthState);
+
+  void _onAuthState(AuthState data) {
+    if (!mounted) return;
+    final event = data.event;
+    final session = data.session;
+    if (event == AuthChangeEvent.signedIn && session != null) {
+      final provider = session.user.appMetadata['provider'] as String?;
+      if (provider == 'google') {
+        // main.dart's listener calls loginWithOAuthSession() which is async.
+        // Poll briefly until AuthService has the local session set, then navigate.
+        _waitForOAuthSessionThenNavigate();
+      }
+    }
+  }
+
+  Future<void> _waitForOAuthSessionThenNavigate() async {
+    // Give loginWithOAuthSession() up to 10 seconds to finish
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      if (AuthService.instance.isAuthenticated) {
+        _navigateToDashboard();
+        return;
+      }
+    }
+    // Timed out — show an error
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Google sign-in timed out. Please try again.')),
+      );
+      setState(() => _isGoogleLoading = false);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _authViewModel = AuthViewModel(AuthService.instance, widget.database);
-    
+
     // Check if user is already authenticated
     if (_authViewModel.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigateToDashboard();
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _oauthSubscription.cancel();
+    super.dispose();
   }
 
   Future<void> _login() async {

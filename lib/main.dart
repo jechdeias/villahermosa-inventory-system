@@ -72,15 +72,31 @@ void main() async {
   // Check and restore Supabase session on startup
   await AuthService.instance.checkSupabaseSession();
   
-  // Add auth state change listener
+  // Add auth state change listener.
+  // signedIn fires after OAuth deep-link callback (Google sign-in) —
+  // at that point we find/create the user in public.users, load them into
+  // AuthService, then navigate to their dashboard.
   Supabase.instance.client.auth.onAuthStateChange.listen(
     (data) {
       final event = data.event;
+      final session = data.session;
       debugPrint('🔐 Auth state changed: $event');
       if (event == AuthChangeEvent.signedOut) {
         debugPrint('⚠️ Session expired or signed out');
       } else if (event == AuthChangeEvent.tokenRefreshed) {
         debugPrint('✅ Token refreshed successfully');
+      } else if (event == AuthChangeEvent.signedIn && session != null) {
+        // Only handle OAuth sign-ins here (email/password sets up local
+        // session in AuthService.login() directly).
+        final provider = session.user.appMetadata['provider'] as String?;
+        if (provider == 'google') {
+          debugPrint('🔑 Google OAuth callback received — setting up local session');
+          AuthService.instance.loginWithOAuthSession(session).then((_) {
+            debugPrint('✅ OAuth local session ready');
+          }).catchError((e) {
+            debugPrint('❌ OAuth local session setup failed: $e');
+          });
+        }
       }
     }
   );
