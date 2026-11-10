@@ -28,8 +28,8 @@ final filteredPaymentsProvider = Provider<List<Payment>>((ref) {
         p.orderCode.toLowerCase().contains(search) ||
         p.storeName.toLowerCase().contains(search) ||
         p.salesRepName.toLowerCase().contains(search);
-    final matchFrom = dateFrom == null || !p.createdAt.isBefore(dateFrom);
-    final matchTo = dateTo == null || !p.createdAt.isAfter(dateTo.add(const Duration(days: 1)));
+    final matchFrom = dateFrom == null || !p.paymentDate.isBefore(dateFrom);
+    final matchTo = dateTo == null || !p.paymentDate.isAfter(dateTo.add(const Duration(days: 1)));
     return matchTab && matchSearch && matchFrom && matchTo;
   }).toList();
 });

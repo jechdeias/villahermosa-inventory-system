@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart' show DiagnosticPropertiesBuilder, DiagnosticsProperty;
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 import '../../core/database/app_database.dart';
@@ -90,6 +91,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _oauthSubscription.cancel();
+    _identifierController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -192,10 +195,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-  @override
-  void dispose() {
-    _identifierController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
 }
