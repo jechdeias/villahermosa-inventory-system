@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 
 import '../../core/database/app_database.dart';
@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _identifierController = TextEditingController(); // Changed from email to identifier
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isGoogleLoading = false;
 
   late AuthViewModel _authViewModel;
 
@@ -80,6 +81,16 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+    _authViewModel.clearError();
+    try {
+      await _authViewModel.signInWithGoogle();
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
+  }
+
   Future<void> _navigateToDashboard() async {
     final navigationService = NavigationService(
       AuthService.instance,
@@ -118,9 +129,13 @@ class _LoginScreenState extends State<LoginScreen> {
         formKey: _formKey,
         isLoading: _authViewModel.isLoading,
         errorMessage: _authViewModel.errorMessage,
-        
+        isGoogleLoading: _isGoogleLoading,
+
         // Callbacks
         onPrimaryButtonPressed: _login,
+        onGoogleSignIn: defaultTargetPlatform == TargetPlatform.android
+            ? _handleGoogleSignIn
+            : null,
         onLinkPressed: () {
           Navigator.pushNamed(context, '/signup');
         },

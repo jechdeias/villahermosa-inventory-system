@@ -38,6 +38,8 @@ class AuthCard extends StatefulWidget {
     this.isLoading = false,
     this.errorMessage,
     this.formKey,
+    this.onGoogleSignIn,
+    this.isGoogleLoading = false,
   });
   // Configurable text content
   final String logoIcon;
@@ -68,6 +70,10 @@ class AuthCard extends StatefulWidget {
   final bool isLoading;
   final String? errorMessage;
   final GlobalKey<FormState>? formKey;
+
+  // Google sign-in
+  final VoidCallback? onGoogleSignIn;
+  final bool isGoogleLoading;
 
   @override
   State<AuthCard> createState() => _AuthCardState();
@@ -303,8 +309,63 @@ class _AuthCardState extends State<AuthCard> {
                         )
                       : Text(widget.primaryButtonText),
                 ),
+
+                // Google sign-in
+                if (widget.onGoogleSignIn != null) ...[
+                  const SizedBox(height: AuthTheme.sectionSpacing),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('or', style: AuthTheme.promptTextStyle),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: AuthTheme.sectionSpacing),
+                  OutlinedButton(
+                    onPressed: (widget.isGoogleLoading || widget.isLoading)
+                        ? null
+                        : widget.onGoogleSignIn,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, AuthTheme.buttonHeight),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AuthTheme.buttonBorderRadius),
+                      ),
+                      side: const BorderSide(color: AuthTheme.inputBorderColor),
+                    ),
+                    child: widget.isGoogleLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'G',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF4285F4),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Continue with Google',
+                                style: AuthTheme.labelStyle.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
+
                 const SizedBox(height: AuthTheme.sectionSpacing),
-                
+
                 // Authentication Links - Separate rows for better UX
                 Column(
                   children: [
