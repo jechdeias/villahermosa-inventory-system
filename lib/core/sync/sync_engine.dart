@@ -1027,23 +1027,18 @@ class SyncEngine {
   
 
   Future<void> _pullOrders(DateTime lastSyncTime) async {
-
+    // Orders are user-generated and may arrive on Supabase *before* the
+    // Windows/admin device last synced (customer places order on mobile →
+    // admin device syncs later but the cursor is already past that
+    // updated_at). Always pull all non-deleted orders so nothing is missed.
     final response = await Supabase.instance.client
-
         .from('orders')
-
         .select()
-
-        .gte('updated_at', lastSyncTime.toIso8601String());
-
-
+        .eq('is_deleted', false);
 
     for (final orderData in response) {
-
       await _updateLocalRecord('orders', orderData);
-
     }
-
   }
 
   
