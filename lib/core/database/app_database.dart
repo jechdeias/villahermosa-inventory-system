@@ -241,6 +241,16 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> activateUser(String userId) async {
+    await (update(users)..where((u) => u.uuid.equals(userId))).write(
+      UsersCompanion(
+        isActive: const Value(true),
+        syncStatus: const Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   /// Rejects a user account
   Future<void> rejectUser(String userId) async {
     await (update(users)..where((u) => u.uuid.equals(userId))).write(

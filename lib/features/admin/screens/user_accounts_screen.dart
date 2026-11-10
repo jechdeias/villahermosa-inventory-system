@@ -199,6 +199,26 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     }
   }
 
+  Future<void> _activateUser(User user) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Activate User'),
+        content: Text('Activate ${_getDisplayName(user)}? They will be able to log in again.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Activate'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      await widget.database.activateUser(user.uuid);
+    }
+  }
+
   // ─── STAT CARD ──────────────────────────────────
 
   Widget _statCard({
@@ -479,8 +499,9 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
           child: Row(children: [
             _actionBtn(Icons.visibility_outlined, 'View', () => _showUserDetails(user)),
             _actionBtn(Icons.edit_outlined, 'Edit', () => _editUser(user)),
-            _actionBtn(Icons.person_off_outlined, 'Deactivate', () => _deactivateUser(user),
-              color: AppTheme.error),
+            user.isActive
+              ? _actionBtn(Icons.person_off_outlined, 'Deactivate', () => _deactivateUser(user), color: AppTheme.error)
+              : _actionBtn(Icons.person_outlined, 'Activate', () => _activateUser(user), color: AppTheme.success),
           ]),
         ),
       ]),
@@ -512,11 +533,17 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       valueRight: MobileCardMuted(_formatDate(user.createdAt)),
       actions: [
         MobileCardAction(label: 'Edit', onPressed: () => _editUser(user)),
-        MobileCardAction(
-          label: 'Deactivate',
-          color: AppTheme.error,
-          onPressed: () => _deactivateUser(user),
-        ),
+        if (user.isActive)
+          MobileCardAction(
+            label: 'Deactivate',
+            color: AppTheme.error,
+            onPressed: () => _deactivateUser(user),
+          )
+        else
+          MobileCardAction(
+            label: 'Activate',
+            onPressed: () => _activateUser(user),
+          ),
       ],
     );
   }
@@ -849,8 +876,13 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         }
       } catch (e) {
         if (mounted) {
+          final msg = e.toString().contains('UNIQUE constraint failed: users.email')
+              ? 'An account with that email already exists.'
+              : e.toString().contains('UNIQUE constraint failed: users.uuid')
+                  ? 'A user with that ID already exists. Please try again.'
+                  : 'Error adding user: $e';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error adding user: $e')),
+            SnackBar(content: Text(msg)),
           );
         }
       }

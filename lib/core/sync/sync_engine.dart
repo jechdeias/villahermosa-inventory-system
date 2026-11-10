@@ -646,14 +646,15 @@ class SyncEngine {
         // it to the customer's numeric id first.
         final customer = await _database.getCustomerById(order.customerId);
         if (customer == null) {
-          // Not a failure: the order belongs to an account with no linked
-          // customer record (e.g. a customer login whose email matches no
-          // customer), so customerId is that user's own uuid. It stays
-          // pending and goes up once the account is linked to a customer.
-          debugPrint('Skipping order ${order.id}: no local customer for customerId=${order.customerId}');
-          continue;
+          // No linked customer record (e.g. a self-registered customer whose
+          // email doesn't match a customers row yet). Push the order anyway
+          // with customer_id = null so it's visible to admin/warehouse; the
+          // store_name field still identifies whose order it is.
+          debugPrint('Order ${order.id}: no customer match for customerId=${order.customerId}, pushing with null customer_id');
+          data['customer_id'] = null;
+        } else {
+          data['customer_id'] = customer.id;
         }
-        data['customer_id'] = customer.id;
 
         // upsert, not insert: a status change (delivered, completed, ...)
         // re-pushes an order Supabase already has, and a plain insert would
