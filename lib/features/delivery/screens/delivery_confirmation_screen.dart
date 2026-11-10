@@ -424,17 +424,25 @@ class _DeliveryConfirmationViewState extends State<DeliveryConfirmationView>
 
   Future<void> _confirmManually(DeliveryViewModel viewModel) async {
     await viewModel.confirmDeliveryByButton(widget.deliveryId);
-    
+    if (!mounted) return;
     if (viewModel.error == null) {
       _showSuccessDialog('Manual Confirmation', 'Delivery confirmed successfully!');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(viewModel.error!), backgroundColor: Colors.red[700]),
+      );
     }
   }
 
   Future<void> _confirmByCode(DeliveryViewModel viewModel) async {
     await viewModel.confirmDeliveryByCode(widget.deliveryId, _codeController.text);
-    
+    if (!mounted) return;
     if (viewModel.error == null) {
       _showSuccessDialog('Code Confirmation', 'Delivery confirmed with code successfully!');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(viewModel.error!), backgroundColor: Colors.red[700]),
+      );
     }
   }
 
