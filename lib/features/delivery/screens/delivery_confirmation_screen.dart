@@ -1,17 +1,17 @@
 /// Delivery Confirmation Screen
-/// 
+///
 /// UI for confirming deliveries using multiple methods:
 /// - Manual button confirmation
 /// - One-time delivery code entry
-/// - QR scanning (future implementation)
-/// 
-/// This screen provides an extensible confirmation flow that works
-/// without camera access or QR dependencies.
+/// - QR scanning via SalesScanScreen (mobile camera) or manual order-number
+///   entry (desktop / no camera)
 library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+import '../../sales/screens/sales_scan_screen.dart';
 import '../viewmodels/delivery_viewmodel.dart';
 
 class DeliveryConfirmationScreen extends StatelessWidget {
@@ -112,7 +112,7 @@ class _DeliveryConfirmationViewState extends State<DeliveryConfirmationView>
           tabs: const [
             Tab(icon: Icon(Icons.check_circle), text: 'Manual'),
             Tab(icon: Icon(Icons.code), text: 'Code'),
-            Tab(icon: Icon(Icons.qr_code_scanner), text: 'QR (Future)'),
+            Tab(icon: Icon(Icons.qr_code_scanner), text: 'QR Scan'),
           ],
         ),
       ),
@@ -338,52 +338,62 @@ class _DeliveryConfirmationViewState extends State<DeliveryConfirmationView>
       ),
     );
 
-  Widget _buildQRConfirmation(DeliveryViewModel viewModel) => Padding(
+  Widget _buildQRConfirmation(DeliveryViewModel viewModel) {
+    final canScan = scannerCameraSupported;
+    return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.qr_code_scanner,
-                    size: 80,
-                    color: Colors.grey[400],
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      canScan ? Icons.qr_code_scanner : Icons.keyboard_outlined,
+                      size: 40,
+                      color: AppTheme.primary,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'QR Code Scanning',
+                    canScan ? 'Scan Customer QR Code' : 'Enter Order Number',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'QR code scanning will be available in a future update.\n\n'
-                    'For now, please use Manual Confirmation or Delivery Code methods.',
+                  const SizedBox(height: 8),
+                  Text(
+                    canScan
+                        ? 'Point your camera at the QR code on the customer\'s order screen to confirm delivery.'
+                        : 'Enter the order number shown on the customer\'s order screen to confirm delivery.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: Colors.grey),
                   ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange[50],
-                      border: Border.all(color: Colors.orange[200]!),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'TODO: QR scanning will be integrated when qr_code_scanner dependency is restored',
-                            style: TextStyle(fontSize: 12, color: Colors.orange),
-                          ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SalesScanScreen(),
                         ),
-                      ],
+                      ),
+                      icon: Icon(canScan ? Icons.qr_code_scanner : Icons.keyboard_outlined),
+                      label: Text(canScan ? 'Open Scanner' : 'Enter Order Number'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ),
                 ],
@@ -393,6 +403,7 @@ class _DeliveryConfirmationViewState extends State<DeliveryConfirmationView>
         ],
       ),
     );
+  }
 
   Widget _buildInfoRow(String label, String value) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
