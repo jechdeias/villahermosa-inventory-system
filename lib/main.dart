@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,6 +133,22 @@ void main() async {
     debugPrint('⏭️ Auto-sync on startup disabled in Settings — skipping');
   }
   
+  // Periodic background sync — every 5 minutes while the app is running.
+  // Pushes any pending local changes and pulls remote updates (new orders
+  // from customer devices, status changes from admin, etc.).
+  Timer.periodic(const Duration(minutes: 5), (_) async {
+    if (!AppSettings.instance.autoSyncOnStartup) return;
+    try {
+      final results = await Connectivity().checkConnectivity();
+      if (results.contains(ConnectivityResult.none)) return;
+      debugPrint('⏱️ Periodic sync triggered');
+      await SyncManager.instance.syncPendingData();
+      await SyncManager.instance.pull();
+    } catch (e) {
+      debugPrint('⚠️ Periodic sync error: $e');
+    }
+  });
+
   runApp(ProviderScope(child: VillahermosaInventoryApp(database: database)));
 }
 
