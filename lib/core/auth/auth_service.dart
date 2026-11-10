@@ -15,6 +15,7 @@ class AuthService {
   
   User? _currentUser;
   bool _isAuthenticated = false;
+  bool _isLoggingInWithOAuth = false;
 
   /// Check if user is authenticated
   bool get isAuthenticated => _isAuthenticated;
@@ -253,6 +254,21 @@ class AuthService {
   /// Google sign-in), inserts a customer-role row locally and queues a sync.
   /// Then sets the local AuthService session so the app navigates normally.
   Future<User?> loginWithOAuthSession(Session session) async {
+    // Guard against concurrent calls (main.dart + login_screen both listen)
+    if (_isLoggingInWithOAuth) {
+      debugPrint('⏳ loginWithOAuthSession already in progress — waiting');
+      // Poll until the first call finishes
+      for (var i = 0; i < 40; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        if (!_isLoggingInWithOAuth) break;
+      }
+      return _currentUser;
+    }
+    if (_isAuthenticated && _currentUser != null) {
+      debugPrint('✅ Already authenticated via OAuth — skipping duplicate call');
+      return _currentUser;
+    }
+    _isLoggingInWithOAuth = true;
     try {
       final email = session.user.email;
       if (email == null) {
@@ -313,6 +329,8 @@ class AuthService {
     } catch (e) {
       debugPrint('💥 loginWithOAuthSession error: $e');
       return null;
+    } finally {
+      _isLoggingInWithOAuth = false;
     }
   }
 

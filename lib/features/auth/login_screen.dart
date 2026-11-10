@@ -45,29 +45,32 @@ class _LoginScreenState extends State<LoginScreen> {
     if (event == AuthChangeEvent.signedIn && session != null) {
       final provider = session.user.appMetadata['provider'] as String?;
       if (provider == 'google') {
-        // main.dart's listener calls loginWithOAuthSession() which is async.
-        // Poll briefly until AuthService has the local session set, then navigate.
-        _waitForOAuthSessionThenNavigate();
+        _handleOAuthCallback(session);
       }
     }
   }
 
-  Future<void> _waitForOAuthSessionThenNavigate() async {
-    // Give loginWithOAuthSession() up to 10 seconds to finish
-    for (var i = 0; i < 20; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 500));
+  Future<void> _handleOAuthCallback(Session session) async {
+    if (!mounted) return;
+    setState(() => _isGoogleLoading = true);
+    try {
+      final user = await AuthService.instance.loginWithOAuthSession(session);
       if (!mounted) return;
-      if (AuthService.instance.isAuthenticated) {
-        _navigateToDashboard();
-        return;
+      if (user != null) {
+        await _navigateToDashboard();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google sign-in failed. Please try again.')),
+        );
+        setState(() => _isGoogleLoading = false);
       }
-    }
-    // Timed out — show an error
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Google sign-in timed out. Please try again.')),
-      );
-      setState(() => _isGoogleLoading = false);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google sign-in error: $e')),
+        );
+        setState(() => _isGoogleLoading = false);
+      }
     }
   }
 
