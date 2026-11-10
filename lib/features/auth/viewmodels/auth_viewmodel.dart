@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 import '../data/auth_repository.dart';
@@ -82,6 +83,31 @@ class AuthViewModel extends ChangeNotifier {
       return await _authRepository.signup(firstName, lastName, email, password);
     } catch (e) {
       _setError('Signup failed: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Signs in with Google via Supabase OAuth.
+  ///
+  /// On mobile, Supabase opens a browser for the Google consent flow and
+  /// returns via deep-link.  On desktop/web it opens the system browser.
+  /// Returns true when the OAuth flow was launched successfully (the actual
+  /// session arrival is asynchronous via Supabase's auth state listener).
+  Future<bool> signInWithGoogle() async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.villahermosa://login-callback',
+      );
+      // OAuth launches a browser; the result arrives via deep-link.
+      // Loading will clear when the caller re-checks after returning.
+      return true;
+    } catch (e) {
+      _setError('Google sign-in failed: ${e.toString()}');
       return false;
     } finally {
       _setLoading(false);

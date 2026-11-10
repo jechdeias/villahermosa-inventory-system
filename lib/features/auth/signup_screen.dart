@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'viewmodels/auth_viewmodel.dart';
-import '../../../shared/theme/app_theme.dart';
+import 'widgets/responsive_auth_screen.dart';
+import 'widgets/signup_card.dart';
 
 /// Signup Screen
-/// Provides user registration interface
+///
+/// Provides customer self-registration.  Styled with [ResponsiveAuthScreen]
+/// and [SignupCard] to match the login screen's design system.
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -18,10 +21,9 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   final AuthViewModel _authViewModel = AuthViewModel.instance;
-  
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -34,283 +36,66 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: LegacyAppTheme.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: LegacyAppTheme.primaryColor),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Logo
-                  Image.asset(
-                    'assets/images/logo/vm_logo.png',
-                    height: 80,
-                    width: 80,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Create Account',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: LegacyAppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Sign up to get started',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // First Name Field
-                  TextFormField(
-                    controller: _firstNameController,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      labelText: 'First Name',
-                      hintText: 'Enter your first name',
-                      prefixIcon: Icon(Icons.person_outline),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your first name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Last Name Field
-                  TextFormField(
-                    controller: _lastNameController,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      labelText: 'Last Name',
-                      hintText: 'Enter your last name',
-                      prefixIcon: Icon(Icons.person_outline),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your last name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email Field
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Enter your email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Password Field
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Create a password',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                      border: const OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Confirm Password Field
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: _obscureConfirmPassword,
-                    decoration: InputDecoration(
-                      labelText: 'Confirm Password',
-                      hintText: 'Confirm your password',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                      ),
-                      border: const OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Error Message
-                  ListenableBuilder(
-                    listenable: _authViewModel,
-                    builder: (context, child) {
-                      if (_authViewModel.errorMessage != null) {
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            border: Border.all(color: Colors.red.shade200),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.error_outline, color: Colors.red.shade600, size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _authViewModel.errorMessage!,
-                                  style: TextStyle(color: Colors.red.shade600, fontSize: 14),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-
-                  // Signup Button
-                  ListenableBuilder(
-                    listenable: _authViewModel,
-                    builder: (context, child) {
-                      return ElevatedButton(
-                        onPressed: _authViewModel.isLoading ? null : _handleSignup,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: LegacyAppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: _authViewModel.isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : const Text('Create Account', style: TextStyle(fontSize: 16)),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Login Link
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Already have an account? Sign in',
-                      style: TextStyle(color: LegacyAppTheme.primaryColor),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+  Widget build(BuildContext context) => ResponsiveAuthScreen(
+        showBackgroundPattern: true,
+        child: ListenableBuilder(
+          listenable: _authViewModel,
+          builder: (context, _) => SignupCard(
+            formKey: _formKey,
+            firstNameController: _firstNameController,
+            lastNameController: _lastNameController,
+            emailController: _emailController,
+            passwordController: _passwordController,
+            confirmPasswordController: _confirmPasswordController,
+            isLoading: _authViewModel.isLoading,
+            isGoogleLoading: _isGoogleLoading,
+            errorMessage: _authViewModel.errorMessage,
+            onPrimaryButtonPressed: _handleSignup,
+            onGoogleSignIn: _handleGoogleSignIn,
+            onLinkPressed: () => Navigator.pop(context),
+            title: 'Create Account',
+            subtitle: 'Join Villahermosa today',
+            primaryButtonText: 'Create Account',
+            promptText: 'Already have an account?',
+            linkText: 'Sign in',
           ),
         ),
-      ),
-    );
-  }
-
-  Future<void> _handleSignup() async {
-    if (_formKey.currentState!.validate()) {
-      if (_passwordController.text != _confirmPasswordController.text) {
-        _authViewModel.clearError();
-        // Set error through viewmodel
-        return;
-      }
-
-      _authViewModel.clearError();
-      
-      final success = await _authViewModel.signUp(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
       );
 
-      if (success && mounted) {
-        // Show success message and navigate to login
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created successfully! You can now log in.'),
-            backgroundColor: LegacyAppTheme.primaryColor,
-          ),
-        );
-        Navigator.pop(context);
+  Future<void> _handleSignup() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _authViewModel.clearError();
+
+    final success = await _authViewModel.signUp(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created! You can now sign in.'),
+          backgroundColor: Color(0xFF1E1E1E),
+        ),
+      );
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+    _authViewModel.clearError();
+
+    try {
+      final launched = await _authViewModel.signInWithGoogle();
+      if (!launched && mounted) {
+        // Error already set in viewmodel; SignupCard will display it.
       }
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 }

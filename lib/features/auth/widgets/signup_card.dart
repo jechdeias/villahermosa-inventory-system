@@ -44,6 +44,8 @@ class SignupCard extends StatefulWidget {
     this.isLoading = false,
     this.errorMessage,
     this.formKey,
+    this.onGoogleSignIn,
+    this.isGoogleLoading = false,
   });
   // Configurable text content
   final String logoIcon;
@@ -83,6 +85,10 @@ class SignupCard extends StatefulWidget {
   final String? errorMessage;
   final GlobalKey<FormState>? formKey;
 
+  // Google sign-in
+  final VoidCallback? onGoogleSignIn;
+  final bool isGoogleLoading;
+
   @override
   State<SignupCard> createState() => _SignupCardState();
 
@@ -119,6 +125,8 @@ class SignupCard extends StatefulWidget {
     properties.add(DiagnosticsProperty<bool>('isLoading', isLoading));
     properties.add(StringProperty('errorMessage', errorMessage));
     properties.add(DiagnosticsProperty<GlobalKey<FormState>?>('formKey', formKey));
+    properties.add(ObjectFlagProperty<VoidCallback?>.has('onGoogleSignIn', onGoogleSignIn));
+    properties.add(DiagnosticsProperty<bool>('isGoogleLoading', isGoogleLoading));
   }
 }
 
@@ -405,8 +413,67 @@ class _SignupCardState extends State<SignupCard> {
                         )
                       : Text(widget.primaryButtonText),
                 ),
+
+                // Google sign-in divider + button
+                if (widget.onGoogleSignIn != null) ...[
+                  const SizedBox(height: AuthTheme.sectionSpacing),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or',
+                          style: AuthTheme.promptTextStyle,
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: AuthTheme.sectionSpacing),
+                  OutlinedButton(
+                    onPressed: (widget.isGoogleLoading || widget.isLoading)
+                        ? null
+                        : widget.onGoogleSignIn,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, AuthTheme.buttonHeight),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AuthTheme.buttonBorderRadius),
+                      ),
+                      side: const BorderSide(color: AuthTheme.inputBorderColor),
+                    ),
+                    child: widget.isGoogleLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Google "G" logo drawn with colored text
+                              const Text(
+                                'G',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF4285F4),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Continue with Google',
+                                style: AuthTheme.labelStyle.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
+
                 const SizedBox(height: AuthTheme.sectionSpacing),
-                
+
                 // Sign In Prompt
                 Center(
                   child: Wrap(
