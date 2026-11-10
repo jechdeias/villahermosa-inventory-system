@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
+import 'package:bcrypt/bcrypt.dart';
 import 'dart:async';
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/villahermosa_theme.dart';
@@ -216,6 +215,32 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     );
     if (confirm == true && mounted) {
       await widget.database.activateUser(user.uuid);
+    }
+  }
+
+  Future<void> _deleteUser(User user) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete User'),
+        content: Text(
+          'Permanently delete ${_getDisplayName(user)} (${user.email})?\n\nThis cannot be undone.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      await widget.database.softDeleteUser(user.uuid);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${_getDisplayName(user)} deleted')),
+      );
     }
   }
 
@@ -442,7 +467,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       Expanded(flex: 2, child: Text('ROLE', style: _colHeader)),
       Expanded(flex: 2, child: Text('STATUS', style: _colHeader)),
       Expanded(flex: 2, child: Text('CREATED', style: _colHeader)),
-      SizedBox(width: 96, child: Text('ACTIONS', style: _colHeader)),
+      SizedBox(width: 120, child: Text('ACTIONS', style: _colHeader)),
     ]),
   );
 
@@ -495,13 +520,14 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         ),
         // ACTIONS
         SizedBox(
-          width: 96,
+          width: 120,
           child: Row(children: [
             _actionBtn(Icons.visibility_outlined, 'View', () => _showUserDetails(user)),
             _actionBtn(Icons.edit_outlined, 'Edit', () => _editUser(user)),
             user.isActive
               ? _actionBtn(Icons.person_off_outlined, 'Deactivate', () => _deactivateUser(user), color: AppTheme.error)
               : _actionBtn(Icons.person_outlined, 'Activate', () => _activateUser(user), color: AppTheme.success),
+            _actionBtn(Icons.delete_outline, 'Delete', () => _deleteUser(user), color: AppTheme.error),
           ]),
         ),
       ]),
@@ -544,6 +570,11 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
             label: 'Activate',
             onPressed: () => _activateUser(user),
           ),
+        MobileCardAction(
+          label: 'Delete',
+          color: AppTheme.error,
+          onPressed: () => _deleteUser(user),
+        ),
       ],
     );
   }
@@ -889,11 +920,8 @@ class _AddUserDialogState extends State<_AddUserDialog> {
     }
   }
 
-  String _hashPassword(String password) {
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
-  }
+  String _hashPassword(String password) =>
+      BCrypt.hashpw(password, BCrypt.gensalt());
 }
 
 class _UserDetailsDialog extends StatelessWidget {
@@ -1323,11 +1351,8 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
     }
   }
 
-  String _hashPassword(String password) {
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
-  }
+  String _hashPassword(String password) =>
+      BCrypt.hashpw(password, BCrypt.gensalt());
 }
 
 // ── User Accounts Filter Sheet ────────────────────────────────────────────────
