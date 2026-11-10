@@ -1,7 +1,9 @@
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/customers_provider.dart';
 import '../services/customers_service.dart';
@@ -21,6 +23,7 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
   late final _businessNameCtrl = TextEditingController(text: widget.editing?.businessName ?? '');
   late final _contactCtrl = TextEditingController(text: widget.editing?.contactNumber ?? '');
   late final _barangayCtrl = TextEditingController(text: widget.editing?.barangay ?? '');
+  late final _emailCtrl = TextEditingController(text: widget.editing?.email ?? '');
   late final _creditLimitCtrl = TextEditingController(text: '${widget.editing?.creditLimit ?? 0}');
   String? _town;
   String? _channel;
@@ -39,6 +42,7 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
     _businessNameCtrl.dispose();
     _contactCtrl.dispose();
     _barangayCtrl.dispose();
+    _emailCtrl.dispose();
     _creditLimitCtrl.dispose();
     super.dispose();
   }
@@ -62,11 +66,13 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
     setState(() => _saving = true);
     try {
       final service = ref.read(customersServiceProvider);
+      final email = _emailCtrl.text.trim().toLowerCase();
       final companion = CustomersCompanion(
         name: Value(_nameCtrl.text.trim()),
         businessName: Value(_businessNameCtrl.text.trim().isEmpty ? null : _businessNameCtrl.text.trim()),
         contactNumber: Value(_contactCtrl.text.trim()),
         barangay: Value(_barangayCtrl.text.trim().isEmpty ? null : _barangayCtrl.text.trim()),
+        email: Value(email.isEmpty ? null : email),
         town: Value(_town),
         municipality: Value(_town!),
         province: const Value('Marinduque'),
@@ -79,6 +85,11 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
         await service.updateCustomer(widget.editing!.uuid, companion);
       } else {
         await service.createCustomer(companion.copyWith(uuid: Value(const Uuid().v4())));
+        // Auto-create a user account for this customer so they can log in
+        // and their profile is linked immediately.
+        if (email.isNotEmpty) {
+          await _autoCreateUserAccount(email);
+        }
       }
 
       widget.onClose();
@@ -89,6 +100,36 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// Creates a customer-role user account if none already exists for [email].
+  /// The account has a blank password so the customer must set their own via
+  /// Supabase Auth (or the admin sends them an invite link).
+  Future<void> _autoCreateUserAccount(String email) async {
+    try {
+      final db = AuthService.instance.database;
+      final existing = await db.getUserByEmail(email);
+      if (existing != null) return; // already has an account
+      final nameParts = _businessNameCtrl.text.trim().split(' ');
+      final firstName = _nameCtrl.text.trim().split(' ').first;
+      final lastName = nameParts.length > 1 ? nameParts.last : '';
+      await db.createUser(UsersCompanion.insert(
+        uuid: const Uuid().v4(),
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        passwordHash: '', // no local password — they log in via Supabase Auth
+        role: 'customer',
+        isActive: const Value(true),
+        isDeleted: const Value(false),
+        syncStatus: const Value('pending'),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+      ));
+    } catch (e) {
+      // Non-fatal: customer record was already saved; just means no auto-login
+      debugPrint('⚠️ Could not auto-create user account for $email: $e');
     }
   }
 
@@ -120,6 +161,13 @@ class _AddCustomerPanelState extends ConsumerState<AddCustomerPanel> {
                   TextField(controller: _businessNameCtrl, style: const TextStyle(fontSize: 13), decoration: _dec('Owner / Business Name')),
                   const SizedBox(height: 10),
                   TextField(controller: _contactCtrl, style: const TextStyle(fontSize: 13), decoration: _dec('Contact Number')),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _emailCtrl,
+                    style: const TextStyle(fontSize: 13),
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: _dec('Email (for customer login)'),
+                  ),
                   const SizedBox(height: 10),
                   TextField(controller: _barangayCtrl, style: const TextStyle(fontSize: 13), decoration: _dec('Barangay')),
                   const SizedBox(height: 10),

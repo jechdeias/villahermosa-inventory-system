@@ -1,11 +1,15 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/auth/auth_service.dart';
+import '../../../core/database/app_database.dart';
+import '../../admin/providers/customers_provider.dart' show customersProvider, kCustomerTowns, kCustomerChannels;
 import '../providers/customer_providers.dart';
 import '../widgets/customer_common.dart';
 import '../widgets/customer_shell.dart';
 import '../../../core/theme/app_theme.dart';
+
 
 class CustomerProfileScreen extends ConsumerStatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -31,6 +35,75 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     if (parts.isEmpty) return p.storeName.isEmpty ? '?' : p.storeName[0].toUpperCase();
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
+  Future<void> _editStoreDetails(CustomerProfile p) async {
+    if (p.customerUuid == null) return;
+    final barangayCtrl = TextEditingController(text: p.barangay);
+    String? town = p.town.isEmpty ? null : p.town;
+    String? channel = p.channel.isEmpty ? null : p.channel;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Edit Store Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(
+                controller: barangayCtrl,
+                decoration: const InputDecoration(labelText: 'Barangay'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: town,
+                decoration: const InputDecoration(labelText: 'Town'),
+                items: kCustomerTowns.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                onChanged: (v) => setDialogState(() => town = v),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: channel,
+                decoration: const InputDecoration(labelText: 'Channel'),
+                items: kCustomerChannels.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (v) => setDialogState(() => channel = v),
+              ),
+            ]),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(color: CcColors.muted))),
+            CcPrimaryButton(label: 'Save', expand: false, height: 44, onPressed: () => Navigator.pop(ctx, true)),
+          ],
+        ),
+      ),
+    );
+    final barangay = barangayCtrl.text.trim();
+    barangayCtrl.dispose();
+    if (ok != true || p.customerUuid == null) return;
+    try {
+      final db = AuthService.instance.database;
+      await db.updateCustomer(
+        p.customerUuid!,
+        CustomersCompanion(
+          barangay: Value(barangay.isEmpty ? null : barangay),
+          town: Value(town),
+          municipality: Value(town ?? ''),
+          channel: Value(channel),
+          storeType: Value(channel ?? ''),
+          syncStatus: const Value('pending'),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+      ref.invalidate(customersProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Store details updated')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
   }
 
   Future<void> _editPhone(CustomerProfile p) async {
@@ -118,7 +191,20 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                 ]),
               ),
               const SizedBox(height: 8),
-              const CcSectionLabel('Store details'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const CcSectionLabel('Store details'),
+                  if (p.hasCustomerRecord)
+                    InkWell(
+                      onTap: () => _editStoreDetails(p),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                        child: Text('Edit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: CcColors.blue)),
+                      ),
+                    ),
+                ],
+              ),
               CcInfoRows(rows: [
                 (label: 'Barangay', value: ccValueText(p.barangay.isEmpty ? '—' : p.barangay)),
                 (label: 'Town', value: ccValueText(townLine)),

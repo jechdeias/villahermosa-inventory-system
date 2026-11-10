@@ -40,12 +40,20 @@ class _CustomerShopScreenState extends ConsumerState<CustomerShopScreen> {
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(color: CcColors.primary, borderRadius: BorderRadius.circular(8)),
-                  child: const Text('V', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/images/logo/vm_logo.png',
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 40, height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: CcColors.primary, borderRadius: BorderRadius.circular(8)),
+                      child: const Text('V', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 const Text('Villahermosa', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: CcColors.text)),
