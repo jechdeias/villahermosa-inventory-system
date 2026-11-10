@@ -1385,15 +1385,27 @@ class SyncEngine {
 
       return {
         'id': record.id,
+        'uuid': record.uuid,
         'customer_id': record.customerId,
         'status': record.status,
+        'warehouse_status': record.warehouseStatus,
         'total_amount': record.totalAmount,
+        'subtotal': record.subtotal,
+        'tax_amount': record.taxAmount,
         'notes': record.customerNotes,
+        'delivery_address': record.deliveryAddress,
+        'payment_status': record.paymentStatus,
+        'priority': record.priority,
         'is_deleted': record.isDeleted,
         'sync_status': record.syncStatus,
         'created_at': record.createdAt.toIso8601String(),
         'updated_at': record.updatedAt.toIso8601String(),
-        'order_code': record.orderNumber,
+        // order_number is the display code (e.g. "ORD-2409") shown in the UI.
+        // order_code is a separate Supabase column (payments reference it).
+        // Previously this map sent 'order_code': record.orderNumber, which
+        // left order_number NULL in Supabase and caused the admin pull to
+        // fall back to 'ORD-${data['id']}' instead of the real order number.
+        'order_number': record.orderNumber,
         'store_name': record.storeName,
         'route_name': record.routeName,
         'sales_rep_id': record.salesRepId,
