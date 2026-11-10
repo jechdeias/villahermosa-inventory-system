@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'widgets/responsive_auth_screen.dart';
@@ -51,7 +52,9 @@ class _SignupScreenState extends State<SignupScreen> {
             isGoogleLoading: _isGoogleLoading,
             errorMessage: _authViewModel.errorMessage,
             onPrimaryButtonPressed: _handleSignup,
-            onGoogleSignIn: _handleGoogleSignIn,
+            onGoogleSignIn: defaultTargetPlatform == TargetPlatform.android
+                ? _handleGoogleSignIn
+                : null,
             onLinkPressed: () => Navigator.pop(context),
             title: 'Create Account',
             subtitle: 'Join Villahermosa today',
