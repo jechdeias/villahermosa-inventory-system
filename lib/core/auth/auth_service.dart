@@ -107,10 +107,18 @@ class AuthService {
       // device has never synced. Authenticate with Supabase first so we have
       // a session, then pull the full users table before the local login.
       final localUserCount = await _localUserCount();
+      bool supabaseAuthSucceeded = false;
       if (localUserCount == 0) {
         debugPrint('📭 Fresh install detected — bootstrapping users from Supabase');
-        await _attemptSupabaseAuth(identifier, password);
+        supabaseAuthSucceeded = await _attemptSupabaseAuth(identifier, password);
         await SyncManager.instance.bootstrapUsers();
+        // After bootstrap the pulled row may have an empty password_hash
+        // (account created via Supabase Auth directly, not through the app).
+        // Since Supabase Auth already confirmed the credentials, write the
+        // bcrypt hash locally now so _localLogin can verify it.
+        if (supabaseAuthSucceeded) {
+          await _ensureLocalPasswordHash(identifier, password);
+        }
       }
 
       // STEP 1: Try local Drift auth first (works offline)
@@ -166,7 +174,7 @@ class AuthService {
       final storedHash = user.passwordHash;
       final passwordValid = _verifyPassword(password, storedHash);
       
-      debugPrint('🔑 Stored hash: ${storedHash.substring(0, 20)}...');
+      debugPrint('🔑 Stored hash: ${storedHash.length > 20 ? storedHash.substring(0, 20) : storedHash}...');
       debugPrint('🔑 Password valid: $passwordValid');
 
       if (!passwordValid) {
@@ -187,31 +195,56 @@ class AuthService {
     }
   }
 
-  /// Attempt Supabase Auth authentication (blocking)
-  Future<void> _attemptSupabaseAuth(String email, String password) async {
+  /// Attempt Supabase Auth authentication (blocking).
+  /// Returns true if a session was established, false otherwise.
+  Future<bool> _attemptSupabaseAuth(String email, String password) async {
     try {
       debugPrint('🔑 Attempting Supabase Auth: $email');
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
-      
+
       if (response.session != null) {
         debugPrint('✅ Supabase Auth established');
         debugPrint('🎫 Token: ${response.session!.accessToken.substring(0, 30)}...');
+        return true;
       } else {
         debugPrint('⚠️ No session returned from Supabase Auth');
+        return false;
       }
     } on AuthException catch (e) {
       debugPrint('❌ Supabase Auth failed: ${e.message}');
       debugPrint('❌ Status code: ${e.statusCode}');
+      return false;
     } catch (e) {
       debugPrint('❌ Supabase Auth error: $e');
+      return false;
     }
-    
-    // Always log current session state
-    final currentSession = Supabase.instance.client.auth.currentSession;
-    debugPrint('📋 Current session: ${currentSession != null ? "Active" : "None"}');
+  }
+
+  /// After a fresh-install bootstrap the pulled user row may have an empty
+  /// password_hash (if the account was originally created via Supabase Auth
+  /// directly). Since Supabase Auth already confirmed the password is correct,
+  /// write the bcrypt hash locally so _localLogin can verify it.
+  Future<void> _ensureLocalPasswordHash(String email, String password) async {
+    try {
+      final user = await _database.getUserByEmail(email);
+      if (user == null) return;
+      if (user.passwordHash.isNotEmpty) return; // already has a hash
+      debugPrint('🔧 Writing local password hash for $email (was empty after bootstrap)');
+      final newHash = _hashPassword(password);
+      await (_database.update(_database.users)
+        ..where((u) => u.email.equals(email)))
+        .write(UsersCompanion(
+          passwordHash: Value(newHash),
+          syncStatus: const Value('synced'), // don't re-push this back up
+          updatedAt: Value(DateTime.now()),
+        ));
+      debugPrint('✅ Local password hash written');
+    } catch (e) {
+      debugPrint('⚠️ _ensureLocalPasswordHash failed: $e');
+    }
   }
 
   /// Logout user
