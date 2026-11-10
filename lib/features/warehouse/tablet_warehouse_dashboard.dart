@@ -19,6 +19,103 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
   final int _lowStockAlerts = 3;
   final int _activeRoutes = 6;
 
+  void _showSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Warehouse Settings',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('Notifications'),
+              subtitle: const Text('Manage alert preferences'),
+              trailing: const Icon(Icons.chevron_right, size: 18),
+              contentPadding: EdgeInsets.zero,
+              onTap: () {
+                Navigator.pop(context);
+                _showNotificationsSheet(context);
+              },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Color(0xFFE94560)),
+              title: const Text('Logout',
+                  style: TextStyle(color: Color(0xFFE94560))),
+              contentPadding: EdgeInsets.zero,
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
+  void _showNotificationsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Notifications',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close, size: 20, color: Color(0xFF9CA3AF)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _notifTile(Icons.warning_amber_rounded, const Color(0xFFF59E0B),
+                'Low stock: $_lowStockAlerts items', 'Super Tibay products below threshold'),
+            _notifTile(Icons.local_shipping_outlined, const Color(0xFF3B82F6),
+                '$_activeRoutes routes active today', 'All routes dispatched on schedule'),
+            _notifTile(Icons.inventory_2_outlined, const Color(0xFF10B981),
+                'Inventory count up to date', '$_totalProducts products tracked'),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _notifTile(IconData icon, Color color, String title, String sub) =>
+    Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(children: [
+        Container(
+          width: 36, height: 36,
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(sub, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+          ],
+        )),
+      ]),
+    );
+
   @override
   Widget build(BuildContext context) => TabletWarehouseTheme.responsiveLayout(
       context: context,
@@ -176,14 +273,14 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
                           ],
                         ),
                       ),
-                      IconButton(
+                      Builder(builder: (ctx) => IconButton(
                         icon: const Icon(
                           Icons.settings,
                           color: Colors.white70,
                           size: 20,
                         ),
-                        onPressed: () {},
-                      ),
+                        onPressed: () => _showSettingsDialog(ctx),
+                      )),
                     ],
                   ),
                 ),
@@ -237,16 +334,25 @@ class _TabletWarehouseDashboardState extends State<TabletWarehouseDashboard> {
         context: context,
         title: 'Villahermosa Marketing Overview',
         actions: [
-          IconButton(
+          Builder(builder: (ctx) => IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {},
+            onPressed: () {
+              setState(() {});
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                const SnackBar(
+                  content: Text('Dashboard refreshed'),
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
             tooltip: 'Refresh',
-          ),
-          IconButton(
+          )),
+          Builder(builder: (ctx) => IconButton(
             icon: const Icon(Icons.notifications),
-            onPressed: () {},
+            onPressed: () => _showNotificationsSheet(ctx),
             tooltip: 'Notifications',
-          ),
+          )),
         ],
       ),
       body: SingleChildScrollView(

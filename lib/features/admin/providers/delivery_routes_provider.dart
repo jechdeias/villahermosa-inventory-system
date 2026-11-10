@@ -14,8 +14,11 @@ final deliveryRoutesSearchProvider = StateProvider<String>((ref) => '');
 
 final selectedDeliveryRouteProvider = StateProvider<DeliveryRoute?>((ref) => null);
 
+final deliveryRoutesStatusFilterProvider = StateProvider<String?>((ref) => null);
+
 final filteredDeliveryRoutesProvider = Provider<List<DeliveryRoute>>((ref) {
   final search = ref.watch(deliveryRoutesSearchProvider).toLowerCase();
+  final statusFilter = ref.watch(deliveryRoutesStatusFilterProvider);
   var list = ref.watch(deliveryRoutesStreamProvider).value ?? [];
 
   if (search.isNotEmpty) {
@@ -23,6 +26,9 @@ final filteredDeliveryRoutesProvider = Provider<List<DeliveryRoute>>((ref) {
         r.routeName.toLowerCase().contains(search) ||
         r.municipality.toLowerCase().contains(search) ||
         (r.assignedRepName ?? '').toLowerCase().contains(search)).toList();
+  }
+  if (statusFilter != null) {
+    list = list.where((r) => r.status == statusFilter).toList();
   }
   return list;
 });

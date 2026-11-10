@@ -31,6 +31,8 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
   List<User> _filteredUsers = [];
   StreamSubscription<List<User>>? _userSubscription;
   String _selectedTab = 'all';
+  DateTime? _joinedAfter;
+  DateTime? _joinedBefore;
 
   @override
   void initState() {
@@ -88,6 +90,12 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       case 'inactive':
         result = result.where((u) => !u.isActive).toList();
     }
+    if (_joinedAfter != null) {
+      result = result.where((u) => !u.createdAt.isBefore(_joinedAfter!)).toList();
+    }
+    if (_joinedBefore != null) {
+      result = result.where((u) => !u.createdAt.isAfter(_joinedBefore!.add(const Duration(days: 1)))).toList();
+    }
     final q = _searchController.text.toLowerCase();
     if (q.isNotEmpty) {
       result = result.where((u) =>
@@ -96,6 +104,25 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       ).toList();
     }
     return result;
+  }
+
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _UserAccountsFilterSheet(
+        joinedAfter: _joinedAfter,
+        joinedBefore: _joinedBefore,
+        onApply: (after, before) {
+          setState(() {
+            _joinedAfter = after;
+            _joinedBefore = before;
+            _filteredUsers = _applyFilters(_allUsers);
+          });
+        },
+      ),
+    );
   }
 
   String _getDisplayName(User user) {
@@ -328,13 +355,18 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         ),
       ),
     );
+    final filterActive = _joinedAfter != null || _joinedBefore != null;
     final filterButton = OutlinedButton.icon(
-      onPressed: () {},
-      icon: const Icon(Icons.filter_list_outlined, size: 14),
-      label: const Text('Filter', style: TextStyle(fontSize: 13)),
+      onPressed: _showFilterSheet,
+      icon: Icon(Icons.filter_list_outlined, size: 14,
+          color: filterActive ? AppTheme.primary : const Color(0xFF374151)),
+      label: Text('Filter', style: TextStyle(
+          fontSize: 13,
+          color: filterActive ? AppTheme.primary : const Color(0xFF374151))),
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF374151),
-        side: const BorderSide(color: AppTheme.border),
+        foregroundColor: filterActive ? AppTheme.primary : const Color(0xFF374151),
+        backgroundColor: filterActive ? AppTheme.primary.withOpacity(0.06) : null,
+        side: BorderSide(color: filterActive ? AppTheme.primary : AppTheme.border),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         minimumSize: const Size(0, 36),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -1263,5 +1295,156 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
     final bytes = utf8.encode(password);
     final digest = sha256.convert(bytes);
     return digest.toString();
+  }
+}
+
+// ── User Accounts Filter Sheet ────────────────────────────────────────────────
+
+class _UserAccountsFilterSheet extends StatefulWidget {
+  const _UserAccountsFilterSheet({
+    required this.joinedAfter,
+    required this.joinedBefore,
+    required this.onApply,
+  });
+
+  final DateTime? joinedAfter;
+  final DateTime? joinedBefore;
+  final void Function(DateTime? after, DateTime? before) onApply;
+
+  @override
+  State<_UserAccountsFilterSheet> createState() => _UserAccountsFilterSheetState();
+}
+
+class _UserAccountsFilterSheetState extends State<_UserAccountsFilterSheet> {
+  DateTime? _after;
+  DateTime? _before;
+
+  @override
+  void initState() {
+    super.initState();
+    _after = widget.joinedAfter;
+    _before = widget.joinedBefore;
+  }
+
+  Future<void> _pickDate({required bool isAfter}) async {
+    final initial = isAfter ? (_after ?? DateTime.now()) : (_before ?? DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppTheme.primary),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() => isAfter ? _after = picked : _before = picked);
+    }
+  }
+
+  static String _fmtDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Filter Users',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Icon(Icons.close, size: 20, color: AppTheme.textMuted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text('DATE JOINED',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                  color: AppTheme.textLight, letterSpacing: 0.8)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickDate(isAfter: true),
+                  icon: const Icon(Icons.calendar_today_outlined, size: 14),
+                  label: Text(_after != null ? 'After: ${_fmtDate(_after!)}' : 'After date',
+                      style: const TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _after != null ? AppTheme.primary : AppTheme.textMuted,
+                    side: BorderSide(color: _after != null ? AppTheme.primary : AppTheme.border),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickDate(isAfter: false),
+                  icon: const Icon(Icons.calendar_today_outlined, size: 14),
+                  label: Text(_before != null ? 'Before: ${_fmtDate(_before!)}' : 'Before date',
+                      style: const TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _before != null ? AppTheme.primary : AppTheme.textMuted,
+                    side: BorderSide(color: _before != null ? AppTheme.primary : AppTheme.border),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    widget.onApply(null, null);
+                    Navigator.pop(context);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppTheme.border),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Clear', style: TextStyle(color: AppTheme.textMuted)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    widget.onApply(_after, _before);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Apply Filter'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

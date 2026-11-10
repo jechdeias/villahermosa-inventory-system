@@ -258,7 +258,7 @@ class _RoutesListColumn extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildToolbar(context),
+          _buildToolbar(context, ref),
           if (filteredRoutes.isEmpty)
             _buildEmptyState()
           else
@@ -278,7 +278,7 @@ class _RoutesListColumn extends ConsumerWidget {
     );
   }
 
-  Widget _buildToolbar(BuildContext context) {
+  Widget _buildToolbar(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: SizedBox(
@@ -303,25 +303,44 @@ class _RoutesListColumn extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.textMuted,
-                side: const BorderSide(color: AppTheme.border),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                minimumSize: const Size(0, 34),
-                textStyle: const TextStyle(fontSize: 12),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.tune, size: 16, color: AppTheme.textMuted),
-                  SizedBox(width: 6),
-                  Text('Filter', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                ],
-              ),
-            ),
+            () {
+              final statusFilter = ref.watch(deliveryRoutesStatusFilterProvider);
+              final filterActive = statusFilter != null;
+              return OutlinedButton(
+                onPressed: () => showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => UncontrolledProviderScope(
+                    container: ProviderScope.containerOf(context),
+                    child: const _DeliveryRoutesFilterSheet(),
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: filterActive ? AppTheme.primary : AppTheme.textMuted,
+                  backgroundColor: filterActive ? AppTheme.primary.withOpacity(0.06) : null,
+                  side: BorderSide(color: filterActive ? AppTheme.primary : AppTheme.border),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                  minimumSize: const Size(0, 34),
+                  textStyle: const TextStyle(fontSize: 12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.tune, size: 16, color: filterActive ? AppTheme.primary : AppTheme.textMuted),
+                    const SizedBox(width: 6),
+                    Text('Filter${filterActive ? ' ·' : ''}',
+                        style: TextStyle(fontSize: 12, color: filterActive ? AppTheme.primary : AppTheme.textMuted)),
+                    if (filterActive) ...[
+                      const SizedBox(width: 2),
+                      Container(width: 6, height: 6,
+                          decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle)),
+                    ],
+                  ],
+                ),
+              );
+            }(),
           ],
         ),
       ),
@@ -512,6 +531,113 @@ class _ActionIconButtonState extends State<_ActionIconButton> {
             child: Icon(widget.icon, size: 15, color: _hovered ? AppTheme.textMuted : AppTheme.textLight),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Delivery Routes Filter Sheet ──────────────────────────────────────────────
+
+class _DeliveryRoutesFilterSheet extends ConsumerStatefulWidget {
+  const _DeliveryRoutesFilterSheet();
+
+  @override
+  ConsumerState<_DeliveryRoutesFilterSheet> createState() => _DeliveryRoutesFilterSheetState();
+}
+
+class _DeliveryRoutesFilterSheetState extends ConsumerState<_DeliveryRoutesFilterSheet> {
+  String? _selectedStatus;
+
+  static const _statusOptions = [
+    ('active', 'Active'),
+    ('inactive', 'Inactive'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = ref.read(deliveryRoutesStatusFilterProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Filter Routes',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Icon(Icons.close, size: 20, color: AppTheme.textMuted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text('STATUS',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                  color: AppTheme.textLight, letterSpacing: 0.8)),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            children: _statusOptions.map(((String val, String label) opt) {
+              final selected = _selectedStatus == opt.$1;
+              return ChoiceChip(
+                label: Text(opt.$2, style: TextStyle(
+                    fontSize: 13,
+                    color: selected ? Colors.white : AppTheme.textPrimary)),
+                selected: selected,
+                selectedColor: AppTheme.primary,
+                backgroundColor: const Color(0xFFF3F4F6),
+                side: BorderSide(color: selected ? AppTheme.primary : AppTheme.border),
+                onSelected: (v) => setState(() => _selectedStatus = v ? opt.$1 : null),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    ref.read(deliveryRoutesStatusFilterProvider.notifier).state = null;
+                    Navigator.pop(context);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppTheme.border),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Clear', style: TextStyle(color: AppTheme.textMuted)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ref.read(deliveryRoutesStatusFilterProvider.notifier).state = _selectedStatus;
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Apply Filter'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

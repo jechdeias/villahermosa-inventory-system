@@ -356,7 +356,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         fontWeight: FontWeight.w600,
                         color: AppTheme.textPrimary)),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () => Navigator.pushReplacementNamed(context, '/admin/orders'),
                   child: const Row(children: [
                     Text('View All',
                         style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),

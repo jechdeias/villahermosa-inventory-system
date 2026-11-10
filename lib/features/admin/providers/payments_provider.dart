@@ -19,6 +19,8 @@ final selectedPaymentProvider = StateProvider<Payment?>((ref) => null);
 final filteredPaymentsProvider = Provider<List<Payment>>((ref) {
   final tab = ref.watch(paymentsTabProvider);
   final search = ref.watch(paymentsSearchProvider).toLowerCase();
+  final dateFrom = ref.watch(paymentsDateFromProvider);
+  final dateTo = ref.watch(paymentsDateToProvider);
   final all = ref.watch(paymentsStreamProvider).value ?? [];
   return all.where((p) {
     final matchTab = tab == 'all' || p.status == tab;
@@ -26,9 +28,14 @@ final filteredPaymentsProvider = Provider<List<Payment>>((ref) {
         p.orderCode.toLowerCase().contains(search) ||
         p.storeName.toLowerCase().contains(search) ||
         p.salesRepName.toLowerCase().contains(search);
-    return matchTab && matchSearch;
+    final matchFrom = dateFrom == null || !p.createdAt.isBefore(dateFrom);
+    final matchTo = dateTo == null || !p.createdAt.isAfter(dateTo.add(const Duration(days: 1)));
+    return matchTab && matchSearch && matchFrom && matchTo;
   }).toList();
 });
+
+final paymentsDateFromProvider = StateProvider<DateTime?>((ref) => null);
+final paymentsDateToProvider = StateProvider<DateTime?>((ref) => null);
 
 final paymentStatsProvider = Provider<Map<String, dynamic>>((ref) {
   final all = ref.watch(paymentsStreamProvider).value ?? [];

@@ -609,7 +609,7 @@ class _OrderRow extends ConsumerWidget {
                     icon: Icons.edit_outlined,
                     tooltip: 'Edit',
                     onTap: () {
-                      // TODO: open edit order form
+                      ref.read(selectedOrderProvider.notifier).state = order;
                     },
                   ),
                   _ActionIconButton(

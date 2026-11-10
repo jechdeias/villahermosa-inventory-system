@@ -254,17 +254,33 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.tune, size: 14),
-              label: const Text('Filter', style: TextStyle(fontSize: 13)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppTheme.border),
-                foregroundColor: const Color(0xFF374151),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              ),
-            ),
+            Consumer(builder: (context, ref, _) {
+              final dateFrom = ref.watch(paymentsDateFromProvider);
+              final dateTo = ref.watch(paymentsDateToProvider);
+              final filterActive = dateFrom != null || dateTo != null;
+              return OutlinedButton.icon(
+                onPressed: () => showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => UncontrolledProviderScope(
+                    container: ProviderScope.containerOf(context),
+                    child: const _PaymentsFilterSheet(),
+                  ),
+                ),
+                icon: Icon(Icons.tune, size: 14,
+                    color: filterActive ? AppTheme.primary : const Color(0xFF374151)),
+                label: Text('Filter', style: TextStyle(
+                    fontSize: 13,
+                    color: filterActive ? AppTheme.primary : const Color(0xFF374151))),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: filterActive ? AppTheme.primary : AppTheme.border),
+                  foregroundColor: filterActive ? AppTheme.primary : const Color(0xFF374151),
+                  backgroundColor: filterActive ? AppTheme.primary.withOpacity(0.06) : null,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
+              );
+            }),
             const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: () => _showRecordPaymentSheet(context),
@@ -603,6 +619,152 @@ class _PaymentMobileCard extends StatelessWidget {
         ],
       ),
       actions: [MobileCardAction(label: 'View', onPressed: onTap)],
+    );
+  }
+}
+
+// ── Payments Filter Sheet ─────────────────────────────────────────────────────
+
+class _PaymentsFilterSheet extends ConsumerStatefulWidget {
+  const _PaymentsFilterSheet();
+
+  @override
+  ConsumerState<_PaymentsFilterSheet> createState() => _PaymentsFilterSheetState();
+}
+
+class _PaymentsFilterSheetState extends ConsumerState<_PaymentsFilterSheet> {
+  DateTime? _from;
+  DateTime? _to;
+
+  @override
+  void initState() {
+    super.initState();
+    _from = ref.read(paymentsDateFromProvider);
+    _to = ref.read(paymentsDateToProvider);
+  }
+
+  Future<void> _pickDate({required bool isFrom}) async {
+    final initial = isFrom ? (_from ?? DateTime.now()) : (_to ?? DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppTheme.primary),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() => isFrom ? _from = picked : _to = picked);
+    }
+  }
+
+  static String _fmtDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Filter Payments',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Icon(Icons.close, size: 20, color: AppTheme.textMuted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text('DATE RANGE',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                  color: AppTheme.textLight, letterSpacing: 0.8)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickDate(isFrom: true),
+                  icon: const Icon(Icons.calendar_today_outlined, size: 14),
+                  label: Text(_from != null ? 'From: ${_fmtDate(_from!)}' : 'From date',
+                      style: const TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _from != null ? AppTheme.primary : AppTheme.textMuted,
+                    side: BorderSide(color: _from != null ? AppTheme.primary : AppTheme.border),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickDate(isFrom: false),
+                  icon: const Icon(Icons.calendar_today_outlined, size: 14),
+                  label: Text(_to != null ? 'To: ${_fmtDate(_to!)}' : 'To date',
+                      style: const TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _to != null ? AppTheme.primary : AppTheme.textMuted,
+                    side: BorderSide(color: _to != null ? AppTheme.primary : AppTheme.border),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    setState(() { _from = null; _to = null; });
+                    ref.read(paymentsDateFromProvider.notifier).state = null;
+                    ref.read(paymentsDateToProvider.notifier).state = null;
+                    Navigator.pop(context);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppTheme.border),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Clear', style: TextStyle(color: AppTheme.textMuted)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ref.read(paymentsDateFromProvider.notifier).state = _from;
+                    ref.read(paymentsDateToProvider.notifier).state = _to;
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Apply Filter'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
