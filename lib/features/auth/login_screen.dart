@@ -78,6 +78,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _authViewModel = AuthViewModel(AuthService.instance, widget.database);
+    // Rebuild the UI whenever loading state or error message changes
+    _authViewModel.addListener(_onViewModelChanged);
 
     // Check if user is already authenticated
     if (_authViewModel.isAuthenticated) {
@@ -87,8 +89,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _onViewModelChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    _authViewModel.removeListener(_onViewModelChanged);
     _oauthSubscription.cancel();
     _identifierController.dispose();
     _passwordController.dispose();

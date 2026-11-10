@@ -134,12 +134,10 @@ class AuthService {
       }
       debugPrint('📋 Session after auth: ${Supabase.instance.client.auth.currentSession != null ? "Active" : "None"}');
 
-      // Pull remote data after successful login
-      try {
-        await SyncManager.instance.pull();
-      } catch (e) {
+      // Pull remote data in background — don't block login navigation
+      SyncManager.instance.pull().catchError((e) {
         debugPrint('Post-login pull failed: $e');
-      }
+      });
 
       return localUser;
     } catch (e) {
@@ -318,12 +316,10 @@ class AuthService {
       _isAuthenticated = true;
       debugPrint('✅ OAuth local session set for ${localUser.email} (${localUser.role})');
 
-      // Pull full data now that we have a session
-      try {
-        await SyncManager.instance.pull();
-      } catch (e) {
+      // Pull full data in background — don't block OAuth navigation
+      SyncManager.instance.pull().catchError((e) {
         debugPrint('Post-OAuth pull failed (non-fatal): $e');
-      }
+      });
 
       return localUser;
     } catch (e) {
