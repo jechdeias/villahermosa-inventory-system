@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart' show DiagnosticPropertiesBuilder, DiagnosticsProperty;
+
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 import '../../core/database/app_database.dart';
@@ -24,11 +24,7 @@ class LoginScreen extends StatefulWidget {
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<AppDatabase>('database', database));
-  }
+
 }
 
 class _LoginScreenState extends State<LoginScreen> {
