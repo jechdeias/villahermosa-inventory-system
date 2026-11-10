@@ -1048,9 +1048,14 @@ class SyncEngine {
   
 
   Future<void> _pullOrderItems(DateTime lastSyncTime) async {
+    final response = await Supabase.instance.client
+        .from('order_items')
+        .select()
+        .gte('updated_at', lastSyncTime.toIso8601String());
 
-    // Implementation needed
-
+    for (final itemData in response) {
+      await _updateLocalRecord('order_items', itemData);
+    }
   }
 
   
@@ -1098,9 +1103,14 @@ class SyncEngine {
   
 
   Future<void> _pullDeliveries(DateTime lastSyncTime) async {
+    final response = await Supabase.instance.client
+        .from('deliveries')
+        .select()
+        .gte('updated_at', lastSyncTime.toIso8601String());
 
-    // Implementation needed
-
+    for (final deliveryData in response) {
+      await _updateLocalRecord('deliveries', deliveryData);
+    }
   }
 
 
@@ -1757,6 +1767,71 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             paymentDate: Value(_toDateTime(data['payment_date']) ?? DateTime.now()),
             status: Value(data['status'] as String? ?? 'unpaid'),
             notes: Value(data['notes'] as String?),
+            syncStatus: const Value('synced'),
+          ),
+        );
+        return;
+      }
+      if (tableName == 'order_items') {
+        // order_id is a TEXT uuid FK on the local side (matches orders.uuid).
+        // product_id on the remote is a bigint FK; we store the product uuid
+        // locally. Resolve by uuid lookup the same way orders resolves customerId.
+        final localProduct = data['product_id'] != null
+            ? await _database.getProductById(data['product_id'] as int)
+            : null;
+        await _database.into(_database.orderItems).insertOnConflictUpdate(
+          OrderItemsCompanion(
+            id: Value(data['id'] as int),
+            uuid: Value(data['uuid'] as String? ?? 'sb-oi-${data['id']}'),
+            orderId: Value(data['order_id'] as String? ?? ''),
+            productId: Value(localProduct?.uuid ?? data['product_id']?.toString() ?? ''),
+            productSku: Value(data['product_sku'] as String? ?? ''),
+            productName: Value(data['product_name'] as String? ?? ''),
+            quantity: Value((data['quantity'] as num?)?.toInt() ?? 0),
+            deliveredQuantity: Value((data['delivered_quantity'] as num?)?.toInt() ?? 0),
+            unitPrice: Value(_toDouble(data['unit_price']) ?? 0),
+            subtotal: Value(_toDouble(data['subtotal']) ?? 0),
+            discountAmount: Value(_toDouble(data['discount_amount']) ?? 0),
+            totalAmount: Value(_toDouble(data['total_amount']) ?? 0),
+            availableStock: Value((data['available_stock'] as num?)?.toInt() ?? 0),
+            stockStatus: Value(data['stock_status'] as String? ?? 'in_stock'),
+            status: Value(data['status'] as String? ?? 'pending'),
+            pickerId: Value(data['picker_id'] as String?),
+            pickedAt: Value(_toDateTime(data['picked_at'])),
+            notes: Value(data['notes'] as String?),
+            isActive: Value(data['is_active'] as bool? ?? true),
+            isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            syncStatus: const Value('synced'),
+          ),
+        );
+        return;
+      }
+      if (tableName == 'deliveries') {
+        final now = DateTime.now();
+        await _database.into(_database.deliveries).insertOnConflictUpdate(
+          DeliveriesCompanion(
+            id: Value(data['id'] as int),
+            uuid: Value(data['uuid'] as String? ?? 'sb-del-${data['id']}'),
+            orderId: Value(data['order_id'] as String? ?? ''),
+            deliveryNumber: Value(data['delivery_number'] as String? ?? 'DEL-${data['id']}'),
+            deliveryPersonnelId: Value(data['delivery_personnel_id'] as String? ?? ''),
+            deliveryPersonnelName: Value(data['delivery_personnel_name'] as String? ?? ''),
+            deliveryPersonnelPhone: Value(data['delivery_personnel_phone'] as String? ?? ''),
+            expectedStartTime: Value(_toDateTime(data['expected_start_time']) ?? now),
+            expectedCompletionTime: Value(_toDateTime(data['expected_completion_time']) ?? now),
+            actualStartTime: Value(_toDateTime(data['actual_start_time'])),
+            actualCompletionTime: Value(_toDateTime(data['actual_completion_time'])),
+            status: Value(data['status'] as String? ?? 'pending'),
+            recipientName: Value(data['recipient_name'] as String?),
+            recipientRelation: Value(data['recipient_relation'] as String?),
+            deliveryNotes: Value(data['delivery_notes'] as String?),
+            collectedAmount: Value(_toDouble(data['collected_amount']) ?? 0),
+            paymentMethod: Value(data['payment_method'] as String?),
+            proofOfDeliveryUrl: Value(data['proof_of_delivery_url'] as String?),
+            deliveryCoordinates: Value(data['delivery_coordinates'] as String?),
+            isActive: Value(data['is_active'] as bool? ?? true),
+            isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            deliveryDate: Value(_toDateTime(data['delivery_date'])),
             syncStatus: const Value('synced'),
           ),
         );
