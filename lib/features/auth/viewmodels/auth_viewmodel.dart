@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
@@ -89,23 +90,51 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  /// Signs in with Google via Supabase OAuth.
+  /// Signs in with Google.
   ///
-  /// On mobile, Supabase opens a browser for the Google consent flow and
-  /// returns via deep-link.  On desktop/web it opens the system browser.
-  /// Returns true when the OAuth flow was launched successfully (the actual
-  /// session arrival is asynchronous via Supabase's auth state listener).
+  /// On Android: uses the native Google Sign-In SDK (no browser popup).
+  /// On other platforms: falls back to Supabase OAuth web flow.
+  /// Returns true when sign-in succeeded and the local session is ready.
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     _clearError();
     try {
-      await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: 'io.supabase.villahermosa://login-callback',
-      );
-      // OAuth launches a browser; the result arrives via deep-link.
-      // Loading will clear when the caller re-checks after returning.
-      return true;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        // Native Android flow — uses google_sign_in package.
+        final googleSignIn = GoogleSignIn(
+          clientId: '331867448304-saipigd6cpsquunjvv9r88cl3lidc127.apps.googleusercontent.com',
+          scopes: ['email', 'profile'],
+        );
+        final googleUser = await googleSignIn.signIn();
+        if (googleUser == null) {
+          // User cancelled
+          _setLoading(false);
+          return false;
+        }
+        final googleAuth = await googleUser.authentication;
+        final idToken = googleAuth.idToken;
+        final accessToken = googleAuth.accessToken;
+        if (idToken == null) {
+          _setError('Google sign-in failed: no ID token received');
+          return false;
+        }
+        // Exchange Google tokens for a Supabase session
+        await Supabase.instance.client.auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+        // Session is now active — loginWithOAuthSession will be called
+        // by the auth state listener in main.dart
+        return true;
+      } else {
+        // Desktop / web — browser OAuth flow
+        await Supabase.instance.client.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: 'io.supabase.villahermosa://login-callback',
+        );
+        return true;
+      }
     } catch (e) {
       _setError('Google sign-in failed: ${e.toString()}');
       return false;
