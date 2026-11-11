@@ -656,14 +656,15 @@ class SyncEngine {
           data['customer_id'] = customer.id;
         }
 
-        // upsert, not insert: a status change (delivered, completed, ...)
-        // re-pushes an order Supabase already has, and a plain insert would
-        // fail on its primary key and leave the change stuck at 'pending'.
+        // Upsert on uuid so the conflict key is the stable app-generated uuid,
+        // not the local SQLite auto-increment id (which resets to 1 after a
+        // fresh install and would collide with unrelated rows already in Supabase).
+        // Remove 'id' from the payload so Supabase assigns its own bigint id on
+        // insert; on update the uuid match handles the row identity.
+        data.remove('id');
         await Supabase.instance.client
-
             .from('orders')
-
-            .upsert(data);
+            .upsert(data, onConflict: 'uuid');
 
         await _markRecordAsSynced(order, order.id.toString());
 
@@ -722,11 +723,12 @@ class SyncEngine {
         }
         data['product_id'] = product.id;
 
+        // Upsert on uuid to avoid id collisions after a fresh reinstall and
+        // to allow retries without duplicate-key errors.
+        data.remove('id');
         await Supabase.instance.client
-
             .from('order_items')
-
-            .insert(data);
+            .upsert(data, onConflict: 'uuid');
 
         await _markRecordAsSynced(orderItem, orderItem.id.toString());
 
