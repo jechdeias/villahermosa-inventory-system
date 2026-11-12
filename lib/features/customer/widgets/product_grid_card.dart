@@ -44,7 +44,10 @@ class ProductGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inStock = product.currentStock > 0;
+    // Customers order regardless of stock — warehouse handles fulfillment.
+    // Gate only on product status ('active'), not on currentStock which
+    // reflects warehouse counts that aren't meaningful to a B2B customer.
+    final inStock = product.status == 'active' && !product.isDeleted;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
