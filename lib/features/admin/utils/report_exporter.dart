@@ -170,7 +170,7 @@ Future<void> exportPdf({
       margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 32),
       footer: (context) => pw.Container(
         padding: const pw.EdgeInsets.only(top: 6),
-        decoration: const pw.BoxDecoration(
+        decoration: pw.BoxDecoration(
           border: pw.Border(top: pw.BorderSide(color: _kBorder, width: 0.5)),
         ),
         child: pw.Row(
@@ -277,7 +277,7 @@ Future<void> exportPdf({
             child: pw.Column(children: [
               // Header
               pw.Container(
-                decoration: const pw.BoxDecoration(
+                decoration: pw.BoxDecoration(
                   color: _kHeaderBg,
                   borderRadius: pw.BorderRadius.only(
                     topLeft: pw.Radius.circular(6),
@@ -295,7 +295,7 @@ Future<void> exportPdf({
                 final pct = total > 0 ? (s.count / total * 100).toStringAsFixed(1) : '0.0';
                 final label = s.status.isEmpty ? s.status : s.status[0].toUpperCase() + s.status.substring(1);
                 return pw.Container(
-                  decoration: const pw.BoxDecoration(
+                  decoration: pw.BoxDecoration(
                     border: pw.Border(top: pw.BorderSide(color: _kBorder, width: 0.5)),
                   ),
                   child: pw.Row(children: [
@@ -320,7 +320,7 @@ Future<void> exportPdf({
             ),
             child: pw.Column(children: [
               pw.Container(
-                decoration: const pw.BoxDecoration(
+                decoration: pw.BoxDecoration(
                   color: _kHeaderBg,
                   borderRadius: pw.BorderRadius.only(
                     topLeft: pw.Radius.circular(6),
@@ -335,7 +335,7 @@ Future<void> exportPdf({
                 ]),
               ),
               ...topProducts.map((p) => pw.Container(
-                decoration: const pw.BoxDecoration(
+                decoration: pw.BoxDecoration(
                   border: pw.Border(top: pw.BorderSide(color: _kBorder, width: 0.5)),
                 ),
                 child: pw.Row(children: [
@@ -359,7 +359,7 @@ Future<void> exportPdf({
           ),
           child: pw.Column(children: [
             pw.Container(
-              decoration: const pw.BoxDecoration(
+              decoration: pw.BoxDecoration(
                 color: _kHeaderBg,
                 borderRadius: pw.BorderRadius.only(
                   topLeft: pw.Radius.circular(6),
@@ -384,7 +384,7 @@ Future<void> exportPdf({
                 _           => _kMuted,
               };
               return pw.Container(
-                decoration: const pw.BoxDecoration(
+                decoration: pw.BoxDecoration(
                   border: pw.Border(top: pw.BorderSide(color: _kBorder, width: 0.5)),
                 ),
                 child: pw.Row(children: [
