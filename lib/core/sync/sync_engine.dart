@@ -694,16 +694,31 @@ class SyncEngine {
 
       try {
 
-        // OrderItems.orderId is the parent order's local uuid; Supabase's
-        // order_items.order_id is bigint (the order's numeric id, which the
-        // orders push inserts as-is). Skip until the parent order has synced.
+        // OrderItems.orderId is the parent order's local uuid. We need the
+        // Supabase-side numeric id for the order_items.order_id FK. After a
+        // reinstall the local autoincrement id ≠ Supabase's id, so we look up
+        // the Supabase row by uuid to get the real remote id.
+        // getOrderById queries by uuid (see app_database.dart line ~380)
         final parentOrder = await _database.getOrderById(orderItem.orderId);
         if (parentOrder == null || parentOrder.syncStatus != 'synced') {
           continue;
         }
 
+        // Fetch the Supabase row for this order to get its server-assigned id.
+        final remoteOrderRows = await Supabase.instance.client
+            .from('orders')
+            .select('id')
+            .eq('uuid', parentOrder.uuid)
+            .limit(1);
+        if (remoteOrderRows.isEmpty) {
+          // Parent order hasn't made it to Supabase yet — retry next cycle.
+          debugPrint('Order item ${orderItem.id}: parent order uuid=${parentOrder.uuid} not in Supabase yet');
+          continue;
+        }
+        final remoteOrderId = remoteOrderRows.first['id'] as int;
+
         final data = _recordToMap(orderItem);
-        data['order_id'] = parentOrder.id;
+        data['order_id'] = remoteOrderId;
 
         // Same as stock_movements: OrderItems.productId is a product uuid,
         // but Supabase's order_items.product_id is bigint.
@@ -1046,10 +1061,13 @@ class SyncEngine {
   
 
   Future<void> _pullOrderItems(DateTime lastSyncTime) async {
+    // Same as _pullOrders: order items are created on customer devices and
+    // may predate the Windows device's last sync cursor. Always pull all
+    // non-deleted items so nothing is missed.
     final response = await Supabase.instance.client
         .from('order_items')
         .select()
-        .gte('updated_at', lastSyncTime.toIso8601String());
+        .eq('is_deleted', false);
 
     for (final itemData in response) {
       await _updateLocalRecord('order_items', itemData);
@@ -1419,8 +1437,13 @@ class SyncEngine {
     if (record is OrderItem) {
 
       return {
+        // id is removed before upsert (see _pushOrderItems)
         'id': record.id,
+        // uuid is the conflict key for upsert — must be in the payload
+        'uuid': record.uuid,
+        // order_id is overwritten by _pushOrderItems with the Supabase numeric id
         'order_id': record.orderId,
+        // product_id is overwritten by _pushOrderItems with the product numeric id
         'product_id': record.productId,
         'quantity': record.quantity,
         'unit_price': record.unitPrice,
