@@ -61,6 +61,12 @@ dev_dependencies:
   drift_dev: ^2.18.0
   build_runner: ^2.4.9
 
+# image 4.11.0 calls ZLibDecoder.decodeLazy which was added in archive 3.4.4.
+# Several transitive dependencies cap archive at ^4.0.0 (which resolves to
+# 4.0.9 and lacks decodeLazy). Force a newer 4.x patch that has the method.
+dependency_overrides:
+  archive: ^4.0.4
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
