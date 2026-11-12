@@ -1759,6 +1759,11 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             salesRepId: Value((data['sales_rep_id'] as num?)?.toInt()),
             salesRepName: Value(data['sales_rep_name'] as String?),
             itemCount: Value((data['item_count'] as num?)?.toInt() ?? 0),
+            // Pull the real created_at from Supabase so the Windows orders list
+            // shows the correct date.  Without this field the companion falls back
+            // to the Drift column default, which was surfacing as 2024-12-12.
+            createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),
+            updatedAt: Value(_toDateTime(data['updated_at']) ?? DateTime.now()),
           ),
         );
         return;
@@ -1871,6 +1876,8 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             isActive: Value(data['is_active'] as bool? ?? true),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
+            createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),
+            updatedAt: Value(_toDateTime(data['updated_at']) ?? DateTime.now()),
           ),
         );
         return;

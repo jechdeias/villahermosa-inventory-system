@@ -123,12 +123,26 @@ class AuthService {
       }
 
       // STEP 1: Try local Drift auth first (works offline)
-      final localUser = await _localLogin(identifier, password);
+      User? localUser = await _localLogin(identifier, password);
+
+      // STEP 1b: If local lookup failed but the table is non-empty, the account
+      // may exist in Supabase but not yet been pulled to this device (e.g. a
+      // new user added by admin on Windows).  Authenticate with Supabase, then
+      // pull users so the row is local, then retry local login.
+      if (localUser == null && localUserCount > 0) {
+        debugPrint('🔍 User not found locally — trying Supabase Auth fallback pull');
+        final supabaseOk = await _attemptSupabaseAuth(identifier, password);
+        if (supabaseOk) {
+          await SyncManager.instance.bootstrapUsers();
+          await _ensureLocalPasswordHash(identifier, password);
+          localUser = await _localLogin(identifier, password);
+        }
+      }
 
       if (localUser == null) return null;
 
       // STEP 2: Try Supabase Auth and wait for session (skip if already done)
-      if (localUserCount > 0) {
+      if (localUserCount > 0 && Supabase.instance.client.auth.currentSession == null) {
         debugPrint('🔑 Local auth succeeded, attempting Supabase Auth...');
         await _attemptSupabaseAuth(identifier, password);
       }
