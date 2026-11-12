@@ -886,11 +886,28 @@ class SyncEngine {
 
         final data = _recordToMap(delivery);
 
+        // Resolve the parent order's Supabase id from its uuid, same as
+        // _pushOrderItems — local autoincrement id ≠ Supabase id after reinstall.
+        final parentOrder = await _database.getOrderById(delivery.orderId);
+        if (parentOrder == null || parentOrder.syncStatus != 'synced') {
+          debugPrint('Delivery ${delivery.id}: parent order not synced yet, skipping');
+          continue;
+        }
+        final remoteOrderRows = await Supabase.instance.client
+            .from('orders')
+            .select('id')
+            .eq('uuid', parentOrder.uuid)
+            .limit(1);
+        if (remoteOrderRows.isEmpty) {
+          debugPrint('Delivery ${delivery.id}: parent order not in Supabase yet');
+          continue;
+        }
+        data['order_id'] = remoteOrderRows.first['id'] as int;
+        data.remove('id');
+
         await Supabase.instance.client
-
             .from('deliveries')
-
-            .insert(data);
+            .upsert(data, onConflict: 'uuid');
 
         await _markRecordAsSynced(delivery, delivery.id.toString());
 
@@ -1462,8 +1479,10 @@ class SyncEngine {
 
       return {
 
+        // id and order_id are overwritten/removed by _pushDeliveries
+        // uuid is the conflict key for upsert
         'id': record.id,
-
+        'uuid': record.uuid,
         'order_id': record.orderId,
 
         'status': record.status,
@@ -1806,9 +1825,12 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
         return;
       }
       if (tableName == 'order_items') {
-        // order_id is a TEXT uuid FK on the local side (matches orders.uuid).
-        // product_id on the remote is a bigint FK; we store the product uuid
-        // locally. Resolve by uuid lookup the same way orders resolves customerId.
+        // order_id on Supabase is bigint (the order's numeric id). Locally
+        // orderId is a TEXT field holding the parent order's uuid — resolve it.
+        final localOrder = data['order_id'] != null
+            ? await _database.getOrderByIntId(data['order_id'] as int)
+            : null;
+        // product_id on Supabase is bigint; locally productId is the product uuid.
         final localProduct = data['product_id'] != null
             ? await _database.getProductById(data['product_id'] as int)
             : null;
@@ -1816,7 +1838,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
           OrderItemsCompanion(
             id: Value(data['id'] as int),
             uuid: Value(data['uuid'] as String? ?? 'sb-oi-${data['id']}'),
-            orderId: Value(data['order_id'] as String? ?? ''),
+            orderId: Value(localOrder?.uuid ?? data['order_id']?.toString() ?? ''),
             productId: Value(localProduct?.uuid ?? data['product_id']?.toString() ?? ''),
             productSku: Value(data['product_sku'] as String? ?? ''),
             productName: Value(data['product_name'] as String? ?? ''),
@@ -1840,12 +1862,16 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
         return;
       }
       if (tableName == 'deliveries') {
+        // order_id on Supabase is bigint; locally orderId is the order's uuid.
+        final localOrder = data['order_id'] != null
+            ? await _database.getOrderByIntId(data['order_id'] as int)
+            : null;
         final now = DateTime.now();
         await _database.into(_database.deliveries).insertOnConflictUpdate(
           DeliveriesCompanion(
             id: Value(data['id'] as int),
             uuid: Value(data['uuid'] as String? ?? 'sb-del-${data['id']}'),
-            orderId: Value(data['order_id'] as String? ?? ''),
+            orderId: Value(localOrder?.uuid ?? data['order_id']?.toString() ?? ''),
             deliveryNumber: Value(data['delivery_number'] as String? ?? 'DEL-${data['id']}'),
             deliveryPersonnelId: Value(data['delivery_personnel_id'] as String? ?? ''),
             deliveryPersonnelName: Value(data['delivery_personnel_name'] as String? ?? ''),
