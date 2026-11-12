@@ -396,6 +396,16 @@ class AppDatabase extends _$AppDatabase {
     ..orderBy([(t) => OrderingTerm(expression: t.createdAt)])
   ).get();
 
+  /// Orders that need shipping labels: picked, packed, or ready for dispatch.
+  Future<List<Order>> getOrdersForLabels() async => (select(orders)
+    ..where((t) =>
+        t.isDeleted.equals(false) &
+        (t.warehouseStatus.equals('picked') |
+         t.warehouseStatus.equals('packed') |
+         t.warehouseStatus.equals('ready')))
+    ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
+  ).get();
+
   // Order Item methods
   Future<int> createOrderItem(OrderItemsCompanion orderItem) => into(orderItems).insert(orderItem);
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../providers/warehouse_providers.dart';
+import '../utils/label_printer.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
 import '../../../core/theme/app_theme.dart';
@@ -214,6 +216,8 @@ class _QuickActionsCard extends ConsumerStatefulWidget {
 }
 
 class _QuickActionsCardState extends ConsumerState<_QuickActionsCard> {
+  bool _printing = false;
+
   Future<void> _sync() async {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(const SnackBar(content: Text('Syncing…')));
@@ -222,6 +226,27 @@ class _QuickActionsCardState extends ConsumerState<_QuickActionsCard> {
       messenger.showSnackBar(const SnackBar(content: Text('Sync finished')));
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Sync failed: $e')));
+    }
+  }
+
+  Future<void> _printLabels() async {
+    if (_printing) return;
+    setState(() => _printing = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final db = AuthService.instance.database;
+      final orders = await db.getOrdersForLabels();
+      if (orders.isEmpty) {
+        messenger.showSnackBar(const SnackBar(
+          content: Text('No picked/packed/ready orders to label right now.'),
+        ));
+        return;
+      }
+      await printLabels(orders);
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Label print failed: $e')));
+    } finally {
+      if (mounted) setState(() => _printing = false);
     }
   }
 
@@ -248,9 +273,7 @@ class _QuickActionsCardState extends ConsumerState<_QuickActionsCard> {
                 tile(Icons.download, 'Stock In', () => whGo(context, WhRoutes.stockMovement, args: 'in')),
                 tile(Icons.upload, 'Stock Out', () => whGo(context, WhRoutes.stockMovement, args: 'out')),
                 tile(Icons.add, 'New Order', () => whGo(context, WhRoutes.incoming)),
-                tile(Icons.print_outlined, 'Print Labels', () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Label printing is not set up yet')));
-                }),
+                tile(Icons.print_outlined, _printing ? 'Printing…' : 'Print Labels', _printLabels),
                 tile(Icons.map_outlined, 'View Routes', () => whGo(context, WhRoutes.routesToday)),
                 tile(Icons.sync, 'Sync Data', _sync),
               ],
