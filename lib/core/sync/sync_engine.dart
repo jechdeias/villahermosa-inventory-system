@@ -1721,10 +1721,18 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
         final localCustomer = data['customer_id'] != null
             ? await _database.getCustomerByIntId(data['customer_id'] as int)
             : null;
+        // Supabase assigns its own numeric id on insert (e.g. id=1) but the
+        // local row may already exist under a different id (e.g. id=9) with
+        // the same uuid. ON CONFLICT("id") won't fire in that case, and the
+        // insert will hit the uuid unique constraint. Resolve to the local id
+        // by uuid lookup so the conflict key is always correct.
+        final remoteUuid = data['uuid'] as String? ?? 'sb-order-${data['id']}';
+        final existingOrder = await _database.getOrderById(remoteUuid);
+        final localId = existingOrder?.id ?? data['id'] as int;
         await _database.into(_database.orders).insertOnConflictUpdate(
           OrdersCompanion(
-            id: Value(data['id'] as int),
-            uuid: Value(data['uuid'] as String? ?? 'sb-order-${data['id']}'),
+            id: Value(localId),
+            uuid: Value(remoteUuid),
             customerId: Value(localCustomer?.uuid ?? data['customer_id']?.toString() ?? ''),
             orderNumber: Value(data['order_number'] as String? ?? 'ORD-${data['id']}'),
             status: Value(data['status'] as String? ?? 'pending'),
@@ -1834,10 +1842,16 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
         final localProduct = data['product_id'] != null
             ? await _database.getProductById(data['product_id'] as int)
             : null;
+        // Same id-mismatch problem as orders: Supabase id may differ from the
+        // local id for the same uuid. Look up by uuid first so the conflict
+        // key is correct and we avoid a spurious UNIQUE constraint failure.
+        final remoteOiUuid = data['uuid'] as String? ?? 'sb-oi-${data['id']}';
+        final existingOi = await _database.getOrderItemById(remoteOiUuid);
+        final localOiId = existingOi?.id ?? data['id'] as int;
         await _database.into(_database.orderItems).insertOnConflictUpdate(
           OrderItemsCompanion(
-            id: Value(data['id'] as int),
-            uuid: Value(data['uuid'] as String? ?? 'sb-oi-${data['id']}'),
+            id: Value(localOiId),
+            uuid: Value(remoteOiUuid),
             orderId: Value(localOrder?.uuid ?? data['order_id']?.toString() ?? ''),
             productId: Value(localProduct?.uuid ?? data['product_id']?.toString() ?? ''),
             productSku: Value(data['product_sku'] as String? ?? ''),
