@@ -65,7 +65,7 @@ dev_dependencies:
 # Transitive constraints keep archive locked at 4.0.9, so we pin image back
 # to 4.1.x which does not use decodeLazy and is compatible with archive 4.0.9.
 dependency_overrides:
-  image: ^4.1.7
+  image: ">=4.1.7 <4.2.0"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
