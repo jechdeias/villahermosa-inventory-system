@@ -1,15 +1,15 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../providers/reports_provider.dart';
+import '../providers/payments_provider.dart';
 import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
 import '../../../core/theme/app_theme.dart';
+import '../utils/report_exporter.dart';
 
 class AdminReportsScreen extends ConsumerWidget {
   const AdminReportsScreen({super.key, required this.database, required this.syncManager});
@@ -173,61 +173,119 @@ class _RangeSelector extends ConsumerWidget {
   }
 }
 
-class _ExportButton extends ConsumerWidget {
-  String _csvField(String v) {
-    if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-      return '"${v.replaceAll('"', '""')}"';
-    }
-    return v;
-  }
-
-  Future<void> _export(BuildContext context, WidgetRef ref) async {
-    final orders = ref.read(reportsOrdersProvider);
-    final messenger = ScaffoldMessenger.of(context);
-
-    final rows = <List<String>>[
-      ['Order Number', 'Date', 'Store', 'Route', 'Sales Rep', 'Status', 'Total Amount'],
-      for (final o in orders)
-        [
-          o.orderNumber,
-          '${o.createdAt.year}-${o.createdAt.month.toString().padLeft(2, '0')}-${o.createdAt.day.toString().padLeft(2, '0')}',
-          o.storeName ?? '',
-          o.routeName ?? '',
-          o.salesRepName ?? '',
-          o.status,
-          o.totalAmount.toStringAsFixed(2),
-        ],
-    ];
-    final csv = rows.map((r) => r.map(_csvField).join(',')).join('\r\n');
-
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final now = DateTime.now();
-      final fileName = 'reports_export_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_'
-          '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}.csv';
-      final file = File('${dir.path}${Platform.pathSeparator}$fileName');
-      await file.writeAsString(csv);
-      messenger.showSnackBar(SnackBar(content: Text('Exported ${orders.length} orders to ${file.path}')));
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Export failed: $e')));
-    }
-  }
-
+class _ExportButton extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ElevatedButton.icon(
-      onPressed: () => _export(context, ref),
-      icon: const Icon(Icons.file_download_outlined, size: 16),
-      label: const Text('Export Report'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+  ConsumerState<_ExportButton> createState() => _ExportButtonState();
+}
+
+class _ExportButtonState extends ConsumerState<_ExportButton> {
+  bool _loadingPdf = false;
+  bool _loadingCsv = false;
+
+  Future<void> _exportPdf() async {
+    if (_loadingPdf) return;
+    setState(() => _loadingPdf = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await exportPdf(
+        orders:          ref.read(reportsOrdersProvider),
+        payments:        ref.read(reportsPaymentsProvider),
+        topProducts:     ref.read(topProductsProvider),
+        statusBreakdown: ref.read(orderStatusBreakdownProvider),
+        stats:           ref.read(reportsStatsProvider),
+        range:           ref.read(reportsRangeProvider),
+        rangeStart:      ref.read(reportsRangeStartProvider),
+        rangeEnd:        ref.read(reportsRangeEndProvider),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('PDF export failed: $e')));
+    } finally {
+      if (mounted) setState(() => _loadingPdf = false);
+    }
+  }
+
+  Future<void> _exportCsv() async {
+    if (_loadingCsv) return;
+    setState(() => _loadingCsv = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await exportCsv(
+        orders:      ref.read(reportsOrdersProvider),
+        payments:    ref.read(reportsPaymentsProvider),
+        topProducts: ref.read(topProductsProvider),
+        stats:       ref.read(reportsStatsProvider),
+        range:       ref.read(reportsRangeProvider),
+        rangeStart:  ref.read(reportsRangeStartProvider),
+        rangeEnd:    ref.read(reportsRangeEndProvider),
+      );
+      final count = ref.read(reportsOrdersProvider).length;
+      messenger.showSnackBar(SnackBar(
+        content: Text('CSV saved — $count orders exported'),
+        backgroundColor: AppTheme.success,
+      ));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('CSV export failed: $e')));
+    } finally {
+      if (mounted) setState(() => _loadingCsv = false);
+    }
+  }
+
+  Widget _btn({
+    required IconData icon,
+    required String label,
+    required bool loading,
+    required VoidCallback onPressed,
+    Color? bg,
+    Color? fg,
+    Color? border,
+  }) {
+    final background = bg ?? AppTheme.primary;
+    final foreground = fg ?? Colors.white;
+    return OutlinedButton.icon(
+      onPressed: loading ? null : onPressed,
+      icon: loading
+          ? SizedBox(
+              width: 12, height: 12,
+              child: CircularProgressIndicator(strokeWidth: 1.5, color: foreground),
+            )
+          : Icon(icon, size: 14),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        backgroundColor: background,
+        foregroundColor: foreground,
+        side: BorderSide(color: border ?? background),
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
         minimumSize: const Size(0, 36),
         textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _btn(
+          icon: Icons.picture_as_pdf_outlined,
+          label: 'Export PDF',
+          loading: _loadingPdf,
+          onPressed: _exportPdf,
+          bg: AppTheme.primary,
+        ),
+        const SizedBox(width: 8),
+        _btn(
+          icon: Icons.table_chart_outlined,
+          label: 'Export CSV',
+          loading: _loadingCsv,
+          onPressed: _exportCsv,
+          bg: Colors.white,
+          fg: AppTheme.textPrimary,
+          border: AppTheme.border,
+        ),
+      ],
     );
   }
 }
