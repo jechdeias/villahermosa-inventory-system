@@ -149,6 +149,26 @@ void main() async {
     }
   });
 
+  // Auto-sync on reconnect — fires immediately when the device goes from
+  // offline → online, so pending orders placed in airplane mode are pushed
+  // as soon as data/wifi is restored (instead of waiting up to 5 minutes).
+  var wasOffline = false;
+  Connectivity().onConnectivityChanged.listen((results) async {
+    if (!AppSettings.instance.autoSyncOnStartup) return;
+    final isOnline = !results.contains(ConnectivityResult.none);
+    if (isOnline && wasOffline) {
+      debugPrint('📶 Network restored — syncing pending data...');
+      try {
+        await SyncManager.instance.syncPendingData();
+        await SyncManager.instance.pull();
+        debugPrint('✅ Reconnect sync complete');
+      } catch (e) {
+        debugPrint('⚠️ Reconnect sync error: $e');
+      }
+    }
+    wasOffline = !isOnline;
+  });
+
   runApp(ProviderScope(child: VillahermosaInventoryApp(database: database)));
 }
 
