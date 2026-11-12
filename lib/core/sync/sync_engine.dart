@@ -562,11 +562,14 @@ class SyncEngine {
 
         final data = _recordToMap(product);
 
+        // Conflict on uuid (not id) so that after a reinstall the local
+        // autoincrement id still matches the correct Supabase row.
+        data.remove('id');
         await Supabase.instance.client
 
             .from('products')
 
-            .upsert(data);
+            .upsert(data, onConflict: 'uuid');
 
         await _markRecordAsSynced(product, product.id.toString());
 
@@ -1234,6 +1237,11 @@ class SyncEngine {
 
         'id': record.id,
 
+        // uuid is the stable conflict key across reinstalls — without it the
+        // upsert falls back to id, which may not match Supabase's row id,
+        // causing stock/price updates to silently fail or update the wrong row.
+        'uuid': record.uuid,
+
         'sku': record.sku,
 
         'name': record.name,
@@ -1860,7 +1868,9 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             orderId: Value(localOrder?.uuid ?? data['order_id']?.toString() ?? ''),
             productId: Value(localProduct?.uuid ?? data['product_id']?.toString() ?? ''),
             productSku: Value(data['product_sku'] as String? ?? ''),
-            productName: Value(data['product_name'] as String? ?? ''),
+            // Supabase's order_items table has no product_name column — enrich
+            // from the local products table using the already-resolved localProduct.
+            productName: Value(data['product_name'] as String? ?? localProduct?.name ?? ''),
             quantity: Value((data['quantity'] as num?)?.toInt() ?? 0),
             deliveredQuantity: Value((data['delivered_quantity'] as num?)?.toInt() ?? 0),
             unitPrice: Value(_toDouble(data['unit_price']) ?? 0),
