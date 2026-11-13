@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _isTestInstance;
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,14 +48,14 @@ class AppDatabase extends _$AppDatabase {
     },
     onUpgrade: (m, from, to) async {
       // Columns added in v2
-      // Note: users/products/customers remoteId dropped in v13 — addColumn
-      // calls for those removed. orders/deliveries/stockMovements remoteId
-      // still exist (dropped in a later migration).
+      // Note: users/products/customers remoteId dropped in v13. orders remoteId
+      // still exists. stockMovements remoteId dropped in v14 — addColumn call
+      // removed. deliveries remoteId still exists.
       if (from < 2) {
         try { await m.addColumn(users, users.forcePasswordChange); } catch (_) {}
         try { await m.addColumn(orders, orders.remoteId); } catch (_) {}
         try { await m.addColumn(deliveries, deliveries.remoteId); } catch (_) {}
-        try { await m.addColumn(stockMovements, stockMovements.remoteId); } catch (_) {}
+        // stockMovements.remoteId removed (dropped v14)
       }
       // Columns added in v3 (uuid on every table)
       if (from < 3) {
@@ -148,6 +148,29 @@ class AppDatabase extends _$AppDatabase {
         // suppliers: drop all columns with zero live reads.
         for (final col in ['supplier_code', 'address1', 'address2', 'tin']) {
           try { await customStatement('ALTER TABLE suppliers DROP COLUMN $col'); } catch (_) {}
+        }
+      }
+      if (from < 14) {
+        // orders: drop write-only / zero-read columns.
+        // paymentStatus: written in new_order_flow but never read in UI (payments
+        //   table is the source of truth for payment state).
+        // taxAmount, priority, pickerId, pickedAt, packerId: zero live reads.
+        // isActive: queries use isDeleted; never read on orders.
+        for (final col in [
+          'tax_amount', 'payment_status', 'priority',
+          'picker_id', 'picked_at', 'packer_id', 'is_active',
+        ]) {
+          try { await customStatement('ALTER TABLE orders DROP COLUMN $col'); } catch (_) {}
+        }
+        // stock_movements: drop write-only / zero-read columns.
+        // All written only by the zero-caller stock_movement_service.dart (deleted
+        // alongside this migration). status/isActive: never read in live UI.
+        // remoteId: write-only; sync resolves by uuid.
+        for (final col in [
+          'unit_cost', 'total_cost', 'from_location', 'to_location',
+          'reference_type', 'status', 'is_active', 'remote_id',
+        ]) {
+          try { await customStatement('ALTER TABLE stock_movements DROP COLUMN $col'); } catch (_) {}
         }
       }
     },

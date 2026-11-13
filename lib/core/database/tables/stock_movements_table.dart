@@ -21,9 +21,8 @@ class StockMovements extends Table {
   /// Quantity moved (positive for stock in, negative for stock out).
   IntColumn get quantity => integer()();
   
-  /// Reference type (order, delivery, adjustment, transfer, etc.).
-  TextColumn get referenceType => text().nullable()();
-  
+  // referenceType dropped v14 — only in zero-caller stock_movement_service.dart.
+
   /// Reference ID linking to the source document.
   TextColumn get referenceId => text().nullable()();
   
@@ -39,24 +38,11 @@ class StockMovements extends Table {
   /// Name of the user who performed the movement.
   TextColumn get userName => text()();
   
-  /// Original location of the stock.
-  TextColumn get fromLocation => text().nullable()();
-  
-  /// Destination location of the stock.
-  TextColumn get toLocation => text().nullable()();
-  
-  /// Unit cost of the product at time of movement.
-  RealColumn get unitCost => real().nullable()();
-  
-  /// Total cost of the movement (quantity * unitCost).
-  RealColumn get totalCost => real().nullable()();
-  
-  /// Status of the movement (pending, completed, cancelled).
-  TextColumn get status => text().withDefault(const Constant('completed'))();
-  
-  /// Indicates whether the movement is currently active.
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-  
+  // fromLocation/toLocation dropped v14 — only in zero-caller stock_movement_service.dart.
+  // unitCost/totalCost dropped v14 — only in zero-caller stock_movement_service.dart.
+  // status dropped v14 — only in zero-caller stock_movement_service.dart + sync pull.
+  // isActive dropped v14 — queries use isDeleted; never read in live code.
+
   /// Timestamp when the stock movement record was created.
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   
@@ -69,8 +55,7 @@ class StockMovements extends Table {
   /// Synchronization status with remote backend.
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
   
-  /// Remote database ID for cross-system synchronization.
-  TextColumn get remoteId => text().nullable()();
+  // remoteId dropped v14 — write-only; sync resolves by uuid.
 
   /// ID of the user who created this movement (FK→users.id, matches Supabase created_by).
   IntColumn get createdBy => integer().nullable()();

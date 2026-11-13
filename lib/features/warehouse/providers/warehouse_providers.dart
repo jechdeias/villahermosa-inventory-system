@@ -170,9 +170,7 @@ class WarehouseActions {
     await (_db.update(_db.orders)..where((t) => t.id.equals(o.id))).write(
       OrdersCompanion(
         warehouseStatus: const Value('ready'),
-        pickedAt: Value(now),
         packedAt: Value(now),
-        packerId: Value(user?.uuid),
         updatedAt: Value(now),
         // An order completed straight from pending skipped Process; its status
         // should still read "processing" from here on.

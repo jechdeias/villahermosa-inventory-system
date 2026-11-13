@@ -84,7 +84,6 @@ class _NewOrderFlowState extends ConsumerState<NewOrderFlow> {
         status: Value(asDraft ? 'draft' : 'pending'),
         syncStatus: const Value('pending'),
         deliveryAddress: Value(_selectedCustomer!.address ?? storeName),
-        paymentStatus: Value(_paymentMethod == 'Credit' ? 'pending' : 'paid'),
         createdAt: Value(now),
         updatedAt: Value(now),
       ));

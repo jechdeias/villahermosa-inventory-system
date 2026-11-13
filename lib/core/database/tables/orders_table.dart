@@ -29,31 +29,19 @@ class Orders extends Table {
   
   /// Order subtotal before tax.
   RealColumn get subtotal => real().withDefault(const Constant(0))();
-  
-  /// Tax amount calculated on the order.
-  RealColumn get taxAmount => real().withDefault(const Constant(0))();
-  
+
+  // taxAmount dropped v14 — never read in UI; Supabase schema has no tax logic.
+  // paymentStatus dropped v14 — write-only in new_order_flow; payments table owns this.
+  // priority dropped v14 — write-only; no UI reads or admin filters.
+  // pickerId/pickedAt/packerId dropped v14 — only in zero-caller warehouse_providers.dart.
+  // isActive dropped v14 — queries use isDeleted; never read in live code.
+
   /// Total amount including tax.
   RealColumn get totalAmount => real().withDefault(const Constant(0))();
-  
-  /// Payment status (pending, partial, paid, failed).
-  TextColumn get paymentStatus => text().withDefault(const Constant('pending'))();
-  
+
   /// Warehouse processing status (pending, picking, packed, ready, shipped).
   TextColumn get warehouseStatus => text().withDefault(const Constant('pending'))();
-  
-  /// Order priority (low, normal, high, urgent).
-  TextColumn get priority => text().withDefault(const Constant('normal'))();
-  
-  /// ID of the warehouse staff member who picked the order.
-  TextColumn get pickerId => text().nullable()();
-  
-  /// Timestamp when the order was picked.
-  DateTimeColumn get pickedAt => dateTime().nullable()();
-  
-  /// ID of the warehouse staff member who packed the order.
-  TextColumn get packerId => text().nullable()();
-  
+
   /// Timestamp when the order was packed.
   DateTimeColumn get packedAt => dateTime().nullable()();
   
@@ -62,9 +50,6 @@ class Orders extends Table {
   
   /// Actual delivery date.
   DateTimeColumn get actualDeliveryDate => dateTime().nullable()();
-  
-  /// Indicates whether the order is currently active.
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   
   /// Timestamp when the order record was created.
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
