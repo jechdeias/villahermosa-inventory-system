@@ -382,9 +382,7 @@ class _DeliveryConfirmationViewState extends State<DeliveryConfirmationView>
                     child: ElevatedButton.icon(
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SalesScanScreen(),
-                        ),
+                        AppTheme.route((_) => const SalesScanScreen()),
                       ),
                       icon: Icon(canScan ? Icons.qr_code_scanner : Icons.keyboard_outlined),
                       label: Text(canScan ? 'Open Scanner' : 'Enter Order Number'),

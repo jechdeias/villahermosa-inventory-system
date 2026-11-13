@@ -113,7 +113,7 @@ class _OrderRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final outForDelivery = order.status == OrderStatus.outForDelivery;
     return InkWell(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SalesOrderDetailScreen(orderUuid: order.uuid))),
+      onTap: () => Navigator.of(context).push(AppTheme.route((_) => SalesOrderDetailScreen(orderUuid: order.uuid))),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(children: [
@@ -146,7 +146,7 @@ class _OrderRow extends ConsumerWidget {
               if (v == 'mark') {
                 showMarkDeliveredFlow(context, ref, order);
               } else {
-                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SalesScanScreen()));
+                Navigator.of(context).push(AppTheme.route((_) => const SalesScanScreen()));
               }
             },
             itemBuilder: (_) => const [

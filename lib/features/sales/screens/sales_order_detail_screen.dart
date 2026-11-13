@@ -113,7 +113,7 @@ class _Body extends ConsumerWidget {
                 top: false,
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   ElevatedButton.icon(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SalesScanScreen())),
+                    onPressed: () => Navigator.of(context).push(AppTheme.route((_) => const SalesScanScreen())),
                     icon: const Icon(Icons.qr_code_scanner_outlined, size: 20),
                     label: const Text('Scan Delivery QR'),
                     style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50), textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),

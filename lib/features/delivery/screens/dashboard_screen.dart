@@ -187,7 +187,7 @@ class _Chip extends StatelessWidget {
 class _QrShortcut extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const SalesScanScreen())),
+    onTap: () => Navigator.push(context, AppTheme.route((_) => const SalesScanScreen())),
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(

@@ -220,7 +220,7 @@ class _QuickActions extends ConsumerWidget {
             icon: Icons.qr_code_scanner_outlined,
             label: 'Scan Delivery',
             highlight: true,
-            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SalesScanScreen())),
+            onTap: () => Navigator.of(context).push(AppTheme.route((_) => const SalesScanScreen())),
           ),
           _QuickActionCard(
             icon: Icons.sync_outlined,

@@ -70,11 +70,28 @@ class AppTheme {
   /// Order numbers, SKUs and other codes.
   static TextStyle get monoSmall => GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.w600, color: textPrimary);
 
+  // ── Page transitions ────────────────────────────────────────────────────────
+  /// Smooth fade+slight-upward-slide for all named-route pushes.
+  static const PageTransitionsTheme pageTransitions = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: _SmoothTransitionBuilder(),
+      TargetPlatform.iOS:     CupertinoPageTransitionsBuilder(),
+      TargetPlatform.windows: _SmoothTransitionBuilder(),
+      TargetPlatform.macOS:   CupertinoPageTransitionsBuilder(),
+      TargetPlatform.linux:   _SmoothTransitionBuilder(),
+    },
+  );
+
+  /// Use this instead of [MaterialPageRoute] for consistent transitions.
+  static Route<T> route<T>(WidgetBuilder builder) =>
+      _SmoothRoute<T>(builder: builder);
+
   // ── ThemeData ───────────────────────────────────────────────────────────────
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: background,
         textTheme: GoogleFonts.interTextTheme(),
+        pageTransitionsTheme: pageTransitions,
         colorScheme: const ColorScheme.light(
           primary: primary,
           surface: surface,
@@ -138,4 +155,54 @@ class AppTheme {
           unselectedLabelStyle: GoogleFonts.inter(fontSize: 11),
         ),
       );
+}
+
+// ── Smooth page transition internals ──────────────────────────────────────────
+
+/// Fade + 18 px upward slide, 220 ms. Feels snappy without being instant.
+class _SmoothTransitionBuilder extends PageTransitionsBuilder {
+  const _SmoothTransitionBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    const curve = Curves.easeOutCubic;
+    final fade = CurvedAnimation(parent: animation, curve: curve);
+    final slide = Tween<Offset>(
+      begin: const Offset(0, 0.045),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: animation, curve: curve));
+
+    return FadeTransition(
+      opacity: fade,
+      child: SlideTransition(position: slide, child: child),
+    );
+  }
+}
+
+/// Drop-in replacement for [MaterialPageRoute] that uses [_SmoothTransitionBuilder].
+class _SmoothRoute<T> extends PageRouteBuilder<T> {
+  _SmoothRoute({required WidgetBuilder builder})
+      : super(
+          pageBuilder: (context, _, __) => builder(context),
+          transitionDuration: const Duration(milliseconds: 220),
+          reverseTransitionDuration: const Duration(milliseconds: 180),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const curve = Curves.easeOutCubic;
+            final fade = CurvedAnimation(parent: animation, curve: curve);
+            final slide = Tween<Offset>(
+              begin: const Offset(0, 0.045),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: animation, curve: curve));
+            return FadeTransition(
+              opacity: fade,
+              child: SlideTransition(position: slide, child: child),
+            );
+          },
+        );
 }

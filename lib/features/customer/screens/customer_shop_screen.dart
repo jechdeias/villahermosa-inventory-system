@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -149,7 +150,7 @@ class _CustomerShopScreenState extends ConsumerState<CustomerShopScreen> {
                             product: p,
                             supplierName: suppliers[p.supplierId] ?? '',
                             inCart: ref.watch(cartQtyProvider(p.uuid)),
-                            onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => CustomerProductDetailScreen(productUuid: p.uuid))),
+                            onTap: () => Navigator.push(context, AppTheme.route((_) => CustomerProductDetailScreen(productUuid: p.uuid))),
                             onAdd: () => ref.read(cartProvider.notifier).addItem(p, 1),
                           );
                         },

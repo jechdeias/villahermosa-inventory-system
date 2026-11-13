@@ -88,7 +88,7 @@ class _CustomerOrdersScreenState extends ConsumerState<CustomerOrdersScreen> {
                   itemCount: shown.length,
                   itemBuilder: (context, i) => _OrderCard(
                     order: shown[i],
-                    onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => CustomerOrderDetailScreen(orderUuid: shown[i].uuid))),
+                    onTap: () => Navigator.push(context, AppTheme.route((_) => CustomerOrderDetailScreen(orderUuid: shown[i].uuid))),
                   ),
                 ),
         ),

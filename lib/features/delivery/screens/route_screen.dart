@@ -262,13 +262,11 @@ class _RouteOrderRow extends StatelessWidget {
       onTap: order.status == OrderStatus.outForDelivery
           ? () => Navigator.push(
                 context,
-                MaterialPageRoute<void>(
-                  builder: (_) => DeliveryConfirmationScreen(
-                    deliveryId: order.uuid,
-                    customerName: order.storeName ?? '',
-                    deliveryAddress: order.deliveryAddress,
-                  ),
-                ),
+                AppTheme.route((_) => DeliveryConfirmationScreen(
+                  deliveryId: order.uuid,
+                  customerName: order.storeName ?? '',
+                  deliveryAddress: order.deliveryAddress,
+                )),
               )
           : null,
       child: Container(
