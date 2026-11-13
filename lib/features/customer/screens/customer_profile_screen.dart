@@ -10,6 +10,7 @@ import '../providers/customer_providers.dart';
 import '../widgets/customer_common.dart';
 import '../widgets/customer_shell.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/sync/sync_manager.dart';
 
 
 class CustomerProfileScreen extends ConsumerStatefulWidget {
@@ -98,6 +99,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
           updatedAt: Value(DateTime.now()),
         ),
       );
+      SyncManager.instance.syncPendingData().catchError((_) {});
       ref.invalidate(customersProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Store details updated')));

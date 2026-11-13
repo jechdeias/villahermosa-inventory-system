@@ -906,6 +906,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         );
 
         await widget.database.createUser(user);
+        SyncManager.instance.syncPendingData().catchError((_) {});
         if (mounted) {
           widget.onUserAdded();
           Navigator.pop(context);
@@ -1194,6 +1195,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
         );
 
         await widget.database.updateUser(widget.user.uuid, updatedUser);
+        SyncManager.instance.syncPendingData().catchError((_) {});
         if (mounted) {
           widget.onUserUpdated();
           Navigator.pop(context);
@@ -1337,6 +1339,7 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
         );
 
         await widget.database.updateUser(widget.user.uuid, updatedUser);
+        SyncManager.instance.syncPendingData().catchError((_) {});
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
