@@ -1882,6 +1882,8 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
             createdBy: Value((data['created_by'] as num?)?.toInt()),
+            createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),
+            updatedAt: Value(_toDateTime(data['updated_at']) ?? DateTime.now()),
           ),
         );
         return;
