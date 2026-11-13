@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _isTestInstance;
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -100,6 +100,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 9) {
         try { await m.createTable(deliveryRoutes); } catch (_) {}
       }
+      // v10: payments — add is_deleted, created_at, updated_at to match Supabase schema
+      if (from < 10) {
+        try { await m.addColumn(payments, payments.isDeleted); } catch (_) {}
+        try { await m.addColumn(payments, payments.createdAt); } catch (_) {}
+        try { await m.addColumn(payments, payments.updatedAt); } catch (_) {}
+      }
     },
     beforeOpen: (details) async {
       // Nuclear option: guarantee payments table exists regardless of
@@ -120,7 +126,10 @@ class AppDatabase extends _$AppDatabase {
         '  payment_date INTEGER NOT NULL,'
         '  status TEXT NOT NULL DEFAULT \'unpaid\','
         '  notes TEXT,'
-        '  sync_status TEXT NOT NULL DEFAULT \'pending\''
+        '  is_deleted INTEGER NOT NULL DEFAULT 0,'
+        '  sync_status TEXT NOT NULL DEFAULT \'pending\','
+        '  created_at INTEGER NOT NULL DEFAULT (unixepoch()),'
+        '  updated_at INTEGER NOT NULL DEFAULT (unixepoch())'
         ')',
       );
       if (!_isTestInstance) {

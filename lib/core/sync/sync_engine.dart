@@ -1412,16 +1412,11 @@ class SyncEngine {
 
     if (record is Payment) {
 
-      // Payments push/pull didn't exist at all before this — no _recordToMap
-      // case, no push method, not registered in the sync loop. orderId and
-      // salesRepId are already plain integer FKs locally (unlike
-      // customerId/productId elsewhere in this file, which are text uuids
-      // needing a lookup) — Payments never had a local uuid column at all,
-      // so this maps directly. There's also no local createdAt/updatedAt on
-      // this table; created_at/updated_at below are synthesized at push
-      // time rather than read from the record.
-
-      final now = DateTime.now().toIso8601String();
+      // Payments push/pull — orderId and salesRepId are plain integer FKs
+      // locally (unlike customerId/productId elsewhere, which are text uuids
+      // needing a lookup). Payments have no local uuid column so we upsert on
+      // the natural id-parity (local autoincrement id == Supabase id).
+      // is_deleted / created_at / updated_at added in schema v10.
 
       return {
 
@@ -1453,11 +1448,13 @@ class SyncEngine {
 
         'notes': record.notes,
 
+        'is_deleted': record.isDeleted,
+
         'sync_status': record.syncStatus,
 
-        'created_at': now,
+        'created_at': record.createdAt.toIso8601String(),
 
-        'updated_at': now,
+        'updated_at': record.updatedAt.toIso8601String(),
 
       };
 
@@ -1544,6 +1541,12 @@ class SyncEngine {
 
         'status': record.status,
 
+        // driver_name maps from local deliveryPersonnelName (the full delivery
+        // person's name). delivery_date matches Supabase's delivery_date column.
+        'driver_name': record.deliveryPersonnelName,
+
+        'delivery_date': record.deliveryDate?.toIso8601String(),
+
         'delivery_notes': record.deliveryNotes,
 
         'is_deleted': record.isDeleted,
@@ -1562,11 +1565,12 @@ class SyncEngine {
 
     if (record is Supplier) {
 
+      // Note: Supabase suppliers table has NO uuid column — omit it from the
+      // push payload to avoid a "column uuid does not exist" error. The Edge
+      // Function upserts on id; supplier_code is the natural unique key.
       return {
 
         'id': record.id,
-
-        'uuid': record.uuid,
 
         'supplier_code': record.supplierCode,
 
@@ -1908,7 +1912,10 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             paymentDate: Value(_toDateTime(data['payment_date']) ?? DateTime.now()),
             status: Value(data['status'] as String? ?? 'unpaid'),
             notes: Value(data['notes'] as String?),
+            isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
+            createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),
+            updatedAt: Value(_toDateTime(data['updated_at']) ?? DateTime.now()),
           ),
         );
         return;
@@ -1992,6 +1999,12 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             ? await _database.getOrderByIntId(data['order_id'] as int)
             : null;
         final now = DateTime.now();
+        // Supabase deliveries only has: id, order_id, delivery_date, status,
+        // driver_name, delivery_notes, is_deleted, sync_status, created_at,
+        // updated_at, uuid.
+        // All other local columns (deliveryPersonnelId/Phone, expectedStart/
+        // CompletionTime, etc.) are local-only: they fall back to empty / epoch.
+        // driver_name → deliveryPersonnelName; delivery_date → deliveryDate.
         await _database.into(_database.deliveries).insertOnConflictUpdate(
           DeliveriesCompanion(
             id: Value(data['id'] as int),
@@ -1999,7 +2012,8 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             orderId: Value(localOrder?.uuid ?? data['order_id']?.toString() ?? ''),
             deliveryNumber: Value(data['delivery_number'] as String? ?? 'DEL-${data['id']}'),
             deliveryPersonnelId: Value(data['delivery_personnel_id'] as String? ?? ''),
-            deliveryPersonnelName: Value(data['delivery_personnel_name'] as String? ?? ''),
+            // driver_name is Supabase's column; map to the local deliveryPersonnelName.
+            deliveryPersonnelName: Value(data['driver_name'] as String? ?? data['delivery_personnel_name'] as String? ?? ''),
             deliveryPersonnelPhone: Value(data['delivery_personnel_phone'] as String? ?? ''),
             expectedStartTime: Value(_toDateTime(data['expected_start_time']) ?? now),
             expectedCompletionTime: Value(_toDateTime(data['expected_completion_time']) ?? now),
@@ -2015,8 +2029,11 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             deliveryCoordinates: Value(data['delivery_coordinates'] as String?),
             isActive: Value(data['is_active'] as bool? ?? true),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            // delivery_date is the Supabase column name (matches local deliveryDate).
             deliveryDate: Value(_toDateTime(data['delivery_date'])),
             syncStatus: const Value('synced'),
+            createdAt: Value(_toDateTime(data['created_at']) ?? now),
+            updatedAt: Value(_toDateTime(data['updated_at']) ?? now),
           ),
         );
         return;
@@ -2096,6 +2113,12 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
         } else if (tableName == 'suppliers') {
 
+          // Supabase suppliers has no uuid column — use supplier_code as the
+          // stable synthetic uuid so each supplier gets a unique, stable id
+          // across reinstalls rather than colliding on empty string.
+          final supplierUuid = data['uuid'] as String?
+              ?? 'sup-${data['supplier_code'] as String? ?? data['id'].toString()}';
+
           await _database.customUpdate(
 
             '''UPDATE suppliers SET
@@ -2108,7 +2131,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
             variables: [
 
-              Variable.withString(data['uuid'] as String? ?? ''),
+              Variable.withString(supplierUuid),
 
               Variable.withString(data['supplier_code'] as String? ?? ''),
 
@@ -2241,6 +2264,10 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
         } else if (tableName == 'suppliers') {
 
+          // Same synthetic-uuid logic as the update case above.
+          final supplierUuid = data['uuid'] as String?
+              ?? 'sup-${data['supplier_code'] as String? ?? data['id'].toString()}';
+
           await _database.customInsert(
 
             '''INSERT OR REPLACE INTO suppliers
@@ -2253,7 +2280,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
               Variable.withInt(data['id'] as int),
 
-              Variable.withString(data['uuid'] as String? ?? ''),
+              Variable.withString(supplierUuid),
 
               Variable.withString(data['supplier_code'] as String? ?? ''),
 

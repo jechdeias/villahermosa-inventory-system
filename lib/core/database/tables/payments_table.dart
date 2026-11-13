@@ -18,5 +18,8 @@ class Payments extends Table {
   DateTimeColumn get paymentDate => dateTime()();
   TextColumn get status => text().withDefault(const Constant('unpaid'))();
   TextColumn get notes => text().nullable()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }

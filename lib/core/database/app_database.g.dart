@@ -10629,7 +10629,10 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
   final Value<DateTime> paymentDate;
   final Value<String> status;
   final Value<String?> notes;
+  final Value<bool> isDeleted;
   final Value<String> syncStatus;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
   const PaymentsCompanion({
     this.id = const Value.absent(),
     this.paymentId = const Value.absent(),
@@ -10645,7 +10648,10 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     this.paymentDate = const Value.absent(),
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
   });
   PaymentsCompanion.insert({
     this.id = const Value.absent(),
@@ -10662,7 +10668,10 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     required DateTime paymentDate,
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
   }) : paymentId = Value(paymentId),
        orderId = Value(orderId),
        orderCode = Value(orderCode),
@@ -10687,7 +10696,10 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     Expression<DateTime>? paymentDate,
     Expression<String>? status,
     Expression<String>? notes,
+    Expression<bool>? isDeleted,
     Expression<String>? syncStatus,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -10704,7 +10716,10 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
       if (paymentDate != null) 'payment_date': paymentDate,
       if (status != null) 'status': status,
       if (notes != null) 'notes': notes,
+      if (isDeleted != null) 'is_deleted': isDeleted,
       if (syncStatus != null) 'sync_status': syncStatus,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
 
@@ -10723,7 +10738,10 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     Value<DateTime>? paymentDate,
     Value<String>? status,
     Value<String?>? notes,
+    Value<bool>? isDeleted,
     Value<String>? syncStatus,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
   }) {
     return PaymentsCompanion(
       id: id ?? this.id,
@@ -10740,7 +10758,10 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
       paymentDate: paymentDate ?? this.paymentDate,
       status: status ?? this.status,
       notes: notes ?? this.notes,
+      isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -10789,8 +10810,17 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
     return map;
   }
@@ -10812,7 +10842,10 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
           ..write('paymentDate: $paymentDate, ')
           ..write('status: $status, ')
           ..write('notes: $notes, ')
-          ..write('syncStatus: $syncStatus')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
