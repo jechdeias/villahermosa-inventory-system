@@ -184,6 +184,8 @@ class SyncEngine {
 
     await _syncTable('suppliers', _pushSuppliers, SyncConflictResolution.remoteWins);
 
+    await _syncTable('delivery_routes', _pushDeliveryRoutes, SyncConflictResolution.localWins);
+
 
 
     debugPrint('Local changes pushed successfully');
@@ -225,6 +227,8 @@ class SyncEngine {
     await _pullTableSafely('deliveries', _pullDeliveries, lastSyncTime);
 
     await _pullTableSafely('suppliers', _pullSuppliers, lastSyncTime);
+
+    await _pullTableSafely('delivery_routes', _pullDeliveryRoutes, lastSyncTime);
 
 
 
@@ -983,6 +987,34 @@ class SyncEngine {
 
 
 
+  Future<List<dynamic>> _pushDeliveryRoutes() async {
+    debugPrint('Pushing delivery_routes to Supabase...');
+
+    final pendingRoutes = await (_database.select(_database.deliveryRoutes)
+          ..where((r) => r.syncStatus.equals('pending'))
+          ..where((r) => r.isDeleted.equals(false)))
+        .get();
+    if (pendingRoutes.isEmpty) {
+      debugPrint('No pending delivery routes to push');
+      return [];
+    }
+
+    for (final route in pendingRoutes) {
+      try {
+        final data = _recordToMap(route);
+        data.remove('id');
+        await Supabase.instance.client
+            .from('delivery_routes')
+            .upsert(data, onConflict: 'uuid');
+        await _markRecordAsSynced(route, route.id.toString());
+        debugPrint('✅ Synced delivery route: ${route.routeName}');
+      } catch (e) {
+        debugPrint('❌ Failed to sync delivery route ${route.routeName}: $e');
+      }
+    }
+    return pendingRoutes;
+  }
+
   /// Table-specific pull methods
 
   Future<void> _pullUsers(DateTime lastSyncTime) async {
@@ -1182,6 +1214,23 @@ class SyncEngine {
   }
 
 
+
+  Future<void> _pullDeliveryRoutes(DateTime lastSyncTime) async {
+    debugPrint('=== PULLING DELIVERY ROUTES ===');
+    // Always pull all active routes — routes are rarely created and admin
+    // changes must reach phones even if the cursor has moved past them.
+    final response = await Supabase.instance.client
+        .from('delivery_routes')
+        .select()
+        .eq('is_deleted', false);
+
+    debugPrint('Supabase returned ${response.length} delivery routes');
+
+    for (final routeData in response) {
+      await _updateLocalRecord('delivery_routes', routeData);
+    }
+    debugPrint('=== PULL DELIVERY ROUTES COMPLETE ===');
+  }
 
   /// Utility methods
 
@@ -1541,6 +1590,23 @@ class SyncEngine {
 
     }
 
+    if (record is DeliveryRoute) {
+      return {
+        'id': record.id,
+        'uuid': record.uuid,
+        'route_name': record.routeName,
+        'municipality': record.municipality,
+        'assigned_rep_name': record.assignedRepName,
+        'delivery_days': record.deliveryDays,
+        'customer_count': record.customerCount,
+        'status': record.status,
+        'is_deleted': record.isDeleted,
+        'sync_status': record.syncStatus,
+        'created_at': record.createdAt.toIso8601String(),
+        'updated_at': record.updatedAt.toIso8601String(),
+      };
+    }
+
     return {};
 
   }
@@ -1566,6 +1632,8 @@ class SyncEngine {
     if (record is Supplier) return 'suppliers';
 
     if (record is Payment) return 'payments';
+
+    if (record is DeliveryRoute) return 'delivery_routes';
 
     return '';
 
@@ -1884,6 +1952,32 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             pickedAt: Value(_toDateTime(data['picked_at'])),
             notes: Value(data['notes'] as String?),
             isActive: Value(data['is_active'] as bool? ?? true),
+            isDeleted: Value(data['is_deleted'] as bool? ?? false),
+            syncStatus: const Value('synced'),
+            createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),
+            updatedAt: Value(_toDateTime(data['updated_at']) ?? DateTime.now()),
+          ),
+        );
+        return;
+      }
+      if (tableName == 'delivery_routes') {
+        // Routes are managed by admin on Windows and pulled to warehouse/delivery phones.
+        // uuid is the stable conflict key across reinstalls.
+        final remoteUuid = data['uuid'] as String? ?? 'sb-route-${data['id']}';
+        final existing = await (_database.select(_database.deliveryRoutes)
+              ..where((r) => r.uuid.equals(remoteUuid)))
+            .getSingleOrNull();
+        final localId = existing?.id ?? data['id'] as int;
+        await _database.into(_database.deliveryRoutes).insertOnConflictUpdate(
+          DeliveryRoutesCompanion(
+            id: Value(localId),
+            uuid: Value(remoteUuid),
+            routeName: Value(data['route_name'] as String? ?? ''),
+            municipality: Value(data['municipality'] as String? ?? ''),
+            assignedRepName: Value(data['assigned_rep_name'] as String?),
+            deliveryDays: Value(data['delivery_days'] as String? ?? ''),
+            customerCount: Value((data['customer_count'] as num?)?.toInt() ?? 0),
+            status: Value(data['status'] as String? ?? 'active'),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
             createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),
