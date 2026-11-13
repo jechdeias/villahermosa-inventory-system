@@ -98,4 +98,11 @@ class Orders extends Table {
 
   /// Cached total item count across all order items.
   IntColumn get itemCount => integer().withDefault(const Constant(0))();
+
+  /// Order code (short human-readable identifier, e.g. "ORD-2409").
+  /// Matches Supabase's order_code column which payments reference.
+  TextColumn get orderCode => text().nullable()();
+
+  /// Date the order was placed. Matches Supabase's order_date column.
+  DateTimeColumn get orderDate => dateTime().nullable()();
 }

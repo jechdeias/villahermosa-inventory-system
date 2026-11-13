@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _isTestInstance;
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -105,6 +105,11 @@ class AppDatabase extends _$AppDatabase {
         try { await m.addColumn(payments, payments.isDeleted); } catch (_) {}
         try { await m.addColumn(payments, payments.createdAt); } catch (_) {}
         try { await m.addColumn(payments, payments.updatedAt); } catch (_) {}
+      }
+      // v11: orders — add order_code and order_date to match Supabase schema
+      if (from < 11) {
+        try { await m.addColumn(orders, orders.orderCode); } catch (_) {}
+        try { await m.addColumn(orders, orders.orderDate); } catch (_) {}
       }
     },
     beforeOpen: (details) async {

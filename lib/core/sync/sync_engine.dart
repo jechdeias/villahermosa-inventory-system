@@ -1487,18 +1487,14 @@ class SyncEngine {
         'sync_status': record.syncStatus,
         'created_at': record.createdAt.toIso8601String(),
         'updated_at': record.updatedAt.toIso8601String(),
-        // order_number is the display code (e.g. "ORD-2409") shown in the UI.
-        // order_code is a separate Supabase column (payments reference it).
-        // Previously this map sent 'order_code': record.orderNumber, which
-        // left order_number NULL in Supabase and caused the admin pull to
-        // fall back to 'ORD-${data['id']}' instead of the real order number.
         'order_number': record.orderNumber,
+        'order_code': record.orderCode,
         'store_name': record.storeName,
         'route_name': record.routeName,
         'sales_rep_id': record.salesRepId,
         'sales_rep_name': record.salesRepName,
         'item_count': record.itemCount,
-        'order_date': record.createdAt.toIso8601String(),
+        'order_date': (record.orderDate ?? record.createdAt).toIso8601String(),
       };
 
     }
@@ -1844,9 +1840,8 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             salesRepId: Value((data['sales_rep_id'] as num?)?.toInt()),
             salesRepName: Value(data['sales_rep_name'] as String?),
             itemCount: Value((data['item_count'] as num?)?.toInt() ?? 0),
-            // Pull the real created_at from Supabase so the Windows orders list
-            // shows the correct date.  Without this field the companion falls back
-            // to the Drift column default, which was surfacing as 2024-12-12.
+            orderCode: Value(data['order_code'] as String?),
+            orderDate: Value(_toDateTime(data['order_date'])),
             createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),
             updatedAt: Value(_toDateTime(data['updated_at']) ?? DateTime.now()),
           ),

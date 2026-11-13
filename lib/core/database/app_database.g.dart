@@ -4767,6 +4767,8 @@ class OrdersCompanion extends UpdateCompanion<Order> {
   final Value<int?> salesRepId;
   final Value<String?> salesRepName;
   final Value<int> itemCount;
+  final Value<String?> orderCode;
+  final Value<DateTime?> orderDate;
   const OrdersCompanion({
     this.id = const Value.absent(),
     this.uuid = const Value.absent(),
@@ -4799,6 +4801,8 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     this.salesRepId = const Value.absent(),
     this.salesRepName = const Value.absent(),
     this.itemCount = const Value.absent(),
+    this.orderCode = const Value.absent(),
+    this.orderDate = const Value.absent(),
   });
   OrdersCompanion.insert({
     this.id = const Value.absent(),
@@ -4832,6 +4836,8 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     this.salesRepId = const Value.absent(),
     this.salesRepName = const Value.absent(),
     this.itemCount = const Value.absent(),
+    this.orderCode = const Value.absent(),
+    this.orderDate = const Value.absent(),
   }) : uuid = Value(uuid),
        customerId = Value(customerId),
        orderNumber = Value(orderNumber),
@@ -4868,6 +4874,8 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     Expression<int>? salesRepId,
     Expression<String>? salesRepName,
     Expression<int>? itemCount,
+    Expression<String>? orderCode,
+    Expression<DateTime>? orderDate,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4903,6 +4911,8 @@ class OrdersCompanion extends UpdateCompanion<Order> {
       if (salesRepId != null) 'sales_rep_id': salesRepId,
       if (salesRepName != null) 'sales_rep_name': salesRepName,
       if (itemCount != null) 'item_count': itemCount,
+      if (orderCode != null) 'order_code': orderCode,
+      if (orderDate != null) 'order_date': orderDate,
     });
   }
 
@@ -4938,6 +4948,8 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     Value<int?>? salesRepId,
     Value<String?>? salesRepName,
     Value<int>? itemCount,
+    Value<String?>? orderCode,
+    Value<DateTime?>? orderDate,
   }) {
     return OrdersCompanion(
       id: id ?? this.id,
@@ -4971,6 +4983,8 @@ class OrdersCompanion extends UpdateCompanion<Order> {
       salesRepId: salesRepId ?? this.salesRepId,
       salesRepName: salesRepName ?? this.salesRepName,
       itemCount: itemCount ?? this.itemCount,
+      orderCode: orderCode ?? this.orderCode,
+      orderDate: orderDate ?? this.orderDate,
     );
   }
 
@@ -5074,6 +5088,12 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     if (itemCount.present) {
       map['item_count'] = Variable<int>(itemCount.value);
     }
+    if (orderCode.present) {
+      map['order_code'] = Variable<String>(orderCode.value);
+    }
+    if (orderDate.present) {
+      map['order_date'] = Variable<DateTime>(orderDate.value);
+    }
     return map;
   }
 
@@ -5110,7 +5130,9 @@ class OrdersCompanion extends UpdateCompanion<Order> {
           ..write('routeName: $routeName, ')
           ..write('salesRepId: $salesRepId, ')
           ..write('salesRepName: $salesRepName, ')
-          ..write('itemCount: $itemCount')
+          ..write('itemCount: $itemCount, ')
+          ..write('orderCode: $orderCode, ')
+          ..write('orderDate: $orderDate')
           ..write(')'))
         .toString();
   }
