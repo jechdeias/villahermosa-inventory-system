@@ -82,16 +82,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _addressMeta = const VerificationMeta(
-    'address',
-  );
-  @override
-  late final GeneratedColumn<String> address = GeneratedColumn<String>(
-    'address',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
@@ -159,17 +149,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
-  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
-    'remoteId',
-  );
-  @override
-  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
-    'remote_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
   late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
@@ -203,13 +182,11 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     passwordHash,
     role,
     phone,
-    address,
     isActive,
     createdAt,
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
     uuid,
     forcePasswordChange,
   ];
@@ -277,12 +254,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
       );
     }
-    if (data.containsKey('address')) {
-      context.handle(
-        _addressMeta,
-        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
-      );
-    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -313,12 +284,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
-    if (data.containsKey('remote_id')) {
-      context.handle(
-        _remoteIdMeta,
-        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
-      );
-    }
+
     if (data.containsKey('uuid')) {
       context.handle(
         _uuidMeta,
@@ -373,10 +339,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.string,
         data['${effectivePrefix}phone'],
       ),
-      address: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}address'],
-      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -397,10 +359,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
       )!,
-      remoteId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}remote_id'],
-      ),
       uuid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
@@ -442,9 +400,6 @@ class User extends DataClass implements Insertable<User> {
   /// User's phone number (optional).
   final String? phone;
 
-  /// User's address (optional).
-  final String? address;
-
   /// Indicates whether the user account is currently active.
   /// Inactive users cannot authenticate or access the system.
   final bool isActive;
@@ -463,9 +418,6 @@ class User extends DataClass implements Insertable<User> {
   /// Tracks whether local changes need to be synced.
   final String syncStatus;
 
-  /// Remote database ID for cross-system synchronization.
-  /// Null for local-only records until synced.
-  final String? remoteId;
 
   /// UUID for cross-system synchronization.
   final String uuid;
@@ -481,13 +433,11 @@ class User extends DataClass implements Insertable<User> {
     required this.passwordHash,
     required this.role,
     this.phone,
-    this.address,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
     required this.isDeleted,
     required this.syncStatus,
-    this.remoteId,
     required this.uuid,
     required this.forcePasswordChange,
   });
@@ -503,17 +453,11 @@ class User extends DataClass implements Insertable<User> {
     if (!nullToAbsent || phone != null) {
       map['phone'] = Variable<String>(phone);
     }
-    if (!nullToAbsent || address != null) {
-      map['address'] = Variable<String>(address);
-    }
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['sync_status'] = Variable<String>(syncStatus);
-    if (!nullToAbsent || remoteId != null) {
-      map['remote_id'] = Variable<String>(remoteId);
-    }
     map['uuid'] = Variable<String>(uuid);
     map['force_password_change'] = Variable<bool>(forcePasswordChange);
     return map;
@@ -530,17 +474,11 @@ class User extends DataClass implements Insertable<User> {
       phone: phone == null && nullToAbsent
           ? const Value.absent()
           : Value(phone),
-      address: address == null && nullToAbsent
-          ? const Value.absent()
-          : Value(address),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
       uuid: Value(uuid),
       forcePasswordChange: Value(forcePasswordChange),
     );
@@ -559,13 +497,11 @@ class User extends DataClass implements Insertable<User> {
       passwordHash: serializer.fromJson<String>(json['passwordHash']),
       role: serializer.fromJson<String>(json['role']),
       phone: serializer.fromJson<String?>(json['phone']),
-      address: serializer.fromJson<String?>(json['address']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
-      remoteId: serializer.fromJson<String?>(json['remoteId']),
       uuid: serializer.fromJson<String>(json['uuid']),
       forcePasswordChange: serializer.fromJson<bool>(
         json['forcePasswordChange'],
@@ -583,13 +519,11 @@ class User extends DataClass implements Insertable<User> {
       'passwordHash': serializer.toJson<String>(passwordHash),
       'role': serializer.toJson<String>(role),
       'phone': serializer.toJson<String?>(phone),
-      'address': serializer.toJson<String?>(address),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'syncStatus': serializer.toJson<String>(syncStatus),
-      'remoteId': serializer.toJson<String?>(remoteId),
       'uuid': serializer.toJson<String>(uuid),
       'forcePasswordChange': serializer.toJson<bool>(forcePasswordChange),
     };
@@ -603,13 +537,11 @@ class User extends DataClass implements Insertable<User> {
     String? passwordHash,
     String? role,
     Value<String?> phone = const Value.absent(),
-    Value<String?> address = const Value.absent(),
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDeleted,
     String? syncStatus,
-    Value<String?> remoteId = const Value.absent(),
     String? uuid,
     bool? forcePasswordChange,
   }) => User(
@@ -620,13 +552,11 @@ class User extends DataClass implements Insertable<User> {
     passwordHash: passwordHash ?? this.passwordHash,
     role: role ?? this.role,
     phone: phone.present ? phone.value : this.phone,
-    address: address.present ? address.value : this.address,
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
-    remoteId: remoteId.present ? remoteId.value : this.remoteId,
     uuid: uuid ?? this.uuid,
     forcePasswordChange: forcePasswordChange ?? this.forcePasswordChange,
   );
@@ -641,7 +571,6 @@ class User extends DataClass implements Insertable<User> {
           : this.passwordHash,
       role: data.role.present ? data.role.value : this.role,
       phone: data.phone.present ? data.phone.value : this.phone,
-      address: data.address.present ? data.address.value : this.address,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -649,7 +578,6 @@ class User extends DataClass implements Insertable<User> {
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
-      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
       forcePasswordChange: data.forcePasswordChange.present
           ? data.forcePasswordChange.value
@@ -667,13 +595,11 @@ class User extends DataClass implements Insertable<User> {
           ..write('passwordHash: $passwordHash, ')
           ..write('role: $role, ')
           ..write('phone: $phone, ')
-          ..write('address: $address, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId, ')
           ..write('uuid: $uuid, ')
           ..write('forcePasswordChange: $forcePasswordChange')
           ..write(')'))
@@ -689,13 +615,11 @@ class User extends DataClass implements Insertable<User> {
     passwordHash,
     role,
     phone,
-    address,
     isActive,
     createdAt,
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
     uuid,
     forcePasswordChange,
   );
@@ -710,13 +634,11 @@ class User extends DataClass implements Insertable<User> {
           other.passwordHash == this.passwordHash &&
           other.role == this.role &&
           other.phone == this.phone &&
-          other.address == this.address &&
           other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.isDeleted == this.isDeleted &&
           other.syncStatus == this.syncStatus &&
-          other.remoteId == this.remoteId &&
           other.uuid == this.uuid &&
           other.forcePasswordChange == this.forcePasswordChange);
 }
@@ -729,13 +651,11 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> passwordHash;
   final Value<String> role;
   final Value<String?> phone;
-  final Value<String?> address;
-  final Value<bool> isActive;
+final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool> isDeleted;
   final Value<String> syncStatus;
-  final Value<String?> remoteId;
   final Value<String> uuid;
   final Value<bool> forcePasswordChange;
   const UsersCompanion({
@@ -746,13 +666,11 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.passwordHash = const Value.absent(),
     this.role = const Value.absent(),
     this.phone = const Value.absent(),
-    this.address = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.forcePasswordChange = const Value.absent(),
   });
@@ -764,13 +682,11 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String passwordHash,
     required String role,
     this.phone = const Value.absent(),
-    this.address = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
     required String uuid,
     this.forcePasswordChange = const Value.absent(),
   }) : firstName = Value(firstName),
@@ -787,13 +703,11 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? passwordHash,
     Expression<String>? role,
     Expression<String>? phone,
-    Expression<String>? address,
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? isDeleted,
     Expression<String>? syncStatus,
-    Expression<String>? remoteId,
     Expression<String>? uuid,
     Expression<bool>? forcePasswordChange,
   }) {
@@ -805,13 +719,11 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (passwordHash != null) 'password_hash': passwordHash,
       if (role != null) 'role': role,
       if (phone != null) 'phone': phone,
-      if (address != null) 'address': address,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (syncStatus != null) 'sync_status': syncStatus,
-      if (remoteId != null) 'remote_id': remoteId,
       if (uuid != null) 'uuid': uuid,
       if (forcePasswordChange != null)
         'force_password_change': forcePasswordChange,
@@ -826,13 +738,11 @@ class UsersCompanion extends UpdateCompanion<User> {
     Value<String>? passwordHash,
     Value<String>? role,
     Value<String?>? phone,
-    Value<String?>? address,
     Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<bool>? isDeleted,
     Value<String>? syncStatus,
-    Value<String?>? remoteId,
     Value<String>? uuid,
     Value<bool>? forcePasswordChange,
   }) {
@@ -844,13 +754,11 @@ class UsersCompanion extends UpdateCompanion<User> {
       passwordHash: passwordHash ?? this.passwordHash,
       role: role ?? this.role,
       phone: phone ?? this.phone,
-      address: address ?? this.address,
-      isActive: isActive ?? this.isActive,
+isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
-      remoteId: remoteId ?? this.remoteId,
       uuid: uuid ?? this.uuid,
       forcePasswordChange: forcePasswordChange ?? this.forcePasswordChange,
     );
@@ -880,9 +788,6 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (phone.present) {
       map['phone'] = Variable<String>(phone.value);
     }
-    if (address.present) {
-      map['address'] = Variable<String>(address.value);
-    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -897,9 +802,6 @@ class UsersCompanion extends UpdateCompanion<User> {
     }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
-    }
-    if (remoteId.present) {
-      map['remote_id'] = Variable<String>(remoteId.value);
     }
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
@@ -920,13 +822,11 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('passwordHash: $passwordHash, ')
           ..write('role: $role, ')
           ..write('phone: $phone, ')
-          ..write('address: $address, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId, ')
           ..write('uuid: $uuid, ')
           ..write('forcePasswordChange: $forcePasswordChange')
           ..write(')'))
@@ -1122,17 +1022,6 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
-  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
-    'remoteId',
-  );
-  @override
-  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
-    'remote_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
   late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
@@ -1184,7 +1073,6 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
     uuid,
     supplierId,
     qtyPerCase,
@@ -1313,12 +1201,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
-    if (data.containsKey('remote_id')) {
-      context.handle(
-        _remoteIdMeta,
-        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
-      );
-    }
+
     if (data.containsKey('uuid')) {
       context.handle(
         _uuidMeta,
@@ -1415,10 +1298,6 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
       )!,
-      remoteId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}remote_id'],
-      ),
       uuid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
@@ -1489,8 +1368,6 @@ class Product extends DataClass implements Insertable<Product> {
   /// Synchronization status with remote backend.
   final String syncStatus;
 
-  /// Remote database ID for cross-system synchronization.
-  final String? remoteId;
 
   /// UUID for cross-system synchronization.
   final String uuid;
@@ -1517,7 +1394,6 @@ class Product extends DataClass implements Insertable<Product> {
     required this.updatedAt,
     required this.isDeleted,
     required this.syncStatus,
-    this.remoteId,
     required this.uuid,
     this.supplierId,
     required this.qtyPerCase,
@@ -1543,9 +1419,6 @@ class Product extends DataClass implements Insertable<Product> {
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['sync_status'] = Variable<String>(syncStatus);
-    if (!nullToAbsent || remoteId != null) {
-      map['remote_id'] = Variable<String>(remoteId);
-    }
     map['uuid'] = Variable<String>(uuid);
     if (!nullToAbsent || supplierId != null) {
       map['supplier_id'] = Variable<int>(supplierId);
@@ -1574,9 +1447,6 @@ class Product extends DataClass implements Insertable<Product> {
       updatedAt: Value(updatedAt),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
       uuid: Value(uuid),
       supplierId: supplierId == null && nullToAbsent
           ? const Value.absent()
@@ -1607,7 +1477,6 @@ class Product extends DataClass implements Insertable<Product> {
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
-      remoteId: serializer.fromJson<String?>(json['remoteId']),
       uuid: serializer.fromJson<String>(json['uuid']),
       supplierId: serializer.fromJson<int?>(json['supplierId']),
       qtyPerCase: serializer.fromJson<int>(json['qtyPerCase']),
@@ -1633,7 +1502,6 @@ class Product extends DataClass implements Insertable<Product> {
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'syncStatus': serializer.toJson<String>(syncStatus),
-      'remoteId': serializer.toJson<String?>(remoteId),
       'uuid': serializer.toJson<String>(uuid),
       'supplierId': serializer.toJson<int?>(supplierId),
       'qtyPerCase': serializer.toJson<int>(qtyPerCase),
@@ -1657,7 +1525,6 @@ class Product extends DataClass implements Insertable<Product> {
     DateTime? updatedAt,
     bool? isDeleted,
     String? syncStatus,
-    Value<String?> remoteId = const Value.absent(),
     String? uuid,
     Value<int?> supplierId = const Value.absent(),
     int? qtyPerCase,
@@ -1678,7 +1545,6 @@ class Product extends DataClass implements Insertable<Product> {
     updatedAt: updatedAt ?? this.updatedAt,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
-    remoteId: remoteId.present ? remoteId.value : this.remoteId,
     uuid: uuid ?? this.uuid,
     supplierId: supplierId.present ? supplierId.value : this.supplierId,
     qtyPerCase: qtyPerCase ?? this.qtyPerCase,
@@ -1705,7 +1571,6 @@ class Product extends DataClass implements Insertable<Product> {
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
-      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
       supplierId: data.supplierId.present
           ? data.supplierId.value
@@ -1735,7 +1600,6 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId, ')
           ..write('uuid: $uuid, ')
           ..write('supplierId: $supplierId, ')
           ..write('qtyPerCase: $qtyPerCase')
@@ -1761,7 +1625,6 @@ class Product extends DataClass implements Insertable<Product> {
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
     uuid,
     supplierId,
     qtyPerCase,
@@ -1786,7 +1649,6 @@ class Product extends DataClass implements Insertable<Product> {
           other.updatedAt == this.updatedAt &&
           other.isDeleted == this.isDeleted &&
           other.syncStatus == this.syncStatus &&
-          other.remoteId == this.remoteId &&
           other.uuid == this.uuid &&
           other.supplierId == this.supplierId &&
           other.qtyPerCase == this.qtyPerCase);
@@ -1809,7 +1671,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<DateTime> updatedAt;
   final Value<bool> isDeleted;
   final Value<String> syncStatus;
-  final Value<String?> remoteId;
   final Value<String> uuid;
   final Value<int?> supplierId;
   final Value<int> qtyPerCase;
@@ -1830,7 +1691,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.supplierId = const Value.absent(),
     this.qtyPerCase = const Value.absent(),
@@ -1852,7 +1712,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
     required String uuid,
     this.supplierId = const Value.absent(),
     this.qtyPerCase = const Value.absent(),
@@ -1882,7 +1741,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<DateTime>? updatedAt,
     Expression<bool>? isDeleted,
     Expression<String>? syncStatus,
-    Expression<String>? remoteId,
     Expression<String>? uuid,
     Expression<int>? supplierId,
     Expression<int>? qtyPerCase,
@@ -1904,7 +1762,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (syncStatus != null) 'sync_status': syncStatus,
-      if (remoteId != null) 'remote_id': remoteId,
       if (uuid != null) 'uuid': uuid,
       if (supplierId != null) 'supplier_id': supplierId,
       if (qtyPerCase != null) 'qty_per_case': qtyPerCase,
@@ -1928,7 +1785,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<DateTime>? updatedAt,
     Value<bool>? isDeleted,
     Value<String>? syncStatus,
-    Value<String?>? remoteId,
     Value<String>? uuid,
     Value<int?>? supplierId,
     Value<int>? qtyPerCase,
@@ -1950,7 +1806,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
-      remoteId: remoteId ?? this.remoteId,
       uuid: uuid ?? this.uuid,
       supplierId: supplierId ?? this.supplierId,
       qtyPerCase: qtyPerCase ?? this.qtyPerCase,
@@ -2008,9 +1863,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
     }
-    if (remoteId.present) {
-      map['remote_id'] = Variable<String>(remoteId.value);
-    }
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
     }
@@ -2042,7 +1894,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId, ')
           ..write('uuid: $uuid, ')
           ..write('supplierId: $supplierId, ')
           ..write('qtyPerCase: $qtyPerCase')
@@ -2197,21 +2048,6 @@ class $CustomersTable extends Customers
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _isActiveMeta = const VerificationMeta(
-    'isActive',
-  );
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-    'is_active',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_active" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2262,17 +2098,6 @@ class $CustomersTable extends Customers
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
-  );
-  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
-    'remoteId',
-  );
-  @override
-  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
-    'remote_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
@@ -2341,12 +2166,10 @@ class $CustomersTable extends Customers
     customerType,
     status,
     contactNumber,
-    isActive,
     createdAt,
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
     uuid,
     currentCredit,
     barangay,
@@ -2397,12 +2220,7 @@ class $CustomersTable extends Customers
         phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
       );
     }
-    if (data.containsKey('address')) {
-      context.handle(
-        _addressMeta,
-        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
-      );
-    }
+
     if (data.containsKey('municipality')) {
       context.handle(
         _municipalityMeta,
@@ -2465,12 +2283,7 @@ class $CustomersTable extends Customers
     } else if (isInserting) {
       context.missing(_contactNumberMeta);
     }
-    if (data.containsKey('is_active')) {
-      context.handle(
-        _isActiveMeta,
-        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
-      );
-    }
+
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2495,12 +2308,7 @@ class $CustomersTable extends Customers
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
-    if (data.containsKey('remote_id')) {
-      context.handle(
-        _remoteIdMeta,
-        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
-      );
-    }
+
     if (data.containsKey('uuid')) {
       context.handle(
         _uuidMeta,
@@ -2597,10 +2405,6 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}contact_number'],
       )!,
-      isActive: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_active'],
-      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2617,10 +2421,6 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
       )!,
-      remoteId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}remote_id'],
-      ),
       uuid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
@@ -2690,8 +2490,6 @@ class Customer extends DataClass implements Insertable<Customer> {
   /// Contact number for orders.
   final String contactNumber;
 
-  /// Indicates whether the customer is currently active.
-  final bool isActive;
 
   /// Timestamp when the customer record was created.
   final DateTime createdAt;
@@ -2704,9 +2502,6 @@ class Customer extends DataClass implements Insertable<Customer> {
 
   /// Synchronization status with remote backend.
   final String syncStatus;
-
-  /// Remote database ID for cross-system synchronization.
-  final String? remoteId;
 
   /// UUID for cross-system synchronization.
   final String uuid;
@@ -2736,12 +2531,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     required this.customerType,
     required this.status,
     required this.contactNumber,
-    required this.isActive,
     required this.createdAt,
     required this.updatedAt,
     required this.isDeleted,
     required this.syncStatus,
-    this.remoteId,
     required this.uuid,
     this.currentCredit,
     this.barangay,
@@ -2772,14 +2565,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     map['customer_type'] = Variable<String>(customerType);
     map['status'] = Variable<String>(status);
     map['contact_number'] = Variable<String>(contactNumber);
-    map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['sync_status'] = Variable<String>(syncStatus);
-    if (!nullToAbsent || remoteId != null) {
-      map['remote_id'] = Variable<String>(remoteId);
-    }
     map['uuid'] = Variable<String>(uuid);
     if (!nullToAbsent || currentCredit != null) {
       map['current_credit'] = Variable<double>(currentCredit);
@@ -2819,14 +2608,10 @@ class Customer extends DataClass implements Insertable<Customer> {
       customerType: Value(customerType),
       status: Value(status),
       contactNumber: Value(contactNumber),
-      isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
       uuid: Value(uuid),
       currentCredit: currentCredit == null && nullToAbsent
           ? const Value.absent()
@@ -2860,12 +2645,10 @@ class Customer extends DataClass implements Insertable<Customer> {
       customerType: serializer.fromJson<String>(json['customerType']),
       status: serializer.fromJson<String>(json['status']),
       contactNumber: serializer.fromJson<String>(json['contactNumber']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
-      remoteId: serializer.fromJson<String?>(json['remoteId']),
       uuid: serializer.fromJson<String>(json['uuid']),
       currentCredit: serializer.fromJson<double?>(json['currentCredit']),
       barangay: serializer.fromJson<String?>(json['barangay']),
@@ -2890,12 +2673,10 @@ class Customer extends DataClass implements Insertable<Customer> {
       'customerType': serializer.toJson<String>(customerType),
       'status': serializer.toJson<String>(status),
       'contactNumber': serializer.toJson<String>(contactNumber),
-      'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'syncStatus': serializer.toJson<String>(syncStatus),
-      'remoteId': serializer.toJson<String?>(remoteId),
       'uuid': serializer.toJson<String>(uuid),
       'currentCredit': serializer.toJson<double?>(currentCredit),
       'barangay': serializer.toJson<String?>(barangay),
@@ -2918,12 +2699,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     String? customerType,
     String? status,
     String? contactNumber,
-    bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDeleted,
     String? syncStatus,
-    Value<String?> remoteId = const Value.absent(),
     String? uuid,
     Value<double?> currentCredit = const Value.absent(),
     Value<String?> barangay = const Value.absent(),
@@ -2943,12 +2722,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     customerType: customerType ?? this.customerType,
     status: status ?? this.status,
     contactNumber: contactNumber ?? this.contactNumber,
-    isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
-    remoteId: remoteId.present ? remoteId.value : this.remoteId,
     uuid: uuid ?? this.uuid,
     currentCredit: currentCredit.present
         ? currentCredit.value
@@ -2982,14 +2759,12 @@ class Customer extends DataClass implements Insertable<Customer> {
       contactNumber: data.contactNumber.present
           ? data.contactNumber.value
           : this.contactNumber,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
-      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
       currentCredit: data.currentCredit.present
           ? data.currentCredit.value
@@ -3016,12 +2791,10 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('customerType: $customerType, ')
           ..write('status: $status, ')
           ..write('contactNumber: $contactNumber, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId, ')
           ..write('uuid: $uuid, ')
           ..write('currentCredit: $currentCredit, ')
           ..write('barangay: $barangay, ')
@@ -3046,12 +2819,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     customerType,
     status,
     contactNumber,
-    isActive,
     createdAt,
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
     uuid,
     currentCredit,
     barangay,
@@ -3075,12 +2846,10 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.customerType == this.customerType &&
           other.status == this.status &&
           other.contactNumber == this.contactNumber &&
-          other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.isDeleted == this.isDeleted &&
           other.syncStatus == this.syncStatus &&
-          other.remoteId == this.remoteId &&
           other.uuid == this.uuid &&
           other.currentCredit == this.currentCredit &&
           other.barangay == this.barangay &&
@@ -3102,12 +2871,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String> customerType;
   final Value<String> status;
   final Value<String> contactNumber;
-  final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool> isDeleted;
   final Value<String> syncStatus;
-  final Value<String?> remoteId;
   final Value<String> uuid;
   final Value<double?> currentCredit;
   final Value<String?> barangay;
@@ -3127,12 +2894,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.customerType = const Value.absent(),
     this.status = const Value.absent(),
     this.contactNumber = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.currentCredit = const Value.absent(),
     this.barangay = const Value.absent(),
@@ -3153,12 +2918,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.customerType = const Value.absent(),
     this.status = const Value.absent(),
     required String contactNumber,
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
     required String uuid,
     this.currentCredit = const Value.absent(),
     this.barangay = const Value.absent(),
@@ -3184,12 +2947,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<String>? customerType,
     Expression<String>? status,
     Expression<String>? contactNumber,
-    Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? isDeleted,
     Expression<String>? syncStatus,
-    Expression<String>? remoteId,
     Expression<String>? uuid,
     Expression<double>? currentCredit,
     Expression<String>? barangay,
@@ -3210,12 +2971,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       if (customerType != null) 'customer_type': customerType,
       if (status != null) 'status': status,
       if (contactNumber != null) 'contact_number': contactNumber,
-      if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (syncStatus != null) 'sync_status': syncStatus,
-      if (remoteId != null) 'remote_id': remoteId,
       if (uuid != null) 'uuid': uuid,
       if (currentCredit != null) 'current_credit': currentCredit,
       if (barangay != null) 'barangay': barangay,
@@ -3238,12 +2997,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<String>? customerType,
     Value<String>? status,
     Value<String>? contactNumber,
-    Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<bool>? isDeleted,
     Value<String>? syncStatus,
-    Value<String?>? remoteId,
     Value<String>? uuid,
     Value<double?>? currentCredit,
     Value<String?>? barangay,
@@ -3264,12 +3021,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       customerType: customerType ?? this.customerType,
       status: status ?? this.status,
       contactNumber: contactNumber ?? this.contactNumber,
-      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
-      remoteId: remoteId ?? this.remoteId,
       uuid: uuid ?? this.uuid,
       currentCredit: currentCredit ?? this.currentCredit,
       barangay: barangay ?? this.barangay,
@@ -3320,9 +3075,6 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     if (contactNumber.present) {
       map['contact_number'] = Variable<String>(contactNumber.value);
     }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -3334,9 +3086,6 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
-    }
-    if (remoteId.present) {
-      map['remote_id'] = Variable<String>(remoteId.value);
     }
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
@@ -3372,12 +3121,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('customerType: $customerType, ')
           ..write('status: $status, ')
           ..write('contactNumber: $contactNumber, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId, ')
           ..write('uuid: $uuid, ')
           ..write('currentCredit: $currentCredit, ')
           ..write('barangay: $barangay, ')
@@ -8941,17 +8688,7 @@ class $SuppliersTable extends Suppliers
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
-  static const VerificationMeta _supplierCodeMeta = const VerificationMeta(
-    'supplierCode',
-  );
-  @override
-  late final GeneratedColumn<String> supplierCode = GeneratedColumn<String>(
-    'supplier_code',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
+
   static const VerificationMeta _tradeNameMeta = const VerificationMeta(
     'tradeName',
   );
@@ -8963,37 +8700,9 @@ class $SuppliersTable extends Suppliers
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _address1Meta = const VerificationMeta(
-    'address1',
-  );
-  @override
-  late final GeneratedColumn<String> address1 = GeneratedColumn<String>(
-    'address1',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _address2Meta = const VerificationMeta(
-    'address2',
-  );
-  @override
-  late final GeneratedColumn<String> address2 = GeneratedColumn<String>(
-    'address2',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _tinMeta = const VerificationMeta('tin');
-  @override
-  late final GeneratedColumn<String> tin = GeneratedColumn<String>(
-    'tin',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
+
+
+
   static const VerificationMeta _isDeletedMeta = const VerificationMeta(
     'isDeleted',
   );
@@ -9049,11 +8758,7 @@ class $SuppliersTable extends Suppliers
   List<GeneratedColumn> get $columns => [
     id,
     uuid,
-    supplierCode,
     tradeName,
-    address1,
-    address2,
-    tin,
     isDeleted,
     syncStatus,
     createdAt,
@@ -9082,17 +8787,6 @@ class $SuppliersTable extends Suppliers
     } else if (isInserting) {
       context.missing(_uuidMeta);
     }
-    if (data.containsKey('supplier_code')) {
-      context.handle(
-        _supplierCodeMeta,
-        supplierCode.isAcceptableOrUnknown(
-          data['supplier_code']!,
-          _supplierCodeMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_supplierCodeMeta);
-    }
     if (data.containsKey('trade_name')) {
       context.handle(
         _tradeNameMeta,
@@ -9100,24 +8794,6 @@ class $SuppliersTable extends Suppliers
       );
     } else if (isInserting) {
       context.missing(_tradeNameMeta);
-    }
-    if (data.containsKey('address1')) {
-      context.handle(
-        _address1Meta,
-        address1.isAcceptableOrUnknown(data['address1']!, _address1Meta),
-      );
-    }
-    if (data.containsKey('address2')) {
-      context.handle(
-        _address2Meta,
-        address2.isAcceptableOrUnknown(data['address2']!, _address2Meta),
-      );
-    }
-    if (data.containsKey('tin')) {
-      context.handle(
-        _tinMeta,
-        tin.isAcceptableOrUnknown(data['tin']!, _tinMeta),
-      );
     }
     if (data.containsKey('is_deleted')) {
       context.handle(
@@ -9160,26 +8836,10 @@ class $SuppliersTable extends Suppliers
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
       )!,
-      supplierCode: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}supplier_code'],
-      )!,
       tradeName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}trade_name'],
       )!,
-      address1: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}address1'],
-      ),
-      address2: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}address2'],
-      ),
-      tin: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}tin'],
-      ),
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_deleted'],
@@ -9208,11 +8868,7 @@ class $SuppliersTable extends Suppliers
 class Supplier extends DataClass implements Insertable<Supplier> {
   final int id;
   final String uuid;
-  final String supplierCode;
   final String tradeName;
-  final String? address1;
-  final String? address2;
-  final String? tin;
   final bool isDeleted;
   final String syncStatus;
   final DateTime createdAt;
@@ -9220,11 +8876,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
   const Supplier({
     required this.id,
     required this.uuid,
-    required this.supplierCode,
     required this.tradeName,
-    this.address1,
-    this.address2,
-    this.tin,
     required this.isDeleted,
     required this.syncStatus,
     required this.createdAt,
@@ -9235,17 +8887,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['uuid'] = Variable<String>(uuid);
-    map['supplier_code'] = Variable<String>(supplierCode);
     map['trade_name'] = Variable<String>(tradeName);
-    if (!nullToAbsent || address1 != null) {
-      map['address1'] = Variable<String>(address1);
-    }
-    if (!nullToAbsent || address2 != null) {
-      map['address2'] = Variable<String>(address2);
-    }
-    if (!nullToAbsent || tin != null) {
-      map['tin'] = Variable<String>(tin);
-    }
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['sync_status'] = Variable<String>(syncStatus);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -9257,15 +8899,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
     return SuppliersCompanion(
       id: Value(id),
       uuid: Value(uuid),
-      supplierCode: Value(supplierCode),
       tradeName: Value(tradeName),
-      address1: address1 == null && nullToAbsent
-          ? const Value.absent()
-          : Value(address1),
-      address2: address2 == null && nullToAbsent
-          ? const Value.absent()
-          : Value(address2),
-      tin: tin == null && nullToAbsent ? const Value.absent() : Value(tin),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
       createdAt: Value(createdAt),
@@ -9281,11 +8915,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
     return Supplier(
       id: serializer.fromJson<int>(json['id']),
       uuid: serializer.fromJson<String>(json['uuid']),
-      supplierCode: serializer.fromJson<String>(json['supplierCode']),
       tradeName: serializer.fromJson<String>(json['tradeName']),
-      address1: serializer.fromJson<String?>(json['address1']),
-      address2: serializer.fromJson<String?>(json['address2']),
-      tin: serializer.fromJson<String?>(json['tin']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -9298,11 +8928,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'uuid': serializer.toJson<String>(uuid),
-      'supplierCode': serializer.toJson<String>(supplierCode),
       'tradeName': serializer.toJson<String>(tradeName),
-      'address1': serializer.toJson<String?>(address1),
-      'address2': serializer.toJson<String?>(address2),
-      'tin': serializer.toJson<String?>(tin),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -9313,11 +8939,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
   Supplier copyWith({
     int? id,
     String? uuid,
-    String? supplierCode,
     String? tradeName,
-    Value<String?> address1 = const Value.absent(),
-    Value<String?> address2 = const Value.absent(),
-    Value<String?> tin = const Value.absent(),
     bool? isDeleted,
     String? syncStatus,
     DateTime? createdAt,
@@ -9325,11 +8947,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
   }) => Supplier(
     id: id ?? this.id,
     uuid: uuid ?? this.uuid,
-    supplierCode: supplierCode ?? this.supplierCode,
     tradeName: tradeName ?? this.tradeName,
-    address1: address1.present ? address1.value : this.address1,
-    address2: address2.present ? address2.value : this.address2,
-    tin: tin.present ? tin.value : this.tin,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
     createdAt: createdAt ?? this.createdAt,
@@ -9339,13 +8957,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
     return Supplier(
       id: data.id.present ? data.id.value : this.id,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
-      supplierCode: data.supplierCode.present
-          ? data.supplierCode.value
-          : this.supplierCode,
       tradeName: data.tradeName.present ? data.tradeName.value : this.tradeName,
-      address1: data.address1.present ? data.address1.value : this.address1,
-      address2: data.address2.present ? data.address2.value : this.address2,
-      tin: data.tin.present ? data.tin.value : this.tin,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
@@ -9360,11 +8972,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
     return (StringBuffer('Supplier(')
           ..write('id: $id, ')
           ..write('uuid: $uuid, ')
-          ..write('supplierCode: $supplierCode, ')
           ..write('tradeName: $tradeName, ')
-          ..write('address1: $address1, ')
-          ..write('address2: $address2, ')
-          ..write('tin: $tin, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
@@ -9377,11 +8985,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
   int get hashCode => Object.hash(
     id,
     uuid,
-    supplierCode,
     tradeName,
-    address1,
-    address2,
-    tin,
     isDeleted,
     syncStatus,
     createdAt,
@@ -9393,12 +8997,8 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       (other is Supplier &&
           other.id == this.id &&
           other.uuid == this.uuid &&
-          other.supplierCode == this.supplierCode &&
-          other.tradeName == this.tradeName &&
-          other.address1 == this.address1 &&
-          other.address2 == this.address2 &&
-          other.tin == this.tin &&
-          other.isDeleted == this.isDeleted &&
+              other.tradeName == this.tradeName &&
+                      other.isDeleted == this.isDeleted &&
           other.syncStatus == this.syncStatus &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -9407,11 +9007,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
 class SuppliersCompanion extends UpdateCompanion<Supplier> {
   final Value<int> id;
   final Value<String> uuid;
-  final Value<String> supplierCode;
   final Value<String> tradeName;
-  final Value<String?> address1;
-  final Value<String?> address2;
-  final Value<String?> tin;
   final Value<bool> isDeleted;
   final Value<String> syncStatus;
   final Value<DateTime> createdAt;
@@ -9419,11 +9015,7 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
   const SuppliersCompanion({
     this.id = const Value.absent(),
     this.uuid = const Value.absent(),
-    this.supplierCode = const Value.absent(),
     this.tradeName = const Value.absent(),
-    this.address1 = const Value.absent(),
-    this.address2 = const Value.absent(),
-    this.tin = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -9432,26 +9024,17 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
   SuppliersCompanion.insert({
     this.id = const Value.absent(),
     required String uuid,
-    required String supplierCode,
     required String tradeName,
-    this.address1 = const Value.absent(),
-    this.address2 = const Value.absent(),
-    this.tin = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : uuid = Value(uuid),
-       supplierCode = Value(supplierCode),
        tradeName = Value(tradeName);
   static Insertable<Supplier> custom({
     Expression<int>? id,
     Expression<String>? uuid,
-    Expression<String>? supplierCode,
     Expression<String>? tradeName,
-    Expression<String>? address1,
-    Expression<String>? address2,
-    Expression<String>? tin,
     Expression<bool>? isDeleted,
     Expression<String>? syncStatus,
     Expression<DateTime>? createdAt,
@@ -9460,11 +9043,7 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (uuid != null) 'uuid': uuid,
-      if (supplierCode != null) 'supplier_code': supplierCode,
       if (tradeName != null) 'trade_name': tradeName,
-      if (address1 != null) 'address1': address1,
-      if (address2 != null) 'address2': address2,
-      if (tin != null) 'tin': tin,
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (createdAt != null) 'created_at': createdAt,
@@ -9475,11 +9054,7 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
   SuppliersCompanion copyWith({
     Value<int>? id,
     Value<String>? uuid,
-    Value<String>? supplierCode,
     Value<String>? tradeName,
-    Value<String?>? address1,
-    Value<String?>? address2,
-    Value<String?>? tin,
     Value<bool>? isDeleted,
     Value<String>? syncStatus,
     Value<DateTime>? createdAt,
@@ -9488,11 +9063,7 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     return SuppliersCompanion(
       id: id ?? this.id,
       uuid: uuid ?? this.uuid,
-      supplierCode: supplierCode ?? this.supplierCode,
       tradeName: tradeName ?? this.tradeName,
-      address1: address1 ?? this.address1,
-      address2: address2 ?? this.address2,
-      tin: tin ?? this.tin,
       isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
@@ -9509,20 +9080,8 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
     }
-    if (supplierCode.present) {
-      map['supplier_code'] = Variable<String>(supplierCode.value);
-    }
     if (tradeName.present) {
       map['trade_name'] = Variable<String>(tradeName.value);
-    }
-    if (address1.present) {
-      map['address1'] = Variable<String>(address1.value);
-    }
-    if (address2.present) {
-      map['address2'] = Variable<String>(address2.value);
-    }
-    if (tin.present) {
-      map['tin'] = Variable<String>(tin.value);
     }
     if (isDeleted.present) {
       map['is_deleted'] = Variable<bool>(isDeleted.value);
@@ -9544,11 +9103,7 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     return (StringBuffer('SuppliersCompanion(')
           ..write('id: $id, ')
           ..write('uuid: $uuid, ')
-          ..write('supplierCode: $supplierCode, ')
           ..write('tradeName: $tradeName, ')
-          ..write('address1: $address1, ')
-          ..write('address2: $address2, ')
-          ..write('tin: $tin, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
@@ -11208,13 +10763,11 @@ typedef $$UsersTableCreateCompanionBuilder =
       required String passwordHash,
       required String role,
       Value<String?> phone,
-      Value<String?> address,
       Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       required String uuid,
       Value<bool> forcePasswordChange,
     });
@@ -11227,13 +10780,11 @@ typedef $$UsersTableUpdateCompanionBuilder =
       Value<String> passwordHash,
       Value<String> role,
       Value<String?> phone,
-      Value<String?> address,
       Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       Value<String> uuid,
       Value<bool> forcePasswordChange,
     });
@@ -11305,11 +10856,6 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get address => $composableBuilder(
-    column: $table.address,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnFilters(column),
@@ -11332,11 +10878,6 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
 
   ColumnFilters<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11420,11 +10961,6 @@ class $$UsersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get address => $composableBuilder(
-    column: $table.address,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -11447,11 +10983,6 @@ class $$UsersTableOrderingComposer
 
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -11498,9 +11029,6 @@ class $$UsersTableAnnotationComposer
   GeneratedColumn<String> get phone =>
       $composableBuilder(column: $table.phone, builder: (column) => column);
 
-  GeneratedColumn<String> get address =>
-      $composableBuilder(column: $table.address, builder: (column) => column);
-
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -11517,9 +11045,6 @@ class $$UsersTableAnnotationComposer
     column: $table.syncStatus,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get remoteId =>
-      $composableBuilder(column: $table.remoteId, builder: (column) => column);
 
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
@@ -11590,13 +11115,11 @@ class $$UsersTableTableManager
                 Value<String> passwordHash = const Value.absent(),
                 Value<String> role = const Value.absent(),
                 Value<String?> phone = const Value.absent(),
-                Value<String?> address = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
                 Value<String> uuid = const Value.absent(),
                 Value<bool> forcePasswordChange = const Value.absent(),
               }) => UsersCompanion(
@@ -11607,13 +11130,11 @@ class $$UsersTableTableManager
                 passwordHash: passwordHash,
                 role: role,
                 phone: phone,
-                address: address,
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
                 uuid: uuid,
                 forcePasswordChange: forcePasswordChange,
               ),
@@ -11626,13 +11147,11 @@ class $$UsersTableTableManager
                 required String passwordHash,
                 required String role,
                 Value<String?> phone = const Value.absent(),
-                Value<String?> address = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
                 required String uuid,
                 Value<bool> forcePasswordChange = const Value.absent(),
               }) => UsersCompanion.insert(
@@ -11643,13 +11162,11 @@ class $$UsersTableTableManager
                 passwordHash: passwordHash,
                 role: role,
                 phone: phone,
-                address: address,
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
                 uuid: uuid,
                 forcePasswordChange: forcePasswordChange,
               ),
@@ -11717,7 +11234,6 @@ typedef $$ProductsTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       required String uuid,
       Value<int?> supplierId,
       Value<int> qtyPerCase,
@@ -11740,7 +11256,6 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       Value<String> uuid,
       Value<int?> supplierId,
       Value<int> qtyPerCase,
@@ -11832,11 +11347,6 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11945,11 +11455,6 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get uuid => $composableBuilder(
     column: $table.uuid,
     builder: (column) => ColumnOrderings(column),
@@ -12027,9 +11532,6 @@ class $$ProductsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get remoteId =>
-      $composableBuilder(column: $table.remoteId, builder: (column) => column);
-
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
 
@@ -12088,7 +11590,6 @@ class $$ProductsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
                 Value<String> uuid = const Value.absent(),
                 Value<int?> supplierId = const Value.absent(),
                 Value<int> qtyPerCase = const Value.absent(),
@@ -12109,7 +11610,6 @@ class $$ProductsTableTableManager
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
                 uuid: uuid,
                 supplierId: supplierId,
                 qtyPerCase: qtyPerCase,
@@ -12132,7 +11632,6 @@ class $$ProductsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
                 required String uuid,
                 Value<int?> supplierId = const Value.absent(),
                 Value<int> qtyPerCase = const Value.absent(),
@@ -12153,7 +11652,6 @@ class $$ProductsTableTableManager
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
                 uuid: uuid,
                 supplierId: supplierId,
                 qtyPerCase: qtyPerCase,
@@ -12195,12 +11693,10 @@ typedef $$CustomersTableCreateCompanionBuilder =
       Value<String> customerType,
       Value<String> status,
       required String contactNumber,
-      Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       required String uuid,
       Value<double?> currentCredit,
       Value<String?> barangay,
@@ -12222,12 +11718,10 @@ typedef $$CustomersTableUpdateCompanionBuilder =
       Value<String> customerType,
       Value<String> status,
       Value<String> contactNumber,
-      Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       Value<String> uuid,
       Value<double?> currentCredit,
       Value<String?> barangay,
@@ -12309,11 +11803,6 @@ class $$CustomersTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -12331,11 +11820,6 @@ class $$CustomersTableFilterComposer
 
   ColumnFilters<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12439,11 +11923,6 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -12461,11 +11940,6 @@ class $$CustomersTableOrderingComposer
 
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -12553,9 +12027,6 @@ class $$CustomersTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<bool> get isActive =>
-      $composableBuilder(column: $table.isActive, builder: (column) => column);
-
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -12569,9 +12040,6 @@ class $$CustomersTableAnnotationComposer
     column: $table.syncStatus,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get remoteId =>
-      $composableBuilder(column: $table.remoteId, builder: (column) => column);
 
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
@@ -12632,12 +12100,10 @@ class $$CustomersTableTableManager
                 Value<String> customerType = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String> contactNumber = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
                 Value<String> uuid = const Value.absent(),
                 Value<double?> currentCredit = const Value.absent(),
                 Value<String?> barangay = const Value.absent(),
@@ -12657,12 +12123,10 @@ class $$CustomersTableTableManager
                 customerType: customerType,
                 status: status,
                 contactNumber: contactNumber,
-                isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
                 uuid: uuid,
                 currentCredit: currentCredit,
                 barangay: barangay,
@@ -12684,12 +12148,10 @@ class $$CustomersTableTableManager
                 Value<String> customerType = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 required String contactNumber,
-                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
                 required String uuid,
                 Value<double?> currentCredit = const Value.absent(),
                 Value<String?> barangay = const Value.absent(),
@@ -12709,12 +12171,10 @@ class $$CustomersTableTableManager
                 customerType: customerType,
                 status: status,
                 contactNumber: contactNumber,
-                isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
                 uuid: uuid,
                 currentCredit: currentCredit,
                 barangay: barangay,
@@ -12764,12 +12224,10 @@ typedef $$OrdersTableCreateCompanionBuilder =
       Value<DateTime?> packedAt,
       Value<DateTime?> expectedDeliveryDate,
       Value<DateTime?> actualDeliveryDate,
-      Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       Value<String?> storeName,
       Value<int?> routeId,
       Value<String?> routeName,
@@ -12803,7 +12261,6 @@ typedef $$OrdersTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       Value<String?> storeName,
       Value<int?> routeId,
       Value<String?> routeName,
@@ -15130,11 +14587,7 @@ typedef $$SuppliersTableCreateCompanionBuilder =
     SuppliersCompanion Function({
       Value<int> id,
       required String uuid,
-      required String supplierCode,
       required String tradeName,
-      Value<String?> address1,
-      Value<String?> address2,
-      Value<String?> tin,
       Value<bool> isDeleted,
       Value<String> syncStatus,
       Value<DateTime> createdAt,
@@ -15144,11 +14597,7 @@ typedef $$SuppliersTableUpdateCompanionBuilder =
     SuppliersCompanion Function({
       Value<int> id,
       Value<String> uuid,
-      Value<String> supplierCode,
       Value<String> tradeName,
-      Value<String?> address1,
-      Value<String?> address2,
-      Value<String?> tin,
       Value<bool> isDeleted,
       Value<String> syncStatus,
       Value<DateTime> createdAt,
@@ -15174,28 +14623,8 @@ class $$SuppliersTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get supplierCode => $composableBuilder(
-    column: $table.supplierCode,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get tradeName => $composableBuilder(
     column: $table.tradeName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get address1 => $composableBuilder(
-    column: $table.address1,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get address2 => $composableBuilder(
-    column: $table.address2,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get tin => $composableBuilder(
-    column: $table.tin,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15239,28 +14668,8 @@ class $$SuppliersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get supplierCode => $composableBuilder(
-    column: $table.supplierCode,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get tradeName => $composableBuilder(
     column: $table.tradeName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get address1 => $composableBuilder(
-    column: $table.address1,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get address2 => $composableBuilder(
-    column: $table.address2,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get tin => $composableBuilder(
-    column: $table.tin,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -15300,22 +14709,8 @@ class $$SuppliersTableAnnotationComposer
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
 
-  GeneratedColumn<String> get supplierCode => $composableBuilder(
-    column: $table.supplierCode,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get tradeName =>
       $composableBuilder(column: $table.tradeName, builder: (column) => column);
-
-  GeneratedColumn<String> get address1 =>
-      $composableBuilder(column: $table.address1, builder: (column) => column);
-
-  GeneratedColumn<String> get address2 =>
-      $composableBuilder(column: $table.address2, builder: (column) => column);
-
-  GeneratedColumn<String> get tin =>
-      $composableBuilder(column: $table.tin, builder: (column) => column);
 
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
@@ -15362,11 +14757,7 @@ class $$SuppliersTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> uuid = const Value.absent(),
-                Value<String> supplierCode = const Value.absent(),
                 Value<String> tradeName = const Value.absent(),
-                Value<String?> address1 = const Value.absent(),
-                Value<String?> address2 = const Value.absent(),
-                Value<String?> tin = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -15374,11 +14765,7 @@ class $$SuppliersTableTableManager
               }) => SuppliersCompanion(
                 id: id,
                 uuid: uuid,
-                supplierCode: supplierCode,
                 tradeName: tradeName,
-                address1: address1,
-                address2: address2,
-                tin: tin,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
                 createdAt: createdAt,
@@ -15388,11 +14775,7 @@ class $$SuppliersTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String uuid,
-                required String supplierCode,
                 required String tradeName,
-                Value<String?> address1 = const Value.absent(),
-                Value<String?> address2 = const Value.absent(),
-                Value<String?> tin = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -15400,11 +14783,7 @@ class $$SuppliersTableTableManager
               }) => SuppliersCompanion.insert(
                 id: id,
                 uuid: uuid,
-                supplierCode: supplierCode,
                 tradeName: tradeName,
-                address1: address1,
-                address2: address2,
-                tin: tin,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
                 createdAt: createdAt,

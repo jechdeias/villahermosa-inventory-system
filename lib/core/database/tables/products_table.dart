@@ -35,7 +35,9 @@ class Products extends Table {
   
   /// Product status (active, inactive, discontinued).
   TextColumn get status => text().withDefault(const Constant('active'))();
-  
+
+  // remoteId dropped v13 — write-only; sync resolves by uuid.
+
   /// Storage location for the product.
   TextColumn get location => text().nullable()();
   
@@ -53,9 +55,6 @@ class Products extends Table {
   
   /// Synchronization status with remote backend.
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
-  
-  /// Remote database ID for cross-system synchronization.
-  TextColumn get remoteId => text().nullable()();
   
   /// UUID for cross-system synchronization.
   TextColumn get uuid => text().unique()();

@@ -1348,8 +1348,6 @@ class SyncEngine {
 
         'phone': record.phone,
 
-        'address': record.address,
-
         'credit_limit': record.creditLimit,
 
         'current_credit': record.currentCredit,
@@ -1567,21 +1565,13 @@ class SyncEngine {
     if (record is Supplier) {
 
       // Note: Supabase suppliers table has NO uuid column — omit it from the
-      // push payload to avoid a "column uuid does not exist" error. The Edge
-      // Function upserts on id; supplier_code is the natural unique key.
+      // push payload. supplierCode/address1/address2/tin dropped v13 (zero
+      // live reads). tradeName is the only field displayed in the app.
       return {
 
         'id': record.id,
 
-        'supplier_code': record.supplierCode,
-
         'trade_name': record.tradeName,
-
-        'address1': record.address1,
-
-        'address2': record.address2,
-
-        'tin': record.tin,
 
         'is_deleted': record.isDeleted,
 
@@ -1768,7 +1758,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             businessName: Value(data['business_name'] as String?),
             email: Value(data['email'] as String?),
             phone: Value(data['phone'] as String?),
-            address: Value(data['address'] as String?),
+            // address column dropped v13.
             municipality: Value(data['municipality'] as String? ?? data['town'] as String? ?? ''),
             province: Value(data['province'] as String? ?? 'Marinduque'),
             storeType: Value(data['store_type'] as String? ?? data['channel'] as String? ?? 'Sari-Sari Store'),
@@ -1780,7 +1770,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             barangay: Value(data['barangay'] as String?),
             town: Value(data['town'] as String?),
             channel: Value(data['channel'] as String?),
-            isActive: Value(data['is_active'] as bool? ?? true),
+            // isActive column dropped v13 — zero reads in live code.
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
           ),
@@ -2114,7 +2104,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
             '''UPDATE suppliers SET
 
-                uuid = ?, supplier_code = ?, trade_name = ?, address1 = ?, address2 = ?, tin = ?,
+                uuid = ?, trade_name = ?,
 
                 is_deleted = ?, sync_status = ?, updated_at = ?
 
@@ -2124,15 +2114,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
               Variable.withString(supplierUuid),
 
-              Variable.withString(data['supplier_code'] as String? ?? ''),
-
               Variable.withString(data['trade_name'] as String? ?? ''),
-
-              Variable.withString(data['address1'] as String? ?? ''),
-
-              Variable.withString(data['address2'] as String? ?? ''),
-
-              Variable.withString(data['tin'] as String? ?? ''),
 
               Variable.withBool(data['is_deleted'] as bool? ?? false),
 
@@ -2196,9 +2178,9 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
             '''INSERT OR REPLACE INTO users 
 
-                    (id, uuid, first_name, last_name, email, password_hash, role, phone, address, is_active, is_deleted, sync_status, remote_id, force_password_change, created_at, updated_at) 
+                    (id, uuid, first_name, last_name, email, password_hash, role, phone, is_active, is_deleted, sync_status, force_password_change, created_at, updated_at) 
 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
 
             variables: [
 
@@ -2225,9 +2207,6 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
               Variable.withString(
                 data['phone'] as String? ?? ''),
 
-              Variable.withString(
-                data['address'] as String? ?? ''),
-
               Variable.withBool(
                 data['is_active'] as bool? ?? true),
 
@@ -2236,9 +2215,6 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
               Variable.withString(
                 data['sync_status'] as String? ?? 'synced'),
-
-              Variable.withString(
-                data['remote_id'] as String? ?? ''),
 
               Variable.withBool(
                 data['force_password_change'] as bool? ?? false),
@@ -2263,9 +2239,9 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
             '''INSERT OR REPLACE INTO suppliers
 
-                    (id, uuid, supplier_code, trade_name, address1, address2, tin, is_deleted, sync_status, created_at, updated_at)
+                    (id, uuid, trade_name, is_deleted, sync_status, created_at, updated_at)
 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
 
             variables: [
 
@@ -2273,15 +2249,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
               Variable.withString(supplierUuid),
 
-              Variable.withString(data['supplier_code'] as String? ?? ''),
-
               Variable.withString(data['trade_name'] as String? ?? ''),
-
-              Variable.withString(data['address1'] as String? ?? ''),
-
-              Variable.withString(data['address2'] as String? ?? ''),
-
-              Variable.withString(data['tin'] as String? ?? ''),
 
               Variable.withBool(data['is_deleted'] as bool? ?? false),
 

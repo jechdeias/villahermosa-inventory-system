@@ -45,9 +45,9 @@ class Customers extends Table {
   /// Contact number for orders.
   TextColumn get contactNumber => text()();
   
-  /// Indicates whether the customer is currently active.
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-  
+  // isActive dropped v13 — zero reads in live code; status field is what
+  // filters use. remoteId dropped v13 — write-only, sync resolves by uuid.
+
   /// Timestamp when the customer record was created.
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   
@@ -59,9 +59,6 @@ class Customers extends Table {
   
   /// Synchronization status with remote backend.
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
-  
-  /// Remote database ID for cross-system synchronization.
-  TextColumn get remoteId => text().nullable()();
   
   /// UUID for cross-system synchronization.
   TextColumn get uuid => text().unique()();

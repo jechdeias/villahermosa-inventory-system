@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _isTestInstance;
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,13 +48,12 @@ class AppDatabase extends _$AppDatabase {
     },
     onUpgrade: (m, from, to) async {
       // Columns added in v2
+      // Note: users/products/customers remoteId dropped in v13 — addColumn
+      // calls for those removed. orders/deliveries/stockMovements remoteId
+      // still exist (dropped in a later migration).
       if (from < 2) {
-        try { await m.addColumn(users, users.remoteId); } catch (_) {}
         try { await m.addColumn(users, users.forcePasswordChange); } catch (_) {}
-        try { await m.addColumn(products, products.remoteId); } catch (_) {}
-        try { await m.addColumn(customers, customers.remoteId); } catch (_) {}
         try { await m.addColumn(orders, orders.remoteId); } catch (_) {}
-        try { await m.addColumn(orderItems, orderItems.remoteId); } catch (_) {}
         try { await m.addColumn(deliveries, deliveries.remoteId); } catch (_) {}
         try { await m.addColumn(stockMovements, stockMovements.remoteId); } catch (_) {}
       }
@@ -130,6 +129,25 @@ class AppDatabase extends _$AppDatabase {
           try {
             await customStatement('ALTER TABLE order_items DROP COLUMN $col');
           } catch (_) {}
+        }
+      }
+      if (from < 13) {
+        // customers: drop is_active (zero UI reads), remote_id (write-only).
+        for (final col in ['is_active', 'remote_id']) {
+          try { await customStatement('ALTER TABLE customers DROP COLUMN $col'); } catch (_) {}
+        }
+        // users: drop address (zero UI reads), remote_id (write-only).
+        for (final col in ['address', 'remote_id']) {
+          try { await customStatement('ALTER TABLE users DROP COLUMN $col'); } catch (_) {}
+        }
+        // products: drop remote_id only (write-only). status IS read in
+        // product_grid_card, product_form_screen, and dashboard_screen.
+        for (final col in ['remote_id']) {
+          try { await customStatement('ALTER TABLE products DROP COLUMN $col'); } catch (_) {}
+        }
+        // suppliers: drop all columns with zero live reads.
+        for (final col in ['supplier_code', 'address1', 'address2', 'tin']) {
+          try { await customStatement('ALTER TABLE suppliers DROP COLUMN $col'); } catch (_) {}
         }
       }
     },
@@ -247,12 +265,7 @@ class AppDatabase extends _$AppDatabase {
     ).watch().map((rows) => rows.first.read<int>('count'));
   }
 
-  Future<bool> markUserAsSynced(String uuid, String remoteId) async => await (update(users)..where((t) => t.uuid.equals(uuid)))
-        .write(UsersCompanion(
-          syncStatus: const Value('synced'),
-          remoteId: Value(remoteId),
-          updatedAt: Value(DateTime.now()),
-        )) > 0;
+  // markUserAsSynced removed v13 — remoteId column dropped; zero callers.
 
   // User management methods
   Future<void> approveUser(String userId, String assignedRole) async {
@@ -361,12 +374,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<Product>> getPendingSyncProducts() async => (select(products)..where((t) => t.syncStatus.equals('pending'))).get();
 
-  Future<bool> markProductAsSynced(String uuid, String remoteId) async => await (update(products)..where((t) => t.uuid.equals(uuid)))
-        .write(ProductsCompanion(
-          syncStatus: const Value('synced'),
-          remoteId: Value(remoteId),
-          updatedAt: Value(DateTime.now()),
-        )) > 0;
+  // markProductAsSynced removed v13 — remoteId column dropped; zero callers.
 
   // Customer methods
   Future<void> createCustomer(CustomersCompanion customer) async {
@@ -395,12 +403,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<Customer>> getPendingSyncCustomers() async => (select(customers)..where((t) => t.syncStatus.equals('pending'))).get();
 
-  Future<bool> markCustomerAsSynced(String uuid, String remoteId) async => await (update(customers)..where((t) => t.uuid.equals(uuid)))
-        .write(CustomersCompanion(
-          syncStatus: const Value('synced'),
-          remoteId: Value(remoteId),
-          updatedAt: Value(DateTime.now()),
-        )) > 0;
+  // markCustomerAsSynced removed v13 — remoteId column dropped; zero callers.
 
   Future<Customer?> getCustomerByEmail(String email) async => (select(customers)..where((t) => t.email.equals(email) & t.isDeleted.equals(false))).getSingleOrNull();
 
