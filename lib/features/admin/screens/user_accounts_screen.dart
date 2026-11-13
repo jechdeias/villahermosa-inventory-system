@@ -243,6 +243,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     );
     if (confirm == true && mounted) {
       await widget.database.softDeleteUser(user.uuid);
+      SyncManager.instance.syncPendingData().catchError((_) {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_getDisplayName(user)} deleted')),
       );
