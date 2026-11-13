@@ -124,9 +124,7 @@ class _NewOrderFlowState extends ConsumerState<NewOrderFlow> {
       ));
 
       if (!asDraft) {
-        try {
-          await SyncManager.instance.push();
-        } catch (_) {}
+        SyncManager.instance.syncPendingData().catchError((_) {});
       }
 
       if (mounted) {
