@@ -8,6 +8,7 @@ class OrdersService {
 
   Future<void> markProcessing(String uuid) => _setStatus(uuid, 'processing');
   Future<void> markOutForDelivery(String uuid) => _setStatus(uuid, 'out_for_delivery');
+  Future<void> markDelivered(String uuid) => _setStatus(uuid, 'delivered');
   Future<void> markCompleted(String uuid) => _setStatus(uuid, 'completed');
   Future<void> cancelOrder(String uuid) => _setStatus(uuid, 'cancelled');
   Future<void> restoreOrder(String uuid) => _setStatus(uuid, 'pending');

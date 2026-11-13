@@ -388,7 +388,8 @@ class OrderDetailPanel extends ConsumerWidget {
     return switch (order.status) {
       'pending'          => [const SizedBox(width: 8), primaryBtn('Start Processing',     () => service.markProcessing(order.uuid))],
       'processing'       => [const SizedBox(width: 8), primaryBtn('Dispatch for Delivery', () => service.markOutForDelivery(order.uuid), bg: const Color(0xFF7C3AED))],
-      'out_for_delivery' => [const SizedBox(width: 8), primaryBtn('Mark Delivered',       () => service.markCompleted(order.uuid), bg: const Color(0xFF059669))],
+      'out_for_delivery' => [const SizedBox(width: 8), primaryBtn('Mark as Delivered',    () => service.markDelivered(order.uuid), bg: const Color(0xFF059669))],
+      'delivered'        => [const SizedBox(width: 8), primaryBtn('Mark Completed',       () => service.markCompleted(order.uuid), bg: const Color(0xFF16A34A))],
       'cancelled'        => [const SizedBox(width: 8), outlineBtn('Restore Order',        () => service.restoreOrder(order.uuid))],
       _                  => [],
     };
