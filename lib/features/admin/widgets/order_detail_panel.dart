@@ -17,6 +17,7 @@ class OrderDetailPanel extends ConsumerWidget {
 
     final itemsAsync = ref.watch(orderItemsProvider(order.uuid));
     final service = ref.read(ordersServiceProvider);
+    final db = ref.read(databaseProvider);
 
     return Container(
       color: Colors.white,
@@ -39,10 +40,18 @@ class OrderDetailPanel extends ConsumerWidget {
                   _buildSection('STORE & ROUTE', [
                     _buildInfoRow('Store', Text(order.storeName ?? order.customerId,
                         style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
-                    _buildInfoRow('Route', Text(order.routeName ?? '—',
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
-                    _buildInfoRow('Sales Rep', Text(order.salesRepName ?? '—',
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary))),
+                    _buildTappableRow(
+                      context: context,
+                      label: 'Route',
+                      value: order.routeName ?? '—',
+                      onTap: () => _showRoutePicker(context, ref, order, service, db),
+                    ),
+                    _buildTappableRow(
+                      context: context,
+                      label: 'Sales Rep',
+                      value: order.salesRepName ?? '—',
+                      onTap: () => _showRepPicker(context, ref, order, service, db),
+                    ),
                   ]),
                   _buildItemsSection(order, itemsAsync),
                 ],
@@ -115,6 +124,128 @@ class OrderDetailPanel extends ConsumerWidget {
     );
   }
 
+  Widget _buildTappableRow({
+    required BuildContext context,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    final assigned = value != '—';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(label,
+                style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: onTap,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: assigned ? AppTheme.textPrimary : const Color(0xFF9CA3AF),
+                        fontStyle: assigned ? FontStyle.normal : FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.edit, size: 14, color: Color(0xFF9CA3AF)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showRoutePicker(
+    BuildContext context,
+    WidgetRef ref,
+    Order order,
+    OrdersService service,
+    AppDatabase db,
+  ) async {
+    final routes = await db.watchAllDeliveryRoutes().first;
+    if (!context.mounted) return;
+
+    if (routes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No delivery routes found. Create routes in the Deliveries screen.')),
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => _PickerDialog(
+        title: 'Assign Route',
+        items: routes.map((r) => _PickerItem(id: r.uuid, name: r.routeName)).toList(),
+        currentId: order.routeId,
+        onSelect: (item) async {
+          await service.assignRoute(
+            order.uuid,
+            routeId: item.id,
+            routeName: item.name,
+            salesRepId: order.salesRepId ?? '',
+            salesRepName: order.salesRepName ?? '',
+          );
+          // Refresh selected order
+          ref.read(selectedOrderProvider.notifier).state =
+              ref.read(filteredOrdersProvider).where((o) => o.uuid == order.uuid).firstOrNull
+              ?? ref.read(selectedOrderProvider);
+        },
+      ),
+    );
+  }
+
+  Future<void> _showRepPicker(
+    BuildContext context,
+    WidgetRef ref,
+    Order order,
+    OrdersService service,
+    AppDatabase db,
+  ) async {
+    final allUsers = await db.getAllUsers();
+    final reps = allUsers.where((u) => u.role == 'delivery' || u.role == 'sales_rep').toList();
+    if (!context.mounted) return;
+
+    if (reps.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No delivery reps found. Add delivery users in User Accounts.')),
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => _PickerDialog(
+        title: 'Assign Sales Rep',
+        items: reps.map((u) => _PickerItem(id: u.uuid, name: '${u.firstName} ${u.lastName}'.trim())).toList(),
+        currentId: order.salesRepId,
+        onSelect: (item) async {
+          await service.assignRoute(
+            order.uuid,
+            routeId: order.routeId ?? '',
+            routeName: order.routeName ?? '',
+            salesRepId: item.id,
+            salesRepName: item.name,
+          );
+          ref.read(selectedOrderProvider.notifier).state =
+              ref.read(filteredOrdersProvider).where((o) => o.uuid == order.uuid).firstOrNull
+              ?? ref.read(selectedOrderProvider);
+        },
+      ),
+    );
+  }
+
   Widget _buildItemsSection(Order order, AsyncValue<List<OrderItem>> itemsAsync) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
@@ -129,7 +260,6 @@ class OrderDetailPanel extends ConsumerWidget {
                   fontSize: 10, fontWeight: FontWeight.w600,
                   color: AppTheme.textLight, letterSpacing: 0.8)),
           const SizedBox(height: 12),
-          // column headers
           const Row(children: [
             Expanded(child: Text('PRODUCT',
                 style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.textLight))),
@@ -276,5 +406,64 @@ class OrderDetailPanel extends ConsumerWidget {
       buf.write(n[i]);
     }
     return buf.toString();
+  }
+}
+
+// ── Shared picker helpers ──────────────────────────────────────────────────────
+
+class _PickerItem {
+  const _PickerItem({required this.id, required this.name});
+  final String id;
+  final String name;
+}
+
+class _PickerDialog extends StatelessWidget {
+  const _PickerDialog({
+    required this.title,
+    required this.items,
+    required this.onSelect,
+    this.currentId,
+  });
+
+  final String title;
+  final List<_PickerItem> items;
+  final String? currentId;
+  final Future<void> Function(_PickerItem) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      content: SizedBox(
+        width: 320,
+        child: ListView.separated(
+          shrinkWrap: true,
+          itemCount: items.length,
+          separatorBuilder: (_, __) => const Divider(height: 1, indent: 16, endIndent: 16),
+          itemBuilder: (ctx, i) {
+            final item = items[i];
+            final selected = item.id == currentId;
+            return ListTile(
+              dense: true,
+              title: Text(item.name, style: const TextStyle(fontSize: 13)),
+              trailing: selected ? const Icon(Icons.check, size: 16, color: AppTheme.success) : null,
+              selected: selected,
+              selectedColor: AppTheme.success,
+              onTap: () async {
+                Navigator.pop(ctx);
+                await onSelect(item);
+              },
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
   }
 }

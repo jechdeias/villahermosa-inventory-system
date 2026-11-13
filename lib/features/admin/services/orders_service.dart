@@ -12,6 +12,25 @@ class OrdersService {
   Future<void> cancelOrder(String uuid) => _setStatus(uuid, 'cancelled');
   Future<void> restoreOrder(String uuid) => _setStatus(uuid, 'pending');
 
+  Future<void> assignRoute(
+    String uuid, {
+    required String routeId,
+    required String routeName,
+    required String salesRepId,
+    required String salesRepName,
+  }) async {
+    await _ref.read(databaseProvider).assignOrderRoute(
+          uuid,
+          routeId: routeId,
+          routeName: routeName,
+          salesRepId: salesRepId,
+          salesRepName: salesRepName,
+        );
+    try {
+      await SyncManager.instance.syncPendingData();
+    } catch (_) {}
+  }
+
   Future<void> _setStatus(String uuid, String status) async {
     await _ref.read(databaseProvider).updateOrderStatus(uuid, status);
     try {

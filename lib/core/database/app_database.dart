@@ -539,6 +539,25 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> assignOrderRoute(
+    String uuid, {
+    required String routeId,
+    required String routeName,
+    required String salesRepId,
+    required String salesRepName,
+  }) async {
+    await (update(orders)..where((t) => t.uuid.equals(uuid))).write(
+      OrdersCompanion(
+        routeId:      Value(routeId),
+        routeName:    Value(routeName),
+        salesRepId:   Value(salesRepId),
+        salesRepName: Value(salesRepName),
+        syncStatus:   const Value('pending'),
+        updatedAt:    Value(DateTime.now()),
+      ),
+    );
+  }
+
   Future<void> seedOrdersForDemo() async {
     final existing = await (select(orders)..where((t) => t.orderNumber.equals('ORD-2401'))).getSingleOrNull();
     if (existing != null) return;
