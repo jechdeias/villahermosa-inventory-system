@@ -202,6 +202,9 @@ class AuthService {
         debugPrint('Post-login pull failed: $e');
       });
 
+      // Start Realtime subscriptions so this device sees remote changes instantly
+      SyncManager.instance.startRealtime();
+
       return localUser;
     } catch (e) {
       debugPrint('💥 Login error: $e');
@@ -384,6 +387,9 @@ class AuthService {
         debugPrint('Post-OAuth pull failed (non-fatal): $e');
       });
 
+      // Start Realtime subscriptions
+      SyncManager.instance.startRealtime();
+
       return localUser;
     } catch (e) {
       debugPrint('💥 loginWithOAuthSession error: $e');
@@ -395,6 +401,7 @@ class AuthService {
 
   /// Logout user
   Future<void> logout() async {
+    SyncManager.instance.stopRealtime();
     try {
       await Supabase.instance.client.auth.signOut();
     } catch (e) {
