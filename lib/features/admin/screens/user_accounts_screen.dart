@@ -906,13 +906,6 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         );
 
         await widget.database.createUser(user);
-        // Register in Supabase Auth so fresh-install devices can log in.
-        // This requires the admin to already have an active session — if
-        // it fails (network, etc.) a later sync will retry via the same path.
-        await AuthService.upsertSupabaseAuthUser(
-          _emailController.text,
-          _passwordController.text,
-        );
         if (mounted) {
           widget.onUserAdded();
           Navigator.pop(context);
@@ -1344,11 +1337,6 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
         );
 
         await widget.database.updateUser(widget.user.uuid, updatedUser);
-        // Also update Supabase Auth so the new password works on fresh installs
-        await AuthService.upsertSupabaseAuthUser(
-          widget.user.email,
-          _passwordController.text,
-        );
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(

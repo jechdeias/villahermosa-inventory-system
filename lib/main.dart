@@ -172,13 +172,54 @@ void main() async {
   runApp(ProviderScope(child: VillahermosaInventoryApp(database: database)));
 }
 
-class VillahermosaInventoryApp extends StatelessWidget {
-
+class VillahermosaInventoryApp extends StatefulWidget {
   const VillahermosaInventoryApp({
     required this.database,
     super.key,
   });
   final AppDatabase database;
+
+  @override
+  State<VillahermosaInventoryApp> createState() => _VillahermosaInventoryAppState();
+}
+
+class _VillahermosaInventoryAppState extends State<VillahermosaInventoryApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Fires when the app returns to the foreground (e.g. the warehouse tablet
+  /// wakes up after the Windows admin pushed new orders). Push any locally
+  /// pending records first, then pull remote changes so the UI is up to date.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (!AppSettings.instance.autoSyncOnStartup) return;
+      if (AuthService.instance.getCurrentUser() == null) return;
+      debugPrint('📱 App resumed — syncing...');
+      Connectivity().checkConnectivity().then((results) async {
+        if (results.contains(ConnectivityResult.none)) return;
+        try {
+          await SyncManager.instance.syncPendingData();
+          await SyncManager.instance.pull();
+          debugPrint('✅ Resume sync complete');
+        } catch (e) {
+          debugPrint('⚠️ Resume sync error: $e');
+        }
+      }).catchError((e) {
+        debugPrint('⚠️ Resume connectivity check failed: $e');
+      });
+    }
+  }
 
   // This widget is the root of your application.
   @override
