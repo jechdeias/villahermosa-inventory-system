@@ -243,7 +243,6 @@ void main() {
         unitPrice: 78,
         subtotal: 936,
         totalAmount: 936,
-        availableStock: 150,
       ));
 
       await db.into(db.payments).insert(PaymentsCompanion.insert(

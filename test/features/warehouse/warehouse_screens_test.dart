@@ -104,7 +104,6 @@ void main() {
             unitPrice: 10,
             subtotal: 240,
             totalAmount: 240,
-            availableStock: 150,
           ));
       await db.into(db.orderItems).insert(OrderItemsCompanion.insert(
             uuid: 'i2',
@@ -116,7 +115,6 @@ void main() {
             unitPrice: 10,
             subtotal: 240,
             totalAmount: 240,
-            availableStock: 0,
           ));
       await db.createStockMovement(StockMovementsCompanion.insert(
         uuid: 'm1',

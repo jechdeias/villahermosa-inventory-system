@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _isTestInstance;
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -110,6 +110,27 @@ class AppDatabase extends _$AppDatabase {
       if (from < 11) {
         try { await m.addColumn(orders, orders.orderCode); } catch (_) {}
         try { await m.addColumn(orders, orders.orderDate); } catch (_) {}
+      }
+      // v12: order_items — drop dead columns. Their only writers were the
+      // (deleted) dead order_workflow.dart, or nothing ever read them.
+      // Raw SQL because the Drift columns no longer exist to reference.
+      // try/catch per column: DROP COLUMN needs SQLite >= 3.35 (Flutter's
+      // bundled SQLite is newer), and a column may already be gone.
+      if (from < 12) {
+        for (final col in [
+          'delivered_quantity',
+          'discount_amount',
+          'available_stock',
+          'stock_status',
+          'picker_id',
+          'notes',
+          'is_active',
+          'remote_id',
+        ]) {
+          try {
+            await customStatement('ALTER TABLE order_items DROP COLUMN $col');
+          } catch (_) {}
+        }
       }
     },
     beforeOpen: (details) async {
@@ -621,7 +642,6 @@ class AppDatabase extends _$AppDatabase {
         unitPrice:         Value(price),
         subtotal:          Value(sub),
         totalAmount:       Value(sub),
-        availableStock:    const Value(100),
         syncStatus:        const Value('synced'),
       ));
     }

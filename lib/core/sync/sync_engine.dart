@@ -1944,23 +1944,20 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             uuid: Value(remoteOiUuid),
             orderId: Value(localOrder?.uuid ?? data['order_id']?.toString() ?? ''),
             productId: Value(localProduct?.uuid ?? data['product_id']?.toString() ?? ''),
-            productSku: Value(data['product_sku'] as String? ?? ''),
-            // Supabase's order_items table has no product_name column — enrich
-            // from the local products table using the already-resolved localProduct.
+            // Supabase's order_items has no product_sku/product_name columns —
+            // enrich from the local products table via the resolved localProduct.
+            productSku: Value(data['product_sku'] as String? ?? localProduct?.sku ?? ''),
             productName: Value(data['product_name'] as String? ?? localProduct?.name ?? ''),
             quantity: Value((data['quantity'] as num?)?.toInt() ?? 0),
-            deliveredQuantity: Value((data['delivered_quantity'] as num?)?.toInt() ?? 0),
             unitPrice: Value(_toDouble(data['unit_price']) ?? 0),
-            subtotal: Value(_toDouble(data['subtotal']) ?? 0),
-            discountAmount: Value(_toDouble(data['discount_amount']) ?? 0),
-            totalAmount: Value(_toDouble(data['total_amount']) ?? 0),
-            availableStock: Value((data['available_stock'] as num?)?.toInt() ?? 0),
-            stockStatus: Value(data['stock_status'] as String? ?? 'in_stock'),
+            // Supabase's column is total_price (see _recordToMap's OrderItem
+            // push map) — there is no subtotal/total_amount remotely. Derive
+            // subtotal from it so admin order totals don't read 0 on pulled rows.
+            subtotal: Value(_toDouble(data['total_price']) ??
+                ((_toDouble(data['unit_price']) ?? 0) * ((data['quantity'] as num?)?.toInt() ?? 0))),
+            totalAmount: Value(_toDouble(data['total_price']) ?? 0),
             status: Value(data['status'] as String? ?? 'pending'),
-            pickerId: Value(data['picker_id'] as String?),
             pickedAt: Value(_toDateTime(data['picked_at'])),
-            notes: Value(data['notes'] as String?),
-            isActive: Value(data['is_active'] as bool? ?? true),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
             createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),

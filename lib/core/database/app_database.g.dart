@@ -5222,18 +5222,6 @@ class $OrderItemsTable extends OrderItems
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _deliveredQuantityMeta = const VerificationMeta(
-    'deliveredQuantity',
-  );
-  @override
-  late final GeneratedColumn<int> deliveredQuantity = GeneratedColumn<int>(
-    'delivered_quantity',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
   static const VerificationMeta _unitPriceMeta = const VerificationMeta(
     'unitPrice',
   );
@@ -5256,18 +5244,6 @@ class $OrderItemsTable extends OrderItems
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _discountAmountMeta = const VerificationMeta(
-    'discountAmount',
-  );
-  @override
-  late final GeneratedColumn<double> discountAmount = GeneratedColumn<double>(
-    'discount_amount',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
   static const VerificationMeta _totalAmountMeta = const VerificationMeta(
     'totalAmount',
   );
@@ -5279,29 +5255,6 @@ class $OrderItemsTable extends OrderItems
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _availableStockMeta = const VerificationMeta(
-    'availableStock',
-  );
-  @override
-  late final GeneratedColumn<int> availableStock = GeneratedColumn<int>(
-    'available_stock',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _stockStatusMeta = const VerificationMeta(
-    'stockStatus',
-  );
-  @override
-  late final GeneratedColumn<String> stockStatus = GeneratedColumn<String>(
-    'stock_status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('available'),
-  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -5311,17 +5264,6 @@ class $OrderItemsTable extends OrderItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
-  );
-  static const VerificationMeta _pickerIdMeta = const VerificationMeta(
-    'pickerId',
-  );
-  @override
-  late final GeneratedColumn<String> pickerId = GeneratedColumn<String>(
-    'picker_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   static const VerificationMeta _pickedAtMeta = const VerificationMeta(
     'pickedAt',
@@ -5333,30 +5275,6 @@ class $OrderItemsTable extends OrderItems
     true,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-  );
-  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
-  @override
-  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
-    'notes',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isActiveMeta = const VerificationMeta(
-    'isActive',
-  );
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-    'is_active',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_active" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
   );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -5409,17 +5327,6 @@ class $OrderItemsTable extends OrderItems
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
-  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
-    'remoteId',
-  );
-  @override
-  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
-    'remote_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5429,23 +5336,15 @@ class $OrderItemsTable extends OrderItems
     productSku,
     productName,
     quantity,
-    deliveredQuantity,
     unitPrice,
     subtotal,
-    discountAmount,
     totalAmount,
-    availableStock,
-    stockStatus,
     status,
-    pickerId,
     pickedAt,
-    notes,
-    isActive,
     createdAt,
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5513,15 +5412,6 @@ class $OrderItemsTable extends OrderItems
     } else if (isInserting) {
       context.missing(_quantityMeta);
     }
-    if (data.containsKey('delivered_quantity')) {
-      context.handle(
-        _deliveredQuantityMeta,
-        deliveredQuantity.isAcceptableOrUnknown(
-          data['delivered_quantity']!,
-          _deliveredQuantityMeta,
-        ),
-      );
-    }
     if (data.containsKey('unit_price')) {
       context.handle(
         _unitPriceMeta,
@@ -5538,15 +5428,6 @@ class $OrderItemsTable extends OrderItems
     } else if (isInserting) {
       context.missing(_subtotalMeta);
     }
-    if (data.containsKey('discount_amount')) {
-      context.handle(
-        _discountAmountMeta,
-        discountAmount.isAcceptableOrUnknown(
-          data['discount_amount']!,
-          _discountAmountMeta,
-        ),
-      );
-    }
     if (data.containsKey('total_amount')) {
       context.handle(
         _totalAmountMeta,
@@ -5558,54 +5439,16 @@ class $OrderItemsTable extends OrderItems
     } else if (isInserting) {
       context.missing(_totalAmountMeta);
     }
-    if (data.containsKey('available_stock')) {
-      context.handle(
-        _availableStockMeta,
-        availableStock.isAcceptableOrUnknown(
-          data['available_stock']!,
-          _availableStockMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_availableStockMeta);
-    }
-    if (data.containsKey('stock_status')) {
-      context.handle(
-        _stockStatusMeta,
-        stockStatus.isAcceptableOrUnknown(
-          data['stock_status']!,
-          _stockStatusMeta,
-        ),
-      );
-    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
         status.isAcceptableOrUnknown(data['status']!, _statusMeta),
       );
     }
-    if (data.containsKey('picker_id')) {
-      context.handle(
-        _pickerIdMeta,
-        pickerId.isAcceptableOrUnknown(data['picker_id']!, _pickerIdMeta),
-      );
-    }
     if (data.containsKey('picked_at')) {
       context.handle(
         _pickedAtMeta,
         pickedAt.isAcceptableOrUnknown(data['picked_at']!, _pickedAtMeta),
-      );
-    }
-    if (data.containsKey('notes')) {
-      context.handle(
-        _notesMeta,
-        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
-      );
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(
-        _isActiveMeta,
-        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -5630,12 +5473,6 @@ class $OrderItemsTable extends OrderItems
       context.handle(
         _syncStatusMeta,
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
-      );
-    }
-    if (data.containsKey('remote_id')) {
-      context.handle(
-        _remoteIdMeta,
-        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
       );
     }
     return context;
@@ -5675,10 +5512,6 @@ class $OrderItemsTable extends OrderItems
         DriftSqlType.int,
         data['${effectivePrefix}quantity'],
       )!,
-      deliveredQuantity: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}delivered_quantity'],
-      )!,
       unitPrice: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}unit_price'],
@@ -5687,42 +5520,18 @@ class $OrderItemsTable extends OrderItems
         DriftSqlType.double,
         data['${effectivePrefix}subtotal'],
       )!,
-      discountAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}discount_amount'],
-      )!,
       totalAmount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}total_amount'],
-      )!,
-      availableStock: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}available_stock'],
-      )!,
-      stockStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}stock_status'],
       )!,
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
       )!,
-      pickerId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}picker_id'],
-      ),
       pickedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}picked_at'],
       ),
-      notes: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}notes'],
-      ),
-      isActive: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_active'],
-      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -5739,10 +5548,6 @@ class $OrderItemsTable extends OrderItems
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
       )!,
-      remoteId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}remote_id'],
-      ),
     );
   }
 
@@ -5759,10 +5564,10 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
   /// Unique identifier for the order item (UUID).
   final String uuid;
 
-  /// Foreign key to the order this item belongs to.
+  /// Foreign key to the order this item belongs to (the order's uuid).
   final String orderId;
 
-  /// Foreign key to the product.
+  /// Foreign key to the product (the product's uuid).
   final String productId;
 
   /// Product SKU at the time of order.
@@ -5774,41 +5579,20 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
   /// Quantity ordered.
   final int quantity;
 
-  /// Quantity delivered.
-  final int deliveredQuantity;
-
   /// Unit price at the time of order.
   final double unitPrice;
 
   /// Subtotal for this item (quantity * unitPrice).
   final double subtotal;
 
-  /// Discount amount applied to this item.
-  final double discountAmount;
-
-  /// Total amount for this item (subtotal - discount).
+  /// Total amount for this item.
   final double totalAmount;
-
-  /// Available stock at the time of order.
-  final int availableStock;
-
-  /// Stock status (available, backorder, out_of_stock).
-  final String stockStatus;
 
   /// Item status (pending, picked, packed, delivered, cancelled).
   final String status;
 
-  /// ID of the warehouse staff member who picked this item.
-  final String? pickerId;
-
   /// Timestamp when this item was picked.
   final DateTime? pickedAt;
-
-  /// Notes specific to this item.
-  final String? notes;
-
-  /// Indicates whether the item is currently active.
-  final bool isActive;
 
   /// Timestamp when the order item record was created.
   final DateTime createdAt;
@@ -5821,9 +5605,6 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
 
   /// Synchronization status with remote backend.
   final String syncStatus;
-
-  /// Remote database ID for cross-system synchronization.
-  final String? remoteId;
   const OrderItem({
     required this.id,
     required this.uuid,
@@ -5832,23 +5613,15 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
     required this.productSku,
     required this.productName,
     required this.quantity,
-    required this.deliveredQuantity,
     required this.unitPrice,
     required this.subtotal,
-    required this.discountAmount,
     required this.totalAmount,
-    required this.availableStock,
-    required this.stockStatus,
     required this.status,
-    this.pickerId,
     this.pickedAt,
-    this.notes,
-    required this.isActive,
     required this.createdAt,
     required this.updatedAt,
     required this.isDeleted,
     required this.syncStatus,
-    this.remoteId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5860,31 +5633,17 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
     map['product_sku'] = Variable<String>(productSku);
     map['product_name'] = Variable<String>(productName);
     map['quantity'] = Variable<int>(quantity);
-    map['delivered_quantity'] = Variable<int>(deliveredQuantity);
     map['unit_price'] = Variable<double>(unitPrice);
     map['subtotal'] = Variable<double>(subtotal);
-    map['discount_amount'] = Variable<double>(discountAmount);
     map['total_amount'] = Variable<double>(totalAmount);
-    map['available_stock'] = Variable<int>(availableStock);
-    map['stock_status'] = Variable<String>(stockStatus);
     map['status'] = Variable<String>(status);
-    if (!nullToAbsent || pickerId != null) {
-      map['picker_id'] = Variable<String>(pickerId);
-    }
     if (!nullToAbsent || pickedAt != null) {
       map['picked_at'] = Variable<DateTime>(pickedAt);
     }
-    if (!nullToAbsent || notes != null) {
-      map['notes'] = Variable<String>(notes);
-    }
-    map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['sync_status'] = Variable<String>(syncStatus);
-    if (!nullToAbsent || remoteId != null) {
-      map['remote_id'] = Variable<String>(remoteId);
-    }
     return map;
   }
 
@@ -5897,31 +5656,17 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
       productSku: Value(productSku),
       productName: Value(productName),
       quantity: Value(quantity),
-      deliveredQuantity: Value(deliveredQuantity),
       unitPrice: Value(unitPrice),
       subtotal: Value(subtotal),
-      discountAmount: Value(discountAmount),
       totalAmount: Value(totalAmount),
-      availableStock: Value(availableStock),
-      stockStatus: Value(stockStatus),
       status: Value(status),
-      pickerId: pickerId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(pickerId),
       pickedAt: pickedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(pickedAt),
-      notes: notes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(notes),
-      isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
     );
   }
 
@@ -5938,23 +5683,15 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
       productSku: serializer.fromJson<String>(json['productSku']),
       productName: serializer.fromJson<String>(json['productName']),
       quantity: serializer.fromJson<int>(json['quantity']),
-      deliveredQuantity: serializer.fromJson<int>(json['deliveredQuantity']),
       unitPrice: serializer.fromJson<double>(json['unitPrice']),
       subtotal: serializer.fromJson<double>(json['subtotal']),
-      discountAmount: serializer.fromJson<double>(json['discountAmount']),
       totalAmount: serializer.fromJson<double>(json['totalAmount']),
-      availableStock: serializer.fromJson<int>(json['availableStock']),
-      stockStatus: serializer.fromJson<String>(json['stockStatus']),
       status: serializer.fromJson<String>(json['status']),
-      pickerId: serializer.fromJson<String?>(json['pickerId']),
       pickedAt: serializer.fromJson<DateTime?>(json['pickedAt']),
-      notes: serializer.fromJson<String?>(json['notes']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
-      remoteId: serializer.fromJson<String?>(json['remoteId']),
     );
   }
   @override
@@ -5968,23 +5705,15 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
       'productSku': serializer.toJson<String>(productSku),
       'productName': serializer.toJson<String>(productName),
       'quantity': serializer.toJson<int>(quantity),
-      'deliveredQuantity': serializer.toJson<int>(deliveredQuantity),
       'unitPrice': serializer.toJson<double>(unitPrice),
       'subtotal': serializer.toJson<double>(subtotal),
-      'discountAmount': serializer.toJson<double>(discountAmount),
       'totalAmount': serializer.toJson<double>(totalAmount),
-      'availableStock': serializer.toJson<int>(availableStock),
-      'stockStatus': serializer.toJson<String>(stockStatus),
       'status': serializer.toJson<String>(status),
-      'pickerId': serializer.toJson<String?>(pickerId),
       'pickedAt': serializer.toJson<DateTime?>(pickedAt),
-      'notes': serializer.toJson<String?>(notes),
-      'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'syncStatus': serializer.toJson<String>(syncStatus),
-      'remoteId': serializer.toJson<String?>(remoteId),
     };
   }
 
@@ -5996,23 +5725,15 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
     String? productSku,
     String? productName,
     int? quantity,
-    int? deliveredQuantity,
     double? unitPrice,
     double? subtotal,
-    double? discountAmount,
     double? totalAmount,
-    int? availableStock,
-    String? stockStatus,
     String? status,
-    Value<String?> pickerId = const Value.absent(),
     Value<DateTime?> pickedAt = const Value.absent(),
-    Value<String?> notes = const Value.absent(),
-    bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDeleted,
     String? syncStatus,
-    Value<String?> remoteId = const Value.absent(),
   }) => OrderItem(
     id: id ?? this.id,
     uuid: uuid ?? this.uuid,
@@ -6021,23 +5742,15 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
     productSku: productSku ?? this.productSku,
     productName: productName ?? this.productName,
     quantity: quantity ?? this.quantity,
-    deliveredQuantity: deliveredQuantity ?? this.deliveredQuantity,
     unitPrice: unitPrice ?? this.unitPrice,
     subtotal: subtotal ?? this.subtotal,
-    discountAmount: discountAmount ?? this.discountAmount,
     totalAmount: totalAmount ?? this.totalAmount,
-    availableStock: availableStock ?? this.availableStock,
-    stockStatus: stockStatus ?? this.stockStatus,
     status: status ?? this.status,
-    pickerId: pickerId.present ? pickerId.value : this.pickerId,
     pickedAt: pickedAt.present ? pickedAt.value : this.pickedAt,
-    notes: notes.present ? notes.value : this.notes,
-    isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
-    remoteId: remoteId.present ? remoteId.value : this.remoteId,
   );
   OrderItem copyWithCompanion(OrderItemsCompanion data) {
     return OrderItem(
@@ -6052,35 +5765,19 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
           ? data.productName.value
           : this.productName,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
-      deliveredQuantity: data.deliveredQuantity.present
-          ? data.deliveredQuantity.value
-          : this.deliveredQuantity,
       unitPrice: data.unitPrice.present ? data.unitPrice.value : this.unitPrice,
       subtotal: data.subtotal.present ? data.subtotal.value : this.subtotal,
-      discountAmount: data.discountAmount.present
-          ? data.discountAmount.value
-          : this.discountAmount,
       totalAmount: data.totalAmount.present
           ? data.totalAmount.value
           : this.totalAmount,
-      availableStock: data.availableStock.present
-          ? data.availableStock.value
-          : this.availableStock,
-      stockStatus: data.stockStatus.present
-          ? data.stockStatus.value
-          : this.stockStatus,
       status: data.status.present ? data.status.value : this.status,
-      pickerId: data.pickerId.present ? data.pickerId.value : this.pickerId,
       pickedAt: data.pickedAt.present ? data.pickedAt.value : this.pickedAt,
-      notes: data.notes.present ? data.notes.value : this.notes,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
-      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
     );
   }
 
@@ -6094,29 +5791,21 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
           ..write('productSku: $productSku, ')
           ..write('productName: $productName, ')
           ..write('quantity: $quantity, ')
-          ..write('deliveredQuantity: $deliveredQuantity, ')
           ..write('unitPrice: $unitPrice, ')
           ..write('subtotal: $subtotal, ')
-          ..write('discountAmount: $discountAmount, ')
           ..write('totalAmount: $totalAmount, ')
-          ..write('availableStock: $availableStock, ')
-          ..write('stockStatus: $stockStatus, ')
           ..write('status: $status, ')
-          ..write('pickerId: $pickerId, ')
           ..write('pickedAt: $pickedAt, ')
-          ..write('notes: $notes, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId')
+          ..write('syncStatus: $syncStatus')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hashAll([
+  int get hashCode => Object.hash(
     id,
     uuid,
     orderId,
@@ -6124,24 +5813,16 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
     productSku,
     productName,
     quantity,
-    deliveredQuantity,
     unitPrice,
     subtotal,
-    discountAmount,
     totalAmount,
-    availableStock,
-    stockStatus,
     status,
-    pickerId,
     pickedAt,
-    notes,
-    isActive,
     createdAt,
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
-  ]);
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -6153,23 +5834,15 @@ class OrderItem extends DataClass implements Insertable<OrderItem> {
           other.productSku == this.productSku &&
           other.productName == this.productName &&
           other.quantity == this.quantity &&
-          other.deliveredQuantity == this.deliveredQuantity &&
           other.unitPrice == this.unitPrice &&
           other.subtotal == this.subtotal &&
-          other.discountAmount == this.discountAmount &&
           other.totalAmount == this.totalAmount &&
-          other.availableStock == this.availableStock &&
-          other.stockStatus == this.stockStatus &&
           other.status == this.status &&
-          other.pickerId == this.pickerId &&
           other.pickedAt == this.pickedAt &&
-          other.notes == this.notes &&
-          other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.isDeleted == this.isDeleted &&
-          other.syncStatus == this.syncStatus &&
-          other.remoteId == this.remoteId);
+          other.syncStatus == this.syncStatus);
 }
 
 class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
@@ -6180,23 +5853,15 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
   final Value<String> productSku;
   final Value<String> productName;
   final Value<int> quantity;
-  final Value<int> deliveredQuantity;
   final Value<double> unitPrice;
   final Value<double> subtotal;
-  final Value<double> discountAmount;
   final Value<double> totalAmount;
-  final Value<int> availableStock;
-  final Value<String> stockStatus;
   final Value<String> status;
-  final Value<String?> pickerId;
   final Value<DateTime?> pickedAt;
-  final Value<String?> notes;
-  final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool> isDeleted;
   final Value<String> syncStatus;
-  final Value<String?> remoteId;
   const OrderItemsCompanion({
     this.id = const Value.absent(),
     this.uuid = const Value.absent(),
@@ -6205,23 +5870,15 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
     this.productSku = const Value.absent(),
     this.productName = const Value.absent(),
     this.quantity = const Value.absent(),
-    this.deliveredQuantity = const Value.absent(),
     this.unitPrice = const Value.absent(),
     this.subtotal = const Value.absent(),
-    this.discountAmount = const Value.absent(),
     this.totalAmount = const Value.absent(),
-    this.availableStock = const Value.absent(),
-    this.stockStatus = const Value.absent(),
     this.status = const Value.absent(),
-    this.pickerId = const Value.absent(),
     this.pickedAt = const Value.absent(),
-    this.notes = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
   });
   OrderItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -6231,23 +5888,15 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
     required String productSku,
     required String productName,
     required int quantity,
-    this.deliveredQuantity = const Value.absent(),
     required double unitPrice,
     required double subtotal,
-    this.discountAmount = const Value.absent(),
     required double totalAmount,
-    required int availableStock,
-    this.stockStatus = const Value.absent(),
     this.status = const Value.absent(),
-    this.pickerId = const Value.absent(),
     this.pickedAt = const Value.absent(),
-    this.notes = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
   }) : uuid = Value(uuid),
        orderId = Value(orderId),
        productId = Value(productId),
@@ -6256,8 +5905,7 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
        quantity = Value(quantity),
        unitPrice = Value(unitPrice),
        subtotal = Value(subtotal),
-       totalAmount = Value(totalAmount),
-       availableStock = Value(availableStock);
+       totalAmount = Value(totalAmount);
   static Insertable<OrderItem> custom({
     Expression<int>? id,
     Expression<String>? uuid,
@@ -6266,23 +5914,15 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
     Expression<String>? productSku,
     Expression<String>? productName,
     Expression<int>? quantity,
-    Expression<int>? deliveredQuantity,
     Expression<double>? unitPrice,
     Expression<double>? subtotal,
-    Expression<double>? discountAmount,
     Expression<double>? totalAmount,
-    Expression<int>? availableStock,
-    Expression<String>? stockStatus,
     Expression<String>? status,
-    Expression<String>? pickerId,
     Expression<DateTime>? pickedAt,
-    Expression<String>? notes,
-    Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? isDeleted,
     Expression<String>? syncStatus,
-    Expression<String>? remoteId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -6292,23 +5932,15 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
       if (productSku != null) 'product_sku': productSku,
       if (productName != null) 'product_name': productName,
       if (quantity != null) 'quantity': quantity,
-      if (deliveredQuantity != null) 'delivered_quantity': deliveredQuantity,
       if (unitPrice != null) 'unit_price': unitPrice,
       if (subtotal != null) 'subtotal': subtotal,
-      if (discountAmount != null) 'discount_amount': discountAmount,
       if (totalAmount != null) 'total_amount': totalAmount,
-      if (availableStock != null) 'available_stock': availableStock,
-      if (stockStatus != null) 'stock_status': stockStatus,
       if (status != null) 'status': status,
-      if (pickerId != null) 'picker_id': pickerId,
       if (pickedAt != null) 'picked_at': pickedAt,
-      if (notes != null) 'notes': notes,
-      if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (syncStatus != null) 'sync_status': syncStatus,
-      if (remoteId != null) 'remote_id': remoteId,
     });
   }
 
@@ -6320,23 +5952,15 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
     Value<String>? productSku,
     Value<String>? productName,
     Value<int>? quantity,
-    Value<int>? deliveredQuantity,
     Value<double>? unitPrice,
     Value<double>? subtotal,
-    Value<double>? discountAmount,
     Value<double>? totalAmount,
-    Value<int>? availableStock,
-    Value<String>? stockStatus,
     Value<String>? status,
-    Value<String?>? pickerId,
     Value<DateTime?>? pickedAt,
-    Value<String?>? notes,
-    Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<bool>? isDeleted,
     Value<String>? syncStatus,
-    Value<String?>? remoteId,
   }) {
     return OrderItemsCompanion(
       id: id ?? this.id,
@@ -6346,23 +5970,15 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
       productSku: productSku ?? this.productSku,
       productName: productName ?? this.productName,
       quantity: quantity ?? this.quantity,
-      deliveredQuantity: deliveredQuantity ?? this.deliveredQuantity,
       unitPrice: unitPrice ?? this.unitPrice,
       subtotal: subtotal ?? this.subtotal,
-      discountAmount: discountAmount ?? this.discountAmount,
       totalAmount: totalAmount ?? this.totalAmount,
-      availableStock: availableStock ?? this.availableStock,
-      stockStatus: stockStatus ?? this.stockStatus,
       status: status ?? this.status,
-      pickerId: pickerId ?? this.pickerId,
       pickedAt: pickedAt ?? this.pickedAt,
-      notes: notes ?? this.notes,
-      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
-      remoteId: remoteId ?? this.remoteId,
     );
   }
 
@@ -6390,41 +6006,20 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
     if (quantity.present) {
       map['quantity'] = Variable<int>(quantity.value);
     }
-    if (deliveredQuantity.present) {
-      map['delivered_quantity'] = Variable<int>(deliveredQuantity.value);
-    }
     if (unitPrice.present) {
       map['unit_price'] = Variable<double>(unitPrice.value);
     }
     if (subtotal.present) {
       map['subtotal'] = Variable<double>(subtotal.value);
     }
-    if (discountAmount.present) {
-      map['discount_amount'] = Variable<double>(discountAmount.value);
-    }
     if (totalAmount.present) {
       map['total_amount'] = Variable<double>(totalAmount.value);
-    }
-    if (availableStock.present) {
-      map['available_stock'] = Variable<int>(availableStock.value);
-    }
-    if (stockStatus.present) {
-      map['stock_status'] = Variable<String>(stockStatus.value);
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
-    if (pickerId.present) {
-      map['picker_id'] = Variable<String>(pickerId.value);
-    }
     if (pickedAt.present) {
       map['picked_at'] = Variable<DateTime>(pickedAt.value);
-    }
-    if (notes.present) {
-      map['notes'] = Variable<String>(notes.value);
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -6437,9 +6032,6 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
     }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
-    }
-    if (remoteId.present) {
-      map['remote_id'] = Variable<String>(remoteId.value);
     }
     return map;
   }
@@ -6454,23 +6046,15 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
           ..write('productSku: $productSku, ')
           ..write('productName: $productName, ')
           ..write('quantity: $quantity, ')
-          ..write('deliveredQuantity: $deliveredQuantity, ')
           ..write('unitPrice: $unitPrice, ')
           ..write('subtotal: $subtotal, ')
-          ..write('discountAmount: $discountAmount, ')
           ..write('totalAmount: $totalAmount, ')
-          ..write('availableStock: $availableStock, ')
-          ..write('stockStatus: $stockStatus, ')
           ..write('status: $status, ')
-          ..write('pickerId: $pickerId, ')
           ..write('pickedAt: $pickedAt, ')
-          ..write('notes: $notes, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId')
+          ..write('syncStatus: $syncStatus')
           ..write(')'))
         .toString();
   }
@@ -13972,23 +13556,15 @@ typedef $$OrderItemsTableCreateCompanionBuilder =
       required String productSku,
       required String productName,
       required int quantity,
-      Value<int> deliveredQuantity,
       required double unitPrice,
       required double subtotal,
-      Value<double> discountAmount,
       required double totalAmount,
-      required int availableStock,
-      Value<String> stockStatus,
       Value<String> status,
-      Value<String?> pickerId,
       Value<DateTime?> pickedAt,
-      Value<String?> notes,
-      Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
     });
 typedef $$OrderItemsTableUpdateCompanionBuilder =
     OrderItemsCompanion Function({
@@ -13999,23 +13575,15 @@ typedef $$OrderItemsTableUpdateCompanionBuilder =
       Value<String> productSku,
       Value<String> productName,
       Value<int> quantity,
-      Value<int> deliveredQuantity,
       Value<double> unitPrice,
       Value<double> subtotal,
-      Value<double> discountAmount,
       Value<double> totalAmount,
-      Value<int> availableStock,
-      Value<String> stockStatus,
       Value<String> status,
-      Value<String?> pickerId,
       Value<DateTime?> pickedAt,
-      Value<String?> notes,
-      Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
     });
 
 class $$OrderItemsTableFilterComposer
@@ -14062,11 +13630,6 @@ class $$OrderItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get deliveredQuantity => $composableBuilder(
-    column: $table.deliveredQuantity,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<double> get unitPrice => $composableBuilder(
     column: $table.unitPrice,
     builder: (column) => ColumnFilters(column),
@@ -14077,23 +13640,8 @@ class $$OrderItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<double> get discountAmount => $composableBuilder(
-    column: $table.discountAmount,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<double> get totalAmount => $composableBuilder(
     column: $table.totalAmount,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get availableStock => $composableBuilder(
-    column: $table.availableStock,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get stockStatus => $composableBuilder(
-    column: $table.stockStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14102,23 +13650,8 @@ class $$OrderItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get pickerId => $composableBuilder(
-    column: $table.pickerId,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<DateTime> get pickedAt => $composableBuilder(
     column: $table.pickedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14139,11 +13672,6 @@ class $$OrderItemsTableFilterComposer
 
   ColumnFilters<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -14192,11 +13720,6 @@ class $$OrderItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get deliveredQuantity => $composableBuilder(
-    column: $table.deliveredQuantity,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<double> get unitPrice => $composableBuilder(
     column: $table.unitPrice,
     builder: (column) => ColumnOrderings(column),
@@ -14207,23 +13730,8 @@ class $$OrderItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<double> get discountAmount => $composableBuilder(
-    column: $table.discountAmount,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<double> get totalAmount => $composableBuilder(
     column: $table.totalAmount,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get availableStock => $composableBuilder(
-    column: $table.availableStock,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get stockStatus => $composableBuilder(
-    column: $table.stockStatus,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -14232,23 +13740,8 @@ class $$OrderItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get pickerId => $composableBuilder(
-    column: $table.pickerId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get pickedAt => $composableBuilder(
     column: $table.pickedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -14269,11 +13762,6 @@ class $$OrderItemsTableOrderingComposer
 
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -14312,51 +13800,22 @@ class $$OrderItemsTableAnnotationComposer
   GeneratedColumn<int> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
-  GeneratedColumn<int> get deliveredQuantity => $composableBuilder(
-    column: $table.deliveredQuantity,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<double> get unitPrice =>
       $composableBuilder(column: $table.unitPrice, builder: (column) => column);
 
   GeneratedColumn<double> get subtotal =>
       $composableBuilder(column: $table.subtotal, builder: (column) => column);
 
-  GeneratedColumn<double> get discountAmount => $composableBuilder(
-    column: $table.discountAmount,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<double> get totalAmount => $composableBuilder(
     column: $table.totalAmount,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get availableStock => $composableBuilder(
-    column: $table.availableStock,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get stockStatus => $composableBuilder(
-    column: $table.stockStatus,
     builder: (column) => column,
   );
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
-  GeneratedColumn<String> get pickerId =>
-      $composableBuilder(column: $table.pickerId, builder: (column) => column);
-
   GeneratedColumn<DateTime> get pickedAt =>
       $composableBuilder(column: $table.pickedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get notes =>
-      $composableBuilder(column: $table.notes, builder: (column) => column);
-
-  GeneratedColumn<bool> get isActive =>
-      $composableBuilder(column: $table.isActive, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -14371,9 +13830,6 @@ class $$OrderItemsTableAnnotationComposer
     column: $table.syncStatus,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get remoteId =>
-      $composableBuilder(column: $table.remoteId, builder: (column) => column);
 }
 
 class $$OrderItemsTableTableManager
@@ -14414,23 +13870,15 @@ class $$OrderItemsTableTableManager
                 Value<String> productSku = const Value.absent(),
                 Value<String> productName = const Value.absent(),
                 Value<int> quantity = const Value.absent(),
-                Value<int> deliveredQuantity = const Value.absent(),
                 Value<double> unitPrice = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
-                Value<double> discountAmount = const Value.absent(),
                 Value<double> totalAmount = const Value.absent(),
-                Value<int> availableStock = const Value.absent(),
-                Value<String> stockStatus = const Value.absent(),
                 Value<String> status = const Value.absent(),
-                Value<String?> pickerId = const Value.absent(),
                 Value<DateTime?> pickedAt = const Value.absent(),
-                Value<String?> notes = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
               }) => OrderItemsCompanion(
                 id: id,
                 uuid: uuid,
@@ -14439,23 +13887,15 @@ class $$OrderItemsTableTableManager
                 productSku: productSku,
                 productName: productName,
                 quantity: quantity,
-                deliveredQuantity: deliveredQuantity,
                 unitPrice: unitPrice,
                 subtotal: subtotal,
-                discountAmount: discountAmount,
                 totalAmount: totalAmount,
-                availableStock: availableStock,
-                stockStatus: stockStatus,
                 status: status,
-                pickerId: pickerId,
                 pickedAt: pickedAt,
-                notes: notes,
-                isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
               ),
           createCompanionCallback:
               ({
@@ -14466,23 +13906,15 @@ class $$OrderItemsTableTableManager
                 required String productSku,
                 required String productName,
                 required int quantity,
-                Value<int> deliveredQuantity = const Value.absent(),
                 required double unitPrice,
                 required double subtotal,
-                Value<double> discountAmount = const Value.absent(),
                 required double totalAmount,
-                required int availableStock,
-                Value<String> stockStatus = const Value.absent(),
                 Value<String> status = const Value.absent(),
-                Value<String?> pickerId = const Value.absent(),
                 Value<DateTime?> pickedAt = const Value.absent(),
-                Value<String?> notes = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
               }) => OrderItemsCompanion.insert(
                 id: id,
                 uuid: uuid,
@@ -14491,23 +13923,15 @@ class $$OrderItemsTableTableManager
                 productSku: productSku,
                 productName: productName,
                 quantity: quantity,
-                deliveredQuantity: deliveredQuantity,
                 unitPrice: unitPrice,
                 subtotal: subtotal,
-                discountAmount: discountAmount,
                 totalAmount: totalAmount,
-                availableStock: availableStock,
-                stockStatus: stockStatus,
                 status: status,
-                pickerId: pickerId,
                 pickedAt: pickedAt,
-                notes: notes,
-                isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

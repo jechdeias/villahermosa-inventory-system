@@ -101,7 +101,6 @@ class _NewOrderFlowState extends ConsumerState<NewOrderFlow> {
           unitPrice: Value(line.product.unitPrice),
           subtotal: Value(line.subtotal),
           totalAmount: Value(line.subtotal),
-          availableStock: Value(line.product.currentStock),
           syncStatus: const Value('pending'),
         ));
       }

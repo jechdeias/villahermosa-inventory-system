@@ -860,7 +860,6 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
           unitPrice: Value(item.unitPrice),
           subtotal: Value(item.subtotal),
           totalAmount: Value(item.subtotal),
-          availableStock: const Value(0),
           syncStatus: const Value('pending'),
         ));
       }

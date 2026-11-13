@@ -320,7 +320,6 @@ Future<String> placeCustomerOrder(
         unitPrice: i.product.unitPrice,
         subtotal: i.subtotal,
         totalAmount: i.subtotal,
-        availableStock: i.product.currentStock,
       ));
     }
   });
