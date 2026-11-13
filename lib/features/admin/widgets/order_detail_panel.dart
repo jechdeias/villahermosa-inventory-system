@@ -218,45 +218,50 @@ class OrderDetailPanel extends ConsumerWidget {
               child: const Text('Close', style: TextStyle(fontSize: 13)),
             ),
           ),
-          if (order.status == 'pending') ...[
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () async {
-                  await service.markCompleted(order.uuid);
-                  ref.read(selectedOrderProvider.notifier).state = null;
-                  onClose();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-                child: const Text('Mark as Completed', style: TextStyle(fontSize: 13)),
-              ),
-            ),
-          ],
-          if (order.status == 'cancelled') ...[
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () async {
-                  await service.restoreOrder(order.uuid);
-                  ref.read(selectedOrderProvider.notifier).state = null;
-                  onClose();
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppTheme.border),
-                  foregroundColor: const Color(0xFF374151),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-                child: const Text('Restore Order', style: TextStyle(fontSize: 13)),
-              ),
-            ),
-          ],
+          ..._statusActions(context, ref, order, service),
         ],
       ),
     );
+  }
+
+  List<Widget> _statusActions(BuildContext context, WidgetRef ref, Order order, OrdersService service) {
+    Future<void> advance(Future<void> Function() fn) async {
+      await fn();
+      ref.read(selectedOrderProvider.notifier).state = null;
+      onClose();
+    }
+
+    Widget primaryBtn(String label, Future<void> Function() fn, {Color? bg}) => Expanded(
+          child: ElevatedButton(
+            onPressed: () => advance(fn),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: bg ?? AppTheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+            child: Text(label, style: const TextStyle(fontSize: 13)),
+          ),
+        );
+
+    Widget outlineBtn(String label, Future<void> Function() fn) => Expanded(
+          child: OutlinedButton(
+            onPressed: () => advance(fn),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppTheme.border),
+              foregroundColor: const Color(0xFF374151),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+            child: Text(label, style: const TextStyle(fontSize: 13)),
+          ),
+        );
+
+    return switch (order.status) {
+      'pending'          => [const SizedBox(width: 8), primaryBtn('Start Processing',     () => service.markProcessing(order.uuid))],
+      'processing'       => [const SizedBox(width: 8), primaryBtn('Dispatch for Delivery', () => service.markOutForDelivery(order.uuid), bg: const Color(0xFF7C3AED))],
+      'out_for_delivery' => [const SizedBox(width: 8), primaryBtn('Mark Delivered',       () => service.markCompleted(order.uuid), bg: const Color(0xFF059669))],
+      'cancelled'        => [const SizedBox(width: 8), outlineBtn('Restore Order',        () => service.restoreOrder(order.uuid))],
+      _                  => [],
+    };
   }
 
   static String _formatDate(DateTime d) =>
