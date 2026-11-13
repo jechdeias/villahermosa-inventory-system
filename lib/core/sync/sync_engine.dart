@@ -1540,21 +1540,26 @@ class SyncEngine {
         'order_id': record.orderId,
 
         'status': record.status,
-
-        // driver_name maps from local deliveryPersonnelName (the full delivery
-        // person's name). delivery_date matches Supabase's delivery_date column.
+        'delivery_number': record.deliveryNumber,
         'driver_name': record.deliveryPersonnelName,
-
+        'delivery_personnel_id': record.deliveryPersonnelId,
+        'delivery_personnel_phone': record.deliveryPersonnelPhone,
+        'expected_start_time': record.expectedStartTime.toIso8601String(),
+        'expected_completion_time': record.expectedCompletionTime.toIso8601String(),
+        'actual_start_time': record.actualStartTime?.toIso8601String(),
+        'actual_completion_time': record.actualCompletionTime?.toIso8601String(),
         'delivery_date': record.deliveryDate?.toIso8601String(),
-
         'delivery_notes': record.deliveryNotes,
-
+        'recipient_name': record.recipientName,
+        'recipient_relation': record.recipientRelation,
+        'collected_amount': record.collectedAmount,
+        'payment_method': record.paymentMethod,
+        'proof_of_delivery_url': record.proofOfDeliveryUrl,
+        'delivery_coordinates': record.deliveryCoordinates,
+        'is_active': record.isActive,
         'is_deleted': record.isDeleted,
-
         'sync_status': record.syncStatus,
-
         'created_at': record.createdAt.toIso8601String(),
-
         'updated_at': record.updatedAt.toIso8601String(),
 
       };
@@ -1999,12 +2004,6 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             ? await _database.getOrderByIntId(data['order_id'] as int)
             : null;
         final now = DateTime.now();
-        // Supabase deliveries only has: id, order_id, delivery_date, status,
-        // driver_name, delivery_notes, is_deleted, sync_status, created_at,
-        // updated_at, uuid.
-        // All other local columns (deliveryPersonnelId/Phone, expectedStart/
-        // CompletionTime, etc.) are local-only: they fall back to empty / epoch.
-        // driver_name → deliveryPersonnelName; delivery_date → deliveryDate.
         await _database.into(_database.deliveries).insertOnConflictUpdate(
           DeliveriesCompanion(
             id: Value(data['id'] as int),
@@ -2012,8 +2011,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             orderId: Value(localOrder?.uuid ?? data['order_id']?.toString() ?? ''),
             deliveryNumber: Value(data['delivery_number'] as String? ?? 'DEL-${data['id']}'),
             deliveryPersonnelId: Value(data['delivery_personnel_id'] as String? ?? ''),
-            // driver_name is Supabase's column; map to the local deliveryPersonnelName.
-            deliveryPersonnelName: Value(data['driver_name'] as String? ?? data['delivery_personnel_name'] as String? ?? ''),
+            deliveryPersonnelName: Value(data['driver_name'] as String? ?? ''),
             deliveryPersonnelPhone: Value(data['delivery_personnel_phone'] as String? ?? ''),
             expectedStartTime: Value(_toDateTime(data['expected_start_time']) ?? now),
             expectedCompletionTime: Value(_toDateTime(data['expected_completion_time']) ?? now),
@@ -2029,7 +2027,6 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             deliveryCoordinates: Value(data['delivery_coordinates'] as String?),
             isActive: Value(data['is_active'] as bool? ?? true),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
-            // delivery_date is the Supabase column name (matches local deliveryDate).
             deliveryDate: Value(_toDateTime(data['delivery_date'])),
             syncStatus: const Value('synced'),
             createdAt: Value(_toDateTime(data['created_at']) ?? now),
