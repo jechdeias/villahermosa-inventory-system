@@ -11,6 +11,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_service.dart';
+import '../../../core/constants/order_status.dart';
+import '../../../core/database/app_database.dart';
 import '../../sales/services/delivery_confirmation.dart';
 
 class DeliveryViewModel extends ChangeNotifier {
@@ -28,27 +30,22 @@ class DeliveryViewModel extends ChangeNotifier {
 
   // ── Manual confirmation ────────────────────────────────────────────────────
 
-  /// Marks the order that belongs to [orderUuid] as delivered.
+  /// Marks the order [orderUuid] as delivered.
   /// [orderUuid] is the order's UUID (passed from route_screen via
-  /// DeliveryConfirmationScreen.deliveryId).  We look up the linked
-  /// delivery record via [getDeliveriesByOrderId] rather than
-  /// [getDeliveryById], because the screen only has the order UUID.
-  /// Works offline (Drift write) and queues a background sync.
+  /// DeliveryConfirmationScreen.deliveryId). The order is looked up
+  /// directly — NOT via the deliveries table, which nothing in the app
+  /// ever writes to (it is sync-pull-only), so a lookup through it
+  /// always came back empty. Re-reading the order here also means a
+  /// stale screen can't deliver an order that has since changed —
+  /// same rules as markOrderDelivered's other callers (dashboard
+  /// button, QR scan). Works offline (Drift write) and queues a
+  /// background sync.
   Future<void> confirmDeliveryByButton(String orderUuid) async {
     _setLoading(true);
     try {
       final db = AuthService.instance.database;
-      final deliveries = await db.getDeliveriesByOrderId(orderUuid);
-      final delivery = deliveries.isNotEmpty ? deliveries.first : null;
-      if (delivery == null) {
-        _setError('Delivery not found for this order.');
-        return;
-      }
-      final order = await db.getOrderById(delivery.orderId);
-      if (order == null) {
-        _setError('Order not found for this delivery.');
-        return;
-      }
+      final order = await _getConfirmableOrder(db, orderUuid);
+      if (order == null) return; // _getConfirmableOrder already set the error
       await markOrderDelivered(db, order, method: deliveryMethodManual);
       _error = null;
       notifyListeners();
@@ -57,6 +54,23 @@ class DeliveryViewModel extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// Re-reads the order and checks it is still confirmable.
+  /// Returns null (with [error] set) if missing or not out for delivery.
+  Future<Order?> _getConfirmableOrder(AppDatabase db, String orderUuid) async {
+    final order = await db.getOrderById(orderUuid);
+    if (order == null) {
+      _setError('Order not found.');
+      return null;
+    }
+    if (order.status != OrderStatus.outForDelivery) {
+      _setError(order.status == OrderStatus.delivered || order.status == OrderStatus.completed
+          ? 'This order has already been delivered.'
+          : 'This order is not out for delivery.');
+      return null;
+    }
+    return order;
   }
 
   // ── Code-based confirmation ────────────────────────────────────────────────
@@ -97,17 +111,8 @@ class DeliveryViewModel extends ChangeNotifier {
     _setLoading(true);
     try {
       final db = AuthService.instance.database;
-      final deliveries = await db.getDeliveriesByOrderId(orderUuid);
-      final delivery = deliveries.isNotEmpty ? deliveries.first : null;
-      if (delivery == null) {
-        _setError('Delivery not found for this order.');
-        return;
-      }
-      final order = await db.getOrderById(delivery.orderId);
-      if (order == null) {
-        _setError('Order not found for this delivery.');
-        return;
-      }
+      final order = await _getConfirmableOrder(db, orderUuid);
+      if (order == null) return; // _getConfirmableOrder already set the error
       await markOrderDelivered(db, order, method: deliveryMethodManual);
       _generatedDeliveryCode = null; // invalidate after use
       _isCodeValid = false;
@@ -142,7 +147,11 @@ class DeliveryViewModel extends ChangeNotifier {
 
   void _setLoading(bool loading) {
     _isLoading = loading;
-    _error = null;
+    // Only clear the error when a new operation STARTS. _setLoading(false)
+    // runs in `finally` blocks after _setError — clearing here too would wipe
+    // the error before the screen reads it and make failures look like
+    // successes.
+    if (loading) _error = null;
     notifyListeners();
   }
 
