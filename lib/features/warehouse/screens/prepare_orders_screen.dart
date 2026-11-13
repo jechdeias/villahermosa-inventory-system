@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
@@ -42,9 +46,30 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
 
   Future<void> _printPicklist(Order o, List<OrderItem> lines, List<Product> products) async {
     final pdf = await buildPicklistPdf(o, lines, products);
-    await Printing.layoutPdf(
-      onLayout: (_) async => pdf.save(),
-      name: 'Picklist_${o.orderNumber}',
+    final bytes = await pdf.save();
+
+    // Windows: open the native print dialog directly (no share sheet on desktop).
+    if (defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      await Printing.layoutPdf(
+        onLayout: (_) async => bytes,
+        name: 'Picklist_${o.orderNumber}',
+      );
+      return;
+    }
+
+    // Mobile: save to temp file then open share sheet (lets the user save as
+    // PDF, AirPrint, email, etc.).
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/Picklist_${o.orderNumber}.pdf');
+    await file.writeAsBytes(bytes);
+    if (!mounted) return;
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'application/pdf')],
+        subject: 'Picklist — ${o.orderNumber}',
+      ),
     );
   }
 
@@ -131,8 +156,12 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
             ]),
             actions: [
               WhSecondaryButton(
-                label: 'Print Picklist',
-                icon: Icons.print_outlined,
+                label: defaultTargetPlatform == TargetPlatform.windows
+                    ? 'Print Picklist'
+                    : 'Export PDF',
+                icon: defaultTargetPlatform == TargetPlatform.windows
+                    ? Icons.print_outlined
+                    : Icons.picture_as_pdf_outlined,
                 onPressed: () => _printPicklist(o, lines, products),
               ),
               WhPrimaryButton(label: 'Complete Order', onPressed: complete ? () => _complete(o, lines) : null),
