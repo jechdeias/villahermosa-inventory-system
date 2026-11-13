@@ -56,6 +56,7 @@ class SyncManager {
     'stock_movements',
     'deliveries',
     'delivery_routes',
+    'suppliers',
   ];
 
   /// Subscribe to Supabase Realtime for every business-critical table.
