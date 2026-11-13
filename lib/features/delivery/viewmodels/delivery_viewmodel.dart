@@ -28,15 +28,20 @@ class DeliveryViewModel extends ChangeNotifier {
 
   // ── Manual confirmation ────────────────────────────────────────────────────
 
-  /// Marks the order that belongs to [deliveryId] as delivered.
+  /// Marks the order that belongs to [orderUuid] as delivered.
+  /// [orderUuid] is the order's UUID (passed from route_screen via
+  /// DeliveryConfirmationScreen.deliveryId).  We look up the linked
+  /// delivery record via [getDeliveriesByOrderId] rather than
+  /// [getDeliveryById], because the screen only has the order UUID.
   /// Works offline (Drift write) and queues a background sync.
-  Future<void> confirmDeliveryByButton(String deliveryId) async {
+  Future<void> confirmDeliveryByButton(String orderUuid) async {
     _setLoading(true);
     try {
       final db = AuthService.instance.database;
-      final delivery = await db.getDeliveryById(deliveryId);
+      final deliveries = await db.getDeliveriesByOrderId(orderUuid);
+      final delivery = deliveries.isNotEmpty ? deliveries.first : null;
       if (delivery == null) {
-        _setError('Delivery not found.');
+        _setError('Delivery not found for this order.');
         return;
       }
       final order = await db.getOrderById(delivery.orderId);
@@ -82,7 +87,8 @@ class DeliveryViewModel extends ChangeNotifier {
   }
 
   /// Validates the code then marks the order delivered if it matches.
-  Future<void> confirmDeliveryByCode(String deliveryId, String confirmationCode) async {
+  /// [orderUuid] is the order's UUID — same semantics as [confirmDeliveryByButton].
+  Future<void> confirmDeliveryByCode(String orderUuid, String confirmationCode) async {
     if (_generatedDeliveryCode == null ||
         confirmationCode.trim() != _generatedDeliveryCode) {
       _setError('Incorrect code. Please check and try again.');
@@ -91,9 +97,10 @@ class DeliveryViewModel extends ChangeNotifier {
     _setLoading(true);
     try {
       final db = AuthService.instance.database;
-      final delivery = await db.getDeliveryById(deliveryId);
+      final deliveries = await db.getDeliveriesByOrderId(orderUuid);
+      final delivery = deliveries.isNotEmpty ? deliveries.first : null;
       if (delivery == null) {
-        _setError('Delivery not found.');
+        _setError('Delivery not found for this order.');
         return;
       }
       final order = await db.getOrderById(delivery.orderId);
