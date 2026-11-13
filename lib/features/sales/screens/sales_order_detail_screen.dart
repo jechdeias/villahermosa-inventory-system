@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/order_status.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/pdf_export.dart';
+import '../../admin/utils/order_pdf_printer.dart';
 import '../../admin/widgets/order_status_badge.dart';
 import '../../customer/providers/customer_providers.dart' show orderLinesProvider, paymentMethodFromNotes;
 import '../../customer/widgets/customer_common.dart' show formatPeso, ccLongFullDate;
@@ -30,6 +32,20 @@ class SalesOrderDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(order?.orderNumber ?? 'Order', style: const TextStyle(fontFamily: AppTheme.monoFamily, fontSize: 16, fontWeight: FontWeight.w600)),
         bottom: const PreferredSize(preferredSize: Size.fromHeight(1), child: Divider(height: 1)),
+        actions: [
+          if (order != null)
+            Consumer(builder: (ctx, r, _) {
+              final lines = r.watch(orderLinesProvider(order!.uuid)).value ?? const <OrderItem>[];
+              return IconButton(
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                tooltip: 'Export PDF',
+                onPressed: () async {
+                  final doc = await buildOrderPdf(order!, lines);
+                  if (ctx.mounted) await exportPdf(doc, 'Order_${order!.orderNumber}.pdf');
+                },
+              );
+            }),
+        ],
       ),
       body: order == null
           ? const Center(child: Text('Order not found', style: TextStyle(fontSize: 14, color: AppTheme.textMuted)))

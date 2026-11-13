@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/pdf_export.dart';
+import '../utils/delivery_receipt_printer.dart';
 import '../../sales/screens/sales_scan_screen.dart';
 import '../viewmodels/delivery_viewmodel.dart';
 
@@ -449,9 +451,10 @@ class _DeliveryConfirmationViewState extends State<DeliveryConfirmationView>
   }
 
   void _showSuccessDialog(String method, String message) {
+    final deliveredAt = DateTime.now();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: Text(method),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -463,8 +466,23 @@ class _DeliveryConfirmationViewState extends State<DeliveryConfirmationView>
         ),
         actions: [
           TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final doc = await buildDeliveryReceiptPdf(
+                orderNumber: widget.deliveryId,
+                storeName: widget.customerName,
+                deliveryAddress: widget.deliveryAddress,
+                deliveredAt: deliveredAt,
+              );
+              if (ctx.mounted) {
+                await exportPdf(doc, 'DeliveryReceipt_${widget.deliveryId}.pdf');
+              }
+            },
+            child: const Text('Print Receipt'),
+          ),
+          TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(ctx).pop(); // Close dialog
               Navigator.of(context).pop(); // Go back to previous screen
             },
             child: const Text('OK'),

@@ -4,9 +4,11 @@ import '../../../core/constants/order_status.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/pdf_export.dart';
 import '../../admin/providers/orders_provider.dart' show databaseProvider;
 import '../../admin/widgets/order_status_badge.dart';
 import '../providers/customer_providers.dart';
+import '../utils/receipt_printer.dart';
 import '../widgets/customer_common.dart';
 import '../widgets/delivery_qr_card.dart';
 import '../widgets/order_progress_stepper.dart';
@@ -33,13 +35,26 @@ class CustomerOrderDetailScreen extends ConsumerWidget {
             child: Column(children: [
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                 child: Row(children: [
                   TextButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.chevron_left, size: 28, color: CcColors.text),
                     label: const Text('My Orders', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: CcColors.text)),
                   ),
+                  const Spacer(),
+                  if (order != null)
+                    Consumer(builder: (ctx, r, _) {
+                      final lines = r.watch(orderLinesProvider(order!.uuid)).value ?? const <OrderItem>[];
+                      return TextButton.icon(
+                        onPressed: () async {
+                          final doc = await buildReceiptPdf(order!, lines);
+                          if (ctx.mounted) await exportPdf(doc, 'Receipt_${order!.orderNumber}.pdf');
+                        },
+                        icon: const Icon(Icons.receipt_long_outlined, size: 20, color: CcColors.text),
+                        label: const Text('Export Receipt', style: TextStyle(fontSize: 14, color: CcColors.text)),
+                      );
+                    }),
                 ]),
               ),
               const Divider(height: 1, color: CcColors.border),

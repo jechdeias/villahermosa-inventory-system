@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/utils/pdf_export.dart';
 import '../providers/warehouse_providers.dart';
+import '../utils/report_pdf_printer.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
 import '../../../core/theme/app_theme.dart';
@@ -73,7 +75,17 @@ class WarehouseReportsScreen extends ConsumerWidget {
           subtitle: 'This week · ${formatShortDate(start).split(', ').last} – ${formatShortDate(today).split(', ').last}, ${today.year}',
           trailing: WhPrimaryButton(
             label: 'Export PDF',
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PDF export is not set up yet'))),
+            onPressed: () async {
+              final doc = await buildReportPdf(
+                movements: movements,
+                orders: orders,
+                products: products,
+                weekStart: start,
+              );
+              if (context.mounted) {
+                await exportPdf(doc, 'WarehouseReport_${start.year}${start.month.toString().padLeft(2, '0')}${start.day.toString().padLeft(2, '0')}.pdf');
+              }
+            },
           ),
         ),
         WhStatRow(bottomGap: 12, cards: [

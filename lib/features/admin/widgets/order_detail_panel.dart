@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/utils/pdf_export.dart';
 import '../providers/orders_provider.dart';
 import '../services/orders_service.dart';
+import '../utils/order_pdf_printer.dart';
 import 'order_status_badge.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -330,6 +332,7 @@ class OrderDetailPanel extends ConsumerWidget {
   }
 
   Widget _buildFooter(BuildContext context, WidgetRef ref, Order order, OrdersService service) {
+    final itemsAsync = ref.watch(orderItemsProvider(order.uuid));
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -346,6 +349,25 @@ class OrderDetailPanel extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 10),
               ),
               child: const Text('Close', style: TextStyle(fontSize: 13)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final lines = itemsAsync.value ?? [];
+                final doc = await buildOrderPdf(order, lines);
+                if (context.mounted) {
+                  await exportPdf(doc, 'Order_${order.orderNumber}.pdf');
+                }
+              },
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
+              label: const Text('Export PDF', style: TextStyle(fontSize: 13)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppTheme.border),
+                foregroundColor: const Color(0xFF374151),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
             ),
           ),
           ..._statusActions(context, ref, order, service),
