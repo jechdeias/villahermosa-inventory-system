@@ -325,6 +325,32 @@ Future<String> placeCustomerOrder(
     }
   });
 
+  // Auto-create an unpaid payment record so admin can track credit immediately.
+  try {
+    final order = await db.getOrderById(orderUuid);
+    if (order != null) {
+      final payId = await db.generatePaymentId();
+      await db.createPayment(PaymentsCompanion.insert(
+        paymentId: payId,
+        orderId: order.id,
+        orderCode: orderNumber,
+        storeName: profile.storeName,
+        // salesRepId 0 = unassigned; admin assigns the rep later via order detail.
+        salesRepId: 0,
+        salesRepName: profile.repName.isEmpty ? '—' : profile.repName,
+        orderAmount: total,
+        amountPaid: const Value(0.0),
+        balance: total,
+        paymentMethod: Value(paymentMethod),
+        paymentDate: DateTime.now(),
+        status: const Value('credit'),
+        syncStatus: const Value('pending'),
+      ));
+    }
+  } catch (_) {
+    // Payment row is best-effort; order itself is already saved.
+  }
+
   ref.read(cartProvider.notifier).clear();
   // Best effort: the order is already safe locally; offline just means it
   // goes up on the next sync.

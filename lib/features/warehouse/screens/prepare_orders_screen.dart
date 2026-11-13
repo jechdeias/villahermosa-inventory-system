@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../providers/warehouse_providers.dart';
+import '../utils/picklist_printer.dart';
 import '../widgets/warehouse_shell.dart';
 import '../widgets/wh_widgets.dart';
 import '../../../core/theme/app_theme.dart';
@@ -36,6 +38,14 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
     await ref.read(warehouseActionsProvider).completeOrder(o, lines);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${o.orderNumber} is ready for loading')));
+  }
+
+  Future<void> _printPicklist(Order o, List<OrderItem> lines, List<Product> products) async {
+    final pdf = await buildPicklistPdf(o, lines, products);
+    await Printing.layoutPdf(
+      onLayout: (_) async => pdf.save(),
+      name: 'Picklist_${o.orderNumber}',
+    );
   }
 
   @override
@@ -123,7 +133,7 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
               WhSecondaryButton(
                 label: 'Print Picklist',
                 icon: Icons.print_outlined,
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Picklist printing is not set up yet'))),
+                onPressed: () => _printPicklist(o, lines, products),
               ),
               WhPrimaryButton(label: 'Complete Order', onPressed: complete ? () => _complete(o, lines) : null),
             ],

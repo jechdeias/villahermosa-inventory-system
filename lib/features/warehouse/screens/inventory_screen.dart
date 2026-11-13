@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
@@ -100,7 +103,7 @@ class _WarehouseInventoryScreenState extends ConsumerState<WarehouseInventoryScr
           subtitle: 'Current stock levels across the warehouse',
           trailing: WhSecondaryButton(
             label: 'Export CSV',
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('CSV export is not set up yet'))),
+            onPressed: () => _exportCsv(context, products),
           ),
         ),
         Padding(
@@ -166,6 +169,34 @@ class _WarehouseInventoryScreenState extends ConsumerState<WarehouseInventoryScr
           WhStockButton(label: '− Out', color: WhColors.red, onPressed: () => _quickMove(p, false)),
         ]),
       ],
+    );
+  }
+
+  Future<void> _exportCsv(BuildContext context, List<Product> products) async {
+    final buf = StringBuffer()
+      ..writeln('SKU,Name,Category,Current Stock,Min Stock,Unit Price,Status');
+    for (final p in products) {
+      String esc(String? v) => '"${(v ?? '').replaceAll('"', '""')}"';
+      final status = p.currentStock <= 0
+          ? 'Out of Stock'
+          : (p.currentStock <= (p.minimumStock ?? 0) ? 'Low Stock' : 'In Stock');
+      buf.writeln('${esc(p.sku)},${esc(p.name)},${esc(p.category)},'
+          '${p.currentStock},${p.minimumStock ?? 0},'
+          '${p.unitPrice.toStringAsFixed(2)},$status');
+    }
+
+    final dir = await getTemporaryDirectory();
+    final now = DateTime.now();
+    final stamp = '${now.year}${now.month.toString().padLeft(2,'0')}${now.day.toString().padLeft(2,'0')}';
+    final file = File('${dir.path}/inventory_$stamp.csv');
+    await file.writeAsString(buf.toString());
+
+    if (!context.mounted) return;
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'text/csv')],
+        subject: 'Villahermosa Inventory — $stamp',
+      ),
     );
   }
 }
