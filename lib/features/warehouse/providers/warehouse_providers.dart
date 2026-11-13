@@ -4,6 +4,7 @@ import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/constants/order_status.dart';
 import '../../../core/settings/app_settings.dart';
+import '../../../core/sync/sync_manager.dart';
 import '../../admin/providers/orders_provider.dart' show databaseProvider;
 import '../../admin/providers/products_provider.dart' show productsStreamProvider;
 import '../../admin/services/products_service.dart';
@@ -134,15 +135,20 @@ class WarehouseActions {
   const WarehouseActions(this._db);
   final AppDatabase _db;
 
+  void _pushAsync() => SyncManager.instance.syncPendingData().catchError((_) {});
+
   /// Warehouse picks the order up: pending → processing.
-  Future<void> processOrder(Order o) => (_db.update(_db.orders)..where((t) => t.id.equals(o.id))).write(
-        OrdersCompanion(
-          status: const Value(OrderStatus.processing),
-          warehouseStatus: const Value('processing'),
-          syncStatus: const Value('pending'),
-          updatedAt: Value(DateTime.now()),
-        ),
-      );
+  Future<void> processOrder(Order o) async {
+    await (_db.update(_db.orders)..where((t) => t.id.equals(o.id))).write(
+      OrdersCompanion(
+        status: const Value(OrderStatus.processing),
+        warehouseStatus: const Value('processing'),
+        syncStatus: const Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    _pushAsync();
+  }
 
   Future<void> setItemPicked(OrderItem i, bool picked) => (_db.update(_db.orderItems)..where((t) => t.id.equals(i.id))).write(
         OrderItemsCompanion(
@@ -174,6 +180,7 @@ class WarehouseActions {
         syncStatus: o.status == OrderStatus.pending ? const Value('pending') : const Value.absent(),
       ),
     );
+    _pushAsync();
   }
 
   Future<void> setItemLoaded(OrderItem i, bool loaded) => (_db.update(_db.orderItems)..where((t) => t.id.equals(i.id))).write(
@@ -193,6 +200,7 @@ class WarehouseActions {
         ),
       );
     }
+    _pushAsync();
     return orders.length;
   }
 }
