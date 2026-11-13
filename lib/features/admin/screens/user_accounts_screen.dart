@@ -6,6 +6,7 @@ import 'dart:async';
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/villahermosa_theme.dart';
 import '../../../core/sync/sync_manager.dart';
+import '../../../core/auth/auth_service.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../widgets/mobile_list_card.dart';
 import '../../../core/theme/app_theme.dart';
@@ -195,6 +196,8 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     );
     if (confirm == true && mounted) {
       await widget.database.deactivateUser(user.uuid);
+      // Ban in Supabase Auth so the account can't log in even on a fresh install
+      await AuthService.banSupabaseAuthUser(user.email);
     }
   }
 
@@ -215,6 +218,8 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     );
     if (confirm == true && mounted) {
       await widget.database.activateUser(user.uuid);
+      // Unban in Supabase Auth so fresh-install devices can log in again
+      await AuthService.unbanSupabaseAuthUser(user.email);
     }
   }
 
@@ -901,6 +906,13 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         );
 
         await widget.database.createUser(user);
+        // Register in Supabase Auth so fresh-install devices can log in.
+        // This requires the admin to already have an active session — if
+        // it fails (network, etc.) a later sync will retry via the same path.
+        await AuthService.upsertSupabaseAuthUser(
+          _emailController.text,
+          _passwordController.text,
+        );
         if (mounted) {
           widget.onUserAdded();
           Navigator.pop(context);
@@ -1332,6 +1344,11 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
         );
 
         await widget.database.updateUser(widget.user.uuid, updatedUser);
+        // Also update Supabase Auth so the new password works on fresh installs
+        await AuthService.upsertSupabaseAuthUser(
+          widget.user.email,
+          _passwordController.text,
+        );
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(

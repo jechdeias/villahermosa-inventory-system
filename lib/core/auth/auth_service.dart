@@ -86,14 +86,63 @@ class AuthService {
     }
   }
 
-  /// Attempt to create Supabase Auth user (non-blocking)
+  /// Create or update a Supabase Auth user via the privileged-sync Edge
+  /// Function. This is the ONLY way passwords flow to Supabase Auth — the
+  /// service key never lives in the client. Caller must already have an
+  /// active Supabase session (admin) for the function to accept the request.
+  /// Returns true on success. Never throws.
+  static Future<bool> upsertSupabaseAuthUser(String email, String password) async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'privileged-sync',
+        body: {'action': 'upsert_auth_user', 'data': {'email': email, 'password': password}},
+      );
+      final ok = response.status == 200;
+      debugPrint(ok ? '✅ Supabase Auth upserted for $email' : '⚠️ upsert_auth_user failed: ${response.data}');
+      return ok;
+    } catch (e) {
+      debugPrint('⚠️ upsert_auth_user error: $e');
+      return false;
+    }
+  }
+
+  /// Ban a Supabase Auth user (effectively deactivates login server-side).
+  static Future<void> banSupabaseAuthUser(String email) async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'privileged-sync',
+        body: {'action': 'ban_auth_user', 'data': {'email': email}},
+      );
+      debugPrint(response.status == 200 ? '✅ Banned $email in Supabase Auth' : '⚠️ ban failed: ${response.data}');
+    } catch (e) {
+      debugPrint('⚠️ ban_auth_user error: $e');
+    }
+  }
+
+  /// Unban a Supabase Auth user (restores login server-side).
+  static Future<void> unbanSupabaseAuthUser(String email) async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'privileged-sync',
+        body: {'action': 'unban_auth_user', 'data': {'email': email}},
+      );
+      debugPrint(response.status == 200 ? '✅ Unbanned $email in Supabase Auth' : '⚠️ unban failed: ${response.data}');
+    } catch (e) {
+      debugPrint('⚠️ unban_auth_user error: $e');
+    }
+  }
+
+  /// Non-blocking wrapper — called after local account creation when the
+  /// caller may not yet have an admin session (e.g. self-signup path).
+  /// For admin-created accounts use upsertSupabaseAuthUser directly so
+  /// the result can be awaited and retried.
   Future<void> _attemptSupabaseSignup(String email, String password) async {
     try {
       await Supabase.instance.client.auth.signUp(
         email: email,
         password: password,
       );
-      debugPrint('✅ Supabase Auth user created');
+      debugPrint('✅ Supabase Auth user created (self-signup path)');
     } catch (e) {
       debugPrint('⚠️ Supabase Auth signup failed: $e');
     }

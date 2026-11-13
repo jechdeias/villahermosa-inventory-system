@@ -135,6 +135,118 @@ serve(async (req) => {
           .upsert(data, { onConflict: 'id', ignoreDuplicates: false })
         break
       }
+
+      // ── Supabase Auth management (requires admin caller) ─────────────────
+      //
+      // upsert_auth_user: create or update a Supabase Auth user.
+      //   data: { email, password }
+      //   Used when admin creates an account or resets a password so that
+      //   fresh-install devices can authenticate via Supabase Auth.
+      //
+      // ban_auth_user / unban_auth_user: set ban_duration on the Auth user.
+      //   data: { email }
+      //   Used when admin deactivates / reactivates an account so it also
+      //   blocks/allows login via Supabase Auth (not just the local flag).
+      case 'upsert_auth_user': {
+        if (!callerEmail) {
+          return jsonResponse({ error: 'Unauthorized' }, 401)
+        }
+        // Verify caller is admin
+        const { data: callerRow2 } = await admin
+          .from('users')
+          .select('role')
+          .eq('email', callerEmail)
+          .maybeSingle()
+        if (callerRow2?.role !== 'admin') {
+          return jsonResponse({ error: 'Forbidden' }, 403)
+        }
+        const { email: targetEmail, password: targetPassword } = data ?? {}
+        if (!targetEmail || !targetPassword) {
+          return jsonResponse({ error: 'email and password required' }, 400)
+        }
+        // Look up whether this email already exists in auth.users
+        const { data: listData, error: listErr } =
+          await admin.auth.admin.listUsers()
+        if (listErr) throw listErr
+        const existing = listData?.users?.find(
+          (u: { email?: string }) => u.email === targetEmail,
+        )
+        if (existing) {
+          // Update password (and unban in case they were banned)
+          const { error: updErr } = await admin.auth.admin.updateUserById(
+            existing.id,
+            { password: targetPassword, ban_duration: 'none' },
+          )
+          if (updErr) throw updErr
+        } else {
+          // Create new Auth user
+          const { error: createErr } = await admin.auth.admin.createUser({
+            email: targetEmail,
+            password: targetPassword,
+            email_confirm: true,
+          })
+          if (createErr) throw createErr
+        }
+        return jsonResponse({ success: true })
+      }
+
+      case 'ban_auth_user': {
+        if (!callerEmail) {
+          return jsonResponse({ error: 'Unauthorized' }, 401)
+        }
+        const { data: callerRow3 } = await admin
+          .from('users')
+          .select('role')
+          .eq('email', callerEmail)
+          .maybeSingle()
+        if (callerRow3?.role !== 'admin') {
+          return jsonResponse({ error: 'Forbidden' }, 403)
+        }
+        const { email: targetEmail2 } = data ?? {}
+        if (!targetEmail2) return jsonResponse({ error: 'email required' }, 400)
+        const { data: listData2 } = await admin.auth.admin.listUsers()
+        const target = listData2?.users?.find(
+          (u: { email?: string }) => u.email === targetEmail2,
+        )
+        if (target) {
+          const { error: banErr } = await admin.auth.admin.updateUserById(
+            target.id,
+            { ban_duration: '876600h' }, // 100 years ≈ permanent
+          )
+          if (banErr) throw banErr
+        }
+        // If no Auth user exists, nothing to ban — that's fine
+        return jsonResponse({ success: true })
+      }
+
+      case 'unban_auth_user': {
+        if (!callerEmail) {
+          return jsonResponse({ error: 'Unauthorized' }, 401)
+        }
+        const { data: callerRow4 } = await admin
+          .from('users')
+          .select('role')
+          .eq('email', callerEmail)
+          .maybeSingle()
+        if (callerRow4?.role !== 'admin') {
+          return jsonResponse({ error: 'Forbidden' }, 403)
+        }
+        const { email: targetEmail3 } = data ?? {}
+        if (!targetEmail3) return jsonResponse({ error: 'email required' }, 400)
+        const { data: listData3 } = await admin.auth.admin.listUsers()
+        const target2 = listData3?.users?.find(
+          (u: { email?: string }) => u.email === targetEmail3,
+        )
+        if (target2) {
+          const { error: unbanErr } = await admin.auth.admin.updateUserById(
+            target2.id,
+            { ban_duration: 'none' },
+          )
+          if (unbanErr) throw unbanErr
+        }
+        return jsonResponse({ success: true })
+      }
+
       default:
         return jsonResponse({ error: 'Unknown action' }, 400)
     }
