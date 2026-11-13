@@ -3229,18 +3229,6 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _taxAmountMeta = const VerificationMeta(
-    'taxAmount',
-  );
-  @override
-  late final GeneratedColumn<double> taxAmount = GeneratedColumn<double>(
-    'tax_amount',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
   static const VerificationMeta _totalAmountMeta = const VerificationMeta(
     'totalAmount',
   );
@@ -3253,18 +3241,6 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _paymentStatusMeta = const VerificationMeta(
-    'paymentStatus',
-  );
-  @override
-  late final GeneratedColumn<String> paymentStatus = GeneratedColumn<String>(
-    'payment_status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('pending'),
-  );
   static const VerificationMeta _warehouseStatusMeta = const VerificationMeta(
     'warehouseStatus',
   );
@@ -3276,51 +3252,6 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
-  );
-  static const VerificationMeta _priorityMeta = const VerificationMeta(
-    'priority',
-  );
-  @override
-  late final GeneratedColumn<String> priority = GeneratedColumn<String>(
-    'priority',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('normal'),
-  );
-  static const VerificationMeta _pickerIdMeta = const VerificationMeta(
-    'pickerId',
-  );
-  @override
-  late final GeneratedColumn<String> pickerId = GeneratedColumn<String>(
-    'picker_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _pickedAtMeta = const VerificationMeta(
-    'pickedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> pickedAt = GeneratedColumn<DateTime>(
-    'picked_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _packerIdMeta = const VerificationMeta(
-    'packerId',
-  );
-  @override
-  late final GeneratedColumn<String> packerId = GeneratedColumn<String>(
-    'packer_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   static const VerificationMeta _packedAtMeta = const VerificationMeta(
     'packedAt',
@@ -3355,21 +3286,6 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
-  static const VerificationMeta _isActiveMeta = const VerificationMeta(
-    'isActive',
-  );
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-    'is_active',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_active" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -3509,18 +3425,11 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
     deliveryAddress,
     customerNotes,
     subtotal,
-    taxAmount,
     totalAmount,
-    paymentStatus,
     warehouseStatus,
-    priority,
-    pickerId,
-    pickedAt,
-    packerId,
     packedAt,
     expectedDeliveryDate,
     actualDeliveryDate,
-    isActive,
     createdAt,
     updatedAt,
     isDeleted,
@@ -3607,27 +3516,12 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
         subtotal.isAcceptableOrUnknown(data['subtotal']!, _subtotalMeta),
       );
     }
-    if (data.containsKey('tax_amount')) {
-      context.handle(
-        _taxAmountMeta,
-        taxAmount.isAcceptableOrUnknown(data['tax_amount']!, _taxAmountMeta),
-      );
-    }
     if (data.containsKey('total_amount')) {
       context.handle(
         _totalAmountMeta,
         totalAmount.isAcceptableOrUnknown(
           data['total_amount']!,
           _totalAmountMeta,
-        ),
-      );
-    }
-    if (data.containsKey('payment_status')) {
-      context.handle(
-        _paymentStatusMeta,
-        paymentStatus.isAcceptableOrUnknown(
-          data['payment_status']!,
-          _paymentStatusMeta,
         ),
       );
     }
@@ -3638,30 +3532,6 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
           data['warehouse_status']!,
           _warehouseStatusMeta,
         ),
-      );
-    }
-    if (data.containsKey('priority')) {
-      context.handle(
-        _priorityMeta,
-        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
-      );
-    }
-    if (data.containsKey('picker_id')) {
-      context.handle(
-        _pickerIdMeta,
-        pickerId.isAcceptableOrUnknown(data['picker_id']!, _pickerIdMeta),
-      );
-    }
-    if (data.containsKey('picked_at')) {
-      context.handle(
-        _pickedAtMeta,
-        pickedAt.isAcceptableOrUnknown(data['picked_at']!, _pickedAtMeta),
-      );
-    }
-    if (data.containsKey('packer_id')) {
-      context.handle(
-        _packerIdMeta,
-        packerId.isAcceptableOrUnknown(data['packer_id']!, _packerIdMeta),
       );
     }
     if (data.containsKey('packed_at')) {
@@ -3686,12 +3556,6 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
           data['actual_delivery_date']!,
           _actualDeliveryDateMeta,
         ),
-      );
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(
-        _isActiveMeta,
-        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -3807,38 +3671,14 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
         DriftSqlType.double,
         data['${effectivePrefix}subtotal'],
       )!,
-      taxAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}tax_amount'],
-      )!,
       totalAmount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}total_amount'],
-      )!,
-      paymentStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}payment_status'],
       )!,
       warehouseStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}warehouse_status'],
       )!,
-      priority: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}priority'],
-      )!,
-      pickerId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}picker_id'],
-      ),
-      pickedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}picked_at'],
-      ),
-      packerId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}packer_id'],
-      ),
       packedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}packed_at'],
@@ -3851,10 +3691,6 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}actual_delivery_date'],
       ),
-      isActive: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_active'],
-      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3933,29 +3769,11 @@ class Order extends DataClass implements Insertable<Order> {
   /// Order subtotal before tax.
   final double subtotal;
 
-  /// Tax amount calculated on the order.
-  final double taxAmount;
-
   /// Total amount including tax.
   final double totalAmount;
 
-  /// Payment status (pending, partial, paid, failed).
-  final String paymentStatus;
-
   /// Warehouse processing status (pending, picking, packed, ready, shipped).
   final String warehouseStatus;
-
-  /// Order priority (low, normal, high, urgent).
-  final String priority;
-
-  /// ID of the warehouse staff member who picked the order.
-  final String? pickerId;
-
-  /// Timestamp when the order was picked.
-  final DateTime? pickedAt;
-
-  /// ID of the warehouse staff member who packed the order.
-  final String? packerId;
 
   /// Timestamp when the order was packed.
   final DateTime? packedAt;
@@ -3965,9 +3783,6 @@ class Order extends DataClass implements Insertable<Order> {
 
   /// Actual delivery date.
   final DateTime? actualDeliveryDate;
-
-  /// Indicates whether the order is currently active.
-  final bool isActive;
 
   /// Timestamp when the order record was created.
   final DateTime createdAt;
@@ -4010,18 +3825,11 @@ class Order extends DataClass implements Insertable<Order> {
     required this.deliveryAddress,
     this.customerNotes,
     required this.subtotal,
-    required this.taxAmount,
     required this.totalAmount,
-    required this.paymentStatus,
     required this.warehouseStatus,
-    required this.priority,
-    this.pickerId,
-    this.pickedAt,
-    this.packerId,
     this.packedAt,
     this.expectedDeliveryDate,
     this.actualDeliveryDate,
-    required this.isActive,
     required this.createdAt,
     required this.updatedAt,
     required this.isDeleted,
@@ -4047,20 +3855,8 @@ class Order extends DataClass implements Insertable<Order> {
       map['customer_notes'] = Variable<String>(customerNotes);
     }
     map['subtotal'] = Variable<double>(subtotal);
-    map['tax_amount'] = Variable<double>(taxAmount);
     map['total_amount'] = Variable<double>(totalAmount);
-    map['payment_status'] = Variable<String>(paymentStatus);
     map['warehouse_status'] = Variable<String>(warehouseStatus);
-    map['priority'] = Variable<String>(priority);
-    if (!nullToAbsent || pickerId != null) {
-      map['picker_id'] = Variable<String>(pickerId);
-    }
-    if (!nullToAbsent || pickedAt != null) {
-      map['picked_at'] = Variable<DateTime>(pickedAt);
-    }
-    if (!nullToAbsent || packerId != null) {
-      map['packer_id'] = Variable<String>(packerId);
-    }
     if (!nullToAbsent || packedAt != null) {
       map['packed_at'] = Variable<DateTime>(packedAt);
     }
@@ -4070,7 +3866,6 @@ class Order extends DataClass implements Insertable<Order> {
     if (!nullToAbsent || actualDeliveryDate != null) {
       map['actual_delivery_date'] = Variable<DateTime>(actualDeliveryDate);
     }
-    map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_deleted'] = Variable<bool>(isDeleted);
@@ -4109,20 +3904,8 @@ class Order extends DataClass implements Insertable<Order> {
           ? const Value.absent()
           : Value(customerNotes),
       subtotal: Value(subtotal),
-      taxAmount: Value(taxAmount),
       totalAmount: Value(totalAmount),
-      paymentStatus: Value(paymentStatus),
       warehouseStatus: Value(warehouseStatus),
-      priority: Value(priority),
-      pickerId: pickerId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(pickerId),
-      pickedAt: pickedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(pickedAt),
-      packerId: packerId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(packerId),
       packedAt: packedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(packedAt),
@@ -4132,7 +3915,6 @@ class Order extends DataClass implements Insertable<Order> {
       actualDeliveryDate: actualDeliveryDate == null && nullToAbsent
           ? const Value.absent()
           : Value(actualDeliveryDate),
-      isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       isDeleted: Value(isDeleted),
@@ -4173,14 +3955,8 @@ class Order extends DataClass implements Insertable<Order> {
       deliveryAddress: serializer.fromJson<String>(json['deliveryAddress']),
       customerNotes: serializer.fromJson<String?>(json['customerNotes']),
       subtotal: serializer.fromJson<double>(json['subtotal']),
-      taxAmount: serializer.fromJson<double>(json['taxAmount']),
       totalAmount: serializer.fromJson<double>(json['totalAmount']),
-      paymentStatus: serializer.fromJson<String>(json['paymentStatus']),
       warehouseStatus: serializer.fromJson<String>(json['warehouseStatus']),
-      priority: serializer.fromJson<String>(json['priority']),
-      pickerId: serializer.fromJson<String?>(json['pickerId']),
-      pickedAt: serializer.fromJson<DateTime?>(json['pickedAt']),
-      packerId: serializer.fromJson<String?>(json['packerId']),
       packedAt: serializer.fromJson<DateTime?>(json['packedAt']),
       expectedDeliveryDate: serializer.fromJson<DateTime?>(
         json['expectedDeliveryDate'],
@@ -4188,7 +3964,6 @@ class Order extends DataClass implements Insertable<Order> {
       actualDeliveryDate: serializer.fromJson<DateTime?>(
         json['actualDeliveryDate'],
       ),
-      isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
@@ -4214,20 +3989,13 @@ class Order extends DataClass implements Insertable<Order> {
       'deliveryAddress': serializer.toJson<String>(deliveryAddress),
       'customerNotes': serializer.toJson<String?>(customerNotes),
       'subtotal': serializer.toJson<double>(subtotal),
-      'taxAmount': serializer.toJson<double>(taxAmount),
       'totalAmount': serializer.toJson<double>(totalAmount),
-      'paymentStatus': serializer.toJson<String>(paymentStatus),
       'warehouseStatus': serializer.toJson<String>(warehouseStatus),
-      'priority': serializer.toJson<String>(priority),
-      'pickerId': serializer.toJson<String?>(pickerId),
-      'pickedAt': serializer.toJson<DateTime?>(pickedAt),
-      'packerId': serializer.toJson<String?>(packerId),
       'packedAt': serializer.toJson<DateTime?>(packedAt),
       'expectedDeliveryDate': serializer.toJson<DateTime?>(
         expectedDeliveryDate,
       ),
       'actualDeliveryDate': serializer.toJson<DateTime?>(actualDeliveryDate),
-      'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isDeleted': serializer.toJson<bool>(isDeleted),
@@ -4251,18 +4019,11 @@ class Order extends DataClass implements Insertable<Order> {
     String? deliveryAddress,
     Value<String?> customerNotes = const Value.absent(),
     double? subtotal,
-    double? taxAmount,
     double? totalAmount,
-    String? paymentStatus,
     String? warehouseStatus,
-    String? priority,
-    Value<String?> pickerId = const Value.absent(),
-    Value<DateTime?> pickedAt = const Value.absent(),
-    Value<String?> packerId = const Value.absent(),
     Value<DateTime?> packedAt = const Value.absent(),
     Value<DateTime?> expectedDeliveryDate = const Value.absent(),
     Value<DateTime?> actualDeliveryDate = const Value.absent(),
-    bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDeleted,
@@ -4285,14 +4046,8 @@ class Order extends DataClass implements Insertable<Order> {
         ? customerNotes.value
         : this.customerNotes,
     subtotal: subtotal ?? this.subtotal,
-    taxAmount: taxAmount ?? this.taxAmount,
     totalAmount: totalAmount ?? this.totalAmount,
-    paymentStatus: paymentStatus ?? this.paymentStatus,
     warehouseStatus: warehouseStatus ?? this.warehouseStatus,
-    priority: priority ?? this.priority,
-    pickerId: pickerId.present ? pickerId.value : this.pickerId,
-    pickedAt: pickedAt.present ? pickedAt.value : this.pickedAt,
-    packerId: packerId.present ? packerId.value : this.packerId,
     packedAt: packedAt.present ? packedAt.value : this.packedAt,
     expectedDeliveryDate: expectedDeliveryDate.present
         ? expectedDeliveryDate.value
@@ -4300,7 +4055,6 @@ class Order extends DataClass implements Insertable<Order> {
     actualDeliveryDate: actualDeliveryDate.present
         ? actualDeliveryDate.value
         : this.actualDeliveryDate,
-    isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     isDeleted: isDeleted ?? this.isDeleted,
@@ -4331,20 +4085,12 @@ class Order extends DataClass implements Insertable<Order> {
           ? data.customerNotes.value
           : this.customerNotes,
       subtotal: data.subtotal.present ? data.subtotal.value : this.subtotal,
-      taxAmount: data.taxAmount.present ? data.taxAmount.value : this.taxAmount,
       totalAmount: data.totalAmount.present
           ? data.totalAmount.value
           : this.totalAmount,
-      paymentStatus: data.paymentStatus.present
-          ? data.paymentStatus.value
-          : this.paymentStatus,
       warehouseStatus: data.warehouseStatus.present
           ? data.warehouseStatus.value
           : this.warehouseStatus,
-      priority: data.priority.present ? data.priority.value : this.priority,
-      pickerId: data.pickerId.present ? data.pickerId.value : this.pickerId,
-      pickedAt: data.pickedAt.present ? data.pickedAt.value : this.pickedAt,
-      packerId: data.packerId.present ? data.packerId.value : this.packerId,
       packedAt: data.packedAt.present ? data.packedAt.value : this.packedAt,
       expectedDeliveryDate: data.expectedDeliveryDate.present
           ? data.expectedDeliveryDate.value
@@ -4352,7 +4098,6 @@ class Order extends DataClass implements Insertable<Order> {
       actualDeliveryDate: data.actualDeliveryDate.present
           ? data.actualDeliveryDate.value
           : this.actualDeliveryDate,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
@@ -4384,18 +4129,11 @@ class Order extends DataClass implements Insertable<Order> {
           ..write('deliveryAddress: $deliveryAddress, ')
           ..write('customerNotes: $customerNotes, ')
           ..write('subtotal: $subtotal, ')
-          ..write('taxAmount: $taxAmount, ')
           ..write('totalAmount: $totalAmount, ')
-          ..write('paymentStatus: $paymentStatus, ')
           ..write('warehouseStatus: $warehouseStatus, ')
-          ..write('priority: $priority, ')
-          ..write('pickerId: $pickerId, ')
-          ..write('pickedAt: $pickedAt, ')
-          ..write('packerId: $packerId, ')
           ..write('packedAt: $packedAt, ')
           ..write('expectedDeliveryDate: $expectedDeliveryDate, ')
           ..write('actualDeliveryDate: $actualDeliveryDate, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
@@ -4421,18 +4159,11 @@ class Order extends DataClass implements Insertable<Order> {
     deliveryAddress,
     customerNotes,
     subtotal,
-    taxAmount,
     totalAmount,
-    paymentStatus,
     warehouseStatus,
-    priority,
-    pickerId,
-    pickedAt,
-    packerId,
     packedAt,
     expectedDeliveryDate,
     actualDeliveryDate,
-    isActive,
     createdAt,
     updatedAt,
     isDeleted,
@@ -4457,18 +4188,11 @@ class Order extends DataClass implements Insertable<Order> {
           other.deliveryAddress == this.deliveryAddress &&
           other.customerNotes == this.customerNotes &&
           other.subtotal == this.subtotal &&
-          other.taxAmount == this.taxAmount &&
           other.totalAmount == this.totalAmount &&
-          other.paymentStatus == this.paymentStatus &&
           other.warehouseStatus == this.warehouseStatus &&
-          other.priority == this.priority &&
-          other.pickerId == this.pickerId &&
-          other.pickedAt == this.pickedAt &&
-          other.packerId == this.packerId &&
           other.packedAt == this.packedAt &&
           other.expectedDeliveryDate == this.expectedDeliveryDate &&
           other.actualDeliveryDate == this.actualDeliveryDate &&
-          other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.isDeleted == this.isDeleted &&
@@ -4491,18 +4215,11 @@ class OrdersCompanion extends UpdateCompanion<Order> {
   final Value<String> deliveryAddress;
   final Value<String?> customerNotes;
   final Value<double> subtotal;
-  final Value<double> taxAmount;
   final Value<double> totalAmount;
-  final Value<String> paymentStatus;
   final Value<String> warehouseStatus;
-  final Value<String> priority;
-  final Value<String?> pickerId;
-  final Value<DateTime?> pickedAt;
-  final Value<String?> packerId;
   final Value<DateTime?> packedAt;
   final Value<DateTime?> expectedDeliveryDate;
   final Value<DateTime?> actualDeliveryDate;
-  final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool> isDeleted;
@@ -4525,18 +4242,11 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     this.deliveryAddress = const Value.absent(),
     this.customerNotes = const Value.absent(),
     this.subtotal = const Value.absent(),
-    this.taxAmount = const Value.absent(),
     this.totalAmount = const Value.absent(),
-    this.paymentStatus = const Value.absent(),
     this.warehouseStatus = const Value.absent(),
-    this.priority = const Value.absent(),
-    this.pickerId = const Value.absent(),
-    this.pickedAt = const Value.absent(),
-    this.packerId = const Value.absent(),
     this.packedAt = const Value.absent(),
     this.expectedDeliveryDate = const Value.absent(),
     this.actualDeliveryDate = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -4560,18 +4270,11 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     required String deliveryAddress,
     this.customerNotes = const Value.absent(),
     this.subtotal = const Value.absent(),
-    this.taxAmount = const Value.absent(),
     this.totalAmount = const Value.absent(),
-    this.paymentStatus = const Value.absent(),
     this.warehouseStatus = const Value.absent(),
-    this.priority = const Value.absent(),
-    this.pickerId = const Value.absent(),
-    this.pickedAt = const Value.absent(),
-    this.packerId = const Value.absent(),
     this.packedAt = const Value.absent(),
     this.expectedDeliveryDate = const Value.absent(),
     this.actualDeliveryDate = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -4598,18 +4301,11 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     Expression<String>? deliveryAddress,
     Expression<String>? customerNotes,
     Expression<double>? subtotal,
-    Expression<double>? taxAmount,
     Expression<double>? totalAmount,
-    Expression<String>? paymentStatus,
     Expression<String>? warehouseStatus,
-    Expression<String>? priority,
-    Expression<String>? pickerId,
-    Expression<DateTime>? pickedAt,
-    Expression<String>? packerId,
     Expression<DateTime>? packedAt,
     Expression<DateTime>? expectedDeliveryDate,
     Expression<DateTime>? actualDeliveryDate,
-    Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? isDeleted,
@@ -4633,20 +4329,13 @@ class OrdersCompanion extends UpdateCompanion<Order> {
       if (deliveryAddress != null) 'delivery_address': deliveryAddress,
       if (customerNotes != null) 'customer_notes': customerNotes,
       if (subtotal != null) 'subtotal': subtotal,
-      if (taxAmount != null) 'tax_amount': taxAmount,
       if (totalAmount != null) 'total_amount': totalAmount,
-      if (paymentStatus != null) 'payment_status': paymentStatus,
       if (warehouseStatus != null) 'warehouse_status': warehouseStatus,
-      if (priority != null) 'priority': priority,
-      if (pickerId != null) 'picker_id': pickerId,
-      if (pickedAt != null) 'picked_at': pickedAt,
-      if (packerId != null) 'packer_id': packerId,
       if (packedAt != null) 'packed_at': packedAt,
       if (expectedDeliveryDate != null)
         'expected_delivery_date': expectedDeliveryDate,
       if (actualDeliveryDate != null)
         'actual_delivery_date': actualDeliveryDate,
-      if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isDeleted != null) 'is_deleted': isDeleted,
@@ -4672,18 +4361,11 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     Value<String>? deliveryAddress,
     Value<String?>? customerNotes,
     Value<double>? subtotal,
-    Value<double>? taxAmount,
     Value<double>? totalAmount,
-    Value<String>? paymentStatus,
     Value<String>? warehouseStatus,
-    Value<String>? priority,
-    Value<String?>? pickerId,
-    Value<DateTime?>? pickedAt,
-    Value<String?>? packerId,
     Value<DateTime?>? packedAt,
     Value<DateTime?>? expectedDeliveryDate,
     Value<DateTime?>? actualDeliveryDate,
-    Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<bool>? isDeleted,
@@ -4707,18 +4389,11 @@ class OrdersCompanion extends UpdateCompanion<Order> {
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       customerNotes: customerNotes ?? this.customerNotes,
       subtotal: subtotal ?? this.subtotal,
-      taxAmount: taxAmount ?? this.taxAmount,
       totalAmount: totalAmount ?? this.totalAmount,
-      paymentStatus: paymentStatus ?? this.paymentStatus,
       warehouseStatus: warehouseStatus ?? this.warehouseStatus,
-      priority: priority ?? this.priority,
-      pickerId: pickerId ?? this.pickerId,
-      pickedAt: pickedAt ?? this.pickedAt,
-      packerId: packerId ?? this.packerId,
       packedAt: packedAt ?? this.packedAt,
       expectedDeliveryDate: expectedDeliveryDate ?? this.expectedDeliveryDate,
       actualDeliveryDate: actualDeliveryDate ?? this.actualDeliveryDate,
-      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
@@ -4762,29 +4437,11 @@ class OrdersCompanion extends UpdateCompanion<Order> {
     if (subtotal.present) {
       map['subtotal'] = Variable<double>(subtotal.value);
     }
-    if (taxAmount.present) {
-      map['tax_amount'] = Variable<double>(taxAmount.value);
-    }
     if (totalAmount.present) {
       map['total_amount'] = Variable<double>(totalAmount.value);
     }
-    if (paymentStatus.present) {
-      map['payment_status'] = Variable<String>(paymentStatus.value);
-    }
     if (warehouseStatus.present) {
       map['warehouse_status'] = Variable<String>(warehouseStatus.value);
-    }
-    if (priority.present) {
-      map['priority'] = Variable<String>(priority.value);
-    }
-    if (pickerId.present) {
-      map['picker_id'] = Variable<String>(pickerId.value);
-    }
-    if (pickedAt.present) {
-      map['picked_at'] = Variable<DateTime>(pickedAt.value);
-    }
-    if (packerId.present) {
-      map['packer_id'] = Variable<String>(packerId.value);
     }
     if (packedAt.present) {
       map['packed_at'] = Variable<DateTime>(packedAt.value);
@@ -4798,9 +4455,6 @@ class OrdersCompanion extends UpdateCompanion<Order> {
       map['actual_delivery_date'] = Variable<DateTime>(
         actualDeliveryDate.value,
       );
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -4855,18 +4509,11 @@ class OrdersCompanion extends UpdateCompanion<Order> {
           ..write('deliveryAddress: $deliveryAddress, ')
           ..write('customerNotes: $customerNotes, ')
           ..write('subtotal: $subtotal, ')
-          ..write('taxAmount: $taxAmount, ')
           ..write('totalAmount: $totalAmount, ')
-          ..write('paymentStatus: $paymentStatus, ')
           ..write('warehouseStatus: $warehouseStatus, ')
-          ..write('priority: $priority, ')
-          ..write('pickerId: $pickerId, ')
-          ..write('pickedAt: $pickedAt, ')
-          ..write('packerId: $packerId, ')
           ..write('packedAt: $packedAt, ')
           ..write('expectedDeliveryDate: $expectedDeliveryDate, ')
           ..write('actualDeliveryDate: $actualDeliveryDate, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
@@ -7434,17 +7081,6 @@ class $StockMovementsTable extends StockMovements
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _referenceTypeMeta = const VerificationMeta(
-    'referenceType',
-  );
-  @override
-  late final GeneratedColumn<String> referenceType = GeneratedColumn<String>(
-    'reference_type',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _referenceIdMeta = const VerificationMeta(
     'referenceId',
   );
@@ -7493,75 +7129,6 @@ class $StockMovementsTable extends StockMovements
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  );
-  static const VerificationMeta _fromLocationMeta = const VerificationMeta(
-    'fromLocation',
-  );
-  @override
-  late final GeneratedColumn<String> fromLocation = GeneratedColumn<String>(
-    'from_location',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _toLocationMeta = const VerificationMeta(
-    'toLocation',
-  );
-  @override
-  late final GeneratedColumn<String> toLocation = GeneratedColumn<String>(
-    'to_location',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _unitCostMeta = const VerificationMeta(
-    'unitCost',
-  );
-  @override
-  late final GeneratedColumn<double> unitCost = GeneratedColumn<double>(
-    'unit_cost',
-    aliasedName,
-    true,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _totalCostMeta = const VerificationMeta(
-    'totalCost',
-  );
-  @override
-  late final GeneratedColumn<double> totalCost = GeneratedColumn<double>(
-    'total_cost',
-    aliasedName,
-    true,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _statusMeta = const VerificationMeta('status');
-  @override
-  late final GeneratedColumn<String> status = GeneratedColumn<String>(
-    'status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('completed'),
-  );
-  static const VerificationMeta _isActiveMeta = const VerificationMeta(
-    'isActive',
-  );
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-    'is_active',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_active" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
   );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -7614,17 +7181,6 @@ class $StockMovementsTable extends StockMovements
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
-  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
-    'remoteId',
-  );
-  @override
-  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
-    'remote_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _createdByMeta = const VerificationMeta(
     'createdBy',
   );
@@ -7643,23 +7199,15 @@ class $StockMovementsTable extends StockMovements
     productId,
     movementType,
     quantity,
-    referenceType,
     referenceId,
     reason,
     notes,
     userId,
     userName,
-    fromLocation,
-    toLocation,
-    unitCost,
-    totalCost,
-    status,
-    isActive,
     createdAt,
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
     createdBy,
   ];
   @override
@@ -7712,15 +7260,6 @@ class $StockMovementsTable extends StockMovements
     } else if (isInserting) {
       context.missing(_quantityMeta);
     }
-    if (data.containsKey('reference_type')) {
-      context.handle(
-        _referenceTypeMeta,
-        referenceType.isAcceptableOrUnknown(
-          data['reference_type']!,
-          _referenceTypeMeta,
-        ),
-      );
-    }
     if (data.containsKey('reference_id')) {
       context.handle(
         _referenceIdMeta,
@@ -7760,45 +7299,6 @@ class $StockMovementsTable extends StockMovements
     } else if (isInserting) {
       context.missing(_userNameMeta);
     }
-    if (data.containsKey('from_location')) {
-      context.handle(
-        _fromLocationMeta,
-        fromLocation.isAcceptableOrUnknown(
-          data['from_location']!,
-          _fromLocationMeta,
-        ),
-      );
-    }
-    if (data.containsKey('to_location')) {
-      context.handle(
-        _toLocationMeta,
-        toLocation.isAcceptableOrUnknown(data['to_location']!, _toLocationMeta),
-      );
-    }
-    if (data.containsKey('unit_cost')) {
-      context.handle(
-        _unitCostMeta,
-        unitCost.isAcceptableOrUnknown(data['unit_cost']!, _unitCostMeta),
-      );
-    }
-    if (data.containsKey('total_cost')) {
-      context.handle(
-        _totalCostMeta,
-        totalCost.isAcceptableOrUnknown(data['total_cost']!, _totalCostMeta),
-      );
-    }
-    if (data.containsKey('status')) {
-      context.handle(
-        _statusMeta,
-        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
-      );
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(
-        _isActiveMeta,
-        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
-      );
-    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -7821,12 +7321,6 @@ class $StockMovementsTable extends StockMovements
       context.handle(
         _syncStatusMeta,
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
-      );
-    }
-    if (data.containsKey('remote_id')) {
-      context.handle(
-        _remoteIdMeta,
-        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
       );
     }
     if (data.containsKey('created_by')) {
@@ -7864,10 +7358,6 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.int,
         data['${effectivePrefix}quantity'],
       )!,
-      referenceType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}reference_type'],
-      ),
       referenceId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}reference_id'],
@@ -7888,30 +7378,6 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.string,
         data['${effectivePrefix}user_name'],
       )!,
-      fromLocation: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}from_location'],
-      ),
-      toLocation: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}to_location'],
-      ),
-      unitCost: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}unit_cost'],
-      ),
-      totalCost: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}total_cost'],
-      ),
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
-      isActive: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_active'],
-      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -7928,10 +7394,6 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
       )!,
-      remoteId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}remote_id'],
-      ),
       createdBy: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_by'],
@@ -7961,9 +7423,6 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
   /// Quantity moved (positive for stock in, negative for stock out).
   final int quantity;
 
-  /// Reference type (order, delivery, adjustment, transfer, etc.).
-  final String? referenceType;
-
   /// Reference ID linking to the source document.
   final String? referenceId;
 
@@ -7979,24 +7438,6 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
   /// Name of the user who performed the movement.
   final String userName;
 
-  /// Original location of the stock.
-  final String? fromLocation;
-
-  /// Destination location of the stock.
-  final String? toLocation;
-
-  /// Unit cost of the product at time of movement.
-  final double? unitCost;
-
-  /// Total cost of the movement (quantity * unitCost).
-  final double? totalCost;
-
-  /// Status of the movement (pending, completed, cancelled).
-  final String status;
-
-  /// Indicates whether the movement is currently active.
-  final bool isActive;
-
   /// Timestamp when the stock movement record was created.
   final DateTime createdAt;
 
@@ -8009,9 +7450,6 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
   /// Synchronization status with remote backend.
   final String syncStatus;
 
-  /// Remote database ID for cross-system synchronization.
-  final String? remoteId;
-
   /// ID of the user who created this movement (FK→users.id, matches Supabase created_by).
   final int? createdBy;
   const StockMovement({
@@ -8020,23 +7458,15 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     required this.productId,
     required this.movementType,
     required this.quantity,
-    this.referenceType,
     this.referenceId,
     required this.reason,
     this.notes,
     required this.userId,
     required this.userName,
-    this.fromLocation,
-    this.toLocation,
-    this.unitCost,
-    this.totalCost,
-    required this.status,
-    required this.isActive,
     required this.createdAt,
     required this.updatedAt,
     required this.isDeleted,
     required this.syncStatus,
-    this.remoteId,
     this.createdBy,
   });
   @override
@@ -8047,9 +7477,6 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     map['product_id'] = Variable<String>(productId);
     map['movement_type'] = Variable<String>(movementType);
     map['quantity'] = Variable<int>(quantity);
-    if (!nullToAbsent || referenceType != null) {
-      map['reference_type'] = Variable<String>(referenceType);
-    }
     if (!nullToAbsent || referenceId != null) {
       map['reference_id'] = Variable<String>(referenceId);
     }
@@ -8059,27 +7486,10 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     }
     map['user_id'] = Variable<String>(userId);
     map['user_name'] = Variable<String>(userName);
-    if (!nullToAbsent || fromLocation != null) {
-      map['from_location'] = Variable<String>(fromLocation);
-    }
-    if (!nullToAbsent || toLocation != null) {
-      map['to_location'] = Variable<String>(toLocation);
-    }
-    if (!nullToAbsent || unitCost != null) {
-      map['unit_cost'] = Variable<double>(unitCost);
-    }
-    if (!nullToAbsent || totalCost != null) {
-      map['total_cost'] = Variable<double>(totalCost);
-    }
-    map['status'] = Variable<String>(status);
-    map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['sync_status'] = Variable<String>(syncStatus);
-    if (!nullToAbsent || remoteId != null) {
-      map['remote_id'] = Variable<String>(remoteId);
-    }
     if (!nullToAbsent || createdBy != null) {
       map['created_by'] = Variable<int>(createdBy);
     }
@@ -8093,9 +7503,6 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       productId: Value(productId),
       movementType: Value(movementType),
       quantity: Value(quantity),
-      referenceType: referenceType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(referenceType),
       referenceId: referenceId == null && nullToAbsent
           ? const Value.absent()
           : Value(referenceId),
@@ -8105,27 +7512,10 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           : Value(notes),
       userId: Value(userId),
       userName: Value(userName),
-      fromLocation: fromLocation == null && nullToAbsent
-          ? const Value.absent()
-          : Value(fromLocation),
-      toLocation: toLocation == null && nullToAbsent
-          ? const Value.absent()
-          : Value(toLocation),
-      unitCost: unitCost == null && nullToAbsent
-          ? const Value.absent()
-          : Value(unitCost),
-      totalCost: totalCost == null && nullToAbsent
-          ? const Value.absent()
-          : Value(totalCost),
-      status: Value(status),
-      isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
       createdBy: createdBy == null && nullToAbsent
           ? const Value.absent()
           : Value(createdBy),
@@ -8143,23 +7533,15 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       productId: serializer.fromJson<String>(json['productId']),
       movementType: serializer.fromJson<String>(json['movementType']),
       quantity: serializer.fromJson<int>(json['quantity']),
-      referenceType: serializer.fromJson<String?>(json['referenceType']),
       referenceId: serializer.fromJson<String?>(json['referenceId']),
       reason: serializer.fromJson<String>(json['reason']),
       notes: serializer.fromJson<String?>(json['notes']),
       userId: serializer.fromJson<String>(json['userId']),
       userName: serializer.fromJson<String>(json['userName']),
-      fromLocation: serializer.fromJson<String?>(json['fromLocation']),
-      toLocation: serializer.fromJson<String?>(json['toLocation']),
-      unitCost: serializer.fromJson<double?>(json['unitCost']),
-      totalCost: serializer.fromJson<double?>(json['totalCost']),
-      status: serializer.fromJson<String>(json['status']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
-      remoteId: serializer.fromJson<String?>(json['remoteId']),
       createdBy: serializer.fromJson<int?>(json['createdBy']),
     );
   }
@@ -8172,23 +7554,15 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       'productId': serializer.toJson<String>(productId),
       'movementType': serializer.toJson<String>(movementType),
       'quantity': serializer.toJson<int>(quantity),
-      'referenceType': serializer.toJson<String?>(referenceType),
       'referenceId': serializer.toJson<String?>(referenceId),
       'reason': serializer.toJson<String>(reason),
       'notes': serializer.toJson<String?>(notes),
       'userId': serializer.toJson<String>(userId),
       'userName': serializer.toJson<String>(userName),
-      'fromLocation': serializer.toJson<String?>(fromLocation),
-      'toLocation': serializer.toJson<String?>(toLocation),
-      'unitCost': serializer.toJson<double?>(unitCost),
-      'totalCost': serializer.toJson<double?>(totalCost),
-      'status': serializer.toJson<String>(status),
-      'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'syncStatus': serializer.toJson<String>(syncStatus),
-      'remoteId': serializer.toJson<String?>(remoteId),
       'createdBy': serializer.toJson<int?>(createdBy),
     };
   }
@@ -8199,23 +7573,15 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     String? productId,
     String? movementType,
     int? quantity,
-    Value<String?> referenceType = const Value.absent(),
     Value<String?> referenceId = const Value.absent(),
     String? reason,
     Value<String?> notes = const Value.absent(),
     String? userId,
     String? userName,
-    Value<String?> fromLocation = const Value.absent(),
-    Value<String?> toLocation = const Value.absent(),
-    Value<double?> unitCost = const Value.absent(),
-    Value<double?> totalCost = const Value.absent(),
-    String? status,
-    bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDeleted,
     String? syncStatus,
-    Value<String?> remoteId = const Value.absent(),
     Value<int?> createdBy = const Value.absent(),
   }) => StockMovement(
     id: id ?? this.id,
@@ -8223,25 +7589,15 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     productId: productId ?? this.productId,
     movementType: movementType ?? this.movementType,
     quantity: quantity ?? this.quantity,
-    referenceType: referenceType.present
-        ? referenceType.value
-        : this.referenceType,
     referenceId: referenceId.present ? referenceId.value : this.referenceId,
     reason: reason ?? this.reason,
     notes: notes.present ? notes.value : this.notes,
     userId: userId ?? this.userId,
     userName: userName ?? this.userName,
-    fromLocation: fromLocation.present ? fromLocation.value : this.fromLocation,
-    toLocation: toLocation.present ? toLocation.value : this.toLocation,
-    unitCost: unitCost.present ? unitCost.value : this.unitCost,
-    totalCost: totalCost.present ? totalCost.value : this.totalCost,
-    status: status ?? this.status,
-    isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
-    remoteId: remoteId.present ? remoteId.value : this.remoteId,
     createdBy: createdBy.present ? createdBy.value : this.createdBy,
   );
   StockMovement copyWithCompanion(StockMovementsCompanion data) {
@@ -8253,9 +7609,6 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           ? data.movementType.value
           : this.movementType,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
-      referenceType: data.referenceType.present
-          ? data.referenceType.value
-          : this.referenceType,
       referenceId: data.referenceId.present
           ? data.referenceId.value
           : this.referenceId,
@@ -8263,23 +7616,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       notes: data.notes.present ? data.notes.value : this.notes,
       userId: data.userId.present ? data.userId.value : this.userId,
       userName: data.userName.present ? data.userName.value : this.userName,
-      fromLocation: data.fromLocation.present
-          ? data.fromLocation.value
-          : this.fromLocation,
-      toLocation: data.toLocation.present
-          ? data.toLocation.value
-          : this.toLocation,
-      unitCost: data.unitCost.present ? data.unitCost.value : this.unitCost,
-      totalCost: data.totalCost.present ? data.totalCost.value : this.totalCost,
-      status: data.status.present ? data.status.value : this.status,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
-      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
     );
   }
@@ -8292,23 +7634,15 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           ..write('productId: $productId, ')
           ..write('movementType: $movementType, ')
           ..write('quantity: $quantity, ')
-          ..write('referenceType: $referenceType, ')
           ..write('referenceId: $referenceId, ')
           ..write('reason: $reason, ')
           ..write('notes: $notes, ')
           ..write('userId: $userId, ')
           ..write('userName: $userName, ')
-          ..write('fromLocation: $fromLocation, ')
-          ..write('toLocation: $toLocation, ')
-          ..write('unitCost: $unitCost, ')
-          ..write('totalCost: $totalCost, ')
-          ..write('status: $status, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId, ')
           ..write('createdBy: $createdBy')
           ..write(')'))
         .toString();
@@ -8321,23 +7655,15 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     productId,
     movementType,
     quantity,
-    referenceType,
     referenceId,
     reason,
     notes,
     userId,
     userName,
-    fromLocation,
-    toLocation,
-    unitCost,
-    totalCost,
-    status,
-    isActive,
     createdAt,
     updatedAt,
     isDeleted,
     syncStatus,
-    remoteId,
     createdBy,
   ]);
   @override
@@ -8349,23 +7675,15 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           other.productId == this.productId &&
           other.movementType == this.movementType &&
           other.quantity == this.quantity &&
-          other.referenceType == this.referenceType &&
           other.referenceId == this.referenceId &&
           other.reason == this.reason &&
           other.notes == this.notes &&
           other.userId == this.userId &&
           other.userName == this.userName &&
-          other.fromLocation == this.fromLocation &&
-          other.toLocation == this.toLocation &&
-          other.unitCost == this.unitCost &&
-          other.totalCost == this.totalCost &&
-          other.status == this.status &&
-          other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.isDeleted == this.isDeleted &&
           other.syncStatus == this.syncStatus &&
-          other.remoteId == this.remoteId &&
           other.createdBy == this.createdBy);
 }
 
@@ -8375,23 +7693,15 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
   final Value<String> productId;
   final Value<String> movementType;
   final Value<int> quantity;
-  final Value<String?> referenceType;
   final Value<String?> referenceId;
   final Value<String> reason;
   final Value<String?> notes;
   final Value<String> userId;
   final Value<String> userName;
-  final Value<String?> fromLocation;
-  final Value<String?> toLocation;
-  final Value<double?> unitCost;
-  final Value<double?> totalCost;
-  final Value<String> status;
-  final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool> isDeleted;
   final Value<String> syncStatus;
-  final Value<String?> remoteId;
   final Value<int?> createdBy;
   const StockMovementsCompanion({
     this.id = const Value.absent(),
@@ -8399,23 +7709,15 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     this.productId = const Value.absent(),
     this.movementType = const Value.absent(),
     this.quantity = const Value.absent(),
-    this.referenceType = const Value.absent(),
     this.referenceId = const Value.absent(),
     this.reason = const Value.absent(),
     this.notes = const Value.absent(),
     this.userId = const Value.absent(),
     this.userName = const Value.absent(),
-    this.fromLocation = const Value.absent(),
-    this.toLocation = const Value.absent(),
-    this.unitCost = const Value.absent(),
-    this.totalCost = const Value.absent(),
-    this.status = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
     this.createdBy = const Value.absent(),
   });
   StockMovementsCompanion.insert({
@@ -8424,23 +7726,15 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     required String productId,
     required String movementType,
     required int quantity,
-    this.referenceType = const Value.absent(),
     this.referenceId = const Value.absent(),
     required String reason,
     this.notes = const Value.absent(),
     required String userId,
     required String userName,
-    this.fromLocation = const Value.absent(),
-    this.toLocation = const Value.absent(),
-    this.unitCost = const Value.absent(),
-    this.totalCost = const Value.absent(),
-    this.status = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.remoteId = const Value.absent(),
     this.createdBy = const Value.absent(),
   }) : uuid = Value(uuid),
        productId = Value(productId),
@@ -8455,23 +7749,15 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     Expression<String>? productId,
     Expression<String>? movementType,
     Expression<int>? quantity,
-    Expression<String>? referenceType,
     Expression<String>? referenceId,
     Expression<String>? reason,
     Expression<String>? notes,
     Expression<String>? userId,
     Expression<String>? userName,
-    Expression<String>? fromLocation,
-    Expression<String>? toLocation,
-    Expression<double>? unitCost,
-    Expression<double>? totalCost,
-    Expression<String>? status,
-    Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? isDeleted,
     Expression<String>? syncStatus,
-    Expression<String>? remoteId,
     Expression<int>? createdBy,
   }) {
     return RawValuesInsertable({
@@ -8480,23 +7766,15 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
       if (productId != null) 'product_id': productId,
       if (movementType != null) 'movement_type': movementType,
       if (quantity != null) 'quantity': quantity,
-      if (referenceType != null) 'reference_type': referenceType,
       if (referenceId != null) 'reference_id': referenceId,
       if (reason != null) 'reason': reason,
       if (notes != null) 'notes': notes,
       if (userId != null) 'user_id': userId,
       if (userName != null) 'user_name': userName,
-      if (fromLocation != null) 'from_location': fromLocation,
-      if (toLocation != null) 'to_location': toLocation,
-      if (unitCost != null) 'unit_cost': unitCost,
-      if (totalCost != null) 'total_cost': totalCost,
-      if (status != null) 'status': status,
-      if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (syncStatus != null) 'sync_status': syncStatus,
-      if (remoteId != null) 'remote_id': remoteId,
       if (createdBy != null) 'created_by': createdBy,
     });
   }
@@ -8507,23 +7785,15 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     Value<String>? productId,
     Value<String>? movementType,
     Value<int>? quantity,
-    Value<String?>? referenceType,
     Value<String?>? referenceId,
     Value<String>? reason,
     Value<String?>? notes,
     Value<String>? userId,
     Value<String>? userName,
-    Value<String?>? fromLocation,
-    Value<String?>? toLocation,
-    Value<double?>? unitCost,
-    Value<double?>? totalCost,
-    Value<String>? status,
-    Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<bool>? isDeleted,
     Value<String>? syncStatus,
-    Value<String?>? remoteId,
     Value<int?>? createdBy,
   }) {
     return StockMovementsCompanion(
@@ -8532,23 +7802,15 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
       productId: productId ?? this.productId,
       movementType: movementType ?? this.movementType,
       quantity: quantity ?? this.quantity,
-      referenceType: referenceType ?? this.referenceType,
       referenceId: referenceId ?? this.referenceId,
       reason: reason ?? this.reason,
       notes: notes ?? this.notes,
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
-      fromLocation: fromLocation ?? this.fromLocation,
-      toLocation: toLocation ?? this.toLocation,
-      unitCost: unitCost ?? this.unitCost,
-      totalCost: totalCost ?? this.totalCost,
-      status: status ?? this.status,
-      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
-      remoteId: remoteId ?? this.remoteId,
       createdBy: createdBy ?? this.createdBy,
     );
   }
@@ -8571,9 +7833,6 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     if (quantity.present) {
       map['quantity'] = Variable<int>(quantity.value);
     }
-    if (referenceType.present) {
-      map['reference_type'] = Variable<String>(referenceType.value);
-    }
     if (referenceId.present) {
       map['reference_id'] = Variable<String>(referenceId.value);
     }
@@ -8589,24 +7848,6 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     if (userName.present) {
       map['user_name'] = Variable<String>(userName.value);
     }
-    if (fromLocation.present) {
-      map['from_location'] = Variable<String>(fromLocation.value);
-    }
-    if (toLocation.present) {
-      map['to_location'] = Variable<String>(toLocation.value);
-    }
-    if (unitCost.present) {
-      map['unit_cost'] = Variable<double>(unitCost.value);
-    }
-    if (totalCost.present) {
-      map['total_cost'] = Variable<double>(totalCost.value);
-    }
-    if (status.present) {
-      map['status'] = Variable<String>(status.value);
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -8618,9 +7859,6 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
-    }
-    if (remoteId.present) {
-      map['remote_id'] = Variable<String>(remoteId.value);
     }
     if (createdBy.present) {
       map['created_by'] = Variable<int>(createdBy.value);
@@ -8636,23 +7874,15 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
           ..write('productId: $productId, ')
           ..write('movementType: $movementType, ')
           ..write('quantity: $quantity, ')
-          ..write('referenceType: $referenceType, ')
           ..write('referenceId: $referenceId, ')
           ..write('reason: $reason, ')
           ..write('notes: $notes, ')
           ..write('userId: $userId, ')
           ..write('userName: $userName, ')
-          ..write('fromLocation: $fromLocation, ')
-          ..write('toLocation: $toLocation, ')
-          ..write('unitCost: $unitCost, ')
-          ..write('totalCost: $totalCost, ')
-          ..write('status: $status, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('remoteId: $remoteId, ')
           ..write('createdBy: $createdBy')
           ..write(')'))
         .toString();
@@ -12213,14 +11443,8 @@ typedef $$OrdersTableCreateCompanionBuilder =
       required String deliveryAddress,
       Value<String?> customerNotes,
       Value<double> subtotal,
-      Value<double> taxAmount,
       Value<double> totalAmount,
-      Value<String> paymentStatus,
       Value<String> warehouseStatus,
-      Value<String> priority,
-      Value<String?> pickerId,
-      Value<DateTime?> pickedAt,
-      Value<String?> packerId,
       Value<DateTime?> packedAt,
       Value<DateTime?> expectedDeliveryDate,
       Value<DateTime?> actualDeliveryDate,
@@ -12245,18 +11469,11 @@ typedef $$OrdersTableUpdateCompanionBuilder =
       Value<String> deliveryAddress,
       Value<String?> customerNotes,
       Value<double> subtotal,
-      Value<double> taxAmount,
       Value<double> totalAmount,
-      Value<String> paymentStatus,
       Value<String> warehouseStatus,
-      Value<String> priority,
-      Value<String?> pickerId,
-      Value<DateTime?> pickedAt,
-      Value<String?> packerId,
       Value<DateTime?> packedAt,
       Value<DateTime?> expectedDeliveryDate,
       Value<DateTime?> actualDeliveryDate,
-      Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
@@ -12342,43 +11559,13 @@ class $$OrdersTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<double> get taxAmount => $composableBuilder(
-    column: $table.taxAmount,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<double> get totalAmount => $composableBuilder(
     column: $table.totalAmount,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get paymentStatus => $composableBuilder(
-    column: $table.paymentStatus,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get warehouseStatus => $composableBuilder(
     column: $table.warehouseStatus,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get priority => $composableBuilder(
-    column: $table.priority,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get pickerId => $composableBuilder(
-    column: $table.pickerId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get pickedAt => $composableBuilder(
-    column: $table.pickedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get packerId => $composableBuilder(
-    column: $table.packerId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12394,11 +11581,6 @@ class $$OrdersTableFilterComposer
 
   ColumnFilters<DateTime> get actualDeliveryDate => $composableBuilder(
     column: $table.actualDeliveryDate,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12532,43 +11714,13 @@ class $$OrdersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<double> get taxAmount => $composableBuilder(
-    column: $table.taxAmount,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<double> get totalAmount => $composableBuilder(
     column: $table.totalAmount,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get paymentStatus => $composableBuilder(
-    column: $table.paymentStatus,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get warehouseStatus => $composableBuilder(
     column: $table.warehouseStatus,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get priority => $composableBuilder(
-    column: $table.priority,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get pickerId => $composableBuilder(
-    column: $table.pickerId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get pickedAt => $composableBuilder(
-    column: $table.pickedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get packerId => $composableBuilder(
-    column: $table.packerId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -12584,11 +11736,6 @@ class $$OrdersTableOrderingComposer
 
   ColumnOrderings<DateTime> get actualDeliveryDate => $composableBuilder(
     column: $table.actualDeliveryDate,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -12689,16 +11836,8 @@ class $$OrdersTableAnnotationComposer
   GeneratedColumn<double> get subtotal =>
       $composableBuilder(column: $table.subtotal, builder: (column) => column);
 
-  GeneratedColumn<double> get taxAmount =>
-      $composableBuilder(column: $table.taxAmount, builder: (column) => column);
-
   GeneratedColumn<double> get totalAmount => $composableBuilder(
     column: $table.totalAmount,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get paymentStatus => $composableBuilder(
-    column: $table.paymentStatus,
     builder: (column) => column,
   );
 
@@ -12706,18 +11845,6 @@ class $$OrdersTableAnnotationComposer
     column: $table.warehouseStatus,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get priority =>
-      $composableBuilder(column: $table.priority, builder: (column) => column);
-
-  GeneratedColumn<String> get pickerId =>
-      $composableBuilder(column: $table.pickerId, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get pickedAt =>
-      $composableBuilder(column: $table.pickedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get packerId =>
-      $composableBuilder(column: $table.packerId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get packedAt =>
       $composableBuilder(column: $table.packedAt, builder: (column) => column);
@@ -12731,9 +11858,6 @@ class $$OrdersTableAnnotationComposer
     column: $table.actualDeliveryDate,
     builder: (column) => column,
   );
-
-  GeneratedColumn<bool> get isActive =>
-      $composableBuilder(column: $table.isActive, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -12836,18 +11960,11 @@ class $$OrdersTableTableManager
                 Value<String> deliveryAddress = const Value.absent(),
                 Value<String?> customerNotes = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
-                Value<double> taxAmount = const Value.absent(),
                 Value<double> totalAmount = const Value.absent(),
-                Value<String> paymentStatus = const Value.absent(),
                 Value<String> warehouseStatus = const Value.absent(),
-                Value<String> priority = const Value.absent(),
-                Value<String?> pickerId = const Value.absent(),
-                Value<DateTime?> pickedAt = const Value.absent(),
-                Value<String?> packerId = const Value.absent(),
                 Value<DateTime?> packedAt = const Value.absent(),
                 Value<DateTime?> expectedDeliveryDate = const Value.absent(),
                 Value<DateTime?> actualDeliveryDate = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -12868,18 +11985,11 @@ class $$OrdersTableTableManager
                 deliveryAddress: deliveryAddress,
                 customerNotes: customerNotes,
                 subtotal: subtotal,
-                taxAmount: taxAmount,
                 totalAmount: totalAmount,
-                paymentStatus: paymentStatus,
                 warehouseStatus: warehouseStatus,
-                priority: priority,
-                pickerId: pickerId,
-                pickedAt: pickedAt,
-                packerId: packerId,
                 packedAt: packedAt,
                 expectedDeliveryDate: expectedDeliveryDate,
                 actualDeliveryDate: actualDeliveryDate,
-                isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
@@ -12902,18 +12012,11 @@ class $$OrdersTableTableManager
                 required String deliveryAddress,
                 Value<String?> customerNotes = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
-                Value<double> taxAmount = const Value.absent(),
                 Value<double> totalAmount = const Value.absent(),
-                Value<String> paymentStatus = const Value.absent(),
                 Value<String> warehouseStatus = const Value.absent(),
-                Value<String> priority = const Value.absent(),
-                Value<String?> pickerId = const Value.absent(),
-                Value<DateTime?> pickedAt = const Value.absent(),
-                Value<String?> packerId = const Value.absent(),
                 Value<DateTime?> packedAt = const Value.absent(),
                 Value<DateTime?> expectedDeliveryDate = const Value.absent(),
                 Value<DateTime?> actualDeliveryDate = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -12934,18 +12037,11 @@ class $$OrdersTableTableManager
                 deliveryAddress: deliveryAddress,
                 customerNotes: customerNotes,
                 subtotal: subtotal,
-                taxAmount: taxAmount,
                 totalAmount: totalAmount,
-                paymentStatus: paymentStatus,
                 warehouseStatus: warehouseStatus,
-                priority: priority,
-                pickerId: pickerId,
-                pickedAt: pickedAt,
-                packerId: packerId,
                 packedAt: packedAt,
                 expectedDeliveryDate: expectedDeliveryDate,
                 actualDeliveryDate: actualDeliveryDate,
-                isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
@@ -14040,23 +13136,15 @@ typedef $$StockMovementsTableCreateCompanionBuilder =
       required String productId,
       required String movementType,
       required int quantity,
-      Value<String?> referenceType,
       Value<String?> referenceId,
       required String reason,
       Value<String?> notes,
       required String userId,
       required String userName,
-      Value<String?> fromLocation,
-      Value<String?> toLocation,
-      Value<double?> unitCost,
-      Value<double?> totalCost,
-      Value<String> status,
-      Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       Value<int?> createdBy,
     });
 typedef $$StockMovementsTableUpdateCompanionBuilder =
@@ -14066,23 +13154,15 @@ typedef $$StockMovementsTableUpdateCompanionBuilder =
       Value<String> productId,
       Value<String> movementType,
       Value<int> quantity,
-      Value<String?> referenceType,
       Value<String?> referenceId,
       Value<String> reason,
       Value<String?> notes,
       Value<String> userId,
       Value<String> userName,
-      Value<String?> fromLocation,
-      Value<String?> toLocation,
-      Value<double?> unitCost,
-      Value<double?> totalCost,
-      Value<String> status,
-      Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
-      Value<String?> remoteId,
       Value<int?> createdBy,
     });
 
@@ -14120,11 +13200,6 @@ class $$StockMovementsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get referenceType => $composableBuilder(
-    column: $table.referenceType,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get referenceId => $composableBuilder(
     column: $table.referenceId,
     builder: (column) => ColumnFilters(column),
@@ -14150,36 +13225,6 @@ class $$StockMovementsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get fromLocation => $composableBuilder(
-    column: $table.fromLocation,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get toLocation => $composableBuilder(
-    column: $table.toLocation,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get unitCost => $composableBuilder(
-    column: $table.unitCost,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get totalCost => $composableBuilder(
-    column: $table.totalCost,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get status => $composableBuilder(
-    column: $table.status,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -14197,11 +13242,6 @@ class $$StockMovementsTableFilterComposer
 
   ColumnFilters<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14245,11 +13285,6 @@ class $$StockMovementsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get referenceType => $composableBuilder(
-    column: $table.referenceType,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get referenceId => $composableBuilder(
     column: $table.referenceId,
     builder: (column) => ColumnOrderings(column),
@@ -14275,36 +13310,6 @@ class $$StockMovementsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get fromLocation => $composableBuilder(
-    column: $table.fromLocation,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get toLocation => $composableBuilder(
-    column: $table.toLocation,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get unitCost => $composableBuilder(
-    column: $table.unitCost,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get totalCost => $composableBuilder(
-    column: $table.totalCost,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get status => $composableBuilder(
-    column: $table.status,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -14322,11 +13327,6 @@ class $$StockMovementsTableOrderingComposer
 
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -14362,11 +13362,6 @@ class $$StockMovementsTableAnnotationComposer
   GeneratedColumn<int> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
-  GeneratedColumn<String> get referenceType => $composableBuilder(
-    column: $table.referenceType,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get referenceId => $composableBuilder(
     column: $table.referenceId,
     builder: (column) => column,
@@ -14384,28 +13379,6 @@ class $$StockMovementsTableAnnotationComposer
   GeneratedColumn<String> get userName =>
       $composableBuilder(column: $table.userName, builder: (column) => column);
 
-  GeneratedColumn<String> get fromLocation => $composableBuilder(
-    column: $table.fromLocation,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get toLocation => $composableBuilder(
-    column: $table.toLocation,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<double> get unitCost =>
-      $composableBuilder(column: $table.unitCost, builder: (column) => column);
-
-  GeneratedColumn<double> get totalCost =>
-      $composableBuilder(column: $table.totalCost, builder: (column) => column);
-
-  GeneratedColumn<String> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => column);
-
-  GeneratedColumn<bool> get isActive =>
-      $composableBuilder(column: $table.isActive, builder: (column) => column);
-
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -14419,9 +13392,6 @@ class $$StockMovementsTableAnnotationComposer
     column: $table.syncStatus,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get remoteId =>
-      $composableBuilder(column: $table.remoteId, builder: (column) => column);
 
   GeneratedColumn<int> get createdBy =>
       $composableBuilder(column: $table.createdBy, builder: (column) => column);
@@ -14465,23 +13435,15 @@ class $$StockMovementsTableTableManager
                 Value<String> productId = const Value.absent(),
                 Value<String> movementType = const Value.absent(),
                 Value<int> quantity = const Value.absent(),
-                Value<String?> referenceType = const Value.absent(),
                 Value<String?> referenceId = const Value.absent(),
                 Value<String> reason = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String> userId = const Value.absent(),
                 Value<String> userName = const Value.absent(),
-                Value<String?> fromLocation = const Value.absent(),
-                Value<String?> toLocation = const Value.absent(),
-                Value<double?> unitCost = const Value.absent(),
-                Value<double?> totalCost = const Value.absent(),
-                Value<String> status = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
                 Value<int?> createdBy = const Value.absent(),
               }) => StockMovementsCompanion(
                 id: id,
@@ -14489,23 +13451,15 @@ class $$StockMovementsTableTableManager
                 productId: productId,
                 movementType: movementType,
                 quantity: quantity,
-                referenceType: referenceType,
                 referenceId: referenceId,
                 reason: reason,
                 notes: notes,
                 userId: userId,
                 userName: userName,
-                fromLocation: fromLocation,
-                toLocation: toLocation,
-                unitCost: unitCost,
-                totalCost: totalCost,
-                status: status,
-                isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
                 createdBy: createdBy,
               ),
           createCompanionCallback:
@@ -14515,23 +13469,15 @@ class $$StockMovementsTableTableManager
                 required String productId,
                 required String movementType,
                 required int quantity,
-                Value<String?> referenceType = const Value.absent(),
                 Value<String?> referenceId = const Value.absent(),
                 required String reason,
                 Value<String?> notes = const Value.absent(),
                 required String userId,
                 required String userName,
-                Value<String?> fromLocation = const Value.absent(),
-                Value<String?> toLocation = const Value.absent(),
-                Value<double?> unitCost = const Value.absent(),
-                Value<double?> totalCost = const Value.absent(),
-                Value<String> status = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
                 Value<int?> createdBy = const Value.absent(),
               }) => StockMovementsCompanion.insert(
                 id: id,
@@ -14539,23 +13485,15 @@ class $$StockMovementsTableTableManager
                 productId: productId,
                 movementType: movementType,
                 quantity: quantity,
-                referenceType: referenceType,
                 referenceId: referenceId,
                 reason: reason,
                 notes: notes,
                 userId: userId,
                 userName: userName,
-                fromLocation: fromLocation,
-                toLocation: toLocation,
-                unitCost: unitCost,
-                totalCost: totalCost,
-                status: status,
-                isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
                 syncStatus: syncStatus,
-                remoteId: remoteId,
                 createdBy: createdBy,
               ),
           withReferenceMapper: (p0) => p0
