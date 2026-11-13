@@ -451,14 +451,10 @@ class _SignupCardState extends State<SignupCard> {
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Google "G" logo drawn with colored text
-                              const Text(
-                                'G',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF4285F4),
-                                ),
+                              Image.asset(
+                                'assets/images/google_logo.png',
+                                width: 20,
+                                height: 20,
                               ),
                               const SizedBox(width: 10),
                               Text(

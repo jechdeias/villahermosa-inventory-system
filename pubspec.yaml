@@ -81,6 +81,7 @@ flutter:
   # Application assets
   assets:
     - assets/images/logo/vm_logo.png
+    - assets/images/google_logo.png
     # Inter + JetBrains Mono bundled for google_fonts so text renders the same offline
     - assets/google_fonts/
 
