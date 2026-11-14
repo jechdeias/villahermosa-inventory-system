@@ -135,7 +135,7 @@ class WarehouseActions {
   const WarehouseActions(this._db);
   final AppDatabase _db;
 
-  void _pushAsync() => SyncManager.instance.syncPendingData().catchError((_) {});
+  void _pushAsync() => SyncManager.syncInBackground();
 
   /// Warehouse picks the order up: pending → processing.
   Future<void> processOrder(Order o) async {
