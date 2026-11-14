@@ -82,7 +82,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -284,7 +283,6 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
-
     if (data.containsKey('uuid')) {
       context.handle(
         _uuidMeta,
@@ -417,7 +415,6 @@ class User extends DataClass implements Insertable<User> {
   /// Synchronization status with remote backend.
   /// Tracks whether local changes need to be synced.
   final String syncStatus;
-
 
   /// UUID for cross-system synchronization.
   final String uuid;
@@ -651,7 +648,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> passwordHash;
   final Value<String> role;
   final Value<String?> phone;
-final Value<bool> isActive;
+  final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool> isDeleted;
@@ -754,7 +751,7 @@ final Value<bool> isActive;
       passwordHash: passwordHash ?? this.passwordHash,
       role: role ?? this.role,
       phone: phone ?? this.phone,
-isActive: isActive ?? this.isActive,
+      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
@@ -1201,7 +1198,6 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
-
     if (data.containsKey('uuid')) {
       context.handle(
         _uuidMeta,
@@ -1367,7 +1363,6 @@ class Product extends DataClass implements Insertable<Product> {
 
   /// Synchronization status with remote backend.
   final String syncStatus;
-
 
   /// UUID for cross-system synchronization.
   final String uuid;
@@ -2220,7 +2215,12 @@ class $CustomersTable extends Customers
         phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
       );
     }
-
+    if (data.containsKey('address')) {
+      context.handle(
+        _addressMeta,
+        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
+      );
+    }
     if (data.containsKey('municipality')) {
       context.handle(
         _municipalityMeta,
@@ -2283,7 +2283,6 @@ class $CustomersTable extends Customers
     } else if (isInserting) {
       context.missing(_contactNumberMeta);
     }
-
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2308,7 +2307,6 @@ class $CustomersTable extends Customers
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
-
     if (data.containsKey('uuid')) {
       context.handle(
         _uuidMeta,
@@ -2489,7 +2487,6 @@ class Customer extends DataClass implements Insertable<Customer> {
 
   /// Contact number for orders.
   final String contactNumber;
-
 
   /// Timestamp when the customer record was created.
   final DateTime createdAt;
@@ -3415,6 +3412,28 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _orderCodeMeta = const VerificationMeta(
+    'orderCode',
+  );
+  @override
+  late final GeneratedColumn<String> orderCode = GeneratedColumn<String>(
+    'order_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _orderDateMeta = const VerificationMeta(
+    'orderDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> orderDate = GeneratedColumn<DateTime>(
+    'order_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3441,6 +3460,8 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
     salesRepId,
     salesRepName,
     itemCount,
+    orderCode,
+    orderDate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3630,6 +3651,18 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
         itemCount.isAcceptableOrUnknown(data['item_count']!, _itemCountMeta),
       );
     }
+    if (data.containsKey('order_code')) {
+      context.handle(
+        _orderCodeMeta,
+        orderCode.isAcceptableOrUnknown(data['order_code']!, _orderCodeMeta),
+      );
+    }
+    if (data.containsKey('order_date')) {
+      context.handle(
+        _orderDateMeta,
+        orderDate.isAcceptableOrUnknown(data['order_date']!, _orderDateMeta),
+      );
+    }
     return context;
   }
 
@@ -3735,6 +3768,14 @@ class $OrdersTable extends Orders with TableInfo<$OrdersTable, Order> {
         DriftSqlType.int,
         data['${effectivePrefix}item_count'],
       )!,
+      orderCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}order_code'],
+      ),
+      orderDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}order_date'],
+      ),
     );
   }
 
@@ -3816,6 +3857,13 @@ class Order extends DataClass implements Insertable<Order> {
 
   /// Cached total item count across all order items.
   final int itemCount;
+
+  /// Order code (short human-readable identifier, e.g. "ORD-2409").
+  /// Matches Supabase's order_code column which payments reference.
+  final String? orderCode;
+
+  /// Date the order was placed. Matches Supabase's order_date column.
+  final DateTime? orderDate;
   const Order({
     required this.id,
     required this.uuid,
@@ -3841,6 +3889,8 @@ class Order extends DataClass implements Insertable<Order> {
     this.salesRepId,
     this.salesRepName,
     required this.itemCount,
+    this.orderCode,
+    this.orderDate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3889,6 +3939,12 @@ class Order extends DataClass implements Insertable<Order> {
       map['sales_rep_name'] = Variable<String>(salesRepName);
     }
     map['item_count'] = Variable<int>(itemCount);
+    if (!nullToAbsent || orderCode != null) {
+      map['order_code'] = Variable<String>(orderCode);
+    }
+    if (!nullToAbsent || orderDate != null) {
+      map['order_date'] = Variable<DateTime>(orderDate);
+    }
     return map;
   }
 
@@ -3938,6 +3994,12 @@ class Order extends DataClass implements Insertable<Order> {
           ? const Value.absent()
           : Value(salesRepName),
       itemCount: Value(itemCount),
+      orderCode: orderCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(orderCode),
+      orderDate: orderDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(orderDate),
     );
   }
 
@@ -3975,6 +4037,8 @@ class Order extends DataClass implements Insertable<Order> {
       salesRepId: serializer.fromJson<int?>(json['salesRepId']),
       salesRepName: serializer.fromJson<String?>(json['salesRepName']),
       itemCount: serializer.fromJson<int>(json['itemCount']),
+      orderCode: serializer.fromJson<String?>(json['orderCode']),
+      orderDate: serializer.fromJson<DateTime?>(json['orderDate']),
     );
   }
   @override
@@ -4007,6 +4071,8 @@ class Order extends DataClass implements Insertable<Order> {
       'salesRepId': serializer.toJson<int?>(salesRepId),
       'salesRepName': serializer.toJson<String?>(salesRepName),
       'itemCount': serializer.toJson<int>(itemCount),
+      'orderCode': serializer.toJson<String?>(orderCode),
+      'orderDate': serializer.toJson<DateTime?>(orderDate),
     };
   }
 
@@ -4035,6 +4101,8 @@ class Order extends DataClass implements Insertable<Order> {
     Value<int?> salesRepId = const Value.absent(),
     Value<String?> salesRepName = const Value.absent(),
     int? itemCount,
+    Value<String?> orderCode = const Value.absent(),
+    Value<DateTime?> orderDate = const Value.absent(),
   }) => Order(
     id: id ?? this.id,
     uuid: uuid ?? this.uuid,
@@ -4066,6 +4134,8 @@ class Order extends DataClass implements Insertable<Order> {
     salesRepId: salesRepId.present ? salesRepId.value : this.salesRepId,
     salesRepName: salesRepName.present ? salesRepName.value : this.salesRepName,
     itemCount: itemCount ?? this.itemCount,
+    orderCode: orderCode.present ? orderCode.value : this.orderCode,
+    orderDate: orderDate.present ? orderDate.value : this.orderDate,
   );
   Order copyWithCompanion(OrdersCompanion data) {
     return Order(
@@ -4115,6 +4185,8 @@ class Order extends DataClass implements Insertable<Order> {
           ? data.salesRepName.value
           : this.salesRepName,
       itemCount: data.itemCount.present ? data.itemCount.value : this.itemCount,
+      orderCode: data.orderCode.present ? data.orderCode.value : this.orderCode,
+      orderDate: data.orderDate.present ? data.orderDate.value : this.orderDate,
     );
   }
 
@@ -4144,7 +4216,9 @@ class Order extends DataClass implements Insertable<Order> {
           ..write('routeName: $routeName, ')
           ..write('salesRepId: $salesRepId, ')
           ..write('salesRepName: $salesRepName, ')
-          ..write('itemCount: $itemCount')
+          ..write('itemCount: $itemCount, ')
+          ..write('orderCode: $orderCode, ')
+          ..write('orderDate: $orderDate')
           ..write(')'))
         .toString();
   }
@@ -4175,6 +4249,8 @@ class Order extends DataClass implements Insertable<Order> {
     salesRepId,
     salesRepName,
     itemCount,
+    orderCode,
+    orderDate,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -4203,7 +4279,9 @@ class Order extends DataClass implements Insertable<Order> {
           other.routeName == this.routeName &&
           other.salesRepId == this.salesRepId &&
           other.salesRepName == this.salesRepName &&
-          other.itemCount == this.itemCount);
+          other.itemCount == this.itemCount &&
+          other.orderCode == this.orderCode &&
+          other.orderDate == this.orderDate);
 }
 
 class OrdersCompanion extends UpdateCompanion<Order> {
@@ -7649,7 +7727,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
   }
 
   @override
-  int get hashCode => Object.hashAll([
+  int get hashCode => Object.hash(
     id,
     uuid,
     productId,
@@ -7665,7 +7743,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     isDeleted,
     syncStatus,
     createdBy,
-  ]);
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -7918,7 +7996,6 @@ class $SuppliersTable extends Suppliers
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
-
   static const VerificationMeta _tradeNameMeta = const VerificationMeta(
     'tradeName',
   );
@@ -7930,9 +8007,6 @@ class $SuppliersTable extends Suppliers
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-
-
-
   static const VerificationMeta _isDeletedMeta = const VerificationMeta(
     'isDeleted',
   );
@@ -8227,8 +8301,8 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       (other is Supplier &&
           other.id == this.id &&
           other.uuid == this.uuid &&
-              other.tradeName == this.tradeName &&
-                      other.isDeleted == this.isDeleted &&
+          other.tradeName == this.tradeName &&
+          other.isDeleted == this.isDeleted &&
           other.syncStatus == this.syncStatus &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -8508,6 +8582,21 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _syncStatusMeta = const VerificationMeta(
     'syncStatus',
   );
@@ -8519,6 +8608,30 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
   );
   @override
   List<GeneratedColumn> get $columns => [
@@ -8536,7 +8649,10 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     paymentDate,
     status,
     notes,
+    isDeleted,
     syncStatus,
+    createdAt,
+    updatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8664,10 +8780,28 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
     if (data.containsKey('sync_status')) {
       context.handle(
         _syncStatusMeta,
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
     return context;
@@ -8735,9 +8869,21 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
       syncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
       )!,
     );
   }
@@ -8763,7 +8909,10 @@ class Payment extends DataClass implements Insertable<Payment> {
   final DateTime paymentDate;
   final String status;
   final String? notes;
+  final bool isDeleted;
   final String syncStatus;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   const Payment({
     required this.id,
     required this.paymentId,
@@ -8779,7 +8928,10 @@ class Payment extends DataClass implements Insertable<Payment> {
     required this.paymentDate,
     required this.status,
     this.notes,
+    required this.isDeleted,
     required this.syncStatus,
+    required this.createdAt,
+    required this.updatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8802,7 +8954,10 @@ class Payment extends DataClass implements Insertable<Payment> {
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['is_deleted'] = Variable<bool>(isDeleted);
     map['sync_status'] = Variable<String>(syncStatus);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
 
@@ -8826,7 +8981,10 @@ class Payment extends DataClass implements Insertable<Payment> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      isDeleted: Value(isDeleted),
       syncStatus: Value(syncStatus),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
     );
   }
 
@@ -8850,7 +9008,10 @@ class Payment extends DataClass implements Insertable<Payment> {
       paymentDate: serializer.fromJson<DateTime>(json['paymentDate']),
       status: serializer.fromJson<String>(json['status']),
       notes: serializer.fromJson<String?>(json['notes']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
   @override
@@ -8871,7 +9032,10 @@ class Payment extends DataClass implements Insertable<Payment> {
       'paymentDate': serializer.toJson<DateTime>(paymentDate),
       'status': serializer.toJson<String>(status),
       'notes': serializer.toJson<String?>(notes),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
       'syncStatus': serializer.toJson<String>(syncStatus),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
 
@@ -8890,7 +9054,10 @@ class Payment extends DataClass implements Insertable<Payment> {
     DateTime? paymentDate,
     String? status,
     Value<String?> notes = const Value.absent(),
+    bool? isDeleted,
     String? syncStatus,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) => Payment(
     id: id ?? this.id,
     paymentId: paymentId ?? this.paymentId,
@@ -8908,7 +9075,10 @@ class Payment extends DataClass implements Insertable<Payment> {
     paymentDate: paymentDate ?? this.paymentDate,
     status: status ?? this.status,
     notes: notes.present ? notes.value : this.notes,
+    isDeleted: isDeleted ?? this.isDeleted,
     syncStatus: syncStatus ?? this.syncStatus,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
   );
   Payment copyWithCompanion(PaymentsCompanion data) {
     return Payment(
@@ -8938,9 +9108,12 @@ class Payment extends DataClass implements Insertable<Payment> {
           : this.paymentDate,
       status: data.status.present ? data.status.value : this.status,
       notes: data.notes.present ? data.notes.value : this.notes,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
 
@@ -8961,7 +9134,10 @@ class Payment extends DataClass implements Insertable<Payment> {
           ..write('paymentDate: $paymentDate, ')
           ..write('status: $status, ')
           ..write('notes: $notes, ')
-          ..write('syncStatus: $syncStatus')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -8982,7 +9158,10 @@ class Payment extends DataClass implements Insertable<Payment> {
     paymentDate,
     status,
     notes,
+    isDeleted,
     syncStatus,
+    createdAt,
+    updatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -9002,7 +9181,10 @@ class Payment extends DataClass implements Insertable<Payment> {
           other.paymentDate == this.paymentDate &&
           other.status == this.status &&
           other.notes == this.notes &&
-          other.syncStatus == this.syncStatus);
+          other.isDeleted == this.isDeleted &&
+          other.syncStatus == this.syncStatus &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
 }
 
 class PaymentsCompanion extends UpdateCompanion<Payment> {
@@ -11452,12 +11634,15 @@ typedef $$OrdersTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
+      Value<String?> remoteId,
       Value<String?> storeName,
       Value<int?> routeId,
       Value<String?> routeName,
       Value<int?> salesRepId,
       Value<String?> salesRepName,
       Value<int> itemCount,
+      Value<String?> orderCode,
+      Value<DateTime?> orderDate,
     });
 typedef $$OrdersTableUpdateCompanionBuilder =
     OrdersCompanion Function({
@@ -11478,12 +11663,15 @@ typedef $$OrdersTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
       Value<String> syncStatus,
+      Value<String?> remoteId,
       Value<String?> storeName,
       Value<int?> routeId,
       Value<String?> routeName,
       Value<int?> salesRepId,
       Value<String?> salesRepName,
       Value<int> itemCount,
+      Value<String?> orderCode,
+      Value<DateTime?> orderDate,
     });
 
 final class $$OrdersTableReferences
@@ -11636,6 +11824,16 @@ class $$OrdersTableFilterComposer
 
   ColumnFilters<int> get itemCount => $composableBuilder(
     column: $table.itemCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get orderCode => $composableBuilder(
+    column: $table.orderCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get orderDate => $composableBuilder(
+    column: $table.orderDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11793,6 +11991,16 @@ class $$OrdersTableOrderingComposer
     column: $table.itemCount,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get orderCode => $composableBuilder(
+    column: $table.orderCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get orderDate => $composableBuilder(
+    column: $table.orderDate,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$OrdersTableAnnotationComposer
@@ -11898,6 +12106,12 @@ class $$OrdersTableAnnotationComposer
   GeneratedColumn<int> get itemCount =>
       $composableBuilder(column: $table.itemCount, builder: (column) => column);
 
+  GeneratedColumn<String> get orderCode =>
+      $composableBuilder(column: $table.orderCode, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get orderDate =>
+      $composableBuilder(column: $table.orderDate, builder: (column) => column);
+
   Expression<T> paymentsRefs<T extends Object>(
     Expression<T> Function($$PaymentsTableAnnotationComposer a) f,
   ) {
@@ -11976,6 +12190,8 @@ class $$OrdersTableTableManager
                 Value<int?> salesRepId = const Value.absent(),
                 Value<String?> salesRepName = const Value.absent(),
                 Value<int> itemCount = const Value.absent(),
+                Value<String?> orderCode = const Value.absent(),
+                Value<DateTime?> orderDate = const Value.absent(),
               }) => OrdersCompanion(
                 id: id,
                 uuid: uuid,
@@ -12001,6 +12217,8 @@ class $$OrdersTableTableManager
                 salesRepId: salesRepId,
                 salesRepName: salesRepName,
                 itemCount: itemCount,
+                orderCode: orderCode,
+                orderDate: orderDate,
               ),
           createCompanionCallback:
               ({
@@ -12028,6 +12246,8 @@ class $$OrdersTableTableManager
                 Value<int?> salesRepId = const Value.absent(),
                 Value<String?> salesRepName = const Value.absent(),
                 Value<int> itemCount = const Value.absent(),
+                Value<String?> orderCode = const Value.absent(),
+                Value<DateTime?> orderDate = const Value.absent(),
               }) => OrdersCompanion.insert(
                 id: id,
                 uuid: uuid,
@@ -12053,6 +12273,8 @@ class $$OrdersTableTableManager
                 salesRepId: salesRepId,
                 salesRepName: salesRepName,
                 itemCount: itemCount,
+                orderCode: orderCode,
+                orderDate: orderDate,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -13765,7 +13987,10 @@ typedef $$PaymentsTableCreateCompanionBuilder =
       required DateTime paymentDate,
       Value<String> status,
       Value<String?> notes,
+      Value<bool> isDeleted,
       Value<String> syncStatus,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
     });
 typedef $$PaymentsTableUpdateCompanionBuilder =
     PaymentsCompanion Function({
@@ -13783,7 +14008,10 @@ typedef $$PaymentsTableUpdateCompanionBuilder =
       Value<DateTime> paymentDate,
       Value<String> status,
       Value<String?> notes,
+      Value<bool> isDeleted,
       Value<String> syncStatus,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
     });
 
 final class $$PaymentsTableReferences
@@ -13896,8 +14124,23 @@ class $$PaymentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14017,8 +14260,23 @@ class $$PaymentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -14124,10 +14382,19 @@ class $$PaymentsTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
   GeneratedColumn<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
   $$OrdersTableAnnotationComposer get orderId {
     final $$OrdersTableAnnotationComposer composer = $composerBuilder(
@@ -14218,7 +14485,10 @@ class $$PaymentsTableTableManager
                 Value<DateTime> paymentDate = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
               }) => PaymentsCompanion(
                 id: id,
                 paymentId: paymentId,
@@ -14234,7 +14504,10 @@ class $$PaymentsTableTableManager
                 paymentDate: paymentDate,
                 status: status,
                 notes: notes,
+                isDeleted: isDeleted,
                 syncStatus: syncStatus,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
               ),
           createCompanionCallback:
               ({
@@ -14252,7 +14525,10 @@ class $$PaymentsTableTableManager
                 required DateTime paymentDate,
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
               }) => PaymentsCompanion.insert(
                 id: id,
                 paymentId: paymentId,
@@ -14268,7 +14544,10 @@ class $$PaymentsTableTableManager
                 paymentDate: paymentDate,
                 status: status,
                 notes: notes,
+                isDeleted: isDeleted,
                 syncStatus: syncStatus,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
               .map(
