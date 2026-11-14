@@ -15,9 +15,9 @@ class OrdersService {
 
   Future<void> assignRoute(
     String uuid, {
-    required String routeId,
+    required int routeId,
     required String routeName,
-    required String salesRepId,
+    required int salesRepId,
     required String salesRepName,
   }) async {
     await _ref.read(databaseProvider).assignOrderRoute(

@@ -189,14 +189,19 @@ class OrderDetailPanel extends ConsumerWidget {
       context: context,
       builder: (ctx) => _PickerDialog(
         title: 'Assign Route',
-        items: routes.map((r) => _PickerItem(id: r.uuid, name: r.routeName)).toList(),
-        currentId: order.routeId,
+        // _PickerItem.id carries the LOCAL int id as a string (orders.routeId /
+        // orders.salesRepId are IntColumns). Local ids are not cross-device
+        // stable, but nothing filters on these ids — rep matching is done by
+        // salesRepName (watchOrdersBySalesRep). Moving both columns to synced
+        // uuids is the documented follow-up in drop_dead_columns.sql.
+        items: routes.map((r) => _PickerItem(id: r.id.toString(), name: r.routeName)).toList(),
+        currentId: order.routeId?.toString(),
         onSelect: (item) async {
           await service.assignRoute(
             order.uuid,
-            routeId: item.id,
+            routeId: int.parse(item.id),
             routeName: item.name,
-            salesRepId: order.salesRepId ?? '',
+            salesRepId: order.salesRepId ?? 0,
             salesRepName: order.salesRepName ?? '',
           );
           // Refresh selected order
@@ -230,14 +235,17 @@ class OrderDetailPanel extends ConsumerWidget {
       context: context,
       builder: (ctx) => _PickerDialog(
         title: 'Assign Sales Rep',
-        items: reps.map((u) => _PickerItem(id: u.uuid, name: '${u.firstName} ${u.lastName}'.trim())).toList(),
-        currentId: order.salesRepId,
+        // Local int id as string — see the note in _showRoutePicker. The name
+        // is what delivery dashboards actually match on, so it must stay the
+        // rep's exact display name.
+        items: reps.map((u) => _PickerItem(id: u.id.toString(), name: '${u.firstName} ${u.lastName}'.trim())).toList(),
+        currentId: order.salesRepId?.toString(),
         onSelect: (item) async {
           await service.assignRoute(
             order.uuid,
-            routeId: order.routeId ?? '',
+            routeId: order.routeId ?? 0,
             routeName: order.routeName ?? '',
-            salesRepId: item.id,
+            salesRepId: int.parse(item.id),
             salesRepName: item.name,
           );
           ref.read(selectedOrderProvider.notifier).state =

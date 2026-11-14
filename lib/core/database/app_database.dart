@@ -600,11 +600,16 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Assigns a route and sales/delivery rep to an order. [routeId] and
+  /// [salesRepId] are LOCAL int ids (orders.routeId / orders.salesRepId are
+  /// IntColumns) — not stable across devices, and nothing filters on them;
+  /// delivery dashboards match on [salesRepName] (watchOrdersBySalesRep), so
+  /// the name must be the rep's exact display name.
   Future<void> assignOrderRoute(
     String uuid, {
-    required String routeId,
+    required int routeId,
     required String routeName,
-    required String salesRepId,
+    required int salesRepId,
     required String salesRepName,
   }) async {
     await (update(orders)..where((t) => t.uuid.equals(uuid))).write(
