@@ -350,10 +350,13 @@ class _AuthCardState extends State<AuthCard> {
                                 height: 20,
                               ),
                               const SizedBox(width: 10),
-                              Text(
-                                'Continue with Google',
-                                style: AuthTheme.labelStyle.copyWith(
-                                  fontWeight: FontWeight.w500,
+                              Flexible(
+                                child: Text(
+                                  'Continue with Google',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AuthTheme.labelStyle.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],

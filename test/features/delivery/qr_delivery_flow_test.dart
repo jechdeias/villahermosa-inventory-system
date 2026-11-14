@@ -289,7 +289,7 @@ void main() {
       await addOrder('ORD-2408', status: 'out_for_delivery');
       await open(tester, 'ORD-2408');
       expect(find.text('Show this to your sales rep'), findsOneWidget);
-      expect(find.text('Your rep will scan this to confirm delivery'), findsOneWidget);
+      expect(find.text('Tap to show fullscreen'), findsOneWidget);
       // The card encodes the order number — what the rep's scanner looks up.
       expect(tester.widget<DeliveryQrCard>(find.byType(DeliveryQrCard)).orderNumber, 'ORD-2408');
       expect(find.byType(QrImageView), findsOneWidget);

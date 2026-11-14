@@ -46,13 +46,14 @@ class CustomerOrderDetailScreen extends ConsumerWidget {
                   if (order != null)
                     Consumer(builder: (ctx, r, _) {
                       final lines = r.watch(orderLinesProvider(order!.uuid)).value ?? const <OrderItem>[];
-                      return TextButton.icon(
+                      // Icon-only: with the "My Orders" back label a text button overflowed phone widths.
+                      return IconButton(
+                        tooltip: 'Export receipt',
                         onPressed: () async {
                           final doc = await buildReceiptPdf(order!, lines);
                           if (ctx.mounted) await exportPdf(doc, 'Receipt_${order!.orderNumber}.pdf');
                         },
-                        icon: const Icon(Icons.receipt_long_outlined, size: 20, color: CcColors.text),
-                        label: const Text('Export Receipt', style: TextStyle(fontSize: 14, color: CcColors.text)),
+                        icon: const Icon(Icons.receipt_long_outlined, size: 22, color: CcColors.text),
                       );
                     }),
                 ]),

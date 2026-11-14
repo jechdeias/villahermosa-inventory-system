@@ -82,9 +82,12 @@ class DeliveryQrCard extends StatelessWidget {
                 children: [
                   Icon(Icons.fullscreen, size: 14, color: Color(0xFF555555)),
                   SizedBox(width: 4),
-                  Text(
-                    'Tap to show fullscreen',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF555555), fontWeight: FontWeight.w500),
+                  Flexible(
+                    child: Text(
+                      'Tap to show fullscreen',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: Color(0xFF555555), fontWeight: FontWeight.w500),
+                    ),
                   ),
                 ],
               ),
