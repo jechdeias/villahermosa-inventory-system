@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show Supabase, RealtimeChannel;
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase, RealtimeChannel, PostgresChangeEvent;
 import '../database/app_database.dart';
 import 'sync_engine.dart';
 

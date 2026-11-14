@@ -185,6 +185,8 @@ class VillahermosaInventoryApp extends StatefulWidget {
 
 class _VillahermosaInventoryAppState extends State<VillahermosaInventoryApp>
     with WidgetsBindingObserver {
+  AppDatabase get database => widget.database;
+
   @override
   void initState() {
     super.initState();
