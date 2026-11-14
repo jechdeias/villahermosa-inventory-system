@@ -163,9 +163,13 @@ Use this section to verify the system works correctly after any change to sync, 
 - Cause: `createdAt` missing from the `orders` `insertOnConflictUpdate` companion in `_updateLocalRecord` — Drift defaulted to epoch.
 - Fix: `createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now())` added to both orders and order_items companions.
 
-**B4 — OPEN: Google Sign-In fails on release APK**
-- Cause: SHA-1 fingerprint of the release APK is not registered in Firebase Console / Google Cloud OAuth credentials.
-- Fix: `keytool -list -v -keystore <release.keystore>` → copy SHA-1 → add to Firebase project → re-download `google-services.json`.
+**B4 — OPEN: Google Sign-In has never worked on Android (worse than originally recorded)**
+- Originally filed as "release APK SHA-1 not registered". Verified Nov 14: it is more fundamental than that. `android/app/google-services.json` contains **no `oauth_client` entries at all** — neither `client_type: 1` (Android) nor `client_type: 3` (web). So there is no Android OAuth client for any SHA-1 to be registered against, debug or release, and the `com.google.gms.google-services` gradle plugin generates no `default_web_client_id` string resource.
+- Why that breaks it twice: `google_sign_in` on Android ignores the `clientId:` argument (it is an iOS/web parameter) and takes the ID token audience from `default_web_client_id`. With that resource absent, no usable idToken is produced, so `Supabase.auth.signInWithIdToken` would reject the result even if the native sign-in sheet completed.
+- `auth_viewmodel.dart` hardcodes `clientId: '331867448304-saipigd6...'`, whose project number matches the Firebase project — so that web client likely does exist in Google Cloud Console and the committed `google-services.json` is simply STALE (downloaded before the OAuth clients were made). Try re-downloading it first.
+- Full fix: (1) in Google Cloud / Firebase console for project `331867448304`, confirm a Web OAuth client exists and create an **Android** OAuth client with the app's package name + the release keystore SHA-1 (`keytool -list -v -keystore <release.keystore>`); add the debug SHA-1 too for development; (2) re-download `google-services.json` and verify it now has `client_type` 1 and 3 entries; (3) in Supabase → Auth → Providers → Google, add the web client ID to the authorized client IDs; (4) in `auth_viewmodel.dart`, switch the Android branch from `clientId:` to `serverClientId: <web client id>`, or drop the argument and let the generated resource supply it.
+- Verify with the PowerShell snippet in the session notes: parse `google-services.json` and list `oauth_client` entries by `client_type`. Empty output means this bug is still present.
+- **Email/password login is unaffected** and is the supported path. If Google Sign-In is not needed at handoff, hide the Google button on Android rather than shipping a button that always fails.
 
 **B5 — OPEN: Order detail may show "No item details recorded"**
 - Root cause tracked: `getOrderItemsByOrderId(orderUuid)` queries `order_items.orderId` by the order's uuid. After the pull fix the orderId in pulled rows is set from `getOrderByIntId(data['order_id'])?.uuid`, so it should be correct.
