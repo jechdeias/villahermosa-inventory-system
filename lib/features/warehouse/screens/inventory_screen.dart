@@ -179,9 +179,9 @@ class _WarehouseInventoryScreenState extends ConsumerState<WarehouseInventoryScr
       String esc(String? v) => '"${(v ?? '').replaceAll('"', '""')}"';
       final status = p.currentStock <= 0
           ? 'Out of Stock'
-          : (p.currentStock <= (p.minimumStock ?? 0) ? 'Low Stock' : 'In Stock');
+          : (p.currentStock <= p.minStock ? 'Low Stock' : 'In Stock');
       buf.writeln('${esc(p.sku)},${esc(p.name)},${esc(p.category)},'
-          '${p.currentStock},${p.minimumStock ?? 0},'
+          '${p.currentStock},${p.minStock},'
           '${p.unitPrice.toStringAsFixed(2)},$status');
     }
 

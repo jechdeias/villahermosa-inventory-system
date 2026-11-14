@@ -1,6 +1,7 @@
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../../core/database/app_database.dart';
+import '../providers/warehouse_providers.dart' show isItemPicked;
 
 // ── Brand colours ─────────────────────────────────────────────────────────────
 final _kPrimary = PdfColor.fromHex('1E1E1E');
@@ -71,7 +72,7 @@ pw.Widget _header(Order order, String date, int page, int total) {
 }
 
 pw.Widget _summaryRow(Order order, List<OrderItem> lines) {
-  final picked = lines.where((l) => (l.warehouseStatus ?? '') == 'picked').length;
+  final picked = lines.where(isItemPicked).length;
   return pw.Container(
     padding: const pw.EdgeInsets.all(12),
     decoration: pw.BoxDecoration(
@@ -125,7 +126,7 @@ pw.Widget _table(List<OrderItem> lines, Map<String, Product> productMap) {
       final p = productMap[l.productId];
       final available = p?.currentStock ?? 0;
       final shortage = available < l.quantity;
-      final picked = (l.warehouseStatus ?? '') == 'picked';
+      final picked = isItemPicked(l);
       return [
         picked ? '✓' : '□',
         l.productSku,
@@ -136,15 +137,10 @@ pw.Widget _table(List<OrderItem> lines, Map<String, Product> productMap) {
         shortage ? 'SHORT' : (picked ? 'PICKED' : 'PENDING'),
       ];
     }).toList(),
-    cellColorCallback: (rowI, colI) {
-      if (colI == 6) {
-        final l = lines[rowI];
-        final p = productMap[l.productId];
-        final available = p?.currentStock ?? 0;
-        if (available < l.quantity) return _kWarning;
-        if ((l.warehouseStatus ?? '') == 'picked') return _kSuccess;
-      }
-      return null;
+    textStyleBuilder: (col, cell, _) {
+      if (col != 6) return null;
+      final color = cell == 'SHORT' ? _kWarning : (cell == 'PICKED' ? _kSuccess : null);
+      return color == null ? null : pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: color);
     },
   );
 }
