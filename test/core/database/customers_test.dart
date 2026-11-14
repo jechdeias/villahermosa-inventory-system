@@ -221,7 +221,6 @@ void main() {
     test('Mark customer as synced', () async {
       // Create a customer
       const customerId = '550e8400-e29b-41d4-a716-446655440109';
-      const remoteId = 'remote-uuid-123';
       
       database.createCustomer(
         CustomersCompanion.insert(
@@ -239,13 +238,16 @@ void main() {
       // Mark as synced
       final customer = await database.getCustomerByEmail('sync@example.com');
       expect(customer, isNotNull);
-      final synced = await database.markCustomerAsSynced(customer!.uuid, remoteId);
+      // remoteId was dropped in v13; sync resolves by uuid, so only the status flips.
+      final synced = await database.updateCustomer(
+        customer!.uuid,
+        const CustomersCompanion(syncStatus: Value('synced')),
+      );
       expect(synced, isTrue);
 
       // Verify the sync status
       final syncedCustomer = await database.getCustomerByEmail('sync@example.com');
       expect(syncedCustomer!.syncStatus, equals('synced'));
-      expect(syncedCustomer.remoteId, equals(remoteId));
     });
   });
 }
