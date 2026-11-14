@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 
@@ -35,8 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isGoogleLoading = false;
 
   late AuthViewModel _authViewModel;
-  late final _oauthSubscription =
-      Supabase.instance.client.auth.onAuthStateChange.listen(_onAuthState);
+  StreamSubscription<AuthState>? _oauthSubscription;
 
   void _onAuthState(AuthState data) {
     if (!mounted) return;
@@ -81,6 +81,14 @@ class _LoginScreenState extends State<LoginScreen> {
     // Rebuild the UI whenever loading state or error message changes
     _authViewModel.addListener(_onViewModelChanged);
 
+    // Listen for the Google OAuth callback. (This was a lazy `late final`
+    // first touched in dispose(), so it never subscribed while the screen
+    // was alive.) Supabase isn't initialised in widget tests.
+    try {
+      _oauthSubscription =
+          Supabase.instance.client.auth.onAuthStateChange.listen(_onAuthState);
+    } catch (_) {}
+
     // Check if user is already authenticated
     if (_authViewModel.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -96,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _authViewModel.removeListener(_onViewModelChanged);
-    _oauthSubscription.cancel();
+    _oauthSubscription?.cancel();
     _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
