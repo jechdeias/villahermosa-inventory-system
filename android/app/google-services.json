@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "378436113717",
+    "project_id": "villahermosa-667c8",
+    "storage_bucket": "villahermosa-667c8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378436113717:android:9987580725934b931f687c",
+        "android_client_info": {
+          "package_name": "com.example.villahermosa_inventory_system"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBePPSdZ1vbXuCjVUwCkK3G1A8e1tKqEhQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
