@@ -620,11 +620,14 @@ class SyncEngine {
       try {
 
         final data = _recordToMap(customer);
-        // Conflict on uuid, not the primary key: local id is a per-device
-        // autoincrement, so two devices both creating id=7 would otherwise
-        // overwrite each other. id is dropped so a new row gets its own
-        // server-side id instead of colliding with someone else's.
-        data.remove('id');
+
+        // Conflict on uuid so two devices can't overwrite each other's row.
+        // 'id' is deliberately KEPT in the payload: orders push the local
+        // customer int id as customer_id and the orders pull resolves it with
+        // getCustomerByIntId, so a customer must have the same numeric id in
+        // SQLite and Supabase. If that id already exists remotely the push
+        // fails on the primary key, is caught below, and the row stays pending
+        // (loud and non-destructive). Do NOT data.remove('id') here.
         await Supabase.instance.client
             .from('customers')
             .upsert(data, onConflict: 'uuid');
