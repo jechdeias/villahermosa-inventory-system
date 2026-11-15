@@ -21,8 +21,13 @@ class _SalesProfileScreenState extends ConsumerState<SalesProfileScreen> {
     setState(() => _syncing = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await SyncManager.instance.performFullSync();
-      if (mounted) messenger.showSnackBar(const SnackBar(content: Text('Synced successfully')));
+      final result = await SyncManager.instance.performFullSync();
+      final ok = result['success'] == true;
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(
+          content: Text(ok ? 'Synced successfully' : 'Sync problem: ${result['error']}'),
+        ));
+      }
     } catch (e) {
       if (mounted) messenger.showSnackBar(SnackBar(content: Text('Sync failed: $e')));
     } finally {
