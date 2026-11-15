@@ -157,6 +157,13 @@ workflows:
     artifacts:
       - build/ios/iphoneos/*.app
       - build/ios/ipa/*.ipa
+      # ios/Podfile and Podfile.lock are GENERATED here and then thrown away
+      # with the CI workspace. Export them so they can be committed: the dev
+      # machine is Windows and physically cannot produce them. Without
+      # Podfile.lock in the repo, every build re-resolves pod versions, so an
+      # upstream pod release can break the build with no change on this side.
+      - ios/Podfile
+      - ios/Podfile.lock
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
     publishing:
