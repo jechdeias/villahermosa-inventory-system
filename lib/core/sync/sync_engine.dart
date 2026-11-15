@@ -1418,6 +1418,7 @@ class SyncEngine {
         'reason': record.reason,
         'reference': record.referenceId,
         'performed_by_name': record.userName,
+        'user_id': record.userId,
         'movement_date': record.createdAt.toIso8601String(),
         'is_deleted': record.isDeleted,
       };
@@ -1490,6 +1491,9 @@ class SyncEngine {
         'customer_id': record.customerId,
         'status': record.status,
         'warehouse_status': record.warehouseStatus,
+        'expected_delivery_date': record.expectedDeliveryDate?.toIso8601String(),
+        'actual_delivery_date': record.actualDeliveryDate?.toIso8601String(),
+        'packed_at': record.packedAt?.toIso8601String(),
         'total_amount': record.totalAmount,
         'subtotal': record.subtotal,
         'notes': record.customerNotes,
@@ -1526,6 +1530,8 @@ class SyncEngine {
         'quantity': record.quantity,
         'unit_price': record.unitPrice,
         'total_price': record.totalAmount,
+        'status': record.status,
+        'picked_at': record.pickedAt?.toIso8601String(),
         'is_deleted': record.isDeleted,
         'sync_status': record.syncStatus,
         'created_at': record.createdAt.toIso8601String(),
@@ -1842,11 +1848,12 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             subtotal: Value(_toDouble(data['subtotal']) ?? 0),
             totalAmount: Value(_toDouble(data['total_amount']) ?? 0),
             warehouseStatus: Value(data['warehouse_status'] as String? ?? 'pending'),
-            // packed_at is never pushed (Supabase has no such column), so a pull
-            // must keep the local value instead of resetting it to null.
+            // packed_at and the delivery dates are pushed now, but rows that were
+            // never pushed are NULL server-side. Keep the local value when the
+            // server has none (this guard is the migration path — keep it).
             packedAt: Value(_toDateTime(data['packed_at']) ?? existingOrder?.packedAt),
-            expectedDeliveryDate: Value(_toDateTime(data['expected_delivery_date'])),
-            actualDeliveryDate: Value(_toDateTime(data['actual_delivery_date'])),
+            expectedDeliveryDate: Value(_toDateTime(data['expected_delivery_date']) ?? existingOrder?.expectedDeliveryDate),
+            actualDeliveryDate: Value(_toDateTime(data['actual_delivery_date']) ?? existingOrder?.actualDeliveryDate),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
             storeName: Value(data['store_name'] as String?),
@@ -1875,18 +1882,25 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
         final localProduct = data['product_id'] != null
             ? await _database.getProductById(data['product_id'] as int)
             : null;
+        final smUuid = data['uuid'] as String? ?? 'sb-stockmovement-${data['id']}';
+        final existingSm = await (_database.select(_database.stockMovements)..where((t) => t.uuid.equals(smUuid))).getSingleOrNull();
         await _database.into(_database.stockMovements).insertOnConflictUpdate(
           StockMovementsCompanion(
             id: Value(data['id'] as int),
-            uuid: Value(data['uuid'] as String? ?? 'sb-stockmovement-${data['id']}'),
+            uuid: Value(smUuid),
             productId: Value(localProduct?.uuid ?? data['product_id']?.toString() ?? ''),
             movementType: Value(data['movement_type'] as String? ?? 'adjustment'),
             quantity: Value((data['quantity'] as num?)?.toInt() ?? 0),
-            referenceId: Value(data['reference_id'] as String?),
+            // Supabase's column is 'reference' (push sends the same key). Keep the
+            // local value when the server has none yet.
+            referenceId: Value(data['reference'] as String? ?? existingSm?.referenceId),
             reason: Value(data['reason'] as String? ?? 'Synced from Supabase'),
             notes: Value(data['notes'] as String?),
-            userId: Value(data['user_id'] as String? ?? ''),
-            userName: Value(data['user_name'] as String? ?? 'Unknown'),
+            // user_id is a newer column: rows pushed before it existed are NULL
+            // server-side, so keep the local value until a push fills it in.
+            userId: Value(data['user_id'] as String? ?? existingSm?.userId ?? ''),
+            // Supabase's column is 'performed_by_name' (its 'user_name' is unused).
+            userName: Value(data['performed_by_name'] as String? ?? existingSm?.userName ?? 'Unknown'),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
             createdBy: Value((data['created_by'] as num?)?.toInt()),
@@ -1964,9 +1978,10 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             subtotal: Value(_toDouble(data['total_price']) ??
                 ((_toDouble(data['unit_price']) ?? 0) * ((data['quantity'] as num?)?.toInt() ?? 0))),
             totalAmount: Value(_toDouble(data['total_price']) ?? 0),
-            // status/picked_at are warehouse picking state. Supabase has no such
-            // columns (push never sends them), so a pull must keep what's local
-            // rather than reset it — otherwise every sync un-ticks the picklist.
+            // status/picked_at are pushed now, but rows never pushed are NULL
+            // server-side. Keep the local value when the server has none, or
+            // the first sync un-ticks every pick (this guard is the migration
+            // path — keep it).
             status: Value(data['status'] as String? ?? existingOi?.status ?? 'pending'),
             pickedAt: Value(_toDateTime(data['picked_at']) ?? existingOi?.pickedAt),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),

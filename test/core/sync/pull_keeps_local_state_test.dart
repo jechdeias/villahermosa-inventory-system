@@ -8,6 +8,8 @@ import 'package:villahermosa_inventory_system/core/sync/sync_engine.dart';
 /// Supabase has no such columns and push never sends them. A pull must not
 /// reset it, or every sync un-ticks the warehouse worker's picklist.
 void main() {
+  group('round trip', roundTripTests);
+
   late AppDatabase db;
   late SyncEngine engine;
 
@@ -66,6 +68,74 @@ void main() {
       await seedOrder();
       await engine.applyPulledRecord('orders', {'id': 9, 'uuid': 'o-9', 'packed_at': '2026-11-16T10:00:00Z'});
       expect((await db.getOrderById('o-9'))!.packedAt!.toUtc(), DateTime.utc(2026, 11, 16, 10));
+    });
+  });
+}
+
+/// Push-key / pull-key agreement and the push maps for newly synced columns.
+/// A mismatch between the two maps is invisible from Dart — see CLAUDE.md.
+void roundTripTests() {
+  late AppDatabase db;
+  late SyncEngine engine;
+
+  setUp(() {
+    db = AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
+    engine = SyncEngine(db);
+  });
+  tearDown(() => db.close());
+
+  Future<StockMovement> movement() => (db.select(db.stockMovements)..where((t) => t.uuid.equals('m-1'))).getSingle();
+
+  Future<void> seedMovement() => db.into(db.stockMovements).insert(StockMovementsCompanion.insert(
+        uuid: 'm-1',
+        productId: 'p',
+        movementType: 'in',
+        quantity: 1,
+        reason: 'r',
+        userId: 'u-local',
+        userName: 'Anne Warehouse',
+        referenceId: const Value('PO-7'),
+      ));
+
+  group('stock_movements pull keys', () {
+    test("reads 'reference' and 'performed_by_name' (the names Supabase and push use)", () async {
+      await engine.applyPulledRecord('stock_movements', {
+        'id': 1, 'uuid': 'm-1', 'movement_type': 'in', 'quantity': 1,
+        'reference': 'PO-9', 'performed_by_name': 'Server Name', 'user_id': 'u-server',
+      });
+      final m = await movement();
+      expect(engine.pullFailureCount, 0);
+      expect(m.referenceId, 'PO-9');
+      expect(m.userName, 'Server Name');
+      expect(m.userId, 'u-server');
+    });
+
+    test('NULL server values leave local reference, user name and user id intact', () async {
+      await seedMovement();
+      await engine.applyPulledRecord('stock_movements', {'id': 1, 'uuid': 'm-1', 'movement_type': 'in', 'quantity': 2});
+      final m = await movement();
+      expect(m.quantity, 2, reason: 'server fields still apply');
+      expect(m.referenceId, 'PO-7');
+      expect(m.userName, 'Anne Warehouse');
+      expect(m.userId, 'u-local');
+    });
+  });
+
+  group('orders delivery dates', () {
+    test('NULL server dates keep local; server dates win', () async {
+      await db.createOrder(OrdersCompanion.insert(
+        uuid: 'o-1', customerId: 'c', orderNumber: 'ORD-1', deliveryAddress: 'x',
+        expectedDeliveryDate: Value(DateTime(2026, 11, 20)),
+        actualDeliveryDate: Value(DateTime(2026, 11, 21)),
+      ));
+      await engine.applyPulledRecord('orders', {'id': 1, 'uuid': 'o-1', 'order_number': 'ORD-1'});
+      var o = (await db.getOrderById('o-1'))!;
+      expect(o.expectedDeliveryDate, DateTime(2026, 11, 20));
+      expect(o.actualDeliveryDate, DateTime(2026, 11, 21));
+
+      await engine.applyPulledRecord('orders', {'id': 1, 'uuid': 'o-1', 'expected_delivery_date': '2026-12-01T00:00:00Z'});
+      o = (await db.getOrderById('o-1'))!;
+      expect(o.expectedDeliveryDate!.toUtc(), DateTime.utc(2026, 12, 1));
     });
   });
 }
