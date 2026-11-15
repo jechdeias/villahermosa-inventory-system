@@ -1,22 +1,22 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:villahermosa_inventory_system/core/auth/auth_service.dart';
 import 'package:villahermosa_inventory_system/core/database/app_database.dart';
 import 'package:villahermosa_inventory_system/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    final database = AppDatabase();
+    // AuthService.instance throws until it owns the shared database (main.dart
+    // does this at startup), so the test must do the same.
+    final database = AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
+    AuthService.initializeWithDatabase(database);
+    addTearDown(database.close);
+
     await tester.pumpWidget(VillahermosaInventoryApp(database: database));
-    
+
     // Verify that the app builds without errors
     expect(find.byType(MaterialApp), findsOneWidget);
   });
