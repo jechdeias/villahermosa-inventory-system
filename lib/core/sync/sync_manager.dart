@@ -121,8 +121,17 @@ class SyncManager {
   void _doRealtimePull() {
     _lastRealtimePull = DateTime.now();
     debugPrint('⚡ Realtime change detected — pulling...');
+    // Handler must return pull()'s type — see auth_service.dart. This one
+    // fires on every realtime change, so a null return here would spray
+    // unhandled type errors whenever Supabase is unreachable.
     pull().catchError((e) {
       debugPrint('⚡ Realtime pull error: $e');
+      return <String, dynamic>{
+        'success': false,
+        'recordsPulled': 0,
+        'error': e.toString(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
     });
   }
 

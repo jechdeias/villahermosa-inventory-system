@@ -198,8 +198,19 @@ class AuthService {
       debugPrint('📋 Session after auth: ${Supabase.instance.client.auth.currentSession != null ? "Active" : "None"}');
 
       // Pull remote data in background — don't block login navigation
+      // catchError must RETURN a value of pull()'s type. pull() returns
+      // Future<Map<String, dynamic>> (since ef1d09a), so a handler that falls
+      // off the end yields null and throws "type 'Null' is not a subtype of
+      // FutureOr<Map<String, dynamic>>" — a second, unhandled error on top of
+      // the one being handled.
       SyncManager.instance.pull().catchError((e) {
         debugPrint('Post-login pull failed: $e');
+        return <String, dynamic>{
+          'success': false,
+          'recordsPulled': 0,
+          'error': e.toString(),
+          'timestamp': DateTime.now().toIso8601String(),
+        };
       });
 
       // Start Realtime subscriptions so this device sees remote changes instantly
@@ -383,8 +394,16 @@ class AuthService {
       debugPrint('✅ OAuth local session set for ${localUser.email} (${localUser.role})');
 
       // Pull full data in background — don't block OAuth navigation
+      // See the note on the post-login pull above: this handler must
+      // return a Map, not fall off the end.
       SyncManager.instance.pull().catchError((e) {
         debugPrint('Post-OAuth pull failed (non-fatal): $e');
+        return <String, dynamic>{
+          'success': false,
+          'recordsPulled': 0,
+          'error': e.toString(),
+          'timestamp': DateTime.now().toIso8601String(),
+        };
       });
 
       // Start Realtime subscriptions
