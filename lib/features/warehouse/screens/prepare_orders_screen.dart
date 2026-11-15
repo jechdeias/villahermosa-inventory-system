@@ -23,6 +23,25 @@ class WarehousePrepareOrdersScreen extends ConsumerStatefulWidget {
 class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareOrdersScreen> {
   String? _selectedUuid;
 
+  /// Runs a warehouse write and surfaces a failure. These used to be
+  /// fire-and-forget, so a failed write left the worker with a tap that
+  /// silently did nothing and no way to tell "not saved" from "missed".
+  Future<bool> _run(String what, Future<void> Function() action) async {
+    try {
+      await action();
+      return true;
+    } catch (e, st) {
+      debugPrint('Warehouse action failed ($what): $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: WhColors.red,
+          content: Text("Couldn't $what — nothing was saved. $e"),
+        ));
+      }
+      return false;
+    }
+  }
+
   Future<void> _complete(Order o, List<OrderItem> lines) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -39,8 +58,8 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
       ),
     );
     if (ok != true) return;
-    await ref.read(warehouseActionsProvider).completeOrder(o, lines);
-    if (!mounted) return;
+    final saved = await _run('complete ${o.orderNumber}', () => ref.read(warehouseActionsProvider).completeOrder(o, lines));
+    if (!saved || !mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${o.orderNumber} is ready for loading')));
   }
 
@@ -200,7 +219,7 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
                       required: l.quantity,
                       available: p?.currentStock,
                       picked: isItemPicked(l),
-                      onChanged: (v) => ref.read(warehouseActionsProvider).setItemPicked(l, v),
+                      onChanged: (v) => _run('save the pick for ${l.productName}', () => ref.read(warehouseActionsProvider).setItemPicked(l, v)),
                     );
                   }),
               ]),
@@ -229,7 +248,7 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
                     Text('$short ${short == 1 ? 'item is' : 'items are'} short on stock', style: const TextStyle(fontSize: 12, color: WhColors.red)),
                   if (picked > 0)
                     TextButton(
-                      onPressed: () => ref.read(warehouseActionsProvider).resetPicks(lines),
+                      onPressed: () => _run('reset picks', () => ref.read(warehouseActionsProvider).resetPicks(lines)),
                       child: const Text('Reset', style: TextStyle(fontSize: 12, color: WhColors.muted)),
                     ),
                 ],
