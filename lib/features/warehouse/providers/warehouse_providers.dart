@@ -28,7 +28,7 @@ String whOrderStatus(Order o) {
   if (o.status == OrderStatus.cancelled) return 'cancelled';
   if (o.status == OrderStatus.completed || o.status == OrderStatus.delivered) return 'completed';
   if (o.status == OrderStatus.outForDelivery) return 'dispatched';
-  // Before dispatch, picking progress lives in warehouseStatus (local only).
+  // Before dispatch, picking progress lives in warehouseStatus (synced both ways: pushed and pulled).
   switch (o.warehouseStatus) {
     case 'dispatched':
       return 'dispatched';
