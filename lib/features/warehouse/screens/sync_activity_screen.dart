@@ -53,9 +53,9 @@ class _WarehouseSyncActivityScreenState extends ConsumerState<WarehouseSyncActiv
   @override
   Widget build(BuildContext context) {
     if (isFirstLoad(ref.watch(stockMovementsStreamProvider))) return const WhLoadingShell(route: WhRoutes.sync, statCards: 4);
-    final movements = ref.watch(stockMovementsStreamProvider).value ?? [];
-    final orders = ref.watch(ordersStreamProvider).value ?? [];
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final movements = ref.watch(stockMovementsStreamProvider).valueOrNull ?? [];
+    final orders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
     final last = lastSyncTime();
 
     bool autoSync = true;

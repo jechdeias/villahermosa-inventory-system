@@ -50,14 +50,14 @@ final orderItemsStreamProvider = StreamProvider<List<OrderItem>>(
 final reportsOrdersProvider = Provider<List<Order>>((ref) {
   final start = ref.watch(reportsRangeStartProvider);
   final end = ref.watch(reportsRangeEndProvider);
-  final all = ref.watch(ordersStreamProvider).value ?? [];
+  final all = ref.watch(ordersStreamProvider).valueOrNull ?? [];
   return all.where((o) => (start == null || o.createdAt.isAfter(start)) && o.createdAt.isBefore(end)).toList();
 });
 
 final reportsPaymentsProvider = Provider<List<Payment>>((ref) {
   final start = ref.watch(reportsRangeStartProvider);
   final end = ref.watch(reportsRangeEndProvider);
-  final all = ref.watch(paymentsStreamProvider).value ?? [];
+  final all = ref.watch(paymentsStreamProvider).valueOrNull ?? [];
   return all.where((p) => (start == null || p.paymentDate.isAfter(start)) && p.paymentDate.isBefore(end)).toList();
 });
 
@@ -70,7 +70,7 @@ final reportsGrowthRateProvider = Provider<double?>((ref) {
 
   final prevEnd = start;
   final prevStart = start.subtract(end.difference(start));
-  final all = ref.watch(ordersStreamProvider).value ?? [];
+  final all = ref.watch(ordersStreamProvider).valueOrNull ?? [];
 
   final current = ref.watch(reportsOrdersProvider).fold(0.0, (s, o) => s + o.totalAmount);
   final previous = all
@@ -86,7 +86,7 @@ final reportsGrowthRateProvider = Provider<double?>((ref) {
 final reportsStatsProvider = Provider<Map<String, dynamic>>((ref) {
   final orders = ref.watch(reportsOrdersProvider);
   final payments = ref.watch(reportsPaymentsProvider);
-  final products = ref.watch(productsStreamProvider).value ?? [];
+  final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
   final totalRevenue = orders.fold(0.0, (s, o) => s + o.totalAmount);
 
   return {
@@ -113,7 +113,7 @@ const _monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'S
 /// Last 6 calendar months of order revenue, independent of the range filter
 /// (a "Week" range would otherwise collapse this to a single point).
 final salesTrendProvider = Provider<List<MonthPoint>>((ref) {
-  final orders = ref.watch(ordersStreamProvider).value ?? [];
+  final orders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
   final now = DateTime.now();
   final months = List.generate(6, (i) => DateTime(now.year, now.month - (5 - i)));
 
@@ -152,7 +152,7 @@ class CategoryStock {
 
 /// Current stock summed by category — a snapshot, not range-filtered.
 final stockByCategoryProvider = Provider<List<CategoryStock>>((ref) {
-  final products = ref.watch(productsStreamProvider).value ?? [];
+  final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
   final totals = <String, int>{};
   for (final p in products) {
     totals[p.category] = (totals[p.category] ?? 0) + p.currentStock;
@@ -174,7 +174,7 @@ class ProductSales {
 final topProductsProvider = Provider<List<ProductSales>>((ref) {
   final start = ref.watch(reportsRangeStartProvider);
   final end = ref.watch(reportsRangeEndProvider);
-  final allItems = ref.watch(orderItemsStreamProvider).value ?? [];
+  final allItems = ref.watch(orderItemsStreamProvider).valueOrNull ?? [];
   final items = allItems
       .where((i) => (start == null || i.createdAt.isAfter(start)) && i.createdAt.isBefore(end))
       .toList();

@@ -114,8 +114,8 @@ class CustomerProfile {
 
 final customerProfileProvider = Provider<CustomerProfile>((ref) {
   final user = AuthService.instance.getCurrentUser();
-  final customers = ref.watch(customersProvider).value ?? [];
-  final routes = ref.watch(deliveryRoutesStreamProvider).value ?? [];
+  final customers = ref.watch(customersProvider).valueOrNull ?? [];
+  final routes = ref.watch(deliveryRoutesStreamProvider).valueOrNull ?? [];
 
   final email = (user?.email ?? '').toLowerCase();
   Customer? customer;
@@ -171,7 +171,7 @@ final customerPaymentsProvider = StreamProvider<List<Payment>>((ref) {
 
 /// Unpaid balance across this store's payments.
 final customerBalanceProvider = Provider<double>((ref) {
-  final payments = ref.watch(customerPaymentsProvider).value ?? [];
+  final payments = ref.watch(customerPaymentsProvider).valueOrNull ?? [];
   return payments.where((p) => p.status != 'paid').fold(0.0, (s, p) => s + p.balance);
 });
 
@@ -376,12 +376,12 @@ Future<void> updateCustomerPhone(WidgetRef ref, String customerUuid, String phon
 
 /// Name of a product's supplier, '' if unknown.
 final supplierNamesProvider = Provider<Map<int, String>>((ref) {
-  final suppliers = ref.watch(suppliersStreamProvider).value ?? [];
+  final suppliers = ref.watch(suppliersStreamProvider).valueOrNull ?? [];
   return {for (final s in suppliers) s.id: s.tradeName};
 });
 
 /// Live product catalogue for the shop (inactive products hidden).
 final shopProductsProvider = Provider<List<Product>>((ref) {
-  final all = ref.watch(productsStreamProvider).value ?? [];
+  final all = ref.watch(productsStreamProvider).valueOrNull ?? [];
   return all.where((p) => p.isActive).toList();
 });

@@ -157,8 +157,8 @@ class _RoutesListColumn extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final routesAsync = ref.watch(deliveryRoutesStreamProvider);
     if (isFirstLoad(routesAsync)) return const ShimmerTablePage(statCards: 4);
-    final allRoutes = routesAsync.value ?? [];
-    final allOrders = ref.watch(ordersStreamProvider).value ?? [];
+    final allRoutes = routesAsync.valueOrNull ?? [];
+    final allOrders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
     final now = DateTime.now();
 
     final totalRoutes = allRoutes.length;

@@ -23,7 +23,7 @@ class _CustomerProductDetailScreenState extends ConsumerState<CustomerProductDet
 
   @override
   Widget build(BuildContext context) {
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
     Product? product;
     for (final p in products) {
       if (p.uuid == widget.productUuid) product = p;

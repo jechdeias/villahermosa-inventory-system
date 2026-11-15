@@ -95,7 +95,7 @@ class _AddRoutePanelState extends ConsumerState<AddRoutePanel> {
 
   @override
   Widget build(BuildContext context) {
-    final reps = (ref.watch(usersProvider).value ?? [])
+    final reps = (ref.watch(usersProvider).valueOrNull ?? [])
         .where((u) => u.role == 'sales_rep' || u.role == 'admin')
         .toList();
 

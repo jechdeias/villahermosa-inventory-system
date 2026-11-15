@@ -84,7 +84,7 @@ class _WarehouseInventoryScreenState extends ConsumerState<WarehouseInventoryScr
   @override
   Widget build(BuildContext context) {
     if (isFirstLoad(ref.watch(productsStreamProvider))) return const WhLoadingShell(route: WhRoutes.inventory, statCards: 3);
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
     final categories = (products.map((p) => p.category).toSet().toList()..sort());
     final q = _search.toLowerCase();
     final filtered = products.where((p) {

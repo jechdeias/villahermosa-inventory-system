@@ -21,7 +21,7 @@ final filteredPaymentsProvider = Provider<List<Payment>>((ref) {
   final search = ref.watch(paymentsSearchProvider).toLowerCase();
   final dateFrom = ref.watch(paymentsDateFromProvider);
   final dateTo = ref.watch(paymentsDateToProvider);
-  final all = ref.watch(paymentsStreamProvider).value ?? [];
+  final all = ref.watch(paymentsStreamProvider).valueOrNull ?? [];
   return all.where((p) {
     final matchTab = tab == 'all' || p.status == tab;
     final matchSearch = search.isEmpty ||
@@ -38,7 +38,7 @@ final paymentsDateFromProvider = StateProvider<DateTime?>((ref) => null);
 final paymentsDateToProvider = StateProvider<DateTime?>((ref) => null);
 
 final paymentStatsProvider = Provider<Map<String, dynamic>>((ref) {
-  final all = ref.watch(paymentsStreamProvider).value ?? [];
+  final all = ref.watch(paymentsStreamProvider).valueOrNull ?? [];
   return {
     'collected': all.fold(0.0, (s, p) => s + p.amountPaid),
     'outstanding': all

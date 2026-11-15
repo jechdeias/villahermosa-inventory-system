@@ -157,7 +157,7 @@ class _OrdersListColumn extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ordersAsync = ref.watch(ordersStreamProvider);
     if (isFirstLoad(ordersAsync)) return const ShimmerTablePage(statCards: 5);
-    final allOrders = ordersAsync.value ?? [];
+    final allOrders = ordersAsync.valueOrNull ?? [];
 
     final totalCount = allOrders.length;
     final pendingCount = allOrders.where((o) => o.status == 'pending').length;
@@ -259,7 +259,7 @@ class _OrdersListColumn extends ConsumerWidget {
   Widget _buildContentCard(BuildContext context, WidgetRef ref) {
     final tab = ref.watch(ordersTabProvider);
     final filteredOrders = ref.watch(filteredOrdersProvider);
-    final allOrders = ref.watch(ordersStreamProvider).value ?? [];
+    final allOrders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
 
     final tabs = [
       for (final s in OrderStatus.all)
@@ -888,8 +888,8 @@ class _NewOrderPanelState extends ConsumerState<_NewOrderPanel> {
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customersProvider);
     final usersAsync = ref.watch(usersProvider);
-    final customers = customersAsync.value ?? [];
-    final reps = (usersAsync.value ?? [])
+    final customers = customersAsync.valueOrNull ?? [];
+    final reps = (usersAsync.valueOrNull ?? [])
         .where((u) => u.role == 'sales_rep' || u.role == 'admin')
         .toList();
 

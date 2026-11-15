@@ -19,7 +19,7 @@ final deliveryRoutesStatusFilterProvider = StateProvider<String?>((ref) => null)
 final filteredDeliveryRoutesProvider = Provider<List<DeliveryRoute>>((ref) {
   final search = ref.watch(deliveryRoutesSearchProvider).toLowerCase();
   final statusFilter = ref.watch(deliveryRoutesStatusFilterProvider);
-  var list = ref.watch(deliveryRoutesStreamProvider).value ?? [];
+  var list = ref.watch(deliveryRoutesStreamProvider).valueOrNull ?? [];
 
   if (search.isNotEmpty) {
     list = list.where((r) =>

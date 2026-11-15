@@ -151,7 +151,7 @@ class _ProductsListColumn extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync = ref.watch(productsStreamProvider);
     if (isFirstLoad(productsAsync)) return const ShimmerTablePage(statCards: 3);
-    final allProducts = productsAsync.value ?? [];
+    final allProducts = productsAsync.valueOrNull ?? [];
 
     final totalCount = allProducts.length;
     final lowStockCount = allProducts.where((p) => p.currentStock <= p.minStock).length;
@@ -218,7 +218,7 @@ class _ProductsListColumn extends ConsumerWidget {
     final tab = ref.watch(productsTabProvider);
     final filteredProducts = ref.watch(filteredProductsProvider);
     final categories = ref.watch(productCategoriesProvider);
-    final allProducts = ref.watch(productsStreamProvider).value ?? [];
+    final allProducts = ref.watch(productsStreamProvider).valueOrNull ?? [];
 
     final tabs = [
       _Tab('All', null, allProducts.length),
@@ -587,7 +587,7 @@ class _ProductsFilterSheetState extends ConsumerState<_ProductsFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final suppliers = ref.watch(suppliersStreamProvider).value ?? [];
+    final suppliers = ref.watch(suppliersStreamProvider).valueOrNull ?? [];
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(16))),

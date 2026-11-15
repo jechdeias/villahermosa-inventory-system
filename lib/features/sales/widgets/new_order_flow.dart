@@ -295,7 +295,7 @@ class _StoreStepState extends ConsumerState<_StoreStep> {
 
   @override
   Widget build(BuildContext context) {
-    final customers = ref.watch(allCustomersProvider).value ?? [];
+    final customers = ref.watch(allCustomersProvider).valueOrNull ?? [];
     final q = _query.toLowerCase();
     final filtered = q.isEmpty
         ? customers
@@ -379,7 +379,7 @@ class _ItemsStepState extends ConsumerState<_ItemsStep> {
 
   @override
   Widget build(BuildContext context) {
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
     final q = _query.toLowerCase();
     final filtered = q.isEmpty
         ? products

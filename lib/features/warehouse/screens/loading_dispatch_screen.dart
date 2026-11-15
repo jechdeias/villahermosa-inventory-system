@@ -46,8 +46,8 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
   @override
   Widget build(BuildContext context) {
     if (isFirstLoad(ref.watch(deliveryRoutesStreamProvider))) return const WhLoadingShell(route: WhRoutes.dispatch);
-    final routes = (ref.watch(deliveryRoutesStreamProvider).value ?? []).toList();
-    final orders = ref.watch(ordersStreamProvider).value ?? [];
+    final routes = (ref.watch(deliveryRoutesStreamProvider).valueOrNull ?? []).toList();
+    final orders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
     final byOrder = ref.watch(orderLinesByOrderProvider);
 
     DeliveryRoute? selected;

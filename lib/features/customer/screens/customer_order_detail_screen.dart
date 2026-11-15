@@ -20,7 +20,7 @@ class CustomerOrderDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orders = ref.watch(customerOrdersProvider).value ?? [];
+    final orders = ref.watch(customerOrdersProvider).valueOrNull ?? [];
     Order? order;
     for (final o in orders) {
       if (o.uuid == orderUuid) order = o;
@@ -45,7 +45,7 @@ class CustomerOrderDetailScreen extends ConsumerWidget {
                   const Spacer(),
                   if (order != null)
                     Consumer(builder: (ctx, r, _) {
-                      final lines = r.watch(orderLinesProvider(order!.uuid)).value ?? const <OrderItem>[];
+                      final lines = r.watch(orderLinesProvider(order!.uuid)).valueOrNull ?? const <OrderItem>[];
                       // Icon-only: with the "My Orders" back label a text button overflowed phone widths.
                       return IconButton(
                         tooltip: 'Export receipt',
@@ -92,8 +92,8 @@ class _Body extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final status = customerStatusOf(order);
     final cancelled = status == CustomerOrderStatus.cancelled;
-    final lines = ref.watch(orderLinesProvider(order.uuid)).value ?? [];
-    final payments = (ref.watch(customerPaymentsProvider).value ?? []).where((p) => p.orderCode == order.orderNumber).toList();
+    final lines = ref.watch(orderLinesProvider(order.uuid)).valueOrNull ?? [];
+    final payments = (ref.watch(customerPaymentsProvider).valueOrNull ?? []).where((p) => p.orderCode == order.orderNumber).toList();
 
     final paid = payments.fold<double>(0, (s, p) => s + p.amountPaid);
     final balance = payments.isEmpty ? order.totalAmount : payments.fold<double>(0, (s, p) => s + p.balance);

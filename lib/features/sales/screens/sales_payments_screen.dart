@@ -27,7 +27,7 @@ class _SalesPaymentsScreenState extends ConsumerState<SalesPaymentsScreen> {
   @override
   Widget build(BuildContext context) {
     final paymentsAsync = ref.watch(salesRepPaymentsProvider);
-    final payments = paymentsAsync.value ?? [];
+    final payments = paymentsAsync.valueOrNull ?? [];
     final filtered = _filter == 'all' ? payments : payments.where((p) => p.status == _filter).toList();
 
     final tabs = [

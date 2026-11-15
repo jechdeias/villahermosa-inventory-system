@@ -18,7 +18,7 @@ class CustomerCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(customerProfileProvider);
     final balance = ref.watch(customerBalanceProvider);
-    final orders = ref.watch(customerOrdersProvider).value ?? [];
+    final orders = ref.watch(customerOrdersProvider).valueOrNull ?? [];
     final activeOrders = orders.where((o) => isActiveCustomerOrder(customerStatusOf(o))).length;
     final nextDelivery = profile.deliveryDays.isNotEmpty
         ? nextDeliveryDate(profile.deliveryDays, DateTime.now())

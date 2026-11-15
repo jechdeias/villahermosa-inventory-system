@@ -148,7 +148,7 @@ class _CustomersListColumn extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final customersAsync = ref.watch(customersStreamProvider);
     if (isFirstLoad(customersAsync)) return const ShimmerTablePage(statCards: 4);
-    final allCustomers = customersAsync.value ?? [];
+    final allCustomers = customersAsync.valueOrNull ?? [];
 
     final totalCount = allCustomers.length;
     final activeCount = allCustomers.where((c) => c.status == 'active').length;
@@ -214,7 +214,7 @@ class _CustomersListColumn extends ConsumerWidget {
   Widget _buildContentCard(BuildContext context, WidgetRef ref) {
     final tab = ref.watch(customersTabProvider);
     final filteredCustomers = ref.watch(filteredCustomersProvider);
-    final allCustomers = ref.watch(customersStreamProvider).value ?? [];
+    final allCustomers = ref.watch(customersStreamProvider).valueOrNull ?? [];
 
     final tabs = [
       _Tab('All', null, allCustomers.length),

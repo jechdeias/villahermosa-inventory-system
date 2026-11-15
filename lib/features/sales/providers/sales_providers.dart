@@ -54,7 +54,7 @@ final salesRepPaymentsProvider = StreamProvider<List<Payment>>((ref) {
 final salesRepRouteProvider = Provider<DeliveryRoute?>((ref) {
   final repName = ref.watch(salesRepFullNameProvider);
   if (repName.isEmpty) return null;
-  final routes = ref.watch(deliveryRoutesStreamProvider).value ?? [];
+  final routes = ref.watch(deliveryRoutesStreamProvider).valueOrNull ?? [];
   for (final r in routes) {
     if (r.assignedRepName == repName) return r;
   }
@@ -82,9 +82,9 @@ String salesDisplayStoreName(Customer c) =>
 /// name if there's no business name — the same rule admin_orders_screen.dart
 /// uses when it writes storeName in the first place).
 final myCustomersProvider = Provider<List<Customer>>((ref) {
-  final orders = ref.watch(salesRepOrdersProvider).value ?? [];
-  final paymentsList = ref.watch(salesRepPaymentsProvider).value ?? [];
-  final allCustomers = ref.watch(allCustomersProvider).value ?? [];
+  final orders = ref.watch(salesRepOrdersProvider).valueOrNull ?? [];
+  final paymentsList = ref.watch(salesRepPaymentsProvider).valueOrNull ?? [];
+  final allCustomers = ref.watch(allCustomersProvider).valueOrNull ?? [];
 
   final storeNames = <String>{
     for (final o in orders)
@@ -100,7 +100,7 @@ final myCustomersProvider = Provider<List<Customer>>((ref) {
 
 /// Distinct stores with an order created today.
 final visitedTodayProvider = Provider<Set<String>>((ref) {
-  final orders = ref.watch(salesRepOrdersProvider).value ?? [];
+  final orders = ref.watch(salesRepOrdersProvider).valueOrNull ?? [];
   final now = DateTime.now();
   return {
     for (final o in orders)
@@ -137,8 +137,8 @@ class SalesActivityEntry {
 
 /// Last 5 entries across this rep's orders + payments, most recent first.
 final salesRecentActivityProvider = Provider<List<SalesActivityEntry>>((ref) {
-  final orders = ref.watch(salesRepOrdersProvider).value ?? [];
-  final paymentsList = ref.watch(salesRepPaymentsProvider).value ?? [];
+  final orders = ref.watch(salesRepOrdersProvider).valueOrNull ?? [];
+  final paymentsList = ref.watch(salesRepPaymentsProvider).valueOrNull ?? [];
 
   final entries = <SalesActivityEntry>[
     for (final o in orders)
@@ -162,8 +162,8 @@ final salesRecentActivityProvider = Provider<List<SalesActivityEntry>>((ref) {
 
 /// Not-yet-synced records this rep created, for the Profile sync summary.
 final salesPendingUploadsProvider = Provider<int>((ref) {
-  final orders = ref.watch(salesRepOrdersProvider).value ?? [];
-  final paymentsList = ref.watch(salesRepPaymentsProvider).value ?? [];
+  final orders = ref.watch(salesRepOrdersProvider).valueOrNull ?? [];
+  final paymentsList = ref.watch(salesRepPaymentsProvider).valueOrNull ?? [];
   return orders.where((o) => o.syncStatus == 'pending').length +
       paymentsList.where((p) => p.syncStatus == 'pending').length;
 });

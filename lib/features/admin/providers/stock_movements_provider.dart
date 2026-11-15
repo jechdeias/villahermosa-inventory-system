@@ -18,7 +18,7 @@ final stockMovementsSearchProvider = StateProvider<String>((ref) => '');
 
 /// Looks up a product by its uuid from the live products list.
 final productByUuidProvider = Provider.family<Product?, String>((ref, uuid) {
-  final products = ref.watch(productsStreamProvider).value ?? [];
+  final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
   for (final p in products) {
     if (p.uuid == uuid) return p;
   }
@@ -28,8 +28,8 @@ final productByUuidProvider = Provider.family<Product?, String>((ref, uuid) {
 final filteredStockMovementsProvider = Provider<List<StockMovement>>((ref) {
   final tab = ref.watch(stockMovementsTabProvider);
   final search = ref.watch(stockMovementsSearchProvider).toLowerCase();
-  final products = ref.watch(productsStreamProvider).value ?? [];
-  var list = ref.watch(stockMovementsStreamProvider).value ?? [];
+  final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
+  var list = ref.watch(stockMovementsStreamProvider).valueOrNull ?? [];
 
   if (tab == 'in' || tab == 'out') {
     list = list.where((m) => m.movementType == tab).toList();

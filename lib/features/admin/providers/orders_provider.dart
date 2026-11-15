@@ -63,7 +63,7 @@ final filteredOrdersProvider = Provider<List<Order>>((ref) {
   final tab = ref.watch(ordersTabProvider);
   final search = ref.watch(ordersSearchProvider).toLowerCase();
   final filters = ref.watch(ordersFilterProvider);
-  var list = ref.watch(ordersStreamProvider).value ?? [];
+  var list = ref.watch(ordersStreamProvider).valueOrNull ?? [];
 
   if (tab != null) {
     list = list.where((o) => o.status == tab).toList();

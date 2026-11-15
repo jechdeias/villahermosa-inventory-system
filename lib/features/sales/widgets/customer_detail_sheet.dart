@@ -25,11 +25,11 @@ class CustomerDetailSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final storeName = salesDisplayStoreName(customer);
-    final orders = (ref.watch(salesRepOrdersProvider).value ?? [])
+    final orders = (ref.watch(salesRepOrdersProvider).valueOrNull ?? [])
         .where((o) => o.storeName == storeName)
         .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final payments = (ref.watch(salesRepPaymentsProvider).value ?? [])
+    final payments = (ref.watch(salesRepPaymentsProvider).valueOrNull ?? [])
         .where((p) => p.storeName == storeName);
     final outstanding = payments.fold(0.0, (s, p) => s + p.balance);
     final lastOrder = orders.isEmpty ? null : orders.first;

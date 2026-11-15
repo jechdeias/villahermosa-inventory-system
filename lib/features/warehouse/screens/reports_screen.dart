@@ -15,11 +15,11 @@ class WarehouseReportsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (isFirstLoad(ref.watch(stockMovementsStreamProvider))) return const WhLoadingShell(route: WhRoutes.reports, statCards: 3);
-    final movements = ref.watch(stockMovementsStreamProvider).value ?? [];
-    final orders = ref.watch(ordersStreamProvider).value ?? [];
-    final routes = (ref.watch(deliveryRoutesStreamProvider).value ?? []).where((r) => r.status == 'active').toList();
+    final movements = ref.watch(stockMovementsStreamProvider).valueOrNull ?? [];
+    final orders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
+    final routes = (ref.watch(deliveryRoutesStreamProvider).valueOrNull ?? []).where((r) => r.status == 'active').toList();
     final lines = ref.watch(orderLinesByOrderProvider);
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
 
     final today = DateTime.now();
     final days = [for (var i = 6; i >= 0; i--) DateTime(today.year, today.month, today.day).subtract(Duration(days: i))];

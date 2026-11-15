@@ -82,10 +82,10 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
   @override
   Widget build(BuildContext context) {
     if (isFirstLoad(ref.watch(ordersStreamProvider))) return const WhLoadingShell(route: WhRoutes.prepare);
-    final orders = (ref.watch(ordersStreamProvider).value ?? []).where(needsPreparing).toList()
+    final orders = (ref.watch(ordersStreamProvider).valueOrNull ?? []).where(needsPreparing).toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     final byOrder = ref.watch(orderLinesByOrderProvider);
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
 
     Order? selected;
     for (final o in orders) {

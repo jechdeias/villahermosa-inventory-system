@@ -69,7 +69,7 @@ class _AddItemFormState extends ConsumerState<AddItemForm> {
       );
     }
 
-    final products = ref.watch(productsProvider).value ?? [];
+    final products = ref.watch(productsProvider).valueOrNull ?? [];
 
     return Container(
       padding: const EdgeInsets.all(12),

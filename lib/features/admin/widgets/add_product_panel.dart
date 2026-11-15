@@ -103,7 +103,7 @@ class _AddProductPanelState extends ConsumerState<AddProductPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final suppliers = ref.watch(suppliersStreamProvider).value ?? [];
+    final suppliers = ref.watch(suppliersStreamProvider).valueOrNull ?? [];
 
     return Container(
       decoration: const BoxDecoration(

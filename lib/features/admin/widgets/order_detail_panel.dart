@@ -363,7 +363,7 @@ class OrderDetailPanel extends ConsumerWidget {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () async {
-                final lines = itemsAsync.value ?? [];
+                final lines = itemsAsync.valueOrNull ?? [];
                 final doc = await buildOrderPdf(order, lines);
                 if (!context.mounted) return;
                 final messenger = ScaffoldMessenger.of(context);

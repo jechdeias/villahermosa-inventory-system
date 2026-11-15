@@ -20,8 +20,8 @@ class _WarehouseRoutesTodayScreenState extends ConsumerState<WarehouseRoutesToda
   @override
   Widget build(BuildContext context) {
     if (isFirstLoad(ref.watch(deliveryRoutesStreamProvider))) return const WhLoadingShell(route: WhRoutes.routesToday, statCards: 3);
-    final routes = (ref.watch(deliveryRoutesStreamProvider).value ?? []).where((r) => r.status == 'active').toList();
-    final orders = ref.watch(ordersStreamProvider).value ?? [];
+    final routes = (ref.watch(deliveryRoutesStreamProvider).valueOrNull ?? []).where((r) => r.status == 'active').toList();
+    final orders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
     final lines = ref.watch(orderLinesByOrderProvider);
 
     bool open(Order o) => !OrderStatus.isFinished(o.status);

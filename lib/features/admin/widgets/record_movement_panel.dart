@@ -75,7 +75,7 @@ class _RecordMovementPanelState extends ConsumerState<RecordMovementPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
 
     return Container(
       decoration: const BoxDecoration(

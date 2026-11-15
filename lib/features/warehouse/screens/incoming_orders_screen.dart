@@ -89,7 +89,7 @@ class _WarehouseIncomingOrdersScreenState extends ConsumerState<WarehouseIncomin
   @override
   Widget build(BuildContext context) {
     if (isFirstLoad(ref.watch(ordersStreamProvider))) return const WhLoadingShell(route: WhRoutes.incoming);
-    final all = ref.watch(ordersStreamProvider).value ?? [];
+    final all = ref.watch(ordersStreamProvider).valueOrNull ?? [];
     final q = _search.toLowerCase();
     final filtered = all.where((o) {
       if (_statusFilter != null && whOrderStatus(o) != _statusFilter) return false;

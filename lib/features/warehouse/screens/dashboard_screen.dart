@@ -16,8 +16,8 @@ class WarehouseDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (isFirstLoad(ref.watch(ordersStreamProvider))) return const WhLoadingShell(route: WhRoutes.dashboard, statCards: 4);
-    final orders = ref.watch(ordersStreamProvider).value ?? [];
-    final routes = ref.watch(deliveryRoutesStreamProvider).value ?? [];
+    final orders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
+    final routes = ref.watch(deliveryRoutesStreamProvider).valueOrNull ?? [];
     final lowStock = ref.watch(lowStockProductsProvider);
 
     final incoming = orders.where((o) => whOrderStatus(o) == 'pending').length;
@@ -111,9 +111,9 @@ class _RecentActivityCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final movements = ref.watch(stockMovementsStreamProvider).value ?? [];
-    final orders = ref.watch(ordersStreamProvider).value ?? [];
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final movements = ref.watch(stockMovementsStreamProvider).valueOrNull ?? [];
+    final orders = ref.watch(ordersStreamProvider).valueOrNull ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
 
     String nameOf(String uuid) {
       for (final p in products) {

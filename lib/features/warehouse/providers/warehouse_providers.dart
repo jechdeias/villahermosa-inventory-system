@@ -109,7 +109,7 @@ String currentUserName() {
 
 /// Open orders grouped by order uuid → their lines.
 final orderLinesByOrderProvider = Provider<Map<String, List<OrderItem>>>((ref) {
-  final items = ref.watch(orderItemsStreamProvider).value ?? [];
+  final items = ref.watch(orderItemsStreamProvider).valueOrNull ?? [];
   final map = <String, List<OrderItem>>{};
   for (final i in items) {
     map.putIfAbsent(i.orderId, () => []).add(i);
@@ -118,7 +118,7 @@ final orderLinesByOrderProvider = Provider<Map<String, List<OrderItem>>>((ref) {
 });
 
 final lowStockProductsProvider = Provider<List<Product>>((ref) {
-  final products = ref.watch(productsStreamProvider).value ?? [];
+  final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
   return products.where((p) => isLowStock(p) || isOutOfStock(p)).toList()
     ..sort((a, b) => a.currentStock.compareTo(b.currentStock));
 });

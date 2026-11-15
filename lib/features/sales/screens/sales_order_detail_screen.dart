@@ -23,7 +23,7 @@ class SalesOrderDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     Order? order;
-    for (final o in ref.watch(salesRepOrdersProvider).value ?? const <Order>[]) {
+    for (final o in ref.watch(salesRepOrdersProvider).valueOrNull ?? const <Order>[]) {
       if (o.uuid == orderUuid) order = o;
     }
 
@@ -35,7 +35,7 @@ class SalesOrderDetailScreen extends ConsumerWidget {
         actions: [
           if (order != null)
             Consumer(builder: (ctx, r, _) {
-              final lines = r.watch(orderLinesProvider(order!.uuid)).value ?? const <OrderItem>[];
+              final lines = r.watch(orderLinesProvider(order!.uuid)).valueOrNull ?? const <OrderItem>[];
               return IconButton(
                 icon: const Icon(Icons.picture_as_pdf_outlined),
                 tooltip: 'Export PDF',
@@ -65,7 +65,7 @@ class _Body extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lines = ref.watch(orderLinesProvider(order.uuid)).value ?? const <OrderItem>[];
+    final lines = ref.watch(orderLinesProvider(order.uuid)).valueOrNull ?? const <OrderItem>[];
     final outForDelivery = order.status == OrderStatus.outForDelivery;
     final method = paymentMethodFromNotes(order.customerNotes) ?? defaultPaymentMethod;
     final confirmedBy = deliveryMethodFromNotes(order.customerNotes);

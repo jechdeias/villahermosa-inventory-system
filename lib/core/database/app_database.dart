@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _isTestInstance;
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -171,6 +171,61 @@ class AppDatabase extends _$AppDatabase {
           'reference_type', 'status', 'is_active', 'remote_id',
         ]) {
           try { await customStatement('ALTER TABLE stock_movements DROP COLUMN $col'); } catch (_) {}
+        }
+      }
+      if (from < 15) {
+        // REPAIR, not a schema change. Some legacy rows hold NULL in columns
+        // Drift declares non-nullable. Drift's generated map() reads those with
+        // a `!`, so a single bad row throws "Null check operator used on a null
+        // value" inside $PaymentsTable.map. That kills the whole stream, the
+        // Riverpod provider caches the error, and from then on EVERY screen
+        // watching it renders grey — which is why one bad payment row made
+        // Payments, Customers and Orders all go blank until restart.
+        //
+        // Both current writers (the payments pull in sync_engine and
+        // createPayment in new_order_flow) already default every one of these,
+        // so nothing re-introduces NULLs; this only heals rows written before
+        // that was true. Defaults match what those two writers use.
+        final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        for (final sql in [
+          "UPDATE payments SET payment_id     = 'PAY-' || id WHERE payment_id     IS NULL",
+          "UPDATE payments SET order_id       = 0            WHERE order_id       IS NULL",
+          "UPDATE payments SET order_code     = ''           WHERE order_code     IS NULL",
+          "UPDATE payments SET store_name     = ''           WHERE store_name     IS NULL",
+          "UPDATE payments SET sales_rep_id   = 0            WHERE sales_rep_id   IS NULL",
+          "UPDATE payments SET sales_rep_name = ''           WHERE sales_rep_name IS NULL",
+          "UPDATE payments SET order_amount   = 0            WHERE order_amount   IS NULL",
+          "UPDATE payments SET amount_paid    = 0            WHERE amount_paid    IS NULL",
+          "UPDATE payments SET balance        = 0            WHERE balance        IS NULL",
+          "UPDATE payments SET status         = 'unpaid'     WHERE status         IS NULL",
+          "UPDATE payments SET sync_status    = 'pending'    WHERE sync_status    IS NULL",
+          "UPDATE payments SET is_deleted     = 0            WHERE is_deleted     IS NULL",
+          "UPDATE payments SET payment_date   = $now         WHERE payment_date   IS NULL",
+          "UPDATE payments SET created_at     = $now         WHERE created_at     IS NULL",
+          "UPDATE payments SET updated_at     = $now         WHERE updated_at     IS NULL",
+          // Same class of latent fault on the other tables a grey screen would
+          // take down. Cheap to run, and each is a no-op when already clean.
+          // Only genuinely non-nullable columns are listed — orders.store_name
+          // and the like are nullable by design and must keep their NULLs.
+          "UPDATE orders SET status      = 'pending' WHERE status      IS NULL",
+          "UPDATE orders SET sync_status = 'pending' WHERE sync_status IS NULL",
+          "UPDATE orders SET is_deleted  = 0         WHERE is_deleted  IS NULL",
+          "UPDATE orders SET subtotal    = 0         WHERE subtotal    IS NULL",
+          "UPDATE orders SET total_amount= 0         WHERE total_amount IS NULL",
+          "UPDATE orders SET item_count  = 0         WHERE item_count  IS NULL",
+          "UPDATE orders SET warehouse_status = 'pending' WHERE warehouse_status IS NULL",
+          "UPDATE order_items SET status = 'pending' WHERE status IS NULL",
+          "UPDATE order_items SET sync_status = 'pending' WHERE sync_status IS NULL",
+          "UPDATE order_items SET is_deleted = 0 WHERE is_deleted IS NULL",
+          "UPDATE customers SET name = '' WHERE name IS NULL",
+          "UPDATE customers SET municipality = '' WHERE municipality IS NULL",
+          "UPDATE customers SET province = 'Marinduque' WHERE province IS NULL",
+          "UPDATE customers SET store_type = 'Sari-Sari Store' WHERE store_type IS NULL",
+          "UPDATE customers SET contact_number = '' WHERE contact_number IS NULL",
+          "UPDATE customers SET sync_status = 'pending' WHERE sync_status IS NULL",
+          "UPDATE customers SET is_deleted = 0 WHERE is_deleted IS NULL",
+        ]) {
+          try { await customStatement(sql); } catch (_) {}
         }
       }
     },

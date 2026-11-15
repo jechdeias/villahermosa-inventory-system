@@ -13,7 +13,7 @@ class CustomerPaymentsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final paymentsAsync = ref.watch(customerPaymentsProvider);
-    final payments = [...(paymentsAsync.value ?? [])]..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+    final payments = [...(paymentsAsync.valueOrNull ?? [])]..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
     final balance = ref.watch(customerBalanceProvider);
     final paid = payments.fold<double>(0, (s, p) => s + p.amountPaid);
 

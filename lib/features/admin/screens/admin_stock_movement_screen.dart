@@ -99,8 +99,8 @@ class _StockMovementListColumn extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final movementsAsync = ref.watch(stockMovementsStreamProvider);
     if (isFirstLoad(movementsAsync)) return const ShimmerTablePage(statCards: 4);
-    final allMovements = movementsAsync.value ?? [];
-    final allProducts = ref.watch(productsStreamProvider).value ?? [];
+    final allMovements = movementsAsync.valueOrNull ?? [];
+    final allProducts = ref.watch(productsStreamProvider).valueOrNull ?? [];
 
     final totalCount = allMovements.length;
     final inCount = allMovements.where((m) => m.movementType == 'in').length;
@@ -164,8 +164,8 @@ class _StockMovementListColumn extends ConsumerWidget {
   Widget _buildContentCard(BuildContext context, WidgetRef ref) {
     final tab = ref.watch(stockMovementsTabProvider);
     final filtered = ref.watch(filteredStockMovementsProvider);
-    final allMovements = ref.watch(stockMovementsStreamProvider).value ?? [];
-    final allProducts = ref.watch(productsStreamProvider).value ?? [];
+    final allMovements = ref.watch(stockMovementsStreamProvider).valueOrNull ?? [];
+    final allProducts = ref.watch(productsStreamProvider).valueOrNull ?? [];
     final lowStockProductIds = allProducts.where((p) => p.currentStock <= p.minStock).map((p) => p.uuid).toSet();
 
     final tabs = [

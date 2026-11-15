@@ -35,7 +35,7 @@ final productsFilterProvider = StateProvider<ProductFilters>((ref) => const Prod
 
 /// Distinct product categories present in the live data, sorted alphabetically.
 final productCategoriesProvider = Provider<List<String>>((ref) {
-  final products = ref.watch(productsStreamProvider).value ?? [];
+  final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
   final categories = products.map((p) => p.category).toSet().toList();
   categories.sort();
   return categories;
@@ -45,7 +45,7 @@ final filteredProductsProvider = Provider<List<Product>>((ref) {
   final tab = ref.watch(productsTabProvider);
   final search = ref.watch(productsSearchProvider).toLowerCase();
   final filters = ref.watch(productsFilterProvider);
-  var list = ref.watch(productsStreamProvider).value ?? [];
+  var list = ref.watch(productsStreamProvider).valueOrNull ?? [];
 
   if (tab != null) {
     list = list.where((p) => p.category == tab).toList();
@@ -67,7 +67,7 @@ final filteredProductsProvider = Provider<List<Product>>((ref) {
 /// Looks up a supplier's display name by id from the live suppliers list.
 final supplierNameProvider = Provider.family<String, int?>((ref, supplierId) {
   if (supplierId == null) return '—';
-  final suppliers = ref.watch(suppliersStreamProvider).value ?? [];
+  final suppliers = ref.watch(suppliersStreamProvider).valueOrNull ?? [];
   for (final s in suppliers) {
     if (s.id == supplierId) return s.tradeName;
   }

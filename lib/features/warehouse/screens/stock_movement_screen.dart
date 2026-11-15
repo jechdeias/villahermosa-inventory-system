@@ -99,8 +99,8 @@ class _WarehouseStockMovementScreenState extends ConsumerState<WarehouseStockMov
   @override
   Widget build(BuildContext context) {
     if (isFirstLoad(ref.watch(productsStreamProvider))) return const WhLoadingShell(route: WhRoutes.stockMovement);
-    final products = ref.watch(productsStreamProvider).value ?? [];
-    final movements = <StockMovement>[...(ref.watch(stockMovementsStreamProvider).value ?? [])]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
+    final movements = <StockMovement>[...(ref.watch(stockMovementsStreamProvider).valueOrNull ?? [])]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return WarehouseShell(
       route: WhRoutes.stockMovement,

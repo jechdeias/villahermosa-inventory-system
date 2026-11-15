@@ -25,7 +25,7 @@ class _WarehouseReturnsScreenState extends ConsumerState<WarehouseReturnsScreen>
   }
 
   Future<void> _logReturn() async {
-    final products = ref.read(productsStreamProvider).value ?? [];
+    final products = ref.read(productsStreamProvider).valueOrNull ?? [];
     final qtyCtrl = TextEditingController();
     final sourceCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
@@ -138,9 +138,9 @@ class _WarehouseReturnsScreenState extends ConsumerState<WarehouseReturnsScreen>
   @override
   Widget build(BuildContext context) {
     if (isFirstLoad(ref.watch(stockMovementsStreamProvider))) return const WhLoadingShell(route: WhRoutes.returns, statCards: 3);
-    final products = ref.watch(productsStreamProvider).value ?? [];
+    final products = ref.watch(productsStreamProvider).valueOrNull ?? [];
     final weekAgo = DateTime.now().subtract(const Duration(days: 7));
-    final all = (ref.watch(stockMovementsStreamProvider).value ?? []).where((m) => returnTypeOf(m) != null).toList()
+    final all = (ref.watch(stockMovementsStreamProvider).valueOrNull ?? []).where((m) => returnTypeOf(m) != null).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     String nameOf(String uuid) {

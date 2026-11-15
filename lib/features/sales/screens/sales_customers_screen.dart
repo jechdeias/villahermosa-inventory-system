@@ -21,7 +21,7 @@ class _SalesCustomersScreenState extends ConsumerState<SalesCustomersScreen> {
   Widget build(BuildContext context) {
     final customers = ref.watch(myCustomersProvider);
     final loading = isFirstLoad(ref.watch(salesRepOrdersProvider));
-    final paymentsList = ref.watch(salesRepPaymentsProvider).value ?? [];
+    final paymentsList = ref.watch(salesRepPaymentsProvider).valueOrNull ?? [];
     final q = _query.toLowerCase();
     final filtered = q.isEmpty
         ? customers

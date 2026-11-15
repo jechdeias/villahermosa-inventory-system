@@ -26,7 +26,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
   @override
   Widget build(BuildContext context) {
     final ordersAsync = ref.watch(salesRepOrdersProvider);
-    final orders = ordersAsync.value ?? [];
+    final orders = ordersAsync.valueOrNull ?? [];
     final filtered = _filter == 'all' ? orders : orders.where((o) => o.status == _filter).toList();
 
     final tabs = [

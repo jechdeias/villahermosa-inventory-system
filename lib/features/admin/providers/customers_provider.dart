@@ -56,7 +56,7 @@ final filteredCustomersProvider = Provider<List<Customer>>((ref) {
   final tab = ref.watch(customersTabProvider);
   final search = ref.watch(customersSearchProvider).toLowerCase();
   final filters = ref.watch(customersFilterProvider);
-  var list = ref.watch(customersStreamProvider).value ?? [];
+  var list = ref.watch(customersStreamProvider).valueOrNull ?? [];
 
   if (tab != null) {
     list = list.where((c) => c.town == tab).toList();

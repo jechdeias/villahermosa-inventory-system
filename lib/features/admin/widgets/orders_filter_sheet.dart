@@ -88,7 +88,7 @@ class _OrdersFilterSheetState extends ConsumerState<OrdersFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final users = ref.watch(usersProvider).value ?? [];
+    final users = ref.watch(usersProvider).valueOrNull ?? [];
     final repNames = users
         .where((u) => u.role == 'sales_rep' || u.role == 'admin')
         .map((u) => '${u.firstName} ${u.lastName}'.trim())

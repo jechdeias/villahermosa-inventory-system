@@ -77,7 +77,7 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final outstanding = (ref.watch(salesRepPaymentsProvider).value ?? [])
+    final outstanding = (ref.watch(salesRepPaymentsProvider).valueOrNull ?? [])
         .where((p) => p.balance > 0)
         .toList();
 
