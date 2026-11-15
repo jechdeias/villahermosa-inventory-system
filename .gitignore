@@ -19,7 +19,11 @@ replay_pid*.log
 
 # Supabase credentials — copy secrets.json.example → secrets.json and fill in real values
 secrets.json
-lib/core/config/supabase_config.dart
+
+# NOTE: lib/core/config/supabase_config.dart used to be ignored here. It no
+# longer holds credentials — it reads them from --dart-define-from-file at
+# compile time — so it is committed. It must stay committed: lib/main.dart
+# imports it, so ignoring it makes a fresh clone fail to compile.
 
 # Supabase CLI local project-link cache (created by `supabase link`)
 supabase/.temp/
