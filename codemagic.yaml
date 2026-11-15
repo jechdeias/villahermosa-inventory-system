@@ -93,8 +93,29 @@ workflows:
       # are advisory, not breakage — failing the build on them hides the thing
       # this workflow exists to answer: does iOS compile? Real errors still
       # fail the step.
+      # Capture the analyzer output and report ERROR-level diagnostics
+      # explicitly. The --no-fatal-* flags alone were not enough, and because
+      # the analyzer prints errors first and infos last, the CI log tail showed
+      # only deprecation noise while the real failures scrolled off the top.
+      # This prints the errors directly and fails only on them.
       - name: flutter analyze (errors only)
-        script: flutter analyze --no-fatal-infos --no-fatal-warnings
+        script: |
+          set +e
+          flutter analyze --no-pub > analyze.txt 2>&1
+          set -e
+          echo "================ analyzer summary ================"
+          tail -n 3 analyze.txt
+          echo "============ ERROR-level diagnostics ============="
+          grep -E '^[[:space:]]*error' analyze.txt || echo "  (none)"
+          echo "=================================================="
+          echo "info/warning counts:"
+          echo "  warnings: $(grep -cE '^[[:space:]]*warning' analyze.txt || true)"
+          echo "  infos:    $(grep -cE '^[[:space:]]*info' analyze.txt || true)"
+          if grep -qE '^[[:space:]]*error' analyze.txt; then
+            echo ">>> Failing: error-level diagnostics above must be fixed."
+            exit 1
+          fi
+          echo ">>> No errors. Warnings and infos are not fatal here."
         ignore_failure: false
 
       - name: flutter test
