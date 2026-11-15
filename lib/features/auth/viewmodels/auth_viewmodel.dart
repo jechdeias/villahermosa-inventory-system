@@ -15,7 +15,9 @@ class AuthViewModel extends ChangeNotifier {
   final AuthRepository _authRepository;
 
   AuthViewModel(this._authService, [AppDatabase? database]) 
-    : _authRepository = AuthRepository(database ?? AppDatabase());
+    // NEVER `?? AppDatabase()`: that opens a SECOND SQLite connection to the
+    // same file and every sync write then fails with "database is locked".
+    : _authRepository = AuthRepository(database ?? AuthService.instance.database);
 
   /// Loading state for async operations.
   bool _isLoading = false;

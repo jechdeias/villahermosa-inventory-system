@@ -496,8 +496,22 @@ Future<void> _migratePasswordToBcrypt(String password, String oldHash) async {
   static AuthService? _instance;
   
   static AuthService get instance {
-    _instance ??= AuthService(AppDatabase());
-    return _instance!;
+    // This used to fall back to `AuthService(AppDatabase())`, which silently
+    // opened a SECOND SQLite connection to the same file. Two writers against
+    // one file is what produced the "database is locked" failures that made
+    // every sync write fail — invisibly, because _updateLocalRecord only
+    // debugPrints its errors. Failing loudly here is far cheaper to diagnose.
+    // main.dart and every test call initializeWithDatabase() first, so nothing
+    // legitimately needs a fallback.
+    final i = _instance;
+    if (i == null) {
+      throw StateError(
+        'AuthService.instance used before initializeWithDatabase(). Call '
+        'AuthService.initializeWithDatabase(database) during startup (see '
+        'main.dart) so the whole app shares one AppDatabase connection.',
+      );
+    }
+    return i;
   }
   
   /// Initialize with shared database instance (call from main.dart)

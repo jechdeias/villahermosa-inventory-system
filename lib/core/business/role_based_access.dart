@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../database/app_database.dart';
+import '../auth/auth_service.dart';
 
 /// Role-Based Access Control
 /// Enforces WHO can do WHAT and WHEN
@@ -7,7 +8,9 @@ class RoleBasedAccess {
   
   RoleBasedAccess(this._database);
   
-  RoleBasedAccess._() : _database = AppDatabase();
+  // Shared connection, not a new one — a second AppDatabase() against the same
+  // file makes every concurrent write fail with "database is locked".
+  RoleBasedAccess._() : _database = AuthService.instance.database;
   final AppDatabase _database;
   
   static RoleBasedAccess? _instance;

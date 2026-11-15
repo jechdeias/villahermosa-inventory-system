@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/auth/auth_service.dart';
 import '../../core/database/app_database.dart';
 import '../../shared/theme/app_theme.dart';
 import 'product_form_screen.dart';
@@ -23,7 +24,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   void initState() {
     super.initState();
-    _database = AppDatabase();
+    // Shared connection — see the note in role_based_access.dart.
+    _database = AuthService.instance.database;
     _loadProducts();
   }
 
