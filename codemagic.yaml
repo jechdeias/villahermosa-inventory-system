@@ -67,13 +67,16 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 45
     environment:
-      # Pinned, not `stable`. Floating stable put CI ~9 minor versions ahead of
-      # the dev machine: it deprecated package:flutter/material.dart (after
-      # v3.47.0-0.0.pre, ~145 infos) and failed 3 widget tests that pass
-      # locally. 3.38.4 is the floor recorded in pubspec.lock's `sdks:` block.
-      # TODO: replace with the dev machine's exact `flutter --version` output —
-      # the point is that CI tests the Flutter you actually ship.
-      flutter: 3.38.4
+      # Pinned to the dev machine's exact version (`flutter --version`:
+      # Flutter 3.47.7, Dart 3.13.5). Floating `stable` is AHEAD of this and
+      # failed 3 widget tests that pass locally, so CI was testing a Flutter
+      # this project does not ship. Do not change this to `stable` — change it
+      # when the dev machine upgrades, so the two stay in step.
+      #
+      # The ~145 `package:flutter/material.dart is deprecated` infos are NOT
+      # version drift: 3.47.7 is the release that deprecated it, so they appear
+      # locally too. The analyze step ignores infos by design.
+      flutter: 3.47.7
       xcode: latest
       cocoapods: default
       groups:
