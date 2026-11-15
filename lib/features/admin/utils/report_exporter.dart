@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -48,7 +49,7 @@ String _rangeLabel(ReportsRange range, DateTime? start, DateTime end) {
 
 // ─── PDF ──────────────────────────────────────────────────────────────────────
 
-Future<void> exportPdf({
+Future<String> exportPdf({
   required List<Order> orders,
   required List<Payment> payments,
   required List<ProductSales> topProducts,
@@ -432,12 +433,12 @@ Future<void> exportPdf({
   );
 
   final bytes = await pdf.save();
-  await _saveAndOpen(bytes, 'VillahermosaReport_${_stamp(generatedAt)}.pdf');
+  return _saveAndOpen(bytes, 'VillahermosaReport_${_stamp(generatedAt)}.pdf');
 }
 
 // ─── CSV ──────────────────────────────────────────────────────────────────────
 
-Future<void> exportCsv({
+Future<String> exportCsv({
   required List<Order> orders,
   required List<Payment> payments,
   required List<ProductSales> topProducts,
@@ -522,7 +523,7 @@ Future<void> exportCsv({
   }
 
   final bytes = Uint8List.fromList(buf.toString().codeUnits);
-  await _saveAndOpen(bytes, 'VillahermosaReport_${_stamp(now)}.csv');
+  return _saveAndOpen(bytes, 'VillahermosaReport_${_stamp(now)}.csv');
 }
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
@@ -543,15 +544,34 @@ String _stamp(DateTime d) =>
 String _fmtDateTime(DateTime d) =>
     '${_fmt(d)} ${d.hour.toString().padLeft(2,'0')}:${d.minute.toString().padLeft(2,'0')}';
 
-Future<void> _saveAndOpen(Uint8List bytes, String fileName) async {
-  final dir = await getApplicationDocumentsDirectory();
+/// Writes the export and returns its full path.
+///
+/// Desktop gets a file and nothing else: the buttons say "Export PDF" and
+/// "Export CSV", and opening a print or share dialog on top of a completed
+/// save is both confusing and, in the PDF case, how the warehouse Export PDF
+/// button ended up showing an EPSON print setup dialog instead of producing a
+/// file. Mobile still shares, because a path on an Android device is not
+/// something the user can act on.
+Future<String> _saveAndOpen(Uint8List bytes, String fileName) async {
+  final isDesktop = defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.linux ||
+      defaultTargetPlatform == TargetPlatform.macOS;
+
+  Directory? dir;
+  if (isDesktop) {
+    try {
+      dir = await getDownloadsDirectory();
+    } catch (_) {
+      // Desktop-only API; can throw on unusual setups.
+    }
+  }
+  dir ??= await getApplicationDocumentsDirectory();
+
   final file = File('${dir.path}${Platform.pathSeparator}$fileName');
   await file.writeAsBytes(bytes);
 
-  if (fileName.endsWith('.pdf')) {
-    // On desktop/mobile: open the native print/share dialog so the user
-    // can preview, save to a custom location, or print.
+  if (!isDesktop && fileName.endsWith('.pdf')) {
     await Printing.sharePdf(bytes: bytes, filename: fileName);
   }
-  // CSV: file is already written to documents dir; caller shows the path.
+  return file.path;
 }

@@ -474,8 +474,11 @@ class _DeliveryConfirmationViewState extends State<DeliveryConfirmationView>
                 deliveryAddress: widget.deliveryAddress,
                 deliveredAt: deliveredAt,
               );
-              if (ctx.mounted) {
-                await exportPdf(doc, 'DeliveryReceipt_${widget.deliveryId}.pdf');
+              if (!ctx.mounted) return;
+              final messenger = ScaffoldMessenger.of(ctx);
+              final path = await exportPdf(doc, 'DeliveryReceipt_${widget.deliveryId}.pdf');
+              if (path != null) {
+                messenger.showSnackBar(SnackBar(content: Text('PDF saved to $path')));
               }
             },
             child: const Text('Print Receipt'),

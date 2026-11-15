@@ -51,7 +51,12 @@ class CustomerOrderDetailScreen extends ConsumerWidget {
                         tooltip: 'Export receipt',
                         onPressed: () async {
                           final doc = await buildReceiptPdf(order!, lines);
-                          if (ctx.mounted) await exportPdf(doc, 'Receipt_${order!.orderNumber}.pdf');
+                          if (!ctx.mounted) return;
+                          final messenger = ScaffoldMessenger.of(ctx);
+                          final path = await exportPdf(doc, 'Receipt_${order!.orderNumber}.pdf');
+                          if (path != null) {
+                            messenger.showSnackBar(SnackBar(content: Text('PDF saved to $path')));
+                          }
                         },
                         icon: const Icon(Icons.receipt_long_outlined, size: 22, color: CcColors.text),
                       );

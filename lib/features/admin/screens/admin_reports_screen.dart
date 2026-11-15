@@ -187,7 +187,7 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
     setState(() => _loadingPdf = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await exportPdf(
+      final path = await exportPdf(
         orders:          ref.read(reportsOrdersProvider),
         payments:        ref.read(reportsPaymentsProvider),
         topProducts:     ref.read(topProductsProvider),
@@ -197,6 +197,7 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
         rangeStart:      ref.read(reportsRangeStartProvider),
         rangeEnd:        ref.read(reportsRangeEndProvider),
       );
+      messenger.showSnackBar(SnackBar(content: Text('PDF saved to $path')));
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('PDF export failed: $e')));
     } finally {
@@ -209,7 +210,7 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
     setState(() => _loadingCsv = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await exportCsv(
+      final path = await exportCsv(
         orders:      ref.read(reportsOrdersProvider),
         payments:    ref.read(reportsPaymentsProvider),
         topProducts: ref.read(topProductsProvider),
@@ -220,7 +221,7 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
       );
       final count = ref.read(reportsOrdersProvider).length;
       messenger.showSnackBar(SnackBar(
-        content: Text('CSV saved — $count orders exported'),
+        content: Text('CSV saved ($count orders) — $path'),
         backgroundColor: AppTheme.success,
       ));
     } catch (e) {

@@ -365,8 +365,11 @@ class OrderDetailPanel extends ConsumerWidget {
               onPressed: () async {
                 final lines = itemsAsync.value ?? [];
                 final doc = await buildOrderPdf(order, lines);
-                if (context.mounted) {
-                  await exportPdf(doc, 'Order_${order.orderNumber}.pdf');
+                if (!context.mounted) return;
+                final messenger = ScaffoldMessenger.of(context);
+                final path = await exportPdf(doc, 'Order_${order.orderNumber}.pdf');
+                if (path != null) {
+                  messenger.showSnackBar(SnackBar(content: Text('PDF saved to $path')));
                 }
               },
               icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),

@@ -41,7 +41,12 @@ class SalesOrderDetailScreen extends ConsumerWidget {
                 tooltip: 'Export PDF',
                 onPressed: () async {
                   final doc = await buildOrderPdf(order!, lines);
-                  if (ctx.mounted) await exportPdf(doc, 'Order_${order!.orderNumber}.pdf');
+                  if (!ctx.mounted) return;
+                  final messenger = ScaffoldMessenger.of(ctx);
+                  final path = await exportPdf(doc, 'Order_${order!.orderNumber}.pdf');
+                  if (path != null) {
+                    messenger.showSnackBar(SnackBar(content: Text('PDF saved to $path')));
+                  }
                 },
               );
             }),

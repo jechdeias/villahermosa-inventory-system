@@ -82,8 +82,14 @@ class WarehouseReportsScreen extends ConsumerWidget {
                 products: products,
                 weekStart: start,
               );
-              if (context.mounted) {
-                await exportPdf(doc, 'WarehouseReport_${start.year}${start.month.toString().padLeft(2, '0')}${start.day.toString().padLeft(2, '0')}.pdf');
+              if (!context.mounted) return;
+              final messenger = ScaffoldMessenger.of(context);
+              final path = await exportPdf(doc,
+                  'WarehouseReport_${start.year}${start.month.toString().padLeft(2, '0')}${start.day.toString().padLeft(2, '0')}.pdf');
+              // Desktop writes a file and returns its path; mobile opens the
+              // share sheet and returns null, which needs no message.
+              if (path != null) {
+                messenger.showSnackBar(SnackBar(content: Text('PDF saved to $path')));
               }
             },
           ),
