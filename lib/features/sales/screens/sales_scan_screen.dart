@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -24,7 +25,7 @@ class SalesScanScreen extends ConsumerStatefulWidget {
   ConsumerState<SalesScanScreen> createState() => _SalesScanScreenState();
 }
 
-class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTickerProviderStateMixin {
+class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   MobileScannerController? _controller;
   late final AnimationController _scanLine = AnimationController(vsync: this, duration: const Duration(milliseconds: 2200));
   final _manualCtrl = TextEditingController();
@@ -35,8 +36,32 @@ class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTi
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (scannerCameraSupported) {
+      // autoStart (default true in mobile_scanner 5.2.3) makes the MobileScanner
+      // widget call controller.start() itself, so we never start it manually here.
       _controller = MobileScannerController(formats: const [BarcodeFormat.qrCode], detectionSpeed: DetectionSpeed.noDuplicates);
+    }
+  }
+
+  /// MobileScanner's own lifecycle handling is skipped whenever the caller
+  /// supplies a controller (`if (widget.controller != null) return;`), so without
+  /// this a backgrounded app comes back to a black or frozen preview.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final controller = _controller;
+    if (controller == null) return;
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        // Stopping resets the torch, so keep the button in step.
+        if (_torchOn) setState(() => _torchOn = false);
+        unawaited(controller.stop());
+      case AppLifecycleState.resumed:
+        unawaited(controller.start());
+      case AppLifecycleState.detached:
+        break;
     }
   }
 
@@ -54,6 +79,7 @@ class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTi
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scanLine.dispose();
     _controller?.dispose();
     _manualCtrl.dispose();
@@ -139,12 +165,18 @@ class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTi
       backgroundColor: const Color(0xFF111111),
       body: Stack(
         children: [
-          if (_controller != null) Positioned.fill(child: MobileScanner(controller: _controller, onDetect: _onQRDetected)) else _buildManualEntryFallback(),
+          if (_controller != null) Positioned.fill(child: _buildCamera(_controller!)) else _buildManualEntryFallback(),
           Positioned.fill(
             child: IgnorePointer(
               child: AnimatedBuilder(
                 animation: _scanLine,
-                builder: (_, _) => CustomPaint(painter: ScannerOverlayPainter(scanProgress: _scanLine.value)),
+                // No scan window over a camera error: the dim would grey out the message.
+                builder: (_, _) => ListenableBuilder(
+                  listenable: _controller ?? _scanLine,
+                  builder: (_, _) => _controller?.value.error != null
+                      ? const SizedBox.shrink()
+                      : CustomPaint(painter: ScannerOverlayPainter(scanProgress: _scanLine.value)),
+                ),
               ),
             ),
           ),
@@ -209,6 +241,59 @@ class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTi
           ),
           if (_result != null) _buildResultOverlay(_result!),
         ],
+      ),
+    );
+  }
+
+  /// The camera preview. BoxFit.contain shows the sensor's whole field of view
+  /// (the default, cover, cropped and magnified it); the dimmed overlay still
+  /// covers the full screen. scanWindow comes from the SAME rect the overlay
+  /// paints ([ScannerOverlayPainter.windowFor], on the same-sized box), so the
+  /// drawn window and the analysed region cannot drift apart.
+  Widget _buildCamera(MobileScannerController controller) => LayoutBuilder(
+        builder: (context, constraints) => MobileScanner(
+          controller: controller,
+          onDetect: _onQRDetected,
+          fit: BoxFit.contain,
+          scanWindow: ScannerOverlayPainter.windowFor(constraints.biggest),
+          // Don't re-send the window to the platform for sub-8px layout changes.
+          scanWindowUpdateThreshold: 8,
+          placeholderBuilder: (context, _) => const ColoredBox(
+            color: Color(0xFF111111),
+            child: Center(child: CircularProgressIndicator(color: Colors.white54, strokeWidth: 2)),
+          ),
+          errorBuilder: (context, error, _) => _buildCameraError(error),
+        ),
+      );
+
+  Widget _buildCameraError(MobileScannerException error) {
+    final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
+    return ColoredBox(
+      color: const Color(0xFF111111),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(32, 0, 32, 120),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.videocam_off_outlined, size: 48, color: Colors.white54),
+              const SizedBox(height: 16),
+              Text(
+                denied ? 'Camera permission denied' : "Couldn't start the camera",
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                denied
+                    ? 'Allow camera access for this app in Settings, or type the order number instead.'
+                    : 'Use "Enter order number instead" below to confirm the delivery by typing it.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
