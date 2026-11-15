@@ -620,12 +620,14 @@ class SyncEngine {
       try {
 
         final data = _recordToMap(customer);
-
+        // Conflict on uuid, not the primary key: local id is a per-device
+        // autoincrement, so two devices both creating id=7 would otherwise
+        // overwrite each other. id is dropped so a new row gets its own
+        // server-side id instead of colliding with someone else's.
+        data.remove('id');
         await Supabase.instance.client
-
             .from('customers')
-
-            .upsert(data);
+            .upsert(data, onConflict: 'uuid');
 
         await _markRecordAsSynced(customer, customer.id.toString());
 
@@ -1250,6 +1252,10 @@ class SyncEngine {
 
   /// Utility methods
 
+  /// The push payload for a record. For tests.
+  @visibleForTesting
+  Map<String, dynamic> recordToPushMap(dynamic record) => _recordToMap(record);
+
   Map<String, dynamic> _recordToMap(dynamic record) {
 
     if (record is User) {
@@ -1355,9 +1361,8 @@ class SyncEngine {
       // fold into town/province defaults on the pull side instead.
 
       return {
-
         'id': record.id,
-
+        'uuid': record.uuid,
         'name': record.name,
 
         'email': record.email,

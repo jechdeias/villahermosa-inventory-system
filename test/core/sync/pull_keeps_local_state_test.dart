@@ -121,6 +121,23 @@ void roundTripTests() {
     });
   });
 
+  group('customers push', () {
+    test('the push payload carries the uuid (the upsert conflict key)', () async {
+      await db.createCustomer(CustomersCompanion.insert(
+        uuid: 'c-unique-1',
+        name: 'Nena',
+        municipality: 'Boac',
+        province: 'Marinduque',
+        storeType: 'Sari-Sari Store',
+        contactNumber: '0',
+      ));
+      final customer = await (db.select(db.customers)..where((t) => t.uuid.equals('c-unique-1'))).getSingle();
+      final map = engine.recordToPushMap(customer);
+      expect(map['uuid'], 'c-unique-1');
+      expect(map['name'], 'Nena');
+    });
+  });
+
   group('stock_movements uuid', () {
     Future<List<StockMovement>> all() => db.select(db.stockMovements).get();
 
