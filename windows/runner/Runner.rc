@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "villahermosa_inventory_system" "\0"
+            VALUE "CompanyName", "Villahermosa Marketing" "\0"
+            VALUE "FileDescription", "Villahermosa Marketing \x96 Inventory and Order Management" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "villahermosa_inventory_system" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "InternalName", "Villahermosa Marketing" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Villahermosa Marketing. All rights reserved." "\0"
             VALUE "OriginalFilename", "villahermosa_inventory_system.exe" "\0"
-            VALUE "ProductName", "villahermosa_inventory_system" "\0"
+            VALUE "ProductName", "Villahermosa Marketing" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
