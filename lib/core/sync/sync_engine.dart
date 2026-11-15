@@ -1962,8 +1962,11 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             subtotal: Value(_toDouble(data['total_price']) ??
                 ((_toDouble(data['unit_price']) ?? 0) * ((data['quantity'] as num?)?.toInt() ?? 0))),
             totalAmount: Value(_toDouble(data['total_price']) ?? 0),
-            status: Value(data['status'] as String? ?? 'pending'),
-            pickedAt: Value(_toDateTime(data['picked_at'])),
+            // status/picked_at are warehouse picking state. Supabase has no such
+            // columns (push never sends them), so a pull must keep what's local
+            // rather than reset it — otherwise every sync un-ticks the picklist.
+            status: Value(data['status'] as String? ?? existingOi?.status ?? 'pending'),
+            pickedAt: Value(_toDateTime(data['picked_at']) ?? existingOi?.pickedAt),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
             syncStatus: const Value('synced'),
             createdAt: Value(_toDateTime(data['created_at']) ?? DateTime.now()),
