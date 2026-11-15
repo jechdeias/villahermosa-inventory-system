@@ -12,7 +12,20 @@
           "package_name": "com.example.villahermosa_inventory_system"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "378436113717-ssorva47m8r8gi0fsjkjtbkqstshchkb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.villahermosa_inventory_system",
+            "certificate_hash": "792b8733f8addfc6c4f2b43f8171becdeb7a59cc"
+          }
+        },
+        {
+          "client_id": "378436113717-g8t37mbk9rm6162t5utlvpfgsga8rg51.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBePPSdZ1vbXuCjVUwCkK3G1A8e1tKqEhQ"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "378436113717-g8t37mbk9rm6162t5utlvpfgsga8rg51.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "378436113717-mcabfbccq0qkfefh5rt2maa3rn554g9n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.villahermosaInventorySystem"
+              }
+            }
+          ]
         }
       }
     }
