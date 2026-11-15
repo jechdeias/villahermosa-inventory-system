@@ -576,7 +576,13 @@ class _BottomBar extends StatelessWidget {
                   : Text(step < 2 ? 'Next' : 'Submit Order', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             ),
           ),
-          if (step == 2)
+          // "Save Draft" is hidden on purpose. _submit(asDraft: true) writes
+          // status 'draft', and nothing in the app can turn a draft back into
+          // 'pending': the warehouse filter excludes 'draft' and no screen can
+          // submit one, so tapping it would strand a real customer order.
+          // Before re-enabling: add a way to open a draft and submit it
+          // (draft -> pending). The asDraft code path is kept intact for that.
+          if (_kShowSaveDraft && step == 2)
             TextButton(
               onPressed: saving ? null : onSaveDraft,
               child: const Text('Save Draft', style: TextStyle(color: AppTheme.textMuted)),
@@ -586,3 +592,6 @@ class _BottomBar extends StatelessWidget {
     );
   }
 }
+
+// See the note above the Save Draft button before flipping this.
+const bool _kShowSaveDraft = false;
