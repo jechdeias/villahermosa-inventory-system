@@ -65,10 +65,16 @@ class _WarehousePrepareOrdersScreenState extends ConsumerState<WarehousePrepareO
     final file = File('${dir.path}/Picklist_${o.orderNumber}.pdf');
     await file.writeAsBytes(bytes);
     if (!mounted) return;
+    // sharePositionOrigin is REQUIRED on iPad — UIActivityViewController is
+    // presented as a popover there and throws without a source rect. Ignored
+    // on Android and iPhone, so it is safe to always pass.
+    final box = context.findRenderObject() as RenderBox?;
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path, mimeType: 'application/pdf')],
         subject: 'Picklist — ${o.orderNumber}',
+        sharePositionOrigin:
+            box == null ? null : box.localToGlobal(Offset.zero) & box.size,
       ),
     );
   }
