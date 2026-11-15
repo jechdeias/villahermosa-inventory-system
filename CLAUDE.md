@@ -41,6 +41,25 @@ Mixed, and drifted from the original plan. `provider` + `ChangeNotifier` was the
 | `supabase/functions/privileged-sync/index.ts` | Edge Function for privileged writes (user/supplier sync); holds the service key server-side only |
 | `supabase/rls_policies.sql` | RLS policies for every other table — run manually via the Supabase SQL Editor, not applied automatically |
 
+## Building and distributing
+
+```
+flutter build apk     --release --dart-define-from-file=secrets.json   # Android
+flutter build windows --release --dart-define-from-file=secrets.json   # Windows (admin)
+```
+The `--dart-define-from-file` flag is **mandatory**. `lib/core/config/supabase_config.dart` reads `SUPABASE_URL` and `SUPABASE_ANON_KEY` from it; without the flag the build succeeds and then fails at runtime with empty credentials.
+
+iOS cannot be built on Windows — Flutter requires macOS and Xcode. Builds run on Codemagic instead (`codemagic.yaml`); see §7.6 of the project documentation.
+
+**Known flaky Windows build failure — C1083, missing `cpp_client_wrapper` sources.** The Flutter cache is intact; the copy into `windows/flutter/ephemeral` just fails sometimes (antivirus is the usual suspect, unconfirmed). Deleting `ephemeral` alone is NOT enough. Fix:
+```
+Remove-Item -Recurse -Force windows\flutter\ephemeral, build\windows
+flutter build windows --release --dart-define-from-file=secrets.json
+```
+Both folders are generated and gitignored. Also close any running instance first, or the link step fails with LNK1104 because Windows locks a running exe.
+
+**Distributing the Windows app:** ship the whole `build\windows\x64\runner\Release\` folder (~44 MB), not just the 112 KB exe — it needs the DLLs and `data\` beside it. Zip the folder. The local database lives in the user's `Documents\`, not in the app folder, so replacing the folder to update the app does **not** lose local data or unsynced orders.
+
 ## Development conventions
 - Pass `AppDatabase` and `SyncManager` down through constructors; both are singletons initialised in `main.dart`.
 - Access the shared database in leaf widgets via `AuthService.instance.database`.
