@@ -193,11 +193,18 @@ class SyncManager {
       finalCounts.forEach((table, count) {
         recordsPulled += count - (initialCounts[table] ?? 0);
       });
-      debugPrint('Pull completed. Records pulled: $recordsPulled');
+      final failed = _syncEngine.pullFailureCount;
+      debugPrint('Pull completed. Records pulled: $recordsPulled, failed: $failed');
       return {
-        'success': true,
+        // A pull that silently dropped rows is not a success.
+        'success': failed == 0,
         'recordsPulled': recordsPulled,
-        'error': null,
+        'failedCount': failed,
+        'failedTables': Map<String, int>.from(_syncEngine.pullFailures),
+        'error': failed == 0
+            ? null
+            : '$failed record${failed == 1 ? '' : 's'} could not be saved '
+                '(${_syncEngine.pullFailures.entries.map((e) => '${e.key}: ${e.value}').join(', ')})',
         'timestamp': DateTime.now().toIso8601String(),
       };
     } catch (e) {
@@ -220,6 +227,7 @@ class SyncManager {
         'success': pushResult['success'] == true && pullResult['success'] == true,
         'recordsPushed': pushResult['recordsPushed'] ?? 0,
         'recordsPulled': pullResult['recordsPulled'] ?? 0,
+        'failedCount': pullResult['failedCount'] ?? 0,
         'error': pushResult['error'] ?? pullResult['error'],
         'timestamp': DateTime.now().toIso8601String(),
       };

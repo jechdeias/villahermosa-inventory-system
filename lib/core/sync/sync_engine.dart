@@ -44,6 +44,21 @@ class SyncEngine {
 
   final AppDatabase _database;
 
+  /// Rows (or whole tables) that failed to apply during the current/last pull,
+  /// keyed by table. Reset at the start of every [performPull].
+  final Map<String, int> pullFailures = {};
+
+  /// Total failures recorded by the current/last pull.
+  int get pullFailureCount => pullFailures.values.fold(0, (a, b) => a + b);
+
+  /// Applies one pulled row exactly as a pull does. For tests.
+  @visibleForTesting
+  Future<void> applyPulledRecord(String table, Map<String, dynamic> data) =>
+      _updateLocalRecord(table, data);
+
+  void _recordPullFailure(String table) =>
+      pullFailures[table] = (pullFailures[table] ?? 0) + 1;
+
   
 
   /// Protected access to database for implementations
@@ -115,7 +130,7 @@ class SyncEngine {
   /// Public entry point for pull operations  
 
   Future<void> performPull() async {
-
+    pullFailures.clear();
     await _pullRemoteChanges();
 
   }
@@ -263,6 +278,7 @@ class SyncEngine {
     } catch (e) {
 
       debugPrint('Skipping $tableName pull - table may not exist yet: $e');
+      _recordPullFailure(tableName);
 
     }
 
@@ -1696,6 +1712,23 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
   
 
+  /// Flags the local copy of a row that failed to pull so it is findable
+  /// ('error' rows are neither pending nor synced). Rows with local edits
+  /// still waiting to push are left alone so those edits are not stranded.
+  /// Best-effort: if the row doesn't exist locally yet there is nothing to flag
+  /// (the failure is still counted), and this must never throw.
+  Future<void> _markRowSyncError(String tableName, Object? uuid) async {
+    if (uuid is! String || uuid.isEmpty) return;
+    try {
+      await _database.customStatement(
+        "UPDATE $tableName SET sync_status = 'error' WHERE uuid = ? AND sync_status != 'pending'",
+        [uuid],
+      );
+    } catch (e) {
+      debugPrint('Could not flag $tableName/$uuid as sync error: $e');
+    }
+  }
+
   Future<void> _updateLocalRecord(String tableName, Map<String, dynamic> data) async {
 
     try {
@@ -2289,8 +2322,9 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
     } catch (e) {
 
       debugPrint('Error updating local record in $tableName: $e');
-
       debugPrint('Error stack: ${StackTrace.current}');
+      _recordPullFailure(tableName);
+      await _markRowSyncError(tableName, data['uuid']);
 
     }
 
