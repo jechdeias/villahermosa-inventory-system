@@ -123,20 +123,14 @@ workflows:
           echo ">>> No errors. Warnings and infos are not fatal here."
         ignore_failure: false
 
-      # TEMPORARILY non-blocking. Failures are still printed in full and the
-      # step is marked failed in the UI — they are NOT hidden. The reason: this
-      # workflow exists to answer one question, "does this project compile for
-      # iOS at all?", and that question has never been reached. On floating
-      # `stable` 3 of 119 tests failed (customer empty-cart empty state,
-      # warehouse dashboard at 1440px, and the default widget_test smoke test)
-      # while all passed on the dev machine, so they are suspected
-      # Flutter-version artefacts rather than real regressions.
-      # TODO: with Flutter now pinned, check whether these 3 still fail. If they
-      # pass, set ignore_failure back to false immediately. If they fail, fix
-      # them and then set it back to false. Do not leave this true.
+      # Blocking. This step was temporarily non-blocking while 3 tests failed on
+      # a floating Flutter `stable`. With Flutter pinned to 3.47.7 all tests pass
+      # locally; the one that really was broken (the default widget_test smoke
+      # test) was a genuine regression from AuthService.instance now throwing
+      # before initializeWithDatabase(), and is fixed.
       - name: flutter test
         script: flutter test
-        ignore_failure: true
+        ignore_failure: false
 
       # ios/Podfile and Podfile.lock do not exist yet — iOS has never been
       # built. `flutter precache --ios` + the build below generate them. If pod
