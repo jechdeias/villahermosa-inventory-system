@@ -1,7 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 import 'dart:ui' show ImageFilter;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -19,7 +19,12 @@ bool get scannerCameraSupported => !kIsWeb && (Platform.isAndroid || Platform.is
 /// code on the customer's order screen, or type the order number. Camera
 /// scanning only exists on Android / iOS; desktop gets manual entry.
 class SalesScanScreen extends ConsumerStatefulWidget {
-  const SalesScanScreen({super.key});
+  const SalesScanScreen({super.key, @visibleForTesting this.debugCamera});
+
+  /// Test seam: stands in for the camera on hosts that have none, so a test can
+  /// exercise the camera-present layout (where every child is Positioned) and see
+  /// the constraints and scanWindow the real camera would receive.
+  final Widget Function(BuildContext context, BoxConstraints constraints, Rect scanWindow)? debugCamera;
 
   @override
   ConsumerState<SalesScanScreen> createState() => _SalesScanScreenState();
@@ -163,9 +168,22 @@ class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTi
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF111111),
+      // StackFit.expand is load-bearing: Scaffold.body gives LOOSE constraints, and
+      // a loose Stack sizes itself to its largest NON-positioned child. Everything
+      // here is Positioned, so without expand the Stack collapsed to the header
+      // row's ~130px height and the camera, overlay and scanWindow all lived in a
+      // strip at the top of the screen.
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          if (_controller != null) Positioned.fill(child: _buildCamera(_controller!)) else _buildManualEntryFallback(),
+          if (widget.debugCamera != null)
+            Positioned.fill(
+              child: LayoutBuilder(builder: (ctx, c) => widget.debugCamera!(ctx, c, ScannerOverlayPainter.windowFor(c.biggest))),
+            )
+          else if (_controller != null)
+            Positioned.fill(child: _buildCamera(_controller!))
+          else
+            _buildManualEntryFallback(),
           Positioned.fill(
             child: IgnorePointer(
               child: AnimatedBuilder(
@@ -180,33 +198,41 @@ class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTi
               ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(children: [
-                IconButton(
-                  tooltip: 'Close',
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  style: IconButton.styleFrom(backgroundColor: Colors.white12),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const Expanded(
-                  child: Text('Scan QR Code', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                ),
-                if (_controller != null)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(children: [
                   IconButton(
-                    tooltip: 'Torch',
-                    icon: Icon(_torchOn ? Icons.flashlight_on : Icons.flashlight_off, color: Colors.white),
+                    tooltip: 'Close',
+                    icon: const Icon(Icons.close, color: Colors.white),
                     style: IconButton.styleFrom(backgroundColor: Colors.white12),
-                    onPressed: _toggleTorch,
-                  )
-                else
-                  const SizedBox(width: 48),
-              ]),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Expanded(
+                    child: Text('Scan QR Code', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                  if (_controller != null)
+                    IconButton(
+                      tooltip: 'Torch',
+                      icon: Icon(_torchOn ? Icons.flashlight_on : Icons.flashlight_off, color: Colors.white),
+                      style: IconButton.styleFrom(backgroundColor: Colors.white12),
+                      onPressed: _toggleTorch,
+                    )
+                  else
+                    const SizedBox(width: 48),
+                ]),
+              ),
             ),
           ),
+          // The bottom blocks clear the gesture bar / home indicator by adding the
+          // bottom inset. Hint sits 68px above the button (button ~48px tall), so
+          // the two never overlap.
           Positioned(
-            bottom: 100,
+            bottom: 100 + MediaQuery.paddingOf(context).bottom,
             left: 0,
             right: 0,
             child: Column(children: [
@@ -224,7 +250,7 @@ class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTi
             ]),
           ),
           Positioned(
-            bottom: 32,
+            bottom: 32 + MediaQuery.paddingOf(context).bottom,
             left: 24,
             right: 24,
             child: OutlinedButton.icon(
@@ -245,16 +271,21 @@ class _SalesScanScreenState extends ConsumerState<SalesScanScreen> with SingleTi
     );
   }
 
-  /// The camera preview. BoxFit.contain shows the sensor's whole field of view
-  /// (the default, cover, cropped and magnified it); the dimmed overlay still
-  /// covers the full screen. scanWindow comes from the SAME rect the overlay
-  /// paints ([ScannerOverlayPainter.windowFor], on the same-sized box), so the
-  /// drawn window and the analysed region cannot drift apart.
+  /// The camera preview, full-screen via BoxFit.cover (the conventional scanner
+  /// look). 987fe89 chose contain, but only because the Stack had collapsed to a
+  /// ~130px strip; at full height a 4:3 sensor under contain letterboxes to about
+  /// 411x548 with big black bands, which looks broken. Cover crops the sensor's
+  /// sides (about 40% of the width on a 20:9 phone) — acceptable because
+  /// scanWindow limits detection to the drawn window, which is inside the visible
+  /// area, so nothing is analysed that the user can't see. scanWindow comes from
+  /// the SAME rect the overlay paints ([ScannerOverlayPainter.windowFor], on a
+  /// box with the same full-screen constraints: both are Positioned.fill in the
+  /// StackFit.expand Stack), so the drawn window and the analysed region agree.
   Widget _buildCamera(MobileScannerController controller) => LayoutBuilder(
         builder: (context, constraints) => MobileScanner(
           controller: controller,
           onDetect: _onQRDetected,
-          fit: BoxFit.contain,
+          fit: BoxFit.cover,
           scanWindow: ScannerOverlayPainter.windowFor(constraints.biggest),
           // Don't re-send the window to the platform for sub-8px layout changes.
           scanWindowUpdateThreshold: 8,

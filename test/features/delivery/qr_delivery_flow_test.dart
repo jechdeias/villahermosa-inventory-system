@@ -403,6 +403,44 @@ void main() {
       await close(tester);
     });
 
+    testWidgets('camera layout fills the screen: button below the header, scan window inside the preview', (tester) async {
+      // Regression: Scaffold.body gives loose constraints, so a Stack whose only
+      // non-positioned child is the header collapsed to ~130px, and the camera,
+      // overlay and scanWindow were laid out inside that strip (scan window at
+      // negative y, button above the header's bottom). Desktop never hit it
+      // because its fallback child is non-positioned, so a stand-in camera is
+      // injected to get the camera-present layout.
+      tester.view.physicalSize = const Size(411, 914);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      BoxConstraints? seen;
+      Rect? window;
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          home: SalesScanScreen(debugCamera: (ctx, c, w) {
+            seen = c;
+            window = w;
+            return const ColoredBox(color: Colors.black);
+          }),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // The camera receives full-screen constraints.
+      expect(seen!.biggest, const Size(411, 914));
+      // The scan window lies entirely inside the preview bounds.
+      final preview = Offset.zero & seen!.biggest;
+      expect(preview.contains(window!.topLeft), isTrue);
+      expect(preview.contains(window!.bottomRight), isTrue);
+
+      final headerBottom = tester.getBottomLeft(find.byTooltip('Close')).dy;
+      final buttonTop = tester.getTopLeft(find.text('Enter order number instead')).dy;
+      expect(buttonTop, greaterThan(headerBottom), reason: 'button must be below the header row');
+      expect(buttonTop, greaterThan(914 / 2), reason: 'button belongs near the bottom of a 914px screen');
+      await close(tester);
+    });
+
     testWidgets('typing an order number confirms the delivery and shows what to collect', (tester) async {
       await addOrder('ORD-2408', status: 'out_for_delivery');
       await open(tester);
