@@ -1842,7 +1842,9 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             subtotal: Value(_toDouble(data['subtotal']) ?? 0),
             totalAmount: Value(_toDouble(data['total_amount']) ?? 0),
             warehouseStatus: Value(data['warehouse_status'] as String? ?? 'pending'),
-            packedAt: Value(_toDateTime(data['packed_at'])),
+            // packed_at is never pushed (Supabase has no such column), so a pull
+            // must keep the local value instead of resetting it to null.
+            packedAt: Value(_toDateTime(data['packed_at']) ?? existingOrder?.packedAt),
             expectedDeliveryDate: Value(_toDateTime(data['expected_delivery_date'])),
             actualDeliveryDate: Value(_toDateTime(data['actual_delivery_date'])),
             isDeleted: Value(data['is_deleted'] as bool? ?? false),
