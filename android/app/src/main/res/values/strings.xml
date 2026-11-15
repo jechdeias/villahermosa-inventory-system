@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="default_web_client_id">331867448304-saipigd6cpsquunjvv9r88cl3lidc127.apps.googleusercontent.com</string>
+    <!--
+      DO NOT add default_web_client_id here.
+
+      This file used to hard-code it as
+        331867448304-saipigd6cpsquunjvv9r88cl3lidc127.apps.googleusercontent.com
+      which belongs to a DIFFERENT Google Cloud project than this app's
+      (378436113717). The com.google.gms.google-services Gradle plugin
+      generates default_web_client_id from android/app/google-services.json,
+      and a hand-written copy in src/main/res overrides that generated value —
+      so Android resolved the wrong project's client id no matter what
+      google-services.json said. That was one of the reasons Google sign-in
+      failed with DEVELOPER_ERROR (code 10).
+
+      The web client id now lives in exactly two places, and they must match:
+        - android/app/google-services.json  (client_type 3, written by Firebase)
+        - serverClientId in lib/features/auth/viewmodels/auth_viewmodel.dart
+      Change it in Firebase, re-download google-services.json, and update the
+      Dart constant. Never reintroduce it as a resource here.
+    -->
 </resources>
