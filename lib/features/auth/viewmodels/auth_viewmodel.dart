@@ -103,8 +103,23 @@ class AuthViewModel extends ChangeNotifier {
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
         // Native Android flow — uses google_sign_in package.
+        //
+        // serverClientId, NOT clientId. google_sign_in IGNORES clientId on
+        // Android (it is an iOS/web parameter); the ID token's audience comes
+        // from serverClientId, and Supabase rejects a token whose audience it
+        // does not recognise. This must be the WEB client (client_type 3) from
+        // android/app/google-services.json, and the same value must be listed
+        // under Supabase → Authentication → Providers → Google → Authorized
+        // Client IDs.
+        //
+        // The previous value here began 331867448304-, which is a DIFFERENT
+        // Google Cloud project from this app's (378436113717). Combined with
+        // google-services.json having had no oauth_client entries at all, that
+        // is why Google sign-in failed with DEVELOPER_ERROR (code 10) in every
+        // build this feature has ever shipped in.
         final googleSignIn = GoogleSignIn(
-          clientId: '331867448304-saipigd6cpsquunjvv9r88cl3lidc127.apps.googleusercontent.com',
+          serverClientId:
+              '378436113717-g8t37mbk9rm6162t5utlvpfgsga8rg51.apps.googleusercontent.com',
           scopes: ['email', 'profile'],
         );
         final googleUser = await googleSignIn.signIn();
