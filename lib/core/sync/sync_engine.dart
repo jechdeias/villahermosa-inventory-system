@@ -1407,6 +1407,7 @@ class SyncEngine {
 
       return {
         'id': record.id,
+        'uuid': record.uuid,
         'product_id': record.productId,
         'movement_type': record.movementType,
         'quantity': record.quantity,

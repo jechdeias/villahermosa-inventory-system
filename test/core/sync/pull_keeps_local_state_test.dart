@@ -121,6 +121,27 @@ void roundTripTests() {
     });
   });
 
+  group('stock_movements uuid', () {
+    Future<List<StockMovement>> all() => db.select(db.stockMovements).get();
+
+    test('a pulled row with a real uuid keeps it', () async {
+      await engine.applyPulledRecord('stock_movements', {'id': 5, 'uuid': 'real-uuid', 'movement_type': 'in', 'quantity': 1});
+      final rows = await all();
+      expect(rows, hasLength(1));
+      expect(rows.single.uuid, 'real-uuid');
+    });
+
+    test('a pulled row with NULL uuid gets the synthetic fallback and is not duplicated', () async {
+      final row = {'id': 5, 'uuid': null, 'movement_type': 'in', 'quantity': 1};
+      await engine.applyPulledRecord('stock_movements', row);
+      await engine.applyPulledRecord('stock_movements', {...row, 'quantity': 3});
+      final rows = await all();
+      expect(rows, hasLength(1));
+      expect(rows.single.uuid, 'sb-stockmovement-5');
+      expect(rows.single.quantity, 3);
+    });
+  });
+
   group('orders delivery dates', () {
     test('NULL server dates keep local; server dates win', () async {
       await db.createOrder(OrdersCompanion.insert(
