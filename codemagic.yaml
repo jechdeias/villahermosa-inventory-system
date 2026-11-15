@@ -1,0 +1,176 @@
+# Codemagic CI — iOS (iPhone + iPad) builds for villahermosa_inventory_system
+#
+# WHY THIS EXISTS: the dev machine is Windows, which cannot build iOS at all.
+# Flutter requires macOS + Xcode for any Apple target. This config rents a
+# macOS machine from Codemagic so iOS can be compiled and tested without
+# owning a Mac.
+#
+# -----------------------------------------------------------------------------
+# SETUP (once, in the Codemagic web UI)
+# -----------------------------------------------------------------------------
+# 1. Add the repo, then create a variable group named "supabase" containing:
+#        SUPABASE_URL        https://wcpvkiapbsalzubpynzw.supabase.co
+#        SUPABASE_ANON_KEY   <the anon key — the PUBLIC one, never the service key>
+#    Mark both as SECURE. secrets.json is gitignored and never reaches CI, so
+#    these two vars are how the build gets its credentials; the step below
+#    rebuilds secrets.json from them at build time.
+#
+#    The ANON key is the only one that belongs here. The service-role key lives
+#    server-side in the privileged-sync Edge Function and must never be in a
+#    client build or a CI variable.
+#
+# 2. Run the `ios-compile-check` workflow first. It needs NO Apple Developer
+#    account and answers the one open question: does this project compile for
+#    iOS at all? Expect it to fail a few times on pods and deployment targets —
+#    that is normal for a first iOS build, not a sign of a broken project.
+#
+# 3. Only once that is green, set up `ios-testflight`. That one needs the
+#    $99/year Apple Developer Program, an App Store Connect API key, and a real
+#    bundle id (see BUNDLE ID below).
+#
+# -----------------------------------------------------------------------------
+# BUNDLE ID — blocks step 3, not step 2
+# -----------------------------------------------------------------------------
+# ios/Runner.xcodeproj still carries Flutter's placeholder:
+#     com.example.villahermosaInventorySystem
+# A "com.example.*" id cannot be registered with Apple, installed on a device,
+# or shipped. Change it in Xcode (Runner target → Signing & Capabilities) to
+# something you own, e.g. ph.villahermosa.inventory, and register that same id
+# in App Store Connect.
+#
+# -----------------------------------------------------------------------------
+
+definitions:
+  scripts:
+    - &write_secrets
+      name: Recreate secrets.json from CI variables
+      script: |
+        cat > secrets.json <<EOF
+        {
+          "SUPABASE_URL": "$SUPABASE_URL",
+          "SUPABASE_ANON_KEY": "$SUPABASE_ANON_KEY"
+        }
+        EOF
+        echo "secrets.json written ($(wc -c < secrets.json) bytes)"
+
+    - &pub_get
+      name: flutter pub get
+      script: flutter pub get
+
+workflows:
+
+  # ===========================================================================
+  # 1. COMPILE CHECK — no Apple account needed. Run this first.
+  # ===========================================================================
+  ios-compile-check:
+    name: iOS compile check (unsigned)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - supabase
+    scripts:
+      - *write_secrets
+      - *pub_get
+
+      - name: flutter analyze
+        script: flutter analyze
+        ignore_failure: false
+
+      - name: flutter test
+        script: flutter test
+        ignore_failure: false
+
+      # ios/Podfile and Podfile.lock do not exist yet — iOS has never been
+      # built. `flutter precache --ios` + the build below generate them. If pod
+      # resolution fails on a minimum-version complaint, raise
+      # IPHONEOS_DEPLOYMENT_TARGET (currently 13.0) in Xcode and in the
+      # Podfile's `platform :ios` line, then commit both.
+      - name: Install CocoaPods dependencies
+        script: |
+          flutter precache --ios
+          find . -name "Podfile" -execdir pod install \; || true
+
+      - name: Build unsigned iOS
+        script: |
+          flutter build ios \
+            --release \
+            --no-codesign \
+            --dart-define-from-file=secrets.json
+    artifacts:
+      - build/ios/iphoneos/*.app
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - shaneparpar@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ===========================================================================
+  # 2. TESTFLIGHT — needs the Apple Developer Program + a real bundle id.
+  #    Fill in the commented values before enabling.
+  # ===========================================================================
+  ios-testflight:
+    name: iOS TestFlight (iPhone + iPad)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: codemagic   # name of the API key added in the UI
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - supabase
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.example.villahermosaInventorySystem  # <-- CHANGE ME
+      vars:
+        APP_STORE_APPLE_ID: 0000000000   # <-- numeric id from App Store Connect
+    scripts:
+      - *write_secrets
+      - *pub_get
+
+      - name: Set up signing certificates
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+
+      - name: Install CocoaPods dependencies
+        script: |
+          flutter precache --ios
+          find . -name "Podfile" -execdir pod install \;
+
+      - name: Build signed IPA
+        script: |
+          flutter build ipa \
+            --release \
+            --dart-define-from-file=secrets.json \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # Add the client's Apple IDs as internal testers in App Store Connect,
+        # then list the tester group(s) here:
+        # beta_groups:
+        #   - Villahermosa staff
+      email:
+        recipients:
+          - shaneparpar@gmail.com
+        notify:
+          success: true
+          failure: true
