@@ -243,8 +243,9 @@ void main() {
 
       // Mark it synced to prove dispatch re-flags it for sync.
       await (db.update(db.orders)..where((t) => t.id.equals(o.id))).write(const OrdersCompanion(syncStatus: Value('synced')));
-      final n = await actions.dispatchOrders([await byNumber('ORD-W')]);
-      expect(n, 1);
+      final result = await actions.dispatchOrders([await byNumber('ORD-W')]);
+      expect(result.count, 1);
+      expect(result.hasFailures, isFalse);
       o = await byNumber('ORD-W');
       expect(o.status, 'out_for_delivery');
       expect(o.syncStatus, 'pending');
