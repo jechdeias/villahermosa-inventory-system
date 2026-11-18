@@ -1288,9 +1288,6 @@ class SyncEngine {
         'is_active': record.isActive,
 
         'is_deleted': record.isDeleted,
-
-        'sync_status': record.syncStatus,
-
         'created_at': record.createdAt.toIso8601String(),
 
         'updated_at': record.updatedAt.toIso8601String(),
@@ -1341,9 +1338,6 @@ class SyncEngine {
         'qty_per_case': record.qtyPerCase,
 
         'is_deleted': record.isDeleted,
-
-        'sync_status': record.syncStatus,
-
         'created_at': record.createdAt.toIso8601String(),
 
         'updated_at': record.updatedAt.toIso8601String(),
@@ -1387,9 +1381,6 @@ class SyncEngine {
         'channel': record.channel,
 
         'is_deleted': record.isDeleted,
-
-        'sync_status': record.syncStatus,
-
         'created_at': record.createdAt.toIso8601String(),
 
         'updated_at': record.updatedAt.toIso8601String(),
@@ -1421,7 +1412,6 @@ class SyncEngine {
         'quantity': record.quantity,
         'notes': record.notes,
         'created_by': record.createdBy,
-        'sync_status': record.syncStatus,
         'created_at': record.createdAt.toIso8601String(),
         'updated_at': record.updatedAt.toIso8601String(),
         'reason': record.reason,
@@ -1473,9 +1463,6 @@ class SyncEngine {
         'notes': record.notes,
 
         'is_deleted': record.isDeleted,
-
-        'sync_status': record.syncStatus,
-
         'created_at': record.createdAt.toIso8601String(),
 
         'updated_at': record.updatedAt.toIso8601String(),
@@ -1508,7 +1495,6 @@ class SyncEngine {
         'notes': record.customerNotes,
         'delivery_address': record.deliveryAddress,
         'is_deleted': record.isDeleted,
-        'sync_status': record.syncStatus,
         'created_at': record.createdAt.toIso8601String(),
         'updated_at': record.updatedAt.toIso8601String(),
         'order_number': record.orderNumber,
@@ -1542,7 +1528,6 @@ class SyncEngine {
         'status': record.status,
         'picked_at': record.pickedAt?.toIso8601String(),
         'is_deleted': record.isDeleted,
-        'sync_status': record.syncStatus,
         'created_at': record.createdAt.toIso8601String(),
         'updated_at': record.updatedAt.toIso8601String(),
       };
@@ -1580,7 +1565,6 @@ class SyncEngine {
         'delivery_coordinates': record.deliveryCoordinates,
         'is_active': record.isActive,
         'is_deleted': record.isDeleted,
-        'sync_status': record.syncStatus,
         'created_at': record.createdAt.toIso8601String(),
         'updated_at': record.updatedAt.toIso8601String(),
 
@@ -1602,9 +1586,6 @@ class SyncEngine {
         'trade_name': record.tradeName,
 
         'is_deleted': record.isDeleted,
-
-        'sync_status': record.syncStatus,
-
         'created_at': record.createdAt.toIso8601String(),
 
         'updated_at': record.updatedAt.toIso8601String(),
@@ -1624,7 +1605,6 @@ class SyncEngine {
         'customer_count': record.customerCount,
         'status': record.status,
         'is_deleted': record.isDeleted,
-        'sync_status': record.syncStatus,
         'created_at': record.createdAt.toIso8601String(),
         'updated_at': record.updatedAt.toIso8601String(),
       };
@@ -2195,7 +2175,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
                 data['is_deleted'] as bool? ?? false),
 
               Variable.withString(
-                data['sync_status'] as String? ?? 'synced'),
+                'synced' /* device-local: a pulled row is synced here, whatever the server says */),
 
               Variable.withInt(
                 _toUnixTimestamp(data['updated_at'])),
@@ -2232,7 +2212,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
               Variable.withBool(data['is_deleted'] as bool? ?? false),
 
-              Variable.withString(data['sync_status'] as String? ?? 'synced'),
+              Variable.withString('synced' /* device-local: a pulled row is synced here, whatever the server says */),
 
               Variable.withInt(_toUnixTimestamp(data['updated_at'])),
 
@@ -2328,7 +2308,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
                 data['is_deleted'] as bool? ?? false),
 
               Variable.withString(
-                data['sync_status'] as String? ?? 'synced'),
+                'synced' /* device-local: a pulled row is synced here, whatever the server says */),
 
               Variable.withBool(
                 data['force_password_change'] as bool? ?? false),
@@ -2367,7 +2347,7 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
 
               Variable.withBool(data['is_deleted'] as bool? ?? false),
 
-              Variable.withString(data['sync_status'] as String? ?? 'synced'),
+              Variable.withString('synced' /* device-local: a pulled row is synced here, whatever the server says */),
 
               Variable.withInt(_toUnixTimestamp(data['created_at'])),
 

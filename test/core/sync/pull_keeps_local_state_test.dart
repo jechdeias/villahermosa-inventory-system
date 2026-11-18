@@ -17,6 +17,7 @@ import 'package:villahermosa_inventory_system/features/warehouse/providers/wareh
 void main() {
   group('round trip', roundTripTests);
   group('sync invariants', syncInvariantTests);
+  group('sync_status never round-trips through the server', syncStatusRoundTripTests);
 
   late AppDatabase db;
   late SyncEngine engine;
@@ -421,6 +422,122 @@ void syncInvariantTests() {
       m.holdPush!.complete();
       await Future.wait([cycle, full]);
       expect(m.pushes, 2);
+    });
+  });
+}
+
+/// sync_status is DEVICE-LOCAL bookkeeping. The push maps used to send the local
+/// value, so a row pushed while 'pending' stored 'pending' on the server; the
+/// push then marked the row synced locally only, the pull read 'pending' back,
+/// wrote it into the local row, and the next cycle pushed it again — forever
+/// ("18 users" dropping after each push and climbing straight back).
+void syncStatusRoundTripTests() {
+  late AppDatabase db;
+  late SyncEngine engine;
+
+  setUp(() {
+    db = AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
+    engine = SyncEngine(db);
+  });
+  tearDown(() => db.close());
+
+  Future<User> addUser(String uuid) async {
+    await db.createUser(UsersCompanion.insert(
+        uuid: uuid, firstName: 'A', lastName: 'B', email: '$uuid@vm.com', passwordHash: 'x', role: 'customer')); // pending
+    return (await db.getUserByEmail('$uuid@vm.com'))!;
+  }
+
+  // What SyncEngine._markRecordAsSynced does after a successful push.
+  Future<void> markSynced(String table, int id) => db.customUpdate('UPDATE $table SET sync_status = ? WHERE id = ?',
+      variables: [Variable.withString('synced'), Variable.withInt(id)], updates: {});
+
+  Future<int> pendingTotal() async => (await db.getPendingCounts()).values.fold<int>(0, (a, b) => a + b);
+
+  group('push', () {
+    test('no push payload carries the local sync_status', () async {
+      final user = await addUser('u1');
+      await db.createProduct(ProductsCompanion.insert(
+          uuid: 'p1', sku: 'S', name: 'N', category: 'c', unitPrice: 1, costPrice: 1, unit: 'pc', currentStock: 1, minStock: 0));
+      await db.createCustomer(CustomersCompanion.insert(
+          uuid: 'c1', name: 'N', municipality: 'm', province: 'p', storeType: 's', contactNumber: '0'));
+      await db.createOrder(OrdersCompanion.insert(uuid: 'o1', customerId: 'c', orderNumber: 'ORD-1', deliveryAddress: 'x'));
+      await db.into(db.orderItems).insert(OrderItemsCompanion.insert(
+          uuid: 'oi1', orderId: 'o1', productId: 'p1', productSku: 'S', productName: 'N', quantity: 1, unitPrice: 1, subtotal: 1, totalAmount: 1));
+      await db.adjustProductStock(productUuid: 'p1', delta: 1, reason: 'r', userUuid: 'u', userName: 'U');
+      await db.createDeliveryRoute(DeliveryRoutesCompanion.insert(
+          uuid: 'r1', routeName: 'R', municipality: 'm', assignedRepName: const Value('rep'), deliveryDays: 'Mon', customerCount: const Value(1)));
+      await db.into(db.suppliers).insert(SuppliersCompanion.insert(uuid: 's1', tradeName: 'T', syncStatus: const Value('pending')));
+
+      final rows = <Object>[
+        user,
+        (await db.getAllProducts()).single,
+        (await db.getAllCustomers()).single,
+        (await db.getOrderById('o1'))!,
+        (await db.getOrderItemById('oi1'))!,
+        (await db.select(db.stockMovements).get()).single,
+        (await db.select(db.deliveryRoutes).get()).single,
+        (await db.select(db.suppliers).get()).single,
+      ];
+      for (final r in rows) {
+        expect(engine.recordToPushMap(r).containsKey('sync_status'), isFalse,
+            reason: '${r.runtimeType} payload must not carry the device-local sync_status');
+      }
+    });
+  });
+
+  group('pull', () {
+    test('users: a server row that says "pending" is written as synced', () async {
+      await engine.applyPulledRecord('users', {
+        'id': 41, 'uuid': 'su-1', 'first_name': 'S', 'last_name': 'T', 'email': 'su1@vm.com',
+        'password_hash': 'x', 'role': 'customer', 'sync_status': 'pending',
+        'created_at': '2026-01-01T00:00:00Z', 'updated_at': '2026-01-01T00:00:00Z',
+      });
+      expect((await db.getUserByEmail('su1@vm.com'))!.syncStatus, 'synced', reason: 'insert path');
+
+      await engine.applyPulledRecord('users', {
+        'id': 41, 'uuid': 'su-1', 'first_name': 'S2', 'last_name': 'T', 'email': 'su1@vm.com',
+        'password_hash': 'x', 'role': 'customer', 'sync_status': 'pending',
+        'created_at': '2026-01-01T00:00:00Z', 'updated_at': '2026-01-02T00:00:00Z',
+      });
+      final u = (await db.getUserByEmail('su1@vm.com'))!;
+      expect(u.firstName, 'S2', reason: 'the update was applied');
+      expect(u.syncStatus, 'synced', reason: 'update path');
+    });
+
+    test('suppliers: a server row that says "pending" is written as synced', () async {
+      for (final round in [1, 2]) {
+        await engine.applyPulledRecord('suppliers', {
+          'id': 7, 'uuid': 'sup-7', 'trade_name': 'Round $round', 'sync_status': 'pending',
+          'created_at': '2026-01-01T00:00:00Z', 'updated_at': '2026-01-0${round}T00:00:00Z',
+        });
+        final sup = await (db.select(db.suppliers)..where((t) => t.uuid.equals('sup-7'))).getSingle();
+        expect(sup.syncStatus, 'synced', reason: 'round $round');
+      }
+    });
+  });
+
+  group('regression: the permanent loop', () {
+    test('push a pending user, mark it synced, pull the same row back: the pending count reaches zero and stays there', () async {
+      final user = await addUser('loop');
+      expect(await pendingTotal(), 1);
+
+      // PUSH: what Supabase stores is exactly the payload. (Before the fix that
+      // included 'sync_status': 'pending'.)
+      final payload = Map<String, dynamic>.from(engine.recordToPushMap(user))
+        ..['id'] = user.id
+        ..['created_at'] = user.createdAt.toIso8601String()
+        ..['updated_at'] = user.updatedAt.toIso8601String();
+
+      // The push succeeds and marks the row synced locally.
+      await markSynced('users', user.id);
+      await db.customStatement("SELECT 1"); // flush
+      expect(await pendingTotal(), 0, reason: 'after the push');
+
+      // PULL: the same row comes back from the server.
+      await engine.applyPulledRecord('users', payload);
+
+      expect((await db.getUserByEmail('loop@vm.com'))!.syncStatus, 'synced', reason: 'the pull must not resurrect "pending"');
+      expect(await pendingTotal(), 0, reason: 'and the next cycle has nothing to push');
     });
   });
 }
