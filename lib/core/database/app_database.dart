@@ -326,6 +326,56 @@ class AppDatabase extends _$AppDatabase {
           updatedAt: Value(DateTime.now()),
         )) > 0;
 
+  /// Every table that syncs, by SQL name. Order is display order.
+  static const syncedTableNames = [
+    'users', 'products', 'customers', 'orders', 'order_items',
+    'stock_movements', 'payments', 'deliveries', 'delivery_routes', 'suppliers',
+  ];
+
+  /// Live count of rows waiting to push (sync_status = 'pending'), per table.
+  /// Tables with nothing pending are omitted.
+  ///
+  /// ONE customSelect, a UNION ALL of ten COUNT(*) queries, watching all ten
+  /// tables: a device with hundreds of pending rows re-runs ten counts on a
+  /// write instead of materialising and summing ten lists. (Drift reruns it on
+  /// any write to those tables; `distinct` stops identical counts rebuilding
+  /// listeners.) Soft-deleted rows count too — they still have to push.
+  Stream<Map<String, int>> watchPendingCounts() => _pendingCountsQuery().watch().map(_pendingCountsOf).distinct((a, b) {
+      if (a.length != b.length) return false;
+      for (final e in a.entries) {
+        if (b[e.key] != e.value) return false;
+      }
+      return true;
+    });
+
+  /// One-shot version of [watchPendingCounts]. It always hits the database —
+  /// unlike `watchPendingCounts().first`, which Drift may answer from the shared
+  /// stream's cached last value (stale after a write Drift didn't see).
+  Future<Map<String, int>> getPendingCounts() async => _pendingCountsOf(await _pendingCountsQuery().get());
+
+  Selectable<QueryRow> _pendingCountsQuery() {
+    final sql = syncedTableNames
+        .map((t) => "SELECT '$t' AS t, COUNT(*) AS n FROM $t WHERE sync_status = 'pending'")
+        .join(' UNION ALL ');
+    return customSelect(sql, readsFrom: {
+      users, products, customers, orders, orderItems,
+      stockMovements, payments, deliveries, deliveryRoutes, suppliers,
+    });
+  }
+
+  Map<String, int> _pendingCountsOf(List<QueryRow> rows) {
+    final out = <String, int>{};
+    for (final r in rows) {
+      final n = r.read<int>('n');
+      if (n > 0) out[r.read<String>('t')] = n;
+    }
+    return out;
+  }
+
+  /// Total pending rows across all synced tables (see [watchPendingCounts]).
+  Stream<int> watchPendingCount() =>
+      watchPendingCounts().map((m) => m.values.fold(0, (a, b) => a + b)).distinct();
+
   Future<List<User>> getPendingSyncUsers() async => (select(users)..where((t) => t.syncStatus.equals('pending'))).get();
 
   // Stream methods for real-time updates

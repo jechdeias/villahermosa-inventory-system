@@ -24,15 +24,12 @@ class WarehouseDashboardScreen extends ConsumerWidget {
     final toPrepare = orders.where(needsPreparing).length;
     final activeRoutes = routes.where((r) => r.status == 'active').length;
 
-    final synced = lastSyncTime();
-
     return WarehouseShell(
       route: WhRoutes.dashboard,
       child: WhPage(children: [
         WhPageHeader(
           title: 'Warehouse Dashboard',
           subtitle: 'Villahermosa Marketing - Warehouse Operations',
-          trailing: _SyncChip(lastSync: synced),
         ),
         WhStatRow(cards: [
           WhStatCard(label: 'Incoming Orders', value: '$incoming', sub: 'Orders to receive', dotColor: WhColors.blue),
@@ -60,38 +57,6 @@ class WarehouseDashboardScreen extends ConsumerWidget {
           ),
         ),
       ]),
-    );
-  }
-}
-
-class _SyncChip extends StatelessWidget {
-  const _SyncChip({required this.lastSync});
-  final DateTime? lastSync;
-
-  @override
-  Widget build(BuildContext context) {
-    final ok = lastSync != null;
-    final color = ok ? WhColors.green : WhColors.amber;
-    final label = lastSync == null
-        ? 'Not synced yet'
-        : isSameDay(lastSync!, DateTime.now())
-            ? 'Last sync: Today, ${formatClock(lastSync!)}'
-            : 'Last sync: ${formatDate(lastSync!)}, ${formatClock(lastSync!)}';
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 10,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(color: ok ? AppTheme.successLight : AppTheme.warningLight, borderRadius: BorderRadius.circular(20)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-            const SizedBox(width: 6),
-            Text(ok ? 'Synced' : 'Pending', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
-          ]),
-        ),
-        Text(label, style: const TextStyle(fontSize: 12, color: WhColors.muted)),
-      ],
     );
   }
 }

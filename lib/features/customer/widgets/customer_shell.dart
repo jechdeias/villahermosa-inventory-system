@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/sync_status_indicator.dart';
 import '../providers/customer_providers.dart';
 import 'customer_common.dart';
 
@@ -53,7 +54,7 @@ class CustomerShell extends ConsumerWidget {
       backgroundColor: CcColors.page,
       body: SafeArea(
         bottom: false,
-        child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560), child: child)),
+        child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560), child: SyncStatusStrip(child: child))),
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: CcColors.border))),

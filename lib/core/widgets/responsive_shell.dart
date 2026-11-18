@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
+import '../database/app_database.dart';
 import '../theme/villahermosa_theme.dart';
 import '../theme/app_theme.dart';
+import 'sync_status_indicator.dart';
 
 class ResponsiveShell extends StatefulWidget {
   const ResponsiveShell({
@@ -121,6 +123,11 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
     );
   }
 
+  /// `database` is typed dynamic on the shell; hand the indicator an AppDatabase
+  /// or null (it then falls back to the shared one).
+  AppDatabase? get _appDatabase =>
+    widget.database is AppDatabase ? widget.database as AppDatabase : null;
+
   bool get _isMobile =>
     MediaQuery.of(context).size.width < 768;
 
@@ -154,6 +161,22 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
                       const Divider(
                         color: AppTheme.sidebarActive, height: 1),
                       Expanded(child: _buildNavItems()),
+                      // Global sync status: pending count, not connection state.
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: _sidebarExpanded ? 12 : 0,
+                          vertical: 10),
+                        child: Align(
+                          alignment: _sidebarExpanded
+                            ? Alignment.centerLeft
+                            : Alignment.center,
+                          child: SyncStatusIndicator(
+                            database: _appDatabase,
+                            onDark: true,
+                            dotOnly: !_sidebarExpanded,
+                          ),
+                        ),
+                      ),
                       const Divider(
                         color: AppTheme.sidebarActive, height: 1),
                       _buildLogout(),
@@ -357,6 +380,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
             fontWeight: FontWeight.w600,
             color: VillahermosaColors.textPrimary)),
         actions: [
+          SyncStatusIndicator(database: _appDatabase),
           IconButton(
             icon: const Icon(Icons.menu,
               color: VillahermosaColors.textPrimary),

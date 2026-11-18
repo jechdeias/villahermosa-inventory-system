@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/sync_status_indicator.dart';
 
 /// Shared mobile shell for the sales rep role: a bottom nav bar wrapping
 /// whichever /sales/* screen is current. Each screen builds its own top
@@ -25,7 +26,7 @@ class SalesShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
-      body: SafeArea(bottom: false, child: child),
+      body: SafeArea(bottom: false, child: SyncStatusStrip(child: child)),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
