@@ -39,3 +39,8 @@ ios/Pods/
 .vscode/
 .idea/
 *.iml
+
+# Inno Setup output — the built installer and its zip are release artifacts,
+# not source. The .iss script itself IS committed.
+installer/**/*.exe
+installer/**/*.zip
