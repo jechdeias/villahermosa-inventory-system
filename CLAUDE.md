@@ -60,6 +60,19 @@ Both folders are generated and gitignored. Also close any running instance first
 
 **Distributing the Windows app:** ship the whole `build\windows\x64\runner\Release\` folder (~44 MB), not just the 112 KB exe — it needs the DLLs and `data\` beside it. Zip the folder. The local database lives in the user's `Documents\`, not in the app folder, so replacing the folder to update the app does **not** lose local data or unsynced orders.
 
+### Windows installer (Inno Setup)
+Script: `installer/vm_distribution.iss`. Build Flutter first, then compile it with Inno Setup's CLI:
+```
+& "C:\Users\jedey\AppData\Local\Programs\Inno Setup 7\ISCC.exe" installer\vm_distribution.iss
+```
+Output: `installer\VMDistributionSetup-1.0.0.exe` (gitignored). **Note the path:** Inno Setup 7.1.1 installs under `AppData\Local\Programs`, NOT `C:\Program Files (x86)\Inno Setup 6\`.
+- **Open or compile it from `installer\`.** `BuildDir` is relative (`..\build\windows\x64\runner\Release`), so a copy opened from Downloads resolves to a path that doesn't exist and silently produces an installer containing only the uninstaller (~4.5 MB instead of ~16 MB). That exact failure happened on 18 Nov. **A healthy setup exe is ~16 MB**; ~4.5 MB means it packaged nothing.
+- The installer packages whatever is in `build\windows\x64\runner\Release` **at compile time**, so build Flutter first and check the exe's timestamp.
+- `AppId` is fixed at `{690807F2-B875-4E02-9DCF-35DBF4EDB1A7}`. **Never regenerate it** — Windows uses it to tell an upgrade from a separate app.
+- Per-user install (`PrivilegesRequired=lowest`): no admin rights, no UAC prompt. The local SQLite DB lives in the user's Documents, not the install folder, so upgrading does not lose data.
+- The script also registers the `io.supabase.villahermosa://` URL scheme under HKCU (needed for Google sign-in on Windows — see A3).
+- **Zip before uploading to Drive** — Chrome blocks bare `.exe` downloads. Use Windows' own `tar.exe` from inside `installer\` (Git Bash's `tar` cannot write zips): `& "$env:SystemRoot\System32\tar.exe" -a -c -f VMDistributionSetup-1.0.0.zip VMDistributionSetup-1.0.0.exe`.
+
 ## Development conventions
 - Pass `AppDatabase` and `SyncManager` down through constructors; both are singletons initialised in `main.dart`.
 - Access the shared database in leaf widgets via `AuthService.instance.database`.
