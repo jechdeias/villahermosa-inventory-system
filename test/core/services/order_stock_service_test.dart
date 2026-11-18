@@ -276,4 +276,66 @@ void main() {
       expect(await stockOf('p1'), 9, reason: '10 − 1 (damaged); dispatch and cancel net to zero');
     });
   });
+
+  group('a failing dispatch is reported, not swallowed', () {
+    // Makes the stock-movement insert for one order (or all) abort, so the
+    // deduction throws inside the transaction that also writes the status.
+    Future<void> breakMovementsFor(String? orderUuid) => db.customStatement(
+        'CREATE TRIGGER fail_movement BEFORE INSERT ON stock_movements '
+        '${orderUuid == null ? '' : "WHEN NEW.reference_id = '$orderUuid' "}'
+        "BEGIN SELECT RAISE(ABORT, 'disk on fire'); END");
+
+    test('a throwing deduction leaves the status AND the stock unchanged, and the result says so', () async {
+      await addProduct('p1', 10);
+      await addOrder('o1', [('p1', 3)]);
+      await breakMovementsFor(null);
+
+      final result = await WarehouseActions(db).dispatchOrders([await orderRow('o1')]);
+
+      expect(result.count, 0);
+      expect(result.hasFailures, isTrue);
+      expect(result.failed.single.order.uuid, 'o1');
+      expect(result.failed.single.error.toString(), contains('disk on fire'));
+      expect((await orderRow('o1')).status, 'processing', reason: 'the status write rolled back with the deduction');
+      expect((await orderRow('o1')).warehouseStatus, isNot('dispatched'));
+      expect(await stockOf('p1'), 10);
+      expect(result.summary, contains('Nothing was dispatched'));
+      expect(result.summary, contains('ORD-o1'));
+    });
+
+    test('a partial route dispatch reports the real count and names the order that failed', () async {
+      for (final p in ['p1', 'p2', 'p3']) {
+        await addProduct(p, 10);
+      }
+      await addOrder('o1', [('p1', 1)]);
+      await addOrder('o2', [('p2', 2)]);
+      await addOrder('o3', [('p3', 3)]);
+      await breakMovementsFor('o2');
+
+      final result = await WarehouseActions(db).dispatchOrders([await orderRow('o1'), await orderRow('o2'), await orderRow('o3')]);
+
+      expect(result.count, 2, reason: 'not 3');
+      expect(result.dispatched.map((o) => o.uuid), ['o1', 'o3']);
+      expect(result.failed.map((f) => f.order.uuid), ['o2']);
+      expect((await orderRow('o1')).status, OrderStatus.outForDelivery);
+      expect((await orderRow('o2')).status, 'processing');
+      expect((await orderRow('o3')).status, OrderStatus.outForDelivery);
+      expect(await stockOf('p1'), 9);
+      expect(await stockOf('p2'), 10);
+      expect(await stockOf('p3'), 7);
+
+      expect(result.summary, startsWith('Dispatched 2 of 3.'));
+      expect(result.summary, contains('ORD-o1, ORD-o3'));
+      expect(result.summary, contains('NOT dispatched: ORD-o2'));
+      expect(result.summary, contains('disk on fire'));
+    });
+
+    test('a clean dispatch still reports the plain count', () async {
+      await addProduct('p1', 10);
+      await addOrder('o1', [('p1', 1)]);
+      final result = await WarehouseActions(db).dispatchOrders([await orderRow('o1')]);
+      expect(result.hasFailures, isFalse);
+      expect(result.summary, 'Route dispatched. 1 order is out for delivery.');
+    });
+  });
 }

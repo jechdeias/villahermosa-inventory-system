@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
@@ -187,25 +188,66 @@ class WarehouseActions {
       _db.updateOrderItemById(i.id, OrderItemsCompanion(status: Value(loaded ? 'loaded' : 'picked')));
 
   /// Truck leaves: every prepared order on the route becomes out_for_delivery
-  /// (the customer's phone then shows its QR code). Returns how many.
-  Future<int> dispatchOrders(List<Order> orders) async {
+  /// (the customer's phone then shows its QR code).
+  ///
+  /// Each order is its own transaction (status write + stock deduction commit
+  /// together, see OrderStockService), so one order failing rolls back only
+  /// itself: the rest still go, and the result says exactly which did and which
+  /// didn't — callers must show that, not just a count.
+  Future<DispatchResult> dispatchOrders(List<Order> orders) async {
+    final dispatched = <Order>[];
+    final failed = <FailedDispatch>[];
     for (final o in orders) {
-      // Status and stock deduction commit together per order (see
-      // OrderStockService: deduction is idempotent per order, so re-dispatching
-      // never deducts twice).
-      await _db.transaction(() async {
-        await _db.updateOrderById(
-          o.id,
-          const OrdersCompanion(
-            status: Value(OrderStatus.outForDelivery),
-            warehouseStatus: Value('dispatched'),
-          ),
-        );
-        await OrderStockService(_db).applyStatusChange(o.uuid, OrderStatus.outForDelivery);
-      });
+      try {
+        await _db.transaction(() async {
+          await _db.updateOrderById(
+            o.id,
+            const OrdersCompanion(
+              status: Value(OrderStatus.outForDelivery),
+              warehouseStatus: Value('dispatched'),
+            ),
+          );
+          await OrderStockService(_db).applyStatusChange(o.uuid, OrderStatus.outForDelivery);
+        });
+        dispatched.add(o);
+      } catch (e) {
+        debugPrint('Dispatch of ${o.orderNumber} failed: $e');
+        failed.add(FailedDispatch(o, e));
+      }
     }
-    _pushAsync();
-    return orders.length;
+    if (dispatched.isNotEmpty) _pushAsync();
+    return DispatchResult(dispatched: dispatched, failed: failed);
+  }
+}
+
+class FailedDispatch {
+  const FailedDispatch(this.order, this.error);
+  final Order order;
+  final Object error;
+}
+
+/// Outcome of a (possibly partial) route dispatch.
+class DispatchResult {
+  const DispatchResult({required this.dispatched, required this.failed});
+  final List<Order> dispatched;
+  final List<FailedDispatch> failed;
+
+  int get count => dispatched.length;
+  bool get hasFailures => failed.isNotEmpty;
+
+  /// What to tell the user: the real count, and — if anything failed — which
+  /// orders went and which did not, with the reason.
+  String get summary {
+    final total = dispatched.length + failed.length;
+    if (failed.isEmpty) {
+      return 'Route dispatched. $count ${count == 1 ? 'order is' : 'orders are'} out for delivery.';
+    }
+    final notSent = failed.map((f) => '${f.order.orderNumber} (${f.error})').join('; ');
+    if (dispatched.isEmpty) {
+      return 'Nothing was dispatched — $total ${total == 1 ? 'order' : 'orders'} failed and stay as they were. $notSent';
+    }
+    final sent = dispatched.map((o) => o.orderNumber).join(', ');
+    return 'Dispatched $count of $total. Out for delivery: $sent. NOT dispatched: $notSent';
   }
 }
 

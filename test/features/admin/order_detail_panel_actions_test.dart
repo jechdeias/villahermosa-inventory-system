@@ -138,4 +138,38 @@ void main() {
     expect(find.text('Export PDF'), findsOneWidget);
     await unmount(tester);
   });
+
+  testWidgets('a failing Dispatch shows a red snackbar and leaves the order and the open panel untouched', (tester) async {
+    await tester.runAsync(() async {
+      await db.createProduct(ProductsCompanion.insert(
+          uuid: 'p1', sku: 'S', name: 'P', category: 'c', unitPrice: 1, costPrice: 1, unit: 'pc', currentStock: 10, minStock: 0));
+      await db.createOrder(OrdersCompanion.insert(
+          uuid: 'o-1', customerId: 'c', orderNumber: 'ORD-1', deliveryAddress: 'x', status: const Value('processing')));
+      await db.into(db.orderItems).insert(OrderItemsCompanion.insert(
+          uuid: 'l1', orderId: 'o-1', productId: 'p1', productSku: 'S', productName: 'P', quantity: 3, unitPrice: 1, subtotal: 3, totalAmount: 3));
+      await db.customStatement("CREATE TRIGGER fail_movement BEFORE INSERT ON stock_movements BEGIN SELECT RAISE(ABORT, 'disk on fire'); END");
+    });
+    await pump(tester, 'processing', 360);
+
+    final button = find.widgetWithText(ElevatedButton, 'Dispatch for Delivery');
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.textContaining("Couldn't Dispatch for Delivery: ORD-1 was not changed"), findsOneWidget);
+    expect(find.textContaining('disk on fire'), findsOneWidget);
+    final snack = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(snack.backgroundColor, Colors.red);
+
+    // Still open and still selected: the order is in its old state.
+    expect(find.text('Export PDF'), findsOneWidget);
+    expect(find.text('Dispatch for Delivery'), findsOneWidget);
+    final row = await tester.runAsync(() => db.getOrderById('o-1'));
+    expect(row!.status, 'processing');
+    final p = await tester.runAsync(() => db.getProductByUuid('p1'));
+    expect(p!.currentStock, 10);
+    await unmount(tester);
+  });
 }

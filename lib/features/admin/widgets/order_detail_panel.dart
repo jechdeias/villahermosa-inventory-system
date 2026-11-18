@@ -347,7 +347,7 @@ class OrderDetailPanel extends ConsumerWidget {
   /// regresses the label clips visibly instead of silently re-wrapping.
   Widget _buildFooter(BuildContext context, WidgetRef ref, Order order, OrdersService service) {
     final itemsAsync = ref.watch(orderItemsProvider(order.uuid));
-    final action = _statusAction(ref, order, service);
+    final action = _statusAction(context, ref, order, service);
 
     Widget closeBtn() => OutlinedButton(
           onPressed: onClose,
@@ -451,23 +451,37 @@ class OrderDetailPanel extends ConsumerWidget {
 
   /// The one status action for this order's state, or null (e.g. completed).
   ({String label, Future<void> Function() onPressed, Color? bg, bool outline})? _statusAction(
-      WidgetRef ref, Order order, OrdersService service) {
-    Future<void> advance(Future<void> Function() fn) async {
-      await fn();
+      BuildContext context, WidgetRef ref, Order order, OrdersService service) {
+    // A failure (e.g. the stock deduction that goes with Dispatch/Cancel throws
+    // and rolls the status change back) must be SHOWN: the order is still in its
+    // old status, so the panel stays open and selected, and the user is told why.
+    // debugPrint alone would be invisible in a release build.
+    Future<void> advance(String label, Future<void> Function() fn) async {
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        await fn();
+      } catch (e) {
+        messenger.showSnackBar(SnackBar(
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 10),
+          content: Text("Couldn't $label: ${order.orderNumber} was not changed. $e"),
+        ));
+        return;
+      }
       ref.read(selectedOrderProvider.notifier).state = null;
       onClose();
     }
 
     ({String label, Future<void> Function() onPressed, Color? bg, bool outline}) primary(
             String label, Future<void> Function() fn, {Color? bg}) =>
-        (label: label, onPressed: () => advance(fn), bg: bg, outline: false);
+        (label: label, onPressed: () => advance(label, fn), bg: bg, outline: false);
 
     return switch (order.status) {
       'pending'          => primary('Start Processing',     () => service.markProcessing(order.uuid)),
       'processing'       => primary('Dispatch for Delivery', () => service.markOutForDelivery(order.uuid), bg: const Color(0xFF7C3AED)),
       'out_for_delivery' => primary('Mark as Delivered',    () => service.markDelivered(order.uuid), bg: const Color(0xFF059669)),
       'delivered'        => primary('Mark Completed',       () => service.markCompleted(order.uuid), bg: const Color(0xFF16A34A)),
-      'cancelled'        => (label: 'Restore Order', onPressed: () => advance(() => service.restoreOrder(order.uuid)), bg: null, outline: true),
+      'cancelled'        => (label: 'Restore Order', onPressed: () => advance('Restore Order', () => service.restoreOrder(order.uuid)), bg: null, outline: true),
       _                  => null,
     };
   }

@@ -35,11 +35,17 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
       ),
     );
     if (ok != true) return;
-    final count = await ref.read(warehouseActionsProvider).dispatchOrders(loadable);
+    final result = await ref.read(warehouseActionsProvider).dispatchOrders(loadable);
     SyncManager.syncInBackground();
     if (!mounted) return;
+    // A partial dispatch must say which orders went and which didn't, in red and
+    // long enough to read — never just a count.
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Route dispatched. $count ${count == 1 ? 'order is' : 'orders are'} out for delivery.')),
+      SnackBar(
+        content: Text(result.summary),
+        backgroundColor: result.hasFailures ? WhColors.red : null,
+        duration: Duration(seconds: result.hasFailures ? 12 : 4),
+      ),
     );
   }
 
