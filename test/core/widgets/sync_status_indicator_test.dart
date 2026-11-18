@@ -461,4 +461,64 @@ void main() {
       }
     });
   });
+
+  group('fourth state: RED for rows that will not sync (sync_status error)', () {
+    test('state, text and colour — errors outrank everything, online or not', () {
+      expect(syncStateFor(online: true, pending: 0, errors: 2), SyncIndicatorState.error);
+      expect(syncStateFor(online: false, pending: 5, errors: 1), SyncIndicatorState.error);
+      expect(syncStateFor(online: true, pending: 3), SyncIndicatorState.syncing, reason: 'no errors: unchanged');
+      expect(syncLabelFor(SyncIndicatorState.error, 0, errors: 1), '1 item could not sync - contact your administrator');
+      expect(syncLabelFor(SyncIndicatorState.error, 0, errors: 3), '3 items could not sync - contact your administrator');
+      expect(syncColorFor(SyncIndicatorState.error), AppTheme.error);
+    });
+
+    testWidgets('the pill turns red, and the sheet lists what is stuck per table', (tester) async {
+      await tester.runAsync(() async {
+        await addCustomer('c1', status: 'error');
+        await addOrder('o1', status: 'error');
+        await addOrder('o2', status: 'error');
+        await addOrder('o3'); // an ordinary pending row alongside
+      });
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: Center(child: SyncStatusIndicator(database: db, initialOnline: true, dotOnly: false))),
+      ));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('3 items could not sync - contact your administrator'), findsOneWidget);
+      final dot = tester.widget<Container>(find.byKey(const Key('sync-dot'))).decoration as BoxDecoration;
+      expect(dot.color, AppTheme.error);
+
+      await tester.tap(find.text('3 items could not sync - contact your administrator'));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byKey(const Key('sync-stuck-section')), findsOneWidget);
+      expect(find.text('COULD NOT UPLOAD'), findsOneWidget);
+      expect(find.text('2 orders'), findsOneWidget, reason: 'stuck orders');
+      expect(find.text('1 customer'), findsOneWidget, reason: 'stuck customer');
+      expect(find.text('1 order'), findsOneWidget, reason: 'the ordinary pending order is still listed under waiting');
+      expect(find.textContaining('Contact your administrator'), findsOneWidget);
+
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 50));
+    });
+
+    testWidgets('no error rows: no red anywhere', (tester) async {
+      await tester.runAsync(() => addOrder('o1'));
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: Center(child: SyncStatusIndicator(database: db, initialOnline: true, dotOnly: false))),
+      ));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Syncing 1 item...'), findsOneWidget);
+      expect(find.textContaining('administrator'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 50));
+    });
+  });
 }

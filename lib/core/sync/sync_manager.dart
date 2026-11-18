@@ -137,11 +137,19 @@ class SyncManager {
       final pendingCounts = await _getPendingRecordCounts();
       final totalPending = pendingCounts.values.fold(0, (sum, count) => sum + count);
       await _syncEngine.performPush();
-      debugPrint('Push completed. Records pushed: $totalPending');
+      final failed = _syncEngine.pushFailureCount;
+      debugPrint('Push completed. Records pending: $totalPending, failed: $failed');
       return {
-        'success': true,
-        'recordsPushed': totalPending,
-        'error': null,
+        // Per-record failures are caught inside the engine; a push that dropped
+        // rows is not a success (mirrors pull()).
+        'success': failed == 0,
+        'recordsPushed': totalPending - failed,
+        'failedCount': failed,
+        'failedTables': Map<String, int>.from(_syncEngine.pushFailures),
+        'error': failed == 0
+            ? null
+            : '$failed record${failed == 1 ? '' : 's'} could not be uploaded '
+                '(${_syncEngine.pushFailures.entries.map((e) => '${e.key}: ${e.value}').join(', ')})',
         'timestamp': DateTime.now().toIso8601String(),
       };
     } catch (e) {
@@ -240,7 +248,9 @@ class SyncManager {
         'success': pushResult['success'] == true && pullResult['success'] == true,
         'recordsPushed': pushResult['recordsPushed'] ?? 0,
         'recordsPulled': pullResult['recordsPulled'] ?? 0,
-        'failedCount': pullResult['failedCount'] ?? 0,
+        'failedCount': (pushResult['failedCount'] ?? 0) + (pullResult['failedCount'] ?? 0),
+        'pushFailedCount': pushResult['failedCount'] ?? 0,
+        'pullFailedCount': pullResult['failedCount'] ?? 0,
         'error': pushResult['error'] ?? pullResult['error'],
         'timestamp': DateTime.now().toIso8601String(),
       };

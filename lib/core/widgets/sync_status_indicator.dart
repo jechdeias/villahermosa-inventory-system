@@ -10,7 +10,7 @@ import '../sync/sync_manager.dart';
 import '../theme/app_theme.dart';
 
 /// What the indicator is telling the user.
-enum SyncIndicatorState { allSynced, syncing, waitingOffline, offline }
+enum SyncIndicatorState { allSynced, syncing, waitingOffline, offline, error }
 
 /// The signal people need is "has my work left this device?" — a PENDING COUNT —
 /// not "am I connected". This is an offline-first app, so being offline is
@@ -21,14 +21,19 @@ enum SyncIndicatorState { allSynced, syncing, waitingOffline, offline }
 ///   online  + N pending → amber  "Syncing N items..."
 ///   offline + N pending → amber  "N items waiting - offline"
 ///   offline + 0 pending → grey   "Offline"
-SyncIndicatorState syncStateFor({required bool online, required int pending}) {
+///   any rows in sync_status 'error' (either connectivity) → RED, contact your
+///   administrator: a row that failed to push repeatedly stops retrying, so
+///   waiting will not fix it.
+SyncIndicatorState syncStateFor({required bool online, required int pending, int errors = 0}) {
+  if (errors > 0) return SyncIndicatorState.error;
   if (online) return pending == 0 ? SyncIndicatorState.allSynced : SyncIndicatorState.syncing;
   return pending == 0 ? SyncIndicatorState.offline : SyncIndicatorState.waitingOffline;
 }
 
 String _items(int n) => '$n ${n == 1 ? 'item' : 'items'}';
 
-String syncLabelFor(SyncIndicatorState state, int pending) => switch (state) {
+String syncLabelFor(SyncIndicatorState state, int pending, {int errors = 0}) => switch (state) {
+      SyncIndicatorState.error => '${_items(errors)} could not sync - contact your administrator',
       SyncIndicatorState.allSynced => 'All synced',
       SyncIndicatorState.syncing => 'Syncing ${_items(pending)}...',
       SyncIndicatorState.waitingOffline => '${_items(pending)} waiting - offline',
@@ -39,12 +44,14 @@ Color syncColorFor(SyncIndicatorState state) => switch (state) {
       SyncIndicatorState.allSynced => AppTheme.success,
       SyncIndicatorState.syncing || SyncIndicatorState.waitingOffline => AppTheme.warning,
       SyncIndicatorState.offline => AppTheme.textMuted,
+      SyncIndicatorState.error => AppTheme.error,
     };
 
 Color _syncBackgroundFor(SyncIndicatorState state) => switch (state) {
       SyncIndicatorState.allSynced => AppTheme.successLight,
       SyncIndicatorState.syncing || SyncIndicatorState.waitingOffline => AppTheme.warningLight,
       SyncIndicatorState.offline => AppTheme.background,
+      SyncIndicatorState.error => AppTheme.errorLight,
     };
 
 /// "2 orders", "1 customer" — the sheet's per-table wording.
@@ -83,6 +90,7 @@ class SyncStatusModel extends ChangeNotifier {
     final db = _db;
     if (db != null) {
       _countSub = db.watchPendingCounts().listen(_setCounts, onError: (_) {});
+      _errorSub = db.watchErrorCounts().listen(_setErrorCounts, onError: (_) {});
     }
     _syncCompleted = syncCompleted ?? _sharedSyncSignal();
     _syncCompleted?.addListener(refresh);
@@ -92,6 +100,8 @@ class SyncStatusModel extends ChangeNotifier {
   final AppDatabase? _db;
   ValueListenable<int>? _syncCompleted;
   StreamSubscription<Map<String, int>>? _countSub;
+  StreamSubscription<Map<String, int>>? _errorSub;
+  Map<String, int> _errorCounts = const {};
   StreamSubscription<dynamic>? _connSub;
   Map<String, int> _counts = const {};
   bool _online;
@@ -116,15 +126,25 @@ class SyncStatusModel extends ChangeNotifier {
   Map<String, int> get counts => _counts;
   bool get online => _online;
   int get pending => _counts.values.fold(0, (a, b) => a + b);
-  SyncIndicatorState get state => syncStateFor(online: _online, pending: pending);
+
+  /// Rows flagged 'error' per table (stuck: they will not retry on their own).
+  Map<String, int> get errorCounts => _errorCounts;
+  int get errors => _errorCounts.values.fold(0, (a, b) => a + b);
+  SyncIndicatorState get state => syncStateFor(online: _online, pending: pending, errors: errors);
 
   /// Worth taking up space for: something is waiting to upload, or the device is
   /// offline. "Online and nothing pending" is the uninteresting default.
-  bool get needsAttention => pending > 0 || !_online;
+  bool get needsAttention => pending > 0 || errors > 0 || !_online;
 
   void _setCounts(Map<String, int> next) {
     if (_disposed) return;
     _counts = next;
+    notifyListeners();
+  }
+
+  void _setErrorCounts(Map<String, int> next) {
+    if (_disposed) return;
+    _errorCounts = next;
     notifyListeners();
   }
 
@@ -141,6 +161,7 @@ class SyncStatusModel extends ChangeNotifier {
     if (db == null || _disposed) return;
     try {
       _setCounts(await db.getPendingCounts());
+      _setErrorCounts(await db.getErrorCounts());
     } catch (_) {}
   }
 
@@ -168,6 +189,7 @@ class SyncStatusModel extends ChangeNotifier {
     _disposed = true;
     _syncCompleted?.removeListener(refresh);
     _countSub?.cancel();
+    _errorSub?.cancel();
     _connSub?.cancel();
     super.dispose();
   }
@@ -299,7 +321,7 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
       builder: (context, _) {
         final pending = model.pending;
         final state = model.state;
-        final label = syncLabelFor(state, pending);
+        final label = syncLabelFor(state, pending, errors: model.errors);
         final color = syncColorFor(state);
         final dot = Container(
           key: const Key('sync-dot'),
@@ -315,9 +337,9 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     dot,
-                    if (pending > 0) ...[
+                    if (pending + model.errors > 0) ...[
                       const SizedBox(width: 4),
-                      Text('$pending', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: widget.onDark ? Colors.white : color)),
+                      Text('${model.errors > 0 ? model.errors : pending}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: widget.onDark ? Colors.white : color)),
                     ],
                   ]),
                 ),
@@ -432,10 +454,16 @@ class _SyncSheetState extends State<_SyncSheet> {
             builder: (context, _) {
               final counts = widget.model.counts;
               final pending = widget.model.pending;
+              final errors = widget.model.errors;
+              final errorCounts = widget.model.errorCounts;
               final state = widget.model.state;
               final ordered = [
                 for (final t in AppDatabase.syncedTableNames)
                   if ((counts[t] ?? 0) > 0) MapEntry(t, counts[t]!),
+              ];
+              final stuck = [
+                for (final t in AppDatabase.syncedTableNames)
+                  if ((errorCounts[t] ?? 0) > 0) MapEntry(t, errorCounts[t]!),
               ];
               return Column(
                 mainAxisSize: MainAxisSize.min,
@@ -445,7 +473,7 @@ class _SyncSheetState extends State<_SyncSheet> {
                     Container(width: 10, height: 10, decoration: BoxDecoration(color: syncColorFor(state), shape: BoxShape.circle)),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(syncLabelFor(state, pending),
+                      child: Text(syncLabelFor(state, pending, errors: errors),
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                     ),
                   ]),
@@ -455,8 +483,36 @@ class _SyncSheetState extends State<_SyncSheet> {
                     style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                   ),
                   const SizedBox(height: 16),
+                  if (stuck.isNotEmpty) ...[
+                    Container(
+                      key: const Key('sync-stuck-section'),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorLight,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.error),
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Text('COULD NOT UPLOAD',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: AppTheme.error)),
+                        const SizedBox(height: 6),
+                        for (final e in stuck)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Text(describePending(e.key, e.value), style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+                          ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'These failed to upload several times and will not retry on their own. Contact your administrator.',
+                          style: TextStyle(fontSize: 12, color: AppTheme.textPrimary),
+                        ),
+                      ]),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   if (ordered.isEmpty)
-                    const Text('Nothing is waiting to upload.', style: TextStyle(fontSize: 13, color: AppTheme.textMuted))
+                    Text(stuck.isEmpty ? 'Nothing is waiting to upload.' : 'Nothing else is waiting to upload.',
+                        style: const TextStyle(fontSize: 13, color: AppTheme.textMuted))
                   else ...[
                     const Text('WAITING TO UPLOAD',
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: AppTheme.textMuted)),

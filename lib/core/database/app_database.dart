@@ -353,9 +353,23 @@ class AppDatabase extends _$AppDatabase {
   /// stream's cached last value (stale after a write Drift didn't see).
   Future<Map<String, int>> getPendingCounts() async => _pendingCountsOf(await _pendingCountsQuery().get());
 
-  Selectable<QueryRow> _pendingCountsQuery() {
+  /// Rows flagged `sync_status = 'error'` (a push that failed repeatedly, or a
+  /// pulled row that could not be applied), per table; tables with none omitted.
+  /// These need an administrator - they will not retry on their own.
+  Stream<Map<String, int>> watchErrorCounts() => _pendingCountsQuery('error').watch().map(_pendingCountsOf).distinct((a, b) {
+      if (a.length != b.length) return false;
+      for (final e in a.entries) {
+        if (b[e.key] != e.value) return false;
+      }
+      return true;
+    });
+
+  /// One-shot [watchErrorCounts] (always hits the database).
+  Future<Map<String, int>> getErrorCounts() async => _pendingCountsOf(await _pendingCountsQuery('error').get());
+
+  Selectable<QueryRow> _pendingCountsQuery([String status = 'pending']) {
     final sql = syncedTableNames
-        .map((t) => "SELECT '$t' AS t, COUNT(*) AS n FROM $t WHERE sync_status = 'pending'")
+        .map((t) => "SELECT '$t' AS t, COUNT(*) AS n FROM $t WHERE sync_status = '$status'")
         .join(' UNION ALL ');
     return customSelect(sql, readsFrom: {
       users, products, customers, orders, orderItems,
