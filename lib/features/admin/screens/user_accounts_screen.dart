@@ -892,6 +892,11 @@ class _AddUserDialogState extends State<_AddUserDialog> {
   Future<void> _addUser() async {
     if (_formKey.currentState!.validate()) {
       try {
+        // The password must reach Supabase Auth too, or this account can't sign
+        // in on a device that has never seen it. Do that first: if it fails,
+        // report it and create nothing rather than leave a half-working account.
+        await AuthService.instance.syncPasswordToSupabaseAuth(_emailController.text, _passwordController.text);
+
         final user = UsersCompanion.insert(
           uuid: const Uuid().v4(),
           firstName: _firstNameController.text,
@@ -911,6 +916,12 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         if (mounted) {
           widget.onUserAdded();
           Navigator.pop(context);
+        }
+      } on PasswordSetException catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Account not created. ${e.message}'), backgroundColor: Colors.red),
+          );
         }
       } catch (e) {
         if (mounted) {
@@ -1332,15 +1343,10 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
   Future<void> _resetPassword() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final updatedUser = UsersCompanion(
-          passwordHash: drift.Value(_hashPassword(_passwordController.text)),
-          forcePasswordChange: const drift.Value(true),
-          syncStatus: const drift.Value('pending'),
-          updatedAt: drift.Value(DateTime.now()),
-        );
-
-        await widget.database.updateUser(widget.user.uuid, updatedUser);
-        SyncManager.instance.syncPendingData().catchError((_) {});
+        // Supabase Auth first, then the local hash (see AuthService.adminResetPassword).
+        // A Supabase failure is shown, not swallowed: the user would otherwise hit
+        // "invalid credentials" on their next new device.
+        await AuthService.instance.adminResetPassword(widget.user.uuid, widget.user.email, _passwordController.text);
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1348,6 +1354,12 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
               content: Text('Password reset successfully! User must change password on next login.'),
               backgroundColor: Colors.green,
             ),
+          );
+        }
+      } on PasswordSetException catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Password NOT reset. ${e.message}'), backgroundColor: Colors.red),
           );
         }
       } catch (e) {
@@ -1359,9 +1371,6 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
       }
     }
   }
-
-  String _hashPassword(String password) =>
-      BCrypt.hashpw(password, BCrypt.gensalt());
 }
 
 // ── User Accounts Filter Sheet ────────────────────────────────────────────────

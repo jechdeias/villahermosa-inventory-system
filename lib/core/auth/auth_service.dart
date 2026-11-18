@@ -434,9 +434,56 @@ class AuthService {
     return u != null && needsPassword(u);
   }
 
+  /// Test seams (instance-level so screens that call [setPassword] /
+  /// [adminResetPassword] can be tested without a live Supabase).
+  @visibleForTesting
+  Future<void> Function(String password)? remotePasswordUpdater;
+  @visibleForTesting
+  Future<bool> Function(String email, String password)? authUpserter;
+
+  static const _onlineLoginFailed =
+      "Couldn't update the online login (Supabase Auth). Check your internet connection"
+      ' and that you are signed in as an admin, then try again. Nothing was changed.';
+
+  /// Creates or updates the Supabase Auth user for [email] through the
+  /// privileged-sync Edge Function (admin only — that is the only way a password
+  /// for ANOTHER account can reach Supabase Auth). Throws [PasswordSetException]
+  /// if it can't, because a local-only password means the account cannot sign in
+  /// on any device that has never seen it (login STEP 1b authenticates against
+  /// Supabase Auth first).
+  Future<void> syncPasswordToSupabaseAuth(String email, String password) async {
+    final ok = await (authUpserter ?? upsertSupabaseAuthUser)(email, password);
+    if (!ok) throw const PasswordSetException(_onlineLoginFailed);
+  }
+
+  /// Admin sets another user's password: Supabase Auth FIRST (so a failure
+  /// changes nothing and is reported), then the local bcrypt hash with
+  /// `forcePasswordChange` on and `syncStatus = 'pending'`.
+  Future<void> adminResetPassword(String userUuid, String email, String newPassword) async {
+    if (newPassword.length < minPasswordLength) {
+      throw const PasswordSetException('Password must be at least $minPasswordLength characters.');
+    }
+    await syncPasswordToSupabaseAuth(email, newPassword);
+    await _database.updateUser(
+      userUuid,
+      UsersCompanion(
+        passwordHash: Value(_hashPassword(newPassword)), // bcrypt
+        forcePasswordChange: const Value(true),
+        syncStatus: const Value('pending'),
+      ),
+    );
+    SyncManager.syncInBackground();
+  }
+
   /// Gives the signed-in account a real password, on BOTH sides:
-  ///  1. Supabase Auth (`auth.updateUser`), so a device that has never seen the
-  ///     account can authenticate and bootstrap it (login STEP 1b / STEP 2);
+  ///  1. Supabase Auth (`auth.updateUser`, which acts on the caller's OWN
+  ///     session — the right call for changing your own password; the admin-only
+  ///     `upsert_auth_user` Edge Function would 403 for a non-admin). This needs
+  ///     a live session. A user forced to change a password after an admin
+  ///     reset normally has one, because login STEP 2 signs into Supabase Auth
+  ///     with the temporary password the reset put there. Without one this
+  ///     fails with a message rather than pretending. It lets a device that has
+  ///     never seen the account authenticate and bootstrap it (login STEP 1b);
   ///  2. the local row, as a bcrypt hash with `syncStatus = 'pending'`, so
   ///     local (offline) login works and the hash is pushed.
   /// Supabase goes first: if it fails nothing is written locally, so the two
@@ -457,7 +504,7 @@ class AuthService {
     }
 
     try {
-      await (updateRemote ?? _updateSupabasePassword)(newPassword);
+      await (updateRemote ?? remotePasswordUpdater ?? _updateSupabasePassword)(newPassword);
     } on PasswordSetException {
       rethrow;
     } on AuthException catch (e) {
@@ -474,6 +521,7 @@ class AuthService {
       user.uuid,
       UsersCompanion(
         passwordHash: Value(_hashPassword(newPassword)), // bcrypt
+        forcePasswordChange: const Value(false), // they just chose their own
         syncStatus: const Value('pending'),
       ),
     );
@@ -485,7 +533,7 @@ class AuthService {
   Future<void> _updateSupabasePassword(String password) async {
     if (Supabase.instance.client.auth.currentSession == null) {
       throw const PasswordSetException(
-          'Your online session has expired. Sign in with Google again, then set a password.');
+          'Your online session has expired. Sign out and sign in again while online, then try again.');
     }
     await Supabase.instance.client.auth.updateUser(UserAttributes(password: password));
   }

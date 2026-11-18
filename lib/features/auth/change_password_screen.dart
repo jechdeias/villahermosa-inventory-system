@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 import '../../../core/database/app_database.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../shared/theme/app_theme.dart';
@@ -45,8 +43,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     });
 
     try {
-      final hash = sha256.convert(utf8.encode(_newPasswordController.text)).toString();
-      await widget.database.updateUserPassword(_currentUser!.uuid, hash);
+      // Supabase Auth + a local bcrypt hash, via the same path as "set a
+      // password" (this used to write a bare SHA-256 and never touch Supabase,
+      // so the two sides disagreed after every forced change).
+      await AuthService.instance.setPassword(_newPasswordController.text);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -58,6 +58,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         
         // Navigate to role dashboard
         _navigateToDashboard();
+      }
+    } on PasswordSetException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Password not changed. ${e.message}"), backgroundColor: Colors.red),
+        );
       }
     } catch (e) {
       if (mounted) {

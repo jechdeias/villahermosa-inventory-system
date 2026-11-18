@@ -9,6 +9,7 @@ import '../../core/auth/auth_service.dart';
 import '../../core/business/role_based_access.dart';
 import '../../core/sync/sync_manager.dart';
 import 'viewmodels/auth_viewmodel.dart';
+import 'oauth_platform.dart';
 import 'set_password_dialog.dart';
 import '../auth/widgets/responsive_auth_screen.dart';
 import '../auth/widgets/auth_card.dart';
@@ -35,6 +36,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isGoogleLoading = false;
+
+  /// Android always; Windows only once the installer's URL-scheme registration
+  /// for THIS exe is confirmed (see googleSignInAvailable).
+  bool _googleAvailable = defaultTargetPlatform == TargetPlatform.android;
 
   late AuthViewModel _authViewModel;
   StreamSubscription<AuthState>? _oauthSubscription;
@@ -85,6 +90,12 @@ class _LoginScreenState extends State<LoginScreen> {
     _authViewModel = AuthViewModel(AuthService.instance, widget.database);
     // Rebuild the UI whenever loading state or error message changes
     _authViewModel.addListener(_onViewModelChanged);
+
+    if (defaultTargetPlatform == TargetPlatform.windows) {
+      googleSignInAvailable().then((ok) {
+        if (mounted && ok) setState(() => _googleAvailable = true);
+      });
+    }
 
     // Listen for the Google OAuth callback. (This was a lazy `late final`
     // first touched in dispose(), so it never subscribed while the screen
@@ -197,9 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Callbacks
         onPrimaryButtonPressed: _login,
-        onGoogleSignIn: defaultTargetPlatform == TargetPlatform.android
-            ? _handleGoogleSignIn
-            : null,
+        onGoogleSignIn: _googleAvailable ? _handleGoogleSignIn : null,
         onLinkPressed: () {
           Navigator.pushNamed(context, '/signup');
         },

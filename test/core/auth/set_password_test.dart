@@ -7,11 +7,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthException;
 import 'package:villahermosa_inventory_system/core/auth/auth_service.dart';
 import 'package:villahermosa_inventory_system/core/database/app_database.dart';
+import 'package:villahermosa_inventory_system/features/auth/change_password_screen.dart';
+import 'package:villahermosa_inventory_system/features/auth/oauth_platform.dart';
 import 'package:villahermosa_inventory_system/features/auth/set_password_dialog.dart';
 
 /// A Google-created account has `passwordHash: ''` (see loginWithOAuthSession).
 /// setPassword gives it a password on Supabase Auth AND a local bcrypt hash.
 void main() {
+  group('password sync to Supabase Auth', passwordSyncTests);
+
+  group('Windows Google button', () {
+    test('registryCommandPointsAt matches only the exe the scheme launches', () {
+      const out = r'    (Default)    REG_SZ    "C:\Users\u\AppData\Local\Programs\VMDistribution\villahermosa_inventory_system.exe" "%1"';
+      expect(registryCommandPointsAt(out, r'C:\Users\u\AppData\Local\Programs\VMDistribution\villahermosa_inventory_system.exe'), isTrue);
+      expect(registryCommandPointsAt(out, r'c:\users\u\appdata\local\programs\vmdistribution\VILLAHERMOSA_INVENTORY_SYSTEM.EXE'), isTrue, reason: 'case-insensitive');
+      expect(registryCommandPointsAt(out, r'C:\dev\build\windows\x64\runner\Release\villahermosa_inventory_system.exe'), isFalse,
+          reason: 'a flutter run / build-folder exe is not the registered one');
+    });
+  });
+
   late AppDatabase db;
   late AuthService auth;
 
@@ -150,6 +164,158 @@ void main() {
       await pump(tester, (c) => maybePromptToSetPassword(c, auth: auth));
       expect(find.text('Set a password?'), findsNothing);
       await tester.runAsync(db.close);
+    });
+  });
+}
+
+/// Admin reset / creation / forced change must put the password on Supabase Auth
+/// as well as the local row — otherwise the user can't sign in on a device that
+/// has never seen the account ("invalid credentials", CLAUDE.md B2).
+void passwordSyncTests() {
+  late AppDatabase db;
+  late AuthService auth;
+
+  Future<User> addUser(String uuid, {String hash = '', bool force = false}) async {
+    await db.createUser(UsersCompanion.insert(
+      uuid: uuid,
+      firstName: 'Una',
+      lastName: 'User',
+      email: '$uuid@vm.com',
+      passwordHash: hash,
+      role: 'warehouse',
+      forcePasswordChange: Value(force),
+      syncStatus: const Value('synced'),
+    ));
+    return (await db.getUserByEmail('$uuid@vm.com'))!;
+  }
+
+  Future<User> reload(User u) async => (await db.getUserByEmail(u.email))!;
+
+  setUp(() {
+    db = AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
+    AuthService.initializeWithDatabase(db);
+    auth = AuthService.instance;
+    SharedPreferences.setMockInitialValues({});
+  });
+  tearDown(() => db.close());
+
+  group('admin password reset', () {
+    test('calls upsertSupabaseAuthUser with the email and new password, then writes bcrypt + forces a change', () async {
+      final user = await addUser('r1', hash: BCrypt.hashpw('old-pass', BCrypt.gensalt()));
+      final calls = <(String, String)>[];
+      auth.authUpserter = (email, pw) async {
+        calls.add((email, pw));
+        return true;
+      };
+
+      await auth.adminResetPassword(user.uuid, user.email, 'temp-1234');
+
+      expect(calls, [(user.email, 'temp-1234')]);
+      final after = await reload(user);
+      expect(after.passwordHash, startsWith(r'$2'));
+      expect(BCrypt.checkpw('temp-1234', after.passwordHash), isTrue);
+      expect(after.forcePasswordChange, isTrue);
+      expect(after.syncStatus, 'pending');
+    });
+
+    test('a Supabase Auth failure is surfaced, not swallowed — and nothing changes locally', () async {
+      final oldHash = BCrypt.hashpw('old-pass', BCrypt.gensalt());
+      final user = await addUser('r2', hash: oldHash);
+      auth.authUpserter = (_, _) async => false;
+
+      await expectLater(
+        auth.adminResetPassword(user.uuid, user.email, 'temp-1234'),
+        throwsA(isA<PasswordSetException>().having((e) => e.message, 'message', contains('online login'))),
+      );
+
+      final after = await reload(user);
+      expect(after.passwordHash, oldHash, reason: 'the old password still works everywhere; the two sides did not diverge');
+      expect(after.forcePasswordChange, isFalse);
+      expect(after.syncStatus, 'synced');
+    });
+
+    test('a too-short password never reaches Supabase', () async {
+      final user = await addUser('r3');
+      var called = false;
+      auth.authUpserter = (_, _) async => called = true;
+      await expectLater(auth.adminResetPassword(user.uuid, user.email, 'abc'), throwsA(isA<PasswordSetException>()));
+      expect(called, isFalse);
+    });
+  });
+
+  group('admin account creation', () {
+    test('syncPasswordToSupabaseAuth passes the credentials through and reports failure', () async {
+      String? seen;
+      auth.authUpserter = (email, pw) async {
+        seen = '$email|$pw';
+        return true;
+      };
+      await auth.syncPasswordToSupabaseAuth('new@vm.com', 'start-123');
+      expect(seen, 'new@vm.com|start-123');
+
+      auth.authUpserter = (_, _) async => false;
+      await expectLater(auth.syncPasswordToSupabaseAuth('new@vm.com', 'start-123'), throwsA(isA<PasswordSetException>()));
+    });
+  });
+
+  group('forced password change screen', () {
+    Future<void> open(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(MaterialApp(home: ChangePasswordScreen(database: db)));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    Future<void> submit(WidgetTester tester, String pw) async {
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), pw);
+      await tester.enterText(fields.at(1), pw);
+      final button = find.widgetWithText(ElevatedButton, 'Change Password');
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    testWidgets('writes a bcrypt hash (not SHA-256), reaches Supabase, and clears the forced-change flag', (tester) async {
+      final user = await tester.runAsync(() => addUser('f1', hash: BCrypt.hashpw('temp-1234', BCrypt.gensalt()), force: true));
+      auth.debugSetCurrentUser(user);
+      String? sentToSupabase;
+      auth.remotePasswordUpdater = (p) async => sentToSupabase = p;
+
+      await open(tester);
+      await submit(tester, 'my-new-pass-1');
+
+      expect(sentToSupabase, 'my-new-pass-1', reason: 'Supabase Auth was updated');
+      final after = (await tester.runAsync(() => reload(user!)))!;
+      expect(after.passwordHash, startsWith(r'$2'), reason: 'bcrypt, not a 64-char SHA-256 hex digest');
+      expect(after.passwordHash.length, isNot(64));
+      expect(BCrypt.checkpw('my-new-pass-1', after.passwordHash), isTrue);
+      expect(after.forcePasswordChange, isFalse);
+      expect(after.syncStatus, 'pending');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 50));
+    });
+
+    testWidgets('a Supabase failure is shown and nothing is written locally', (tester) async {
+      final oldHash = BCrypt.hashpw('temp-1234', BCrypt.gensalt());
+      final user = await tester.runAsync(() => addUser('f2', hash: oldHash, force: true));
+      auth.debugSetCurrentUser(user);
+      auth.remotePasswordUpdater = (_) async => throw const PasswordSetException('Your online session has expired.');
+
+      await open(tester);
+      await submit(tester, 'my-new-pass-1');
+
+      expect(find.textContaining('Password not changed'), findsOneWidget);
+      expect(find.textContaining('online session has expired'), findsOneWidget);
+      final after = (await tester.runAsync(() => reload(user!)))!;
+      expect(after.passwordHash, oldHash);
+      expect(after.forcePasswordChange, isTrue);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 50));
     });
   });
 }
