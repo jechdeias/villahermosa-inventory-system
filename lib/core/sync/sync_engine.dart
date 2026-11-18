@@ -48,7 +48,7 @@ class SyncEngine {
   /// keyed by table. Reset at the start of every [performPull].
   final Map<String, int> pullFailures = {};
 
-  /// Consecutive push failures per row, keyed `table#localId`. IN MEMORY on
+  /// Consecutive PERMANENT push failures per row, keyed `table#localId`. IN MEMORY on
   /// purpose: a column would need a Drift migration, and losing the count on a
   /// restart is harmless (the row is simply retried a few more times before it is
   /// flagged). Cleared when the row pushes, or when it is flagged.
@@ -64,13 +64,55 @@ class SyncEngine {
   final Map<String, int> pushFailures = {};
   int get pushFailureCount => pushFailures.values.fold(0, (a, b) => a + b);
 
-  /// Records one failed push of a row. On the [maxPushAttempts]th consecutive
-  /// failure the row is flagged `sync_status = 'error'`: push only selects
-  /// 'pending' rows so it stops being retried, and the pull (which skips only
-  /// 'pending') starts refreshing it from the server again — a row that can never
-  /// push no longer stays frozen. Never throws.
-  Future<void> _recordPushFailure(String table, int id) async {
+  /// SQLSTATE codes that mean "this exact write can never succeed on retry":
+  /// unique violation, foreign-key violation, not-null violation, invalid input
+  /// syntax. PostgREST puts the SQLSTATE in [PostgrestException.code]. When the
+  /// response body is not PostgREST JSON (a gateway 502/504, say) the client
+  /// puts the HTTP status there instead ('502'), which matches none of these.
+  static const _permanentSqlStates = {'23505', '23503', '23502', '22P02'};
+
+  /// True when [error] is a failure that will never succeed on retry:
+  ///  * a [PostgrestException] with one of [_permanentSqlStates];
+  ///  * a [FunctionException] (privileged-sync, thrown by the client on any
+  ///    non-2xx) with a 4xx status OTHER than 408 and 429, and other than 401
+  ///    (an expired session token succeeds after a refresh, so it is not
+  ///    permanent).
+  /// EVERYTHING ELSE is transient: SocketException, TimeoutException,
+  /// ClientException, HandshakeException, any 5xx, 408, 429, a PostgrestException
+  /// carrying an HTTP status or a PGRST code, and anything unrecognised. When
+  /// unsure the answer is transient: a row wrongly left pending only costs a
+  /// retry, a row wrongly flagged 'error' has its unsent edit overwritten by the
+  /// next pull.
+  @visibleForTesting
+  static bool isPermanentPushError(Object? error) {
+    if (error is PostgrestException) return _permanentSqlStates.contains(error.code);
+    if (error is FunctionException) {
+      final s = error.status;
+      return s >= 400 && s < 500 && s != 401 && s != 408 && s != 429;
+    }
+    return false;
+  }
+
+  /// Records one failed push of a row.
+  ///
+  /// Every failure counts in [pushFailures] (so the push result and sync message
+  /// say rows did not upload), but only a PERMANENT failure counts toward the row
+  /// being flagged: [permanent] (the local "no matching product/order" skips,
+  /// which need a data change) or an [error] that [isPermanentPushError]. A
+  /// transient failure leaves the row 'pending' and the streak untouched
+  /// (neither counted nor cleared): on a patchy connection three network
+  /// failures in a row are an ordinary afternoon, not evidence about the row.
+  ///
+  /// On the [maxPushAttempts]th consecutive permanent failure the row is flagged
+  /// `sync_status = 'error'`: push only selects 'pending' rows so it stops being
+  /// retried, and the pull (which skips only 'pending') starts refreshing it from
+  /// the server again. Never throws.
+  Future<void> _recordPushFailure(String table, int id, {Object? error, bool permanent = false}) async {
     pushFailures[table] = (pushFailures[table] ?? 0) + 1;
+    if (!permanent && !isPermanentPushError(error)) {
+      debugPrint('↻ $table/$id push failed (transient, not counted): $error');
+      return;
+    }
     final key = '$table#$id';
     final n = (_pushFailureStreak[key] ?? 0) + 1;
     if (n < maxPushAttempts) {
@@ -84,7 +126,7 @@ class SyncEngine {
         variables: [Variable.withInt(id)],
         updates: {_tableByName(table)},
       );
-      debugPrint('⚠️ $table/$id failed to push $n times in a row — flagged as error');
+      debugPrint('⚠️ $table/$id failed permanently $n times in a row — flagged as error');
     } catch (e) {
       debugPrint('Could not flag $table/$id as push error: $e');
     }
@@ -110,6 +152,11 @@ class SyncEngine {
   @visibleForTesting
   Future<void> applyPulledRecord(String table, Map<String, dynamic> data) =>
       _updateLocalRecord(table, data);
+
+  /// Records a push failure exactly as the push functions do. For tests.
+  @visibleForTesting
+  Future<void> recordPushFailureForTest(String table, int id, {Object? error, bool permanent = false}) =>
+      _recordPushFailure(table, id, error: error, permanent: permanent);
 
   /// Marks [record] synced exactly as a successful push does. For tests.
   @visibleForTesting
@@ -574,10 +621,10 @@ class SyncEngine {
 
         debugPrint('📦 User data mapped: ${data.keys.toList()}');
 
-        final ok = await _callPrivilegedSync(action: 'sync_user', data: data);
-        if (!ok) {
+        final rejected = await _callPrivilegedSync(action: 'sync_user', data: data);
+        if (!rejected.ok) {
           debugPrint('❌ Failed to sync user ${user.email}: privileged-sync rejected the request');
-        await _recordPushFailure('users', user.id);
+        await _recordPushFailure('users', user.id, error: rejected.error);
           continue;
         }
 
@@ -590,7 +637,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('❌ Failed to sync user ${user.email}: $e');
-        await _recordPushFailure('users', user.id);
+        await _recordPushFailure('users', user.id, error: e);
 
       }
 
@@ -607,7 +654,10 @@ class SyncEngine {
   /// inside the function itself. Returns false (not throw) on any failure
   /// so callers can decide whether to leave the record 'pending' for the
   /// next sync cycle.
-  Future<bool> _callPrivilegedSync({
+  /// [error] is the exception that made it fail (a [FunctionException] carries
+  /// the HTTP status), so the caller can tell a permanent rejection from a
+  /// network blip.
+  Future<({bool ok, Object? error})> _callPrivilegedSync({
     required String action,
     required Map<String, dynamic> data,
   }) async {
@@ -616,10 +666,10 @@ class SyncEngine {
         'privileged-sync',
         body: {'action': action, 'data': data},
       );
-      return response.status == 200;
+      return (ok: response.status == 200, error: null);
     } catch (e) {
       debugPrint('Privileged sync error: $e');
-      return false;
+      return (ok: false, error: e);
     }
   }
 
@@ -663,7 +713,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('Failed to sync product ${product.id}: $e');
-        await _recordPushFailure('products', product.id);
+        await _recordPushFailure('products', product.id, error: e);
 
       }
 
@@ -705,7 +755,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('Failed to sync customer ${customer.id}: $e');
-        await _recordPushFailure('customers', customer.id);
+        await _recordPushFailure('customers', customer.id, error: e);
 
       }
 
@@ -768,7 +818,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('Failed to sync order ${order.id}: $e');
-        await _recordPushFailure('orders', order.id);
+        await _recordPushFailure('orders', order.id, error: e);
 
       }
 
@@ -823,7 +873,7 @@ class SyncEngine {
         if (orderItem.productId.isEmpty) {
           // No product to resolve — can never sync, so stop retrying.
           debugPrint('Failed to sync order item ${orderItem.id}: empty productId');
-        await _recordPushFailure('order_items', orderItem.id);
+        await _recordPushFailure('order_items', orderItem.id, permanent: true);
           await (_database.update(_database.orderItems)
                 ..where((i) => i.id.equals(orderItem.id)))
               .write(const OrderItemsCompanion(syncStatus: Value('error')));
@@ -833,7 +883,7 @@ class SyncEngine {
         final product = await _database.getProductByUuid(orderItem.productId);
         if (product == null) {
           debugPrint('Failed to sync order item ${orderItem.id}: no local product for productId=${orderItem.productId}');
-        await _recordPushFailure('order_items', orderItem.id);
+        await _recordPushFailure('order_items', orderItem.id, permanent: true);
           continue;
         }
         data['product_id'] = product.id;
@@ -850,7 +900,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('Failed to sync order item ${orderItem.id}: $e');
-        await _recordPushFailure('order_items', orderItem.id);
+        await _recordPushFailure('order_items', orderItem.id, error: e);
 
       }
 
@@ -883,7 +933,7 @@ class SyncEngine {
         final product = await _database.getProductByUuid(stockMovement.productId);
         if (product == null) {
           debugPrint('Failed to sync stock movement ${stockMovement.id}: no local product for productId=${stockMovement.productId}');
-        await _recordPushFailure('stock_movements', stockMovement.id);
+        await _recordPushFailure('stock_movements', stockMovement.id, permanent: true);
           // Orphaned — the product will never appear locally, so stop retrying.
           await (_database.update(_database.stockMovements)
                 ..where((m) => m.id.equals(stockMovement.id)))
@@ -905,7 +955,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('Failed to sync stock movement ${stockMovement.id}: $e');
-        await _recordPushFailure('stock_movements', stockMovement.id);
+        await _recordPushFailure('stock_movements', stockMovement.id, error: e);
 
       }
 
@@ -933,7 +983,7 @@ class SyncEngine {
         if (parentOrder == null) {
           // Orphan — the order doesn't exist locally, so it can never sync.
           debugPrint('Failed to sync payment ${payment.id}: no local order for orderId=${payment.orderId}');
-        await _recordPushFailure('payments', payment.id);
+        await _recordPushFailure('payments', payment.id, permanent: true);
           await (_database.update(_database.payments)
                 ..where((p) => p.id.equals(payment.id)))
               .write(const PaymentsCompanion(syncStatus: Value('error')));
@@ -944,7 +994,7 @@ class SyncEngine {
           // never exist in Supabase even though they're marked 'synced'
           // locally — the payment's foreign key can never be satisfied.
           debugPrint('Failed to sync payment ${payment.id}: parent order ${parentOrder.id} is a seed order');
-        await _recordPushFailure('payments', payment.id);
+        await _recordPushFailure('payments', payment.id, permanent: true);
           await (_database.update(_database.payments)
                 ..where((p) => p.id.equals(payment.id)))
               .write(const PaymentsCompanion(syncStatus: Value('error')));
@@ -968,7 +1018,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('Failed to sync payment ${payment.id}: $e');
-        await _recordPushFailure('payments', payment.id);
+        await _recordPushFailure('payments', payment.id, error: e);
 
       }
 
@@ -1020,7 +1070,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('Failed to sync delivery ${delivery.id}: $e');
-        await _recordPushFailure('deliveries', delivery.id);
+        await _recordPushFailure('deliveries', delivery.id, error: e);
 
       }
 
@@ -1061,10 +1111,10 @@ class SyncEngine {
 
         final data = _recordToMap(supplier);
 
-        final ok = await _callPrivilegedSync(action: 'sync_supplier', data: data);
-        if (!ok) {
+        final rejected = await _callPrivilegedSync(action: 'sync_supplier', data: data);
+        if (!rejected.ok) {
           debugPrint('❌ Failed to sync supplier ${supplier.tradeName}: privileged-sync rejected the request');
-        await _recordPushFailure('suppliers', supplier.id);
+        await _recordPushFailure('suppliers', supplier.id, error: rejected.error);
           continue;
         }
 
@@ -1075,7 +1125,7 @@ class SyncEngine {
       } catch (e) {
 
         debugPrint('❌ Failed to sync supplier ${supplier.tradeName}: $e');
-        await _recordPushFailure('suppliers', supplier.id);
+        await _recordPushFailure('suppliers', supplier.id, error: e);
 
       }
 
@@ -1112,7 +1162,7 @@ class SyncEngine {
         debugPrint('✅ Synced delivery route: ${route.routeName}');
       } catch (e) {
         debugPrint('❌ Failed to sync delivery route ${route.routeName}: $e');
-        await _recordPushFailure('delivery_routes', route.id);
+        await _recordPushFailure('delivery_routes', route.id, error: e);
       }
     }
     return pendingRoutes;
@@ -2004,7 +2054,10 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             routeId: Value((data['route_id'] as num?)?.toInt()),
             routeName: Value(data['route_name'] as String?),
             salesRepId: Value((data['sales_rep_id'] as num?)?.toInt()),
-            salesRepName: Value(data['sales_rep_name'] as String?),
+            // Keep the local value when the server sends none. Every customer-placed
+            // order reaches the server unassigned (NULL); an admin's local assignment
+            // must not be wiped by that row coming back before the push lands.
+            salesRepName: Value(data['sales_rep_name'] as String? ?? existingOrder?.salesRepName),
             itemCount: Value((data['item_count'] as num?)?.toInt() ?? 0),
             orderCode: Value(data['order_code'] as String?),
             orderDate: Value(_toDateTime(data['order_date'])),
