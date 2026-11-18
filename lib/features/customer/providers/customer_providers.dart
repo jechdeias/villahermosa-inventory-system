@@ -92,7 +92,6 @@ class CustomerProfile {
     this.email = '',
     this.memberSince,
     this.address = '',
-    this.routeAmbiguous = false,
   });
 
   final String firstName;
@@ -109,10 +108,6 @@ class CustomerProfile {
   final String email;
   final DateTime? memberSince;
   final String address;
-
-  /// More than one route serves [town] equally well; the lowest-id one was used
-  /// (see [matchRouteForTown]).
-  final bool routeAmbiguous;
 
   /// Only a linked customer record can be edited / have orders pushed.
   bool get hasCustomerRecord => customerUuid != null;
@@ -156,6 +151,21 @@ RouteMatch matchRouteForTown(String town, List<DeliveryRoute> routes) {
   final best = candidates.first;
   final tied = candidates.where((r) => rank(r) == rank(best)).length;
   return RouteMatch(best, ambiguous: tied > 1);
+}
+
+/// Municipalities where more than one in-service route ties for first place —
+/// [matchRouteForTown] picks the lowest id, but that is a data problem an admin
+/// should resolve (shown on the admin Routes screen). Sorted, one entry each.
+List<String> ambiguousMunicipalities(List<DeliveryRoute> routes) {
+  final seen = <String, String>{};
+  for (final r in routes.where(_routeIsServing)) {
+    final display = r.municipality.trim();
+    if (display.isNotEmpty) seen.putIfAbsent(_normTown(display), () => display);
+  }
+  return [
+    for (final m in seen.values)
+      if (matchRouteForTown(m, routes).ambiguous) m,
+  ]..sort();
 }
 
 /// One entry in the town picker.
@@ -227,7 +237,6 @@ final customerProfileProvider = Provider<CustomerProfile>((ref) {
     email: user?.email ?? customer?.email ?? '',
     memberSince: customer?.createdAt ?? user?.createdAt,
     address: customer?.address ?? '',
-    routeAmbiguous: match.ambiguous,
   );
 });
 
@@ -238,10 +247,22 @@ final customerOrdersProvider = StreamProvider<List<Order>>((ref) {
   return ref.watch(databaseProvider).watchOrdersForCustomer(profile.customerUuid, profile.storeName);
 });
 
-final customerPaymentsProvider = StreamProvider<List<Payment>>((ref) {
+/// A customer's payments: those of THEIR orders (matched by order code — a
+/// payment has no customer FK and its store name is a denormalised label that
+/// goes stale when the store is renamed), plus any carrying the current store
+/// name (payments recorded without a matching order row).
+List<Payment> paymentsForCustomer(List<Payment> all, List<Order> myOrders, String storeName) {
+  final codes = {for (final o in myOrders) o.orderNumber};
+  return all.where((p) => codes.contains(p.orderCode) || p.storeName == storeName).toList();
+}
+
+final customerPaymentsProvider = Provider<AsyncValue<List<Payment>>>((ref) {
   final store = ref.watch(customerProfileProvider).storeName;
-  return ref.watch(databaseProvider).watchAllPayments().map((all) => all.where((p) => p.storeName == store).toList());
+  final orders = ref.watch(customerOrdersProvider).valueOrNull ?? const <Order>[];
+  return ref.watch(_allPaymentsProvider).whenData((all) => paymentsForCustomer(all, orders, store));
 });
+
+final _allPaymentsProvider = StreamProvider<List<Payment>>((ref) => ref.watch(databaseProvider).watchAllPayments());
 
 /// Unpaid balance across this store's payments.
 final customerBalanceProvider = Provider<double>((ref) {

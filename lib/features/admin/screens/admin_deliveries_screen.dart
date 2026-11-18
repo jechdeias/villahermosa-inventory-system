@@ -7,6 +7,7 @@ import '../../../core/sync/sync_manager.dart';
 import '../../../core/widgets/responsive_shell.dart';
 import '../providers/delivery_routes_provider.dart';
 import '../providers/orders_provider.dart' show ordersStreamProvider;
+import '../../customer/providers/customer_providers.dart' show ambiguousMunicipalities;
 import '../widgets/add_route_panel.dart';
 import '../widgets/mobile_list_card.dart';
 import '../widgets/orders_stat_card.dart';
@@ -178,6 +179,10 @@ class _RoutesListColumn extends ConsumerWidget {
         children: [
           _buildPageHeader(),
           const SizedBox(height: 20),
+          if (ambiguousMunicipalities(allRoutes).isNotEmpty) ...[
+            _AmbiguousRoutesBanner(municipalities: ambiguousMunicipalities(allRoutes)),
+            const SizedBox(height: 20),
+          ],
           _buildStatsRow(totalRoutes, activeRoutes, totalCustomers, deliveriesToday),
           const SizedBox(height: 20),
           _buildContentCard(context, ref),
@@ -641,4 +646,33 @@ class _DeliveryRoutesFilterSheetState extends ConsumerState<_DeliveryRoutesFilte
       ),
     );
   }
+}
+
+/// Two (or more) in-service routes cover one municipality: customers there are
+/// attached to the lowest-id one, which may not be the one intended.
+class _AmbiguousRoutesBanner extends StatelessWidget {
+  const _AmbiguousRoutesBanner({required this.municipalities});
+  final List<String> municipalities;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        key: const Key('ambiguous-routes-banner'),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBEB),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFD97706)),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Icon(Icons.warning_amber_rounded, color: Color(0xFF92400E)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'More than one route covers ${municipalities.join(', ')}. Customers there are attached to the route with the lowest ID, '
+              'so their delivery days and sales rep may not be the ones you intend. Set the extra route to inactive, or give it a different municipality.',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF92400E)),
+            ),
+          ),
+        ]),
+      );
 }

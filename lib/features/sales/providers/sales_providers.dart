@@ -75,41 +75,58 @@ String salesDisplayStoreName(Customer c) =>
 /// schema (Customers has no routeName/routeId column, and DeliveryRoutes.
 /// customerCount is just a cached integer, not an actual membership list),
 /// so this is derived from transaction history instead: the distinct set
-/// of customers this rep has an Order or Payment for. Payments has no
-/// customerId FK at all — storeName is the only field common to both
-/// Orders and Payments that identifies which customer a transaction
-/// belongs to, so matching is by store display name (businessName, or
-/// name if there's no business name — the same rule admin_orders_screen.dart
-/// uses when it writes storeName in the first place).
+/// of customers this rep has an Order or Payment for.
+///
+/// IDENTITY: by customer uuid wherever there is one (an order's `customerId`;
+/// a payment reaches its customer through its order, since Payments has no
+/// customer FK). The store NAME is only a fallback for rows that carry no
+/// resolvable uuid — a store name is a label the customer can edit, and keying
+/// on it dropped a renamed store from its rep's list.
+List<Customer> customersForRep({
+  required List<Customer> customers,
+  required List<Order> orders,
+  required List<Payment> payments,
+}) {
+  final known = {for (final c in customers) c.uuid};
+  final ids = <String>{};
+  final names = <String>{};
+  for (final o in orders) {
+    if (known.contains(o.customerId)) {
+      ids.add(o.customerId);
+    } else if (o.storeName != null) {
+      names.add(o.storeName!); // no resolvable uuid -> legacy name match
+    }
+  }
+  final byCode = {for (final o in orders) o.orderNumber: o};
+  for (final p in payments) {
+    final cid = byCode[p.orderCode]?.customerId;
+    if (cid != null && known.contains(cid)) {
+      ids.add(cid);
+    } else {
+      names.add(p.storeName);
+    }
+  }
+  return customers.where((c) => ids.contains(c.uuid) || names.contains(salesDisplayStoreName(c))).toList();
+}
+
 final myCustomersProvider = Provider<List<Customer>>((ref) {
-  final orders = ref.watch(salesRepOrdersProvider).valueOrNull ?? [];
-  final paymentsList = ref.watch(salesRepPaymentsProvider).valueOrNull ?? [];
-  final allCustomers = ref.watch(allCustomersProvider).valueOrNull ?? [];
-
-  final storeNames = <String>{
-    for (final o in orders)
-      if (o.storeName != null) o.storeName!,
-    for (final p in paymentsList) p.storeName,
-  };
-  if (storeNames.isEmpty) return const [];
-
-  return allCustomers
-      .where((c) => storeNames.contains(salesDisplayStoreName(c)))
-      .toList();
+  return customersForRep(
+    customers: ref.watch(allCustomersProvider).valueOrNull ?? [],
+    orders: ref.watch(salesRepOrdersProvider).valueOrNull ?? [],
+    payments: ref.watch(salesRepPaymentsProvider).valueOrNull ?? [],
+  );
 });
 
-/// Distinct stores with an order created today.
+/// Distinct stores with an order created today (keyed by customer, so a store
+/// renamed mid-day is still one visit).
 final visitedTodayProvider = Provider<Set<String>>((ref) {
   final orders = ref.watch(salesRepOrdersProvider).valueOrNull ?? [];
   final now = DateTime.now();
   return {
     for (final o in orders)
-      if (o.storeName != null &&
-          o.createdAt.year == now.year &&
-          o.createdAt.month == now.month &&
-          o.createdAt.day == now.day)
-        o.storeName!,
-  };
+      if (o.createdAt.year == now.year && o.createdAt.month == now.month && o.createdAt.day == now.day)
+        o.customerId.isNotEmpty ? o.customerId : (o.storeName ?? ''),
+  }..remove('');
 });
 
 final todayProgressProvider = Provider<Map<String, int>>((ref) {
