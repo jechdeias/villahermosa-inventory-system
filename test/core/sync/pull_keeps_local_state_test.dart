@@ -1,14 +1,22 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:villahermosa_inventory_system/core/database/app_database.dart';
 import 'package:villahermosa_inventory_system/core/sync/sync_engine.dart';
+import 'package:villahermosa_inventory_system/core/sync/sync_manager.dart';
+import 'package:villahermosa_inventory_system/features/warehouse/providers/warehouse_providers.dart' show WarehouseActions;
 
+// NOTE: rows seeded here are 'synced' on purpose. These tests are about the
+// per-column keep-local guards (legacy NULLs on SYNCED rows); a 'pending' row is
+// skipped by the pull entirely (see 'a pending row is never touched by a pull').
 /// Picking state (order_items.status / picked_at) is local bookkeeping:
 /// Supabase has no such columns and push never sends them. A pull must not
 /// reset it, or every sync un-ticks the warehouse worker's picklist.
 void main() {
   group('round trip', roundTripTests);
+  group('sync invariants', syncInvariantTests);
 
   late AppDatabase db;
   late SyncEngine engine;
@@ -28,6 +36,7 @@ void main() {
           totalAmount: 1,
           status: const Value('picked'),
           pickedAt: Value(DateTime(2026, 11, 15)),
+          syncStatus: const Value('synced'),
         ));
   });
   tearDown(() => db.close());
@@ -53,6 +62,7 @@ void main() {
           orderNumber: 'ORD-9',
           deliveryAddress: 'x',
           packedAt: Value(DateTime(2026, 11, 15, 9)),
+          syncStatus: const Value('synced'),
         ));
 
     test('a pull the server sends no packed_at for keeps the local value', () async {
@@ -95,6 +105,7 @@ void roundTripTests() {
         userId: 'u-local',
         userName: 'Anne Warehouse',
         referenceId: const Value('PO-7'),
+        syncStatus: const Value('synced'),
       ));
 
   group('stock_movements pull keys', () {
@@ -165,6 +176,7 @@ void roundTripTests() {
         uuid: 'o-1', customerId: 'c', orderNumber: 'ORD-1', deliveryAddress: 'x',
         expectedDeliveryDate: Value(DateTime(2026, 11, 20)),
         actualDeliveryDate: Value(DateTime(2026, 11, 21)),
+        syncStatus: const Value('synced'),
       ));
       await engine.applyPulledRecord('orders', {'id': 1, 'uuid': 'o-1', 'order_number': 'ORD-1'});
       var o = (await db.getOrderById('o-1'))!;
@@ -174,6 +186,218 @@ void roundTripTests() {
       await engine.applyPulledRecord('orders', {'id': 1, 'uuid': 'o-1', 'expected_delivery_date': '2026-12-01T00:00:00Z'});
       o = (await db.getOrderById('o-1'))!;
       expect(o.expectedDeliveryDate!.toUtc(), DateTime.utc(2026, 12, 1));
+    });
+  });
+}
+
+/// A SyncManager whose push/pull are counted (and can be held open) instead of
+/// touching Supabase.
+class _CountingSyncManager extends SyncManager {
+  _CountingSyncManager(AppDatabase db) : super(db, SyncEngine(db));
+  int pushes = 0;
+  int pulls = 0;
+  Completer<void>? holdPush;
+
+  @override
+  Future<Map<String, dynamic>> push() async {
+    pushes++;
+    await holdPush?.future;
+    return {'success': true};
+  }
+
+  @override
+  Future<Map<String, dynamic>> pull() async {
+    pulls++;
+    return {'success': true};
+  }
+}
+
+/// The three-layer "local change reverts or never syncs" invariants.
+void syncInvariantTests() {
+  late AppDatabase db;
+  late SyncEngine engine;
+
+  setUp(() {
+    db = AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
+    engine = SyncEngine(db);
+  });
+  tearDown(() => db.close());
+
+  Future<void> markAllSynced() async {
+    for (final t in ['users', 'products', 'customers', 'orders', 'order_items']) {
+      await db.customStatement("UPDATE $t SET sync_status = 'synced'");
+    }
+  }
+
+  Future<Customer> customer(String uuid) => (db.select(db.customers)..where((t) => t.uuid.equals(uuid))).getSingle();
+
+  Future<void> addCustomer(String uuid) => db.createCustomer(CustomersCompanion.insert(
+      uuid: uuid, name: 'N', municipality: 'm', province: 'p', storeType: 's', contactNumber: '0'));
+
+  // ── Layer 2: the pull never clobbers unpushed work ──────────────────────────
+  group('a pending row is never touched by a pull', () {
+    test('order_items (matched by uuid)', () async {
+      await db.into(db.orderItems).insert(OrderItemsCompanion.insert(
+            uuid: 'oi-p', orderId: 'o', productId: 'p', productSku: 'S', productName: 'P',
+            quantity: 1, unitPrice: 1, subtotal: 1, totalAmount: 1,
+            status: const Value('picked'), // syncStatus defaults to 'pending'
+          ));
+      await engine.applyPulledRecord('order_items', {'id': 1, 'uuid': 'oi-p', 'quantity': 99, 'status': 'pending'});
+
+      final row = (await db.getOrderItemById('oi-p'))!;
+      expect(row.status, 'picked');
+      expect(row.quantity, 1);
+      expect(row.syncStatus, 'pending', reason: 'left pending so the next push sends it');
+      expect(engine.pullFailureCount, 0);
+    });
+
+    test('orders (a stale server status does not revert a local Process)', () async {
+      await db.createOrder(OrdersCompanion.insert(
+        uuid: 'o-p', customerId: 'c', orderNumber: 'ORD-P', deliveryAddress: 'x',
+        status: const Value('processing'),
+      ));
+      await engine.applyPulledRecord('orders', {'id': 7, 'uuid': 'o-p', 'order_number': 'ORD-P', 'status': 'pending'});
+      final o = (await db.getOrderById('o-p'))!;
+      expect(o.status, 'processing');
+      expect(o.syncStatus, 'pending');
+    });
+
+    test('products (matched by id, the way the pull writes them)', () async {
+      await db.createProduct(ProductsCompanion.insert(
+        uuid: 'pr-p', sku: 'S', name: 'Local name', category: 'c', unitPrice: 1, costPrice: 1, unit: 'pc', currentStock: 5, minStock: 0,
+      ));
+      final id = (await (db.select(db.products)..where((t) => t.uuid.equals('pr-p'))).getSingle()).id;
+      await engine.applyPulledRecord('products', {'id': id, 'uuid': 'pr-p', 'name': 'Server name', 'sku': 'S', 'current_stock': 0});
+      final p = await (db.select(db.products)..where((t) => t.uuid.equals('pr-p'))).getSingle();
+      expect(p.name, 'Local name');
+      expect(p.currentStock, 5);
+      expect(p.syncStatus, 'pending');
+    });
+
+    test('control: the same pull DOES apply once the row is synced', () async {
+      await db.into(db.orderItems).insert(OrderItemsCompanion.insert(
+            uuid: 'oi-s', orderId: 'o', productId: 'p', productSku: 'S', productName: 'P',
+            quantity: 1, unitPrice: 1, subtotal: 1, totalAmount: 1,
+            syncStatus: const Value('synced'),
+          ));
+      await engine.applyPulledRecord('order_items', {'id': 2, 'uuid': 'oi-s', 'quantity': 99});
+      expect((await db.getOrderItemById('oi-s'))!.quantity, 99);
+    });
+  });
+
+  // ── Layer 3: no write path can forget syncStatus ────────────────────────────
+  group('local writes mark the row pending', () {
+    test('soft-deleting a user, a product and a customer', () async {
+      await db.createUser(UsersCompanion.insert(
+          uuid: 'u1', firstName: 'A', lastName: 'B', email: 'a@b.c', passwordHash: 'x', role: 'customer'));
+      await db.createProduct(ProductsCompanion.insert(
+          uuid: 'p1', sku: 'S', name: 'N', category: 'c', unitPrice: 1, costPrice: 1, unit: 'pc', currentStock: 1, minStock: 0));
+      await addCustomer('c1');
+      await markAllSynced();
+
+      await db.softDeleteUser('u1');
+      await db.softDeleteProduct('p1');
+      await db.softDeleteCustomer('c1');
+
+      final u = await (db.select(db.users)..where((t) => t.uuid.equals('u1'))).getSingle();
+      final p = await (db.select(db.products)..where((t) => t.uuid.equals('p1'))).getSingle();
+      final c = await customer('c1');
+      expect([u.isDeleted, p.isDeleted, c.isDeleted], everyElement(isTrue));
+      expect([u.syncStatus, p.syncStatus, c.syncStatus], everyElement('pending'));
+    });
+
+    test('updateX helpers force pending even if the caller passes nothing (or "synced")', () async {
+      await addCustomer('c2');
+      await markAllSynced();
+      await db.updateCustomer('c2', const CustomersCompanion(name: Value('New')));
+      expect((await customer('c2')).syncStatus, 'pending');
+
+      await markAllSynced();
+      await db.updateCustomer('c2', const CustomersCompanion(name: Value('Newer'), syncStatus: Value('synced')));
+      expect((await customer('c2')).syncStatus, 'pending');
+    });
+
+    test('setItemPicked and setItemLoaded mark the order item pending', () async {
+      await db.into(db.orderItems).insert(OrderItemsCompanion.insert(
+            uuid: 'oi-w', orderId: 'o', productId: 'p', productSku: 'S', productName: 'P',
+            quantity: 1, unitPrice: 1, subtotal: 1, totalAmount: 1,
+            syncStatus: const Value('synced'),
+          ));
+      var item = (await db.getOrderItemById('oi-w'))!;
+      final actions = WarehouseActions(db);
+
+      await actions.setItemPicked(item, true);
+      item = (await db.getOrderItemById('oi-w'))!;
+      expect(item.status, 'picked');
+      expect(item.syncStatus, 'pending');
+
+      await markAllSynced();
+      await actions.setItemLoaded(item, true);
+      item = (await db.getOrderItemById('oi-w'))!;
+      expect(item.status, 'loaded');
+      expect(item.syncStatus, 'pending');
+    });
+
+    test('completing an order marks it pending (warehouse_status and packed_at sync now)', () async {
+      await db.createOrder(OrdersCompanion.insert(
+        uuid: 'o-w', customerId: 'c', orderNumber: 'ORD-W', deliveryAddress: 'x',
+        status: const Value('processing'), syncStatus: const Value('synced'),
+      ));
+      var o = (await db.getOrderById('o-w'))!;
+      await WarehouseActions(db).completeOrder(o, const []);
+      o = (await db.getOrderById('o-w'))!;
+      expect(o.warehouseStatus, 'ready');
+      expect(o.packedAt, isNotNull);
+      expect(o.syncStatus, 'pending', reason: 'status was already processing; this used to leave the row synced');
+    });
+  });
+
+  // ── Layer 1: sync is serialised ─────────────────────────────────────────────
+  group('syncPendingData is single-flight', () {
+    test('two overlapping calls share one push/pull cycle', () async {
+      final m = _CountingSyncManager(db)..holdPush = Completer<void>();
+      final a = m.syncPendingData();
+      final b = m.syncPendingData(); // arrives while the first is still pushing
+      expect(identical(a, b), isTrue, reason: 'the second caller gets the in-flight Future');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      m.holdPush!.complete();
+      await Future.wait([a, b]);
+
+      expect(m.pushes, 1);
+      expect(m.pulls, 1);
+    });
+
+    test('a caller that joined mid-cycle gets one more cycle only if rows are still pending', () async {
+      await addCustomer('c-pend'); // pending
+      final m = _CountingSyncManager(db)..holdPush = Completer<void>();
+      final a = m.syncPendingData();
+      final b = m.syncPendingData();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      m.holdPush!.complete();
+      await Future.wait([a, b]);
+      expect(m.pushes, 2, reason: 'something was still pending, so one trailing cycle ran');
+      expect(m.pulls, 2);
+    });
+
+    test('sequential calls each run their own cycle', () async {
+      final m = _CountingSyncManager(db);
+      await m.syncPendingData();
+      await m.syncPendingData();
+      expect(m.pushes, 2);
+    });
+
+    test('a full sync waits for the running cycle instead of overlapping it', () async {
+      final m = _CountingSyncManager(db)..holdPush = Completer<void>();
+      final cycle = m.syncPendingData();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      var fullDone = false;
+      final full = m.performFullSync().then((_) => fullDone = true);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(m.pushes, 1, reason: 'full sync has not started its own push yet');
+      expect(fullDone, isFalse);
+      m.holdPush!.complete();
+      await Future.wait([cycle, full]);
+      expect(m.pushes, 2);
     });
   });
 }

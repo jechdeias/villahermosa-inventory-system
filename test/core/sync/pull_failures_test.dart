@@ -43,11 +43,13 @@ void main() {
     expect(await statusOf('p1'), 'error');
   });
 
-  test('a row with local edits still waiting to push is not flagged', () async {
+  test('a row with local edits still waiting to push is skipped: not applied, not counted, not flagged', () async {
     await seedProduct('p2', 'pending');
     await engine.applyPulledRecord('products', badRow('p2'));
 
-    expect(engine.pullFailureCount, 1);
+    // The pull never even tried to apply it (it would have failed), so it is
+    // not a failure — and the pending local change is left to push.
+    expect(engine.pullFailureCount, 0);
     expect(await statusOf('p2'), 'pending');
   });
 

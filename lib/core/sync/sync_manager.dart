@@ -120,18 +120,12 @@ class SyncManager {
 
   void _doRealtimePull() {
     _lastRealtimePull = DateTime.now();
-    debugPrint('⚡ Realtime change detected — pulling...');
-    // Handler must return pull()'s type — see auth_service.dart. This one
-    // fires on every realtime change, so a null return here would spray
-    // unhandled type errors whenever Supabase is unreachable.
-    pull().catchError((e) {
-      debugPrint('⚡ Realtime pull error: $e');
-      return <String, dynamic>{
-        'success': false,
-        'recordsPulled': 0,
-        'error': e.toString(),
-        'timestamp': DateTime.now().toIso8601String(),
-      };
+    debugPrint('⚡ Realtime change detected — syncing...');
+    // Goes through syncPendingData (push THEN pull, single-flight) rather than a
+    // bare pull(): a lone pull could run while a local write was still waiting
+    // to push, and overwrite it with the server's stale copy.
+    syncPendingData().catchError((Object e) {
+      debugPrint('⚡ Realtime sync error: $e');
     });
   }
 
@@ -227,7 +221,9 @@ class SyncManager {
     }
   }
 
-  Future<Map<String, dynamic>> performFullSync() async {
+  Future<Map<String, dynamic>> performFullSync() => _exclusive(_performFullSyncUnlocked);
+
+  Future<Map<String, dynamic>> _performFullSyncUnlocked() async {
     try {
       debugPrint('Starting full sync...');
       final pushResult = await push();
@@ -254,10 +250,79 @@ class SyncManager {
 
   /// Push pending rows then pull remote changes. Use this after every local
   /// write so other devices see the change immediately.
-  Future<void> syncPendingData() async {
+  ///
+  /// SINGLE-FLIGHT: while a cycle is running, further callers get that same
+  /// Future instead of starting a second cycle. Overlapping cycles are what let
+  /// a Realtime-triggered pull land mid-push and revert a local change with the
+  /// server's older copy.
+  ///
+  /// A caller that arrives mid-cycle may have written a row AFTER the running
+  /// push already passed its table, so if anyone joined and rows are still
+  /// pending when the cycle ends, exactly one more cycle runs. A row that can
+  /// never push therefore costs one extra cycle per burst, not a loop.
+  Future<void> syncPendingData() {
+    final running = _inFlight;
+    if (running != null) {
+      _joinedWhileRunning = true;
+      return running;
+    }
+    _joinedWhileRunning = false;
+    late final Future<void> cycle;
+    cycle = _exclusive(_runSyncCycles).whenComplete(() {
+      if (identical(_inFlight, cycle)) _inFlight = null;
+    });
+    _inFlight = cycle;
+    return cycle;
+  }
+
+  Future<void>? _inFlight;
+  bool _joinedWhileRunning = false;
+
+  Future<void> _runSyncCycles() async {
+    await _syncCycle();
+    if (_joinedWhileRunning) {
+      _joinedWhileRunning = false;
+      if (await _hasPendingRows()) await _syncCycle();
+    }
+  }
+
+  Future<void> _syncCycle() async {
     debugPrint('🔄 Syncing pending data...');
     await push();
     await pull();
+  }
+
+  /// Runs [body] only after every earlier exclusive section has finished, so a
+  /// full sync and a background cycle never overlap each other.
+  Future<T> _exclusive<T>(Future<T> Function() body) {
+    final done = Completer<T>();
+    final previous = _exclusiveTail;
+    _exclusiveTail = done.future.then<void>((_) {}, onError: (Object _) {});
+    previous.then((_) async {
+      try {
+        done.complete(await body());
+      } catch (e, st) {
+        done.completeError(e, st);
+      }
+    });
+    return done.future;
+  }
+
+  Future<void> _exclusiveTail = Future<void>.value();
+
+  Future<bool> _hasPendingRows() async {
+    for (final table in const [
+      'users', 'products', 'customers', 'orders', 'order_items',
+      'stock_movements', 'payments', 'deliveries', 'delivery_routes', 'suppliers',
+    ]) {
+      try {
+        final row = await _database
+            .customSelect("SELECT 1 AS x FROM $table WHERE sync_status = 'pending' LIMIT 1")
+            .getSingleOrNull();
+        if (row != null) return true;
+      } catch (_) {}
+    }
+    return false;
   }
 
   /// Pull all users from Supabase on a fresh install (empty local DB).

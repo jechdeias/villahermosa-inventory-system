@@ -1744,12 +1744,81 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
     }
   }
 
+  /// How each table's pull finds "the same row" locally, mirroring what its
+  /// write below conflicts on: by `uuid` (orders, order_items, delivery_routes),
+  /// by primary-key `id` (payments, which has no uuid), or either (the id-parity
+  /// tables). Value = the synthetic uuid the pull invents when the server row
+  /// has none.
+  static const _uuidOnlyTables = {'orders': 'sb-order-', 'order_items': 'sb-oi-', 'delivery_routes': 'sb-route-'};
+  static const _idOrUuidTables = {
+    'products': 'sb-product-',
+    'customers': 'sb-customer-',
+    'stock_movements': 'sb-stockmovement-',
+    'deliveries': 'sb-del-',
+    'users': null,
+    'suppliers': null,
+  };
+
+  /// True when the local copy of this pulled row has changes the server hasn't
+  /// seen yet (sync_status = 'pending'). The pull must not overwrite such a
+  /// row: its push comes first, and if that push failed the local change is
+  /// all that exists. This is the invariant the column-by-column
+  /// `?? existing...` guards approximate; those stay for the legacy-NULL case.
+  Future<bool> _hasUnpushedLocalChanges(String tableName, Map<String, dynamic> data) async {
+    try {
+      final id = data['id'];
+      final conds = <String>[];
+      final vars = <Variable>[];
+      void byId() {
+        if (id is int) {
+          conds.add('id = ?');
+          vars.add(Variable.withInt(id));
+        }
+      }
+
+      void byUuid(String? syntheticPrefix) {
+        final uuid = data['uuid'];
+        if (uuid is String && uuid.isNotEmpty) {
+          conds.add('uuid = ?');
+          vars.add(Variable.withString(uuid));
+        } else if (syntheticPrefix != null && id != null) {
+          conds.add('uuid = ?');
+          vars.add(Variable.withString('$syntheticPrefix$id'));
+        }
+      }
+
+      if (_uuidOnlyTables.containsKey(tableName)) {
+        byUuid(_uuidOnlyTables[tableName]);
+      } else if (_idOrUuidTables.containsKey(tableName)) {
+        byId();
+        byUuid(_idOrUuidTables[tableName]);
+      } else if (tableName == 'payments') {
+        byId();
+      }
+      if (conds.isEmpty) return false;
+
+      final row = await _database.customSelect(
+        "SELECT 1 AS x FROM $tableName WHERE sync_status = 'pending' AND (${conds.join(' OR ')}) LIMIT 1",
+        variables: vars,
+      ).getSingleOrNull();
+      return row != null;
+    } catch (e) {
+      // Never let the guard itself block a pull; worst case is the old behaviour.
+      debugPrint('Pending-row check failed for $tableName: $e');
+      return false;
+    }
+  }
+
   Future<void> _updateLocalRecord(String tableName, Map<String, dynamic> data) async {
 
     try {
 
-      debugPrint('_updateLocalRecord called for table: $tableName');
+      if (await _hasUnpushedLocalChanges(tableName, data)) {
+        debugPrint('Skipping pull of $tableName ${data['uuid'] ?? data['id']}: local changes not pushed yet');
+        return;
+      }
 
+      debugPrint('_updateLocalRecord called for table: $tableName');
       debugPrint('Data keys: ${data.keys.toList()}');
 
       debugPrint('Data values: $data');
