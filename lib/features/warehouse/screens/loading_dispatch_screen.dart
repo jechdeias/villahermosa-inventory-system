@@ -123,6 +123,9 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
     final loaded = rows.where((r) => isItemLoaded(r.line) || whOrderStatus(r.order) == 'dispatched').length;
     final allLoaded = loadable.isNotEmpty && rows.where((r) => whOrderStatus(r.order) == 'ready').every((r) => isItemLoaded(r.line));
 
+    final state = routeDispatchState(loadable: loadable, dispatched: dispatched, rows: rows.length, allLoaded: allLoaded);
+    final dispatchedAt = dispatched.isEmpty ? null : dispatched.map((o) => o.updatedAt).reduce((a, b) => a.isAfter(b) ? a : b);
+
     final stores = shown.map((o) => o.storeName ?? '').where((s) => s.isNotEmpty).toSet().length;
     final products = rows.map((r) => r.line.productSku).toSet().length;
     final units = rows.fold<int>(0, (s, r) => s + r.line.quantity);
@@ -141,10 +144,35 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
               ),
             ]),
             actions: [
-              Text('$loaded of ${rows.length} lines loaded', style: const TextStyle(fontSize: 12, color: WhColors.muted)),
-              WhPrimaryButton(label: 'Dispatch', icon: Icons.local_shipping_outlined, onPressed: allLoaded ? () => _dispatch(route, loadable) : null),
+              // Say WHY the button is (or isn't) available instead of a bare greyed
+              // button beside "10 of 10 lines loaded" on a route that already went
+              // out. The button's own condition is unchanged.
+              if (state == DispatchState.dispatched)
+                Container(
+                  key: const Key('route-dispatched'),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(8)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF166534)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Dispatched${dispatchedAt == null ? '' : ' ${_stamp(dispatchedAt)}'}',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF166534)),
+                    ),
+                  ]),
+                )
+              else ...[
+                if (state != DispatchState.empty)
+                  Text('$loaded of ${rows.length} lines loaded', style: const TextStyle(fontSize: 12, color: WhColors.muted)),
+                WhPrimaryButton(label: 'Dispatch', icon: Icons.local_shipping_outlined, onPressed: allLoaded ? () => _dispatch(route, loadable) : null),
+              ],
             ],
           ),
+          if (state == DispatchState.needsLoading)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(18, 0, 18, 10),
+              child: Text('Load all lines to dispatch', key: Key('load-all-hint'), style: TextStyle(fontSize: 12, color: WhColors.muted)),
+            ),
           if (rows.isEmpty)
             WhEmpty(
                 waiting > 0
@@ -188,8 +216,42 @@ class _WarehouseLoadingDispatchScreenState extends ConsumerState<WarehouseLoadin
         Text(l.productName, style: const TextStyle(fontSize: 13, color: WhColors.text), overflow: TextOverflow.ellipsis),
         Text('${l.quantity} units', style: const TextStyle(fontSize: 13, color: WhColors.text)),
         Text(o.storeName ?? '—', style: const TextStyle(fontSize: 13, color: WhColors.muted), overflow: TextOverflow.ellipsis),
-        Tooltip(message: dispatched ? 'Dispatched' : 'Tap to mark ${loaded ? 'pending' : 'loaded'}', child: WhStatusBadge(loaded ? 'loaded' : 'pending')),
+        Tooltip(
+          message: dispatched ? 'Dispatched' : 'Tap to mark ${loaded ? 'pending' : 'loaded'}',
+          child: WhStatusBadge(dispatched ? 'dispatched' : (loaded ? 'loaded' : 'pending')),
+        ),
       ],
     );
   }
+}
+
+String _stamp(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} '
+    '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+/// Which state a route's loading list is in — what the header should tell the
+/// user, independent of the Dispatch button's own (unchanged) condition.
+enum DispatchState {
+  /// Nothing prepared or dispatched on this route: the empty state shows.
+  empty,
+
+  /// Orders are ready but not every line is loaded yet.
+  needsLoading,
+
+  /// Orders are ready and every line is loaded: Dispatch is available.
+  readyToDispatch,
+
+  /// Everything has gone out and nothing is ready: there is nothing to dispatch.
+  dispatched,
+}
+
+DispatchState routeDispatchState({
+  required List<Order> loadable,
+  required List<Order> dispatched,
+  required int rows,
+  required bool allLoaded,
+}) {
+  if (loadable.isNotEmpty) return allLoaded ? DispatchState.readyToDispatch : DispatchState.needsLoading;
+  if (dispatched.isNotEmpty && rows > 0) return DispatchState.dispatched;
+  return DispatchState.empty;
 }
