@@ -525,6 +525,10 @@ class SyncEngine {
   /// Nullable-safe parse for optional timestamp columns (picked_at,
   /// expected_delivery_date, ...) — these are genuinely absent for most
   /// rows, unlike created_at/updated_at which always have a value.
+  /// Parses a server timestamp. Every synced column is `timestamptz`, which
+  /// PostgREST returns WITH an offset ("...+00:00"), so [DateTime.tryParse] lands
+  /// on the correct instant. (A string with no offset would be taken as LOCAL
+  /// time - which is why everything we SEND must carry one: see the push maps.)
   DateTime? _toDateTime(dynamic value) {
     if (value == null) return null;
     return DateTime.tryParse(value.toString());
@@ -1158,7 +1162,7 @@ class SyncEngine {
 
         .select()
 
-        .gte('updated_at', lastSyncTime.toIso8601String());
+        .gte('updated_at', lastSyncTime.toUtc().toIso8601String());
 
     
 
@@ -1180,7 +1184,7 @@ class SyncEngine {
 
         .select()
 
-        .gte('updated_at', lastSyncTime.toIso8601String());
+        .gte('updated_at', lastSyncTime.toUtc().toIso8601String());
 
     
 
@@ -1235,7 +1239,7 @@ class SyncEngine {
 
         .select()
 
-        .gte('updated_at', lastSyncTime.toIso8601String());
+        .gte('updated_at', lastSyncTime.toUtc().toIso8601String());
 
 
 
@@ -1257,7 +1261,7 @@ class SyncEngine {
 
         .select()
 
-        .gte('updated_at', lastSyncTime.toIso8601String());
+        .gte('updated_at', lastSyncTime.toUtc().toIso8601String());
 
     for (final paymentData in response) {
 
@@ -1273,7 +1277,7 @@ class SyncEngine {
     final response = await Supabase.instance.client
         .from('deliveries')
         .select()
-        .gte('updated_at', lastSyncTime.toIso8601String());
+        .gte('updated_at', lastSyncTime.toUtc().toIso8601String());
 
     for (final deliveryData in response) {
       await _updateLocalRecord('deliveries', deliveryData);
@@ -1366,9 +1370,9 @@ class SyncEngine {
         'is_active': record.isActive,
 
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
 
-        'updated_at': record.updatedAt.toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
 
       };
 
@@ -1416,9 +1420,9 @@ class SyncEngine {
         'qty_per_case': record.qtyPerCase,
 
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
 
-        'updated_at': record.updatedAt.toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
 
       };
 
@@ -1459,9 +1463,9 @@ class SyncEngine {
         'channel': record.channel,
 
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
 
-        'updated_at': record.updatedAt.toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
 
       };
 
@@ -1490,13 +1494,13 @@ class SyncEngine {
         'quantity': record.quantity,
         'notes': record.notes,
         'created_by': record.createdBy,
-        'created_at': record.createdAt.toIso8601String(),
-        'updated_at': record.updatedAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
         'reason': record.reason,
         'reference': record.referenceId,
         'performed_by_name': record.userName,
         'user_id': record.userId,
-        'movement_date': record.createdAt.toIso8601String(),
+        'movement_date': record.createdAt.toUtc().toIso8601String(),
         'is_deleted': record.isDeleted,
       };
 
@@ -1534,16 +1538,16 @@ class SyncEngine {
 
         'payment_method': record.paymentMethod,
 
-        'payment_date': record.paymentDate.toIso8601String(),
+        'payment_date': record.paymentDate.toUtc().toIso8601String(),
 
         'status': record.status,
 
         'notes': record.notes,
 
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
 
-        'updated_at': record.updatedAt.toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
 
       };
 
@@ -1565,16 +1569,16 @@ class SyncEngine {
         'customer_id': record.customerId,
         'status': record.status,
         'warehouse_status': record.warehouseStatus,
-        'expected_delivery_date': record.expectedDeliveryDate?.toIso8601String(),
-        'actual_delivery_date': record.actualDeliveryDate?.toIso8601String(),
-        'packed_at': record.packedAt?.toIso8601String(),
+        'expected_delivery_date': record.expectedDeliveryDate?.toUtc().toIso8601String(),
+        'actual_delivery_date': record.actualDeliveryDate?.toUtc().toIso8601String(),
+        'packed_at': record.packedAt?.toUtc().toIso8601String(),
         'total_amount': record.totalAmount,
         'subtotal': record.subtotal,
         'notes': record.customerNotes,
         'delivery_address': record.deliveryAddress,
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
-        'updated_at': record.updatedAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
         'order_number': record.orderNumber,
         'order_code': record.orderCode,
         'store_name': record.storeName,
@@ -1582,7 +1586,7 @@ class SyncEngine {
         'sales_rep_id': record.salesRepId,
         'sales_rep_name': record.salesRepName,
         'item_count': record.itemCount,
-        'order_date': (record.orderDate ?? record.createdAt).toIso8601String(),
+        'order_date': (record.orderDate ?? record.createdAt).toUtc().toIso8601String(),
       };
 
     }
@@ -1604,10 +1608,10 @@ class SyncEngine {
         'unit_price': record.unitPrice,
         'total_price': record.totalAmount,
         'status': record.status,
-        'picked_at': record.pickedAt?.toIso8601String(),
+        'picked_at': record.pickedAt?.toUtc().toIso8601String(),
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
-        'updated_at': record.updatedAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
       };
 
     }
@@ -1629,11 +1633,11 @@ class SyncEngine {
         'driver_name': record.deliveryPersonnelName,
         'delivery_personnel_id': record.deliveryPersonnelId,
         'delivery_personnel_phone': record.deliveryPersonnelPhone,
-        'expected_start_time': record.expectedStartTime.toIso8601String(),
-        'expected_completion_time': record.expectedCompletionTime.toIso8601String(),
-        'actual_start_time': record.actualStartTime?.toIso8601String(),
-        'actual_completion_time': record.actualCompletionTime?.toIso8601String(),
-        'delivery_date': record.deliveryDate?.toIso8601String(),
+        'expected_start_time': record.expectedStartTime.toUtc().toIso8601String(),
+        'expected_completion_time': record.expectedCompletionTime.toUtc().toIso8601String(),
+        'actual_start_time': record.actualStartTime?.toUtc().toIso8601String(),
+        'actual_completion_time': record.actualCompletionTime?.toUtc().toIso8601String(),
+        'delivery_date': record.deliveryDate?.toUtc().toIso8601String(),
         'delivery_notes': record.deliveryNotes,
         'recipient_name': record.recipientName,
         'recipient_relation': record.recipientRelation,
@@ -1643,8 +1647,8 @@ class SyncEngine {
         'delivery_coordinates': record.deliveryCoordinates,
         'is_active': record.isActive,
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
-        'updated_at': record.updatedAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
 
       };
 
@@ -1664,9 +1668,9 @@ class SyncEngine {
         'trade_name': record.tradeName,
 
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
 
-        'updated_at': record.updatedAt.toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
 
       };
 
@@ -1683,8 +1687,8 @@ class SyncEngine {
         'customer_count': record.customerCount,
         'status': record.status,
         'is_deleted': record.isDeleted,
-        'created_at': record.createdAt.toIso8601String(),
-        'updated_at': record.updatedAt.toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
       };
     }
 

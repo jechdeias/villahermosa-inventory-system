@@ -210,8 +210,8 @@ class AuthRepository {
         'is_active': user.isActive,
         'is_deleted': user.isDeleted,
         'sync_status': 'synced',
-        'created_at': user.createdAt.toIso8601String(),
-        'updated_at': user.updatedAt.toIso8601String(),
+        'created_at': user.createdAt.toUtc().toIso8601String(),
+        'updated_at': user.updatedAt.toUtc().toIso8601String(),
       };
 
       debugPrint('☁️ Syncing to Supabase with data: $userData');
