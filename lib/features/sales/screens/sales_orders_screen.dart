@@ -8,6 +8,7 @@ import '../providers/sales_providers.dart';
 import '../widgets/mark_delivered_flow.dart';
 import '../widgets/new_order_flow.dart';
 import '../widgets/sales_shell.dart';
+import '../widgets/sales_filter_chips.dart';
 import 'sales_order_detail_screen.dart';
 import 'sales_scan_screen.dart';
 import '../../../core/constants/order_status.dart';
@@ -51,35 +52,10 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
               ),
             ]),
           ),
-          SizedBox(
-            height: 40,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              itemCount: tabs.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, i) {
-                final (value, label, count) = tabs[i];
-                final active = _filter == value;
-                return InkWell(
-                  onTap: () => setState(() => _filter = value),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: active ? AppTheme.primary : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text('$label ($count)',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: active ? Colors.white : AppTheme.textMuted)),
-                  ),
-                );
-              },
-            ),
+          SalesFilterChips(
+            tabs: tabs,
+            selected: _filter,
+            onSelected: (v) => setState(() => _filter = v),
           ),
           Expanded(
             child: isFirstLoad(ordersAsync)

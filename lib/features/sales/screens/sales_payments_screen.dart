@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/sales_providers.dart';
 import '../widgets/record_payment_sheet.dart';
 import '../widgets/sales_shell.dart';
+import '../widgets/sales_filter_chips.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SalesPaymentsScreen extends ConsumerStatefulWidget {
@@ -61,35 +62,11 @@ class _SalesPaymentsScreenState extends ConsumerState<SalesPaymentsScreen> {
               ),
             ]),
           ),
-          SizedBox(
-            height: 40,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              itemCount: tabs.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, i) {
-                final (value, label, count) = tabs[i];
-                final active = _filter == value;
-                return InkWell(
-                  onTap: () => setState(() => _filter = value),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: active ? AppTheme.primary : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text('$label ($count)',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: active ? Colors.white : AppTheme.textMuted)),
-                  ),
-                );
-              },
-            ),
+          SalesFilterChips(
+            tabs: tabs,
+            selected: _filter,
+            onSelected: (v) => setState(() => _filter = v),
+            verticalPadding: 12,
           ),
           Expanded(
             child: isFirstLoad(paymentsAsync)
