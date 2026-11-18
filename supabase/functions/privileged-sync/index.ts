@@ -61,6 +61,54 @@ async function resolveCallerEmail(
   return data.user.email
 }
 
+const AUTH_LOOKUP_PER_PAGE = 200
+// 50 pages x 200 = 10,000 accounts. Hitting this is an error, not "not found":
+// returning null there would make upsert_auth_user try createUser for a user
+// that exists, and make ban/unban silently do nothing.
+const AUTH_LOOKUP_MAX_PAGES = 50
+
+/** Finds an auth.users row by email, case-insensitively, scanning EVERY page.
+ *
+ *  listUsers() with no arguments returns only the first 50 users, and a lookup
+ *  that only searched that page missed most of this project's ~410 accounts
+ *  (upsert_auth_user then fell through to createUser and failed with "already
+ *  registered"; ban/unban silently did nothing). auth.users stores emails
+ *  lowercased, so both sides are lowercased for the comparison.
+ *
+ *  Returns null only when the user is genuinely absent (so upsert_auth_user can
+ *  still create one). Throws if listUsers errors or the page cap is reached. */
+async function findAuthUserByEmail(
+  admin: ReturnType<typeof createClient>,
+  email: string,
+): Promise<{ id: string; email?: string } | null> {
+  const wanted = String(email).trim().toLowerCase()
+  for (let page = 1; page <= AUTH_LOOKUP_MAX_PAGES; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: AUTH_LOOKUP_PER_PAGE,
+    })
+    if (error) throw error
+    const users = data?.users ?? []
+    const hit = users.find(
+      (u: { email?: string }) => (u.email ?? '').toLowerCase() === wanted,
+    )
+    if (hit) {
+      console.log(`findAuthUserByEmail: found on page ${page} (scanned ${page} page(s))`)
+      return hit
+    }
+    if (users.length < AUTH_LOOKUP_PER_PAGE) {
+      console.log(`findAuthUserByEmail: not found after scanning ${page} page(s)`)
+      return null
+    }
+  }
+  const msg =
+    `findAuthUserByEmail: scanned the ${AUTH_LOOKUP_MAX_PAGES}-page cap ` +
+    `(${AUTH_LOOKUP_MAX_PAGES * AUTH_LOOKUP_PER_PAGE} users) without a result — ` +
+    'auth.users has outgrown the lookup; raise AUTH_LOOKUP_MAX_PAGES or switch to a SQL lookup'
+  console.error(msg)
+  throw new Error(msg)
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -165,12 +213,7 @@ serve(async (req) => {
           return jsonResponse({ error: 'email and password required' }, 400)
         }
         // Look up whether this email already exists in auth.users
-        const { data: listData, error: listErr } =
-          await admin.auth.admin.listUsers()
-        if (listErr) throw listErr
-        const existing = listData?.users?.find(
-          (u: { email?: string }) => u.email === targetEmail,
-        )
+        const existing = await findAuthUserByEmail(admin, targetEmail)
         if (existing) {
           // Update password (and unban in case they were banned)
           const { error: updErr } = await admin.auth.admin.updateUserById(
@@ -204,10 +247,7 @@ serve(async (req) => {
         }
         const { email: targetEmail2 } = data ?? {}
         if (!targetEmail2) return jsonResponse({ error: 'email required' }, 400)
-        const { data: listData2 } = await admin.auth.admin.listUsers()
-        const target = listData2?.users?.find(
-          (u: { email?: string }) => u.email === targetEmail2,
-        )
+        const target = await findAuthUserByEmail(admin, targetEmail2)
         if (target) {
           const { error: banErr } = await admin.auth.admin.updateUserById(
             target.id,
@@ -233,10 +273,7 @@ serve(async (req) => {
         }
         const { email: targetEmail3 } = data ?? {}
         if (!targetEmail3) return jsonResponse({ error: 'email required' }, 400)
-        const { data: listData3 } = await admin.auth.admin.listUsers()
-        const target2 = listData3?.users?.find(
-          (u: { email?: string }) => u.email === targetEmail3,
-        )
+        const target2 = await findAuthUserByEmail(admin, targetEmail3)
         if (target2) {
           const { error: unbanErr } = await admin.auth.admin.updateUserById(
             target2.id,
