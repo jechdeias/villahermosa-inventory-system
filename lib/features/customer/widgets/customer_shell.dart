@@ -50,13 +50,15 @@ class CustomerShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final index = _tabs.indexWhere((t) => t.route == currentRoute);
-    return Scaffold(
+    return SyncStatusScope(
+      child: Scaffold(
       backgroundColor: CcColors.page,
       body: SafeArea(
         bottom: false,
         child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560), child: SyncStatusStrip(child: child))),
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SyncStatusDotOverlay(
+        child: Container(
         decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: CcColors.border))),
         child: SafeArea(
           top: false,
@@ -96,6 +98,8 @@ class CustomerShell extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+      ),
       ),
     );
   }

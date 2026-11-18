@@ -225,6 +225,14 @@ class SyncManager {
 
   Future<Map<String, dynamic>> _performFullSyncUnlocked() async {
     try {
+      return await _fullSyncBody();
+    } finally {
+      _announceCycleEnd();
+    }
+  }
+
+  Future<Map<String, dynamic>> _fullSyncBody() async {
+    try {
       debugPrint('Starting full sync...');
       final pushResult = await push();
       final pullResult = await pull();
@@ -288,9 +296,28 @@ class SyncManager {
 
   Future<void> _syncCycle() async {
     debugPrint('🔄 Syncing pending data...');
-    await push();
-    await pull();
+    try {
+      await push();
+      await pull();
+    } finally {
+      _announceCycleEnd();
+    }
   }
+
+  // ── Sync-completed signal ────────────────────────────────────────────────
+
+  final ValueNotifier<int> _syncCompleted = ValueNotifier<int>(0);
+
+  /// Ticks once each time a sync cycle FINISHES (a `syncPendingData` cycle or a
+  /// `performFullSync`), however it ended. Listeners use it to re-read state
+  /// that sync changes without Drift noticing: `_markRecordAsSynced` writes
+  /// `sync_status = 'synced'` with a raw `customUpdate`, so no `watch` stream
+  /// fires for it. One notification per cycle on purpose — adding `updates:` to
+  /// that per-record write would fire a stream notification per record (300
+  /// during a 300-row sync) and rebuild every watching list that often.
+  ValueListenable<int> get syncCompleted => _syncCompleted;
+
+  void _announceCycleEnd() => _syncCompleted.value++;
 
   /// Runs [body] only after every earlier exclusive section has finished, so a
   /// full sync and a background cycle never overlap each other.

@@ -24,10 +24,12 @@ class SalesShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SyncStatusScope(
+      child: Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: SafeArea(bottom: false, child: SyncStatusStrip(child: child)),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SyncStatusDotOverlay(
+        child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           border: Border(top: BorderSide(color: AppTheme.border)),
@@ -66,6 +68,8 @@ class SalesShell extends StatelessWidget {
             }).toList(),
           ),
         ),
+      ),
+      ),
       ),
     );
   }

@@ -65,13 +65,174 @@ String describePending(String table, int n) {
   return '$n ${n == 1 ? one : many}';
 }
 
+/// Everything the indicator and the strip show, in one place: the pending count
+/// (per table), connectivity, and when to re-read them.
+///
+/// * Local writes notify through Drift, so [AppDatabase.watchPendingCounts]
+///   covers them.
+/// * Sync's own "mark synced" writes do NOT (see [SyncManager.syncCompleted]), so
+///   the count is also re-read whenever a sync cycle finishes. No timer.
+class SyncStatusModel extends ChangeNotifier {
+  SyncStatusModel({
+    AppDatabase? database,
+    Stream<bool>? onlineStream,
+    bool? initialOnline,
+    ValueListenable<int>? syncCompleted,
+  })  : _db = database ?? _sharedDatabase(),
+        _online = initialOnline ?? true {
+    final db = _db;
+    if (db != null) {
+      _countSub = db.watchPendingCounts().listen(_setCounts, onError: (_) {});
+    }
+    _syncCompleted = syncCompleted ?? _sharedSyncSignal();
+    _syncCompleted?.addListener(refresh);
+    _initConnectivity(onlineStream, initialOnline);
+  }
+
+  final AppDatabase? _db;
+  ValueListenable<int>? _syncCompleted;
+  StreamSubscription<Map<String, int>>? _countSub;
+  StreamSubscription<dynamic>? _connSub;
+  Map<String, int> _counts = const {};
+  bool _online;
+  bool _disposed = false;
+
+  static AppDatabase? _sharedDatabase() {
+    try {
+      return AuthService.instance.database;
+    } catch (_) {
+      return null; // not signed in / not initialised: nothing to show
+    }
+  }
+
+  static ValueListenable<int>? _sharedSyncSignal() {
+    try {
+      return SyncManager.instance.syncCompleted;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Map<String, int> get counts => _counts;
+  bool get online => _online;
+  int get pending => _counts.values.fold(0, (a, b) => a + b);
+  SyncIndicatorState get state => syncStateFor(online: _online, pending: pending);
+
+  /// Worth taking up space for: something is waiting to upload, or the device is
+  /// offline. "Online and nothing pending" is the uninteresting default.
+  bool get needsAttention => pending > 0 || !_online;
+
+  void _setCounts(Map<String, int> next) {
+    if (_disposed) return;
+    _counts = next;
+    notifyListeners();
+  }
+
+  void _setOnline(bool value) {
+    if (_disposed || _online == value) return;
+    _online = value;
+    notifyListeners();
+  }
+
+  /// Re-reads the count from the database now (one-shot, so it can't be answered
+  /// from Drift's cached stream value).
+  Future<void> refresh() async {
+    final db = _db;
+    if (db == null || _disposed) return;
+    try {
+      _setCounts(await db.getPendingCounts());
+    } catch (_) {}
+  }
+
+  Future<void> _initConnectivity(Stream<bool>? onlineStream, bool? initialOnline) async {
+    if (onlineStream != null) {
+      _connSub = onlineStream.listen(_setOnline);
+      return;
+    }
+    if (initialOnline != null) return;
+    try {
+      final connectivity = Connectivity();
+      _setOnline(!(await connectivity.checkConnectivity()).contains(ConnectivityResult.none));
+      if (_disposed) return;
+      _connSub = connectivity.onConnectivityChanged.listen(
+        (r) => _setOnline(!r.contains(ConnectivityResult.none)),
+        onError: (_) {},
+      );
+    } catch (_) {
+      // No connectivity plugin (tests, unsupported platform): assume online.
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _syncCompleted?.removeListener(refresh);
+    _countSub?.cancel();
+    _connSub?.cancel();
+    super.dispose();
+  }
+}
+
+/// Owns one [SyncStatusModel] for a subtree (a shell), so the strip and the
+/// always-visible dot share one set of database/connectivity subscriptions.
+class SyncStatusScope extends StatefulWidget {
+  const SyncStatusScope({
+    super.key,
+    required this.child,
+    this.database,
+    this.onlineStream,
+    this.initialOnline,
+    this.syncCompleted,
+  });
+
+  final Widget child;
+
+  /// Test seams; defaults are the shared database, connectivity_plus and
+  /// [SyncManager.syncCompleted].
+  final AppDatabase? database;
+  final Stream<bool>? onlineStream;
+  final bool? initialOnline;
+  final ValueListenable<int>? syncCompleted;
+
+  static SyncStatusModel? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_SyncStatusInherited>()?.notifier;
+
+  @override
+  State<SyncStatusScope> createState() => _SyncStatusScopeState();
+}
+
+class _SyncStatusScopeState extends State<SyncStatusScope> {
+  late final SyncStatusModel _model = SyncStatusModel(
+    database: widget.database,
+    onlineStream: widget.onlineStream,
+    initialOnline: widget.initialOnline,
+    syncCompleted: widget.syncCompleted,
+  );
+
+  @override
+  void dispose() {
+    _model.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _SyncStatusInherited(notifier: _model, child: widget.child);
+}
+
+class _SyncStatusInherited extends InheritedNotifier<SyncStatusModel> {
+  const _SyncStatusInherited({required SyncStatusModel super.notifier, required super.child});
+}
+
 /// Global sync status: a small pill (or just a dot when space is tight) shown by
 /// every role's shell. Tap for what is pending and a "Sync now" button.
 ///
-/// Display only — it reads [AppDatabase.watchPendingCounts] and connectivity and
-/// changes no sync logic. A row whose push can never succeed stays 'pending', so
-/// the count never clears: that is deliberate (a stuck count is how someone
-/// notices; see the frozen-rows note in CLAUDE.md).
+/// Display only — it reads [AppDatabase.watchPendingCounts], connectivity and the
+/// sync-completed signal, and changes no sync logic. A row whose push can never
+/// succeed stays 'pending', so the count never clears: that is deliberate (a
+/// stuck count is how someone notices; see the frozen-rows note in CLAUDE.md).
+///
+/// Inside a [SyncStatusScope] it shares that scope's model; on its own it makes
+/// (and disposes) its own.
 class SyncStatusIndicator extends StatefulWidget {
   const SyncStatusIndicator({
     super.key,
@@ -82,7 +243,7 @@ class SyncStatusIndicator extends StatefulWidget {
     this.initialOnline,
     this.onSyncNow,
     this.lastSync,
-    this.refreshInterval = const Duration(seconds: 5),
+    this.syncCompleted,
   });
 
   /// Defaults to the shared [AuthService] database.
@@ -95,102 +256,40 @@ class SyncStatusIndicator extends StatefulWidget {
   /// dot only on narrow (phone) screens, label on wider ones.
   final bool? dotOnly;
 
-  /// Test seams. Defaults: connectivity_plus, [SyncManager.syncPendingData] and
-  /// the persisted last-sync time.
+  /// Test seams. Defaults: connectivity_plus, [SyncManager.syncPendingData], the
+  /// persisted last-sync time and [SyncManager.syncCompleted].
   final Stream<bool>? onlineStream;
   final bool? initialOnline;
   final Future<void> Function()? onSyncNow;
   final DateTime? Function()? lastSync;
-
-  /// How often to re-read the pending count on top of the live stream (zero
-  /// disables). SyncEngine marks rows synced with `customUpdate` WITHOUT an
-  /// `updates:` set, which Drift cannot turn into a stream notification, so the
-  /// stream alone can go stale after a successful push until some other write
-  /// lands. A cheap periodic re-read keeps the number honest without touching
-  /// sync code. (Real fix, one line: pass `updates: {...}` in
-  /// `_markRecordAsSynced` — deliberately not done in a display-only change.)
-  final Duration refreshInterval;
+  final ValueListenable<int>? syncCompleted;
 
   @override
   State<SyncStatusIndicator> createState() => _SyncStatusIndicatorState();
 }
 
 class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
-  final _counts = ValueNotifier<Map<String, int>>(const {});
-  late final _online = ValueNotifier<bool>(widget.initialOnline ?? true);
-  StreamSubscription<Map<String, int>>? _countSub;
-  StreamSubscription<dynamic>? _connSub;
-  Timer? _poll;
+  SyncStatusModel? _ownModel;
 
-  int get _pending => _counts.value.values.fold(0, (a, b) => a + b);
-
-  @override
-  void initState() {
-    super.initState();
-    final db = _database;
-    if (db != null) {
-      _countSub = db.watchPendingCounts().listen((c) => _counts.value = c, onError: (_) {});
-      if (widget.refreshInterval > Duration.zero) {
-        _poll = Timer.periodic(widget.refreshInterval, (_) => refresh());
-      }
-    }
-    _initConnectivity();
-  }
-
-  /// Re-reads the count now (also called after "Sync now").
-  Future<void> refresh() async {
-    final db = _database;
-    if (db == null || !mounted) return;
-    try {
-      final latest = await db.getPendingCounts();
-      if (mounted) _counts.value = latest;
-    } catch (_) {}
-  }
-
-  AppDatabase? get _database {
-    if (widget.database != null) return widget.database;
-    try {
-      return AuthService.instance.database;
-    } catch (_) {
-      return null; // not signed in / not initialised: nothing to show
-    }
-  }
-
-  Future<void> _initConnectivity() async {
-    if (widget.onlineStream != null) {
-      _connSub = widget.onlineStream!.listen((v) => _online.value = v);
-      return;
-    }
-    if (widget.initialOnline != null) return;
-    try {
-      final connectivity = Connectivity();
-      _online.value = !(await connectivity.checkConnectivity()).contains(ConnectivityResult.none);
-      _connSub = connectivity.onConnectivityChanged.listen(
-        (r) => _online.value = !r.contains(ConnectivityResult.none),
-        onError: (_) {},
-      );
-    } catch (_) {
-      // No connectivity plugin (tests, unsupported platform): assume online.
-    }
-  }
+  SyncStatusModel _modelFor(BuildContext context) =>
+      SyncStatusScope.maybeOf(context) ??
+      (_ownModel ??= SyncStatusModel(
+        database: widget.database,
+        onlineStream: widget.onlineStream,
+        initialOnline: widget.initialOnline,
+        syncCompleted: widget.syncCompleted,
+      ));
 
   @override
   void dispose() {
-    _poll?.cancel();
-    _countSub?.cancel();
-    _connSub?.cancel();
-    _counts.dispose();
-    _online.dispose();
+    _ownModel?.dispose();
     super.dispose();
   }
 
   Future<void> _syncNow() async {
+    // The sync-completed signal re-reads the count when the cycle ends.
     final fn = widget.onSyncNow ?? SyncManager.instance.syncPendingData;
-    try {
-      await fn();
-    } finally {
-      await refresh(); // the stream can't see sync's silent "mark synced" writes
-    }
+    await fn();
   }
 
   DateTime? _lastSync() {
@@ -202,26 +301,27 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
     }
   }
 
-  void _openSheet() {
+  void _openSheet(SyncStatusModel model) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
       showDragHandle: true,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => _SyncSheet(counts: _counts, online: _online, onSyncNow: _syncNow, lastSync: _lastSync()),
+      builder: (_) => _SyncSheet(model: model, onSyncNow: _syncNow, lastSync: _lastSync()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final model = _modelFor(context);
     final narrow = MediaQuery.sizeOf(context).width < 480;
     final dotOnly = widget.dotOnly ?? narrow;
     return ListenableBuilder(
-      listenable: Listenable.merge([_counts, _online]),
+      listenable: model,
       builder: (context, _) {
-        final pending = _pending;
-        final state = syncStateFor(online: _online.value, pending: pending);
+        final pending = model.pending;
+        final state = model.state;
         final label = syncLabelFor(state, pending);
         final color = syncColorFor(state);
         final dot = Container(
@@ -270,7 +370,7 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
           label: 'Sync status: $label',
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: _openSheet,
+            onTap: () => _openSheet(model),
             child: body,
           ),
         );
@@ -280,9 +380,8 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
 }
 
 class _SyncSheet extends StatefulWidget {
-  const _SyncSheet({required this.counts, required this.online, required this.onSyncNow, required this.lastSync});
-  final ValueListenable<Map<String, int>> counts;
-  final ValueListenable<bool> online;
+  const _SyncSheet({required this.model, required this.onSyncNow, required this.lastSync});
+  final SyncStatusModel model;
   final Future<void> Function() onSyncNow;
   final DateTime? lastSync;
 
@@ -317,12 +416,11 @@ class _SyncSheetState extends State<_SyncSheet> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: ListenableBuilder(
-            listenable: Listenable.merge([widget.counts, widget.online]),
+            listenable: widget.model,
             builder: (context, _) {
-              final counts = widget.counts.value;
-              final pending = counts.values.fold(0, (a, b) => a + b);
-              final online = widget.online.value;
-              final state = syncStateFor(online: online, pending: pending);
+              final counts = widget.model.counts;
+              final pending = widget.model.pending;
+              final state = widget.model.state;
               final ordered = [
                 for (final t in AppDatabase.syncedTableNames)
                   if ((counts[t] ?? 0) > 0) MapEntry(t, counts[t]!),
@@ -388,25 +486,82 @@ class _SyncSheetState extends State<_SyncSheet> {
       );
 }
 
-/// Wraps a mobile screen body with a slim right-aligned status row on top, for
-/// the shells that have no app bar (customer, sales rep / delivery).
+/// Height of the expanded strip.
+const double kSyncStripHeight = 30;
+
+/// A status row above a mobile screen body, for the shells with no app bar
+/// (customer, sales rep / delivery). It takes ZERO height while the device is
+/// online with nothing pending — the uninteresting default — and animates open
+/// when rows are waiting or the device goes offline. (An always-visible dot for
+/// "all synced, on demand" lives in the shell's bottom bar; see [SyncStatusDot].)
+///
+/// Needs a [SyncStatusScope] above it; wraps itself in one if there is none.
 class SyncStatusStrip extends StatelessWidget {
   const SyncStatusStrip({super.key, required this.child, this.background});
   final Widget child;
   final Color? background;
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) {
+    final model = SyncStatusScope.maybeOf(context);
+    if (model == null) {
+      return SyncStatusScope(child: SyncStatusStrip(background: background, child: child));
+    }
+    // Reduced motion: no slide, it just appears / disappears.
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return ListenableBuilder(
+      listenable: model,
+      builder: (context, _) {
+        final bar = model.needsAttention
+            ? Container(
+                key: const Key('sync-strip'),
+                color: background,
+                padding: const EdgeInsets.fromLTRB(12, 2, 8, 0),
+                alignment: Alignment.centerRight,
+                height: kSyncStripHeight,
+                child: const SyncStatusIndicator(dotOnly: false),
+              )
+            : const SizedBox(key: Key('sync-strip-collapsed'), width: double.infinity, height: 0);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            reduceMotion
+                ? bar
+                : AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topCenter,
+                    child: bar,
+                  ),
+            Expanded(child: child),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// A small always-visible status dot (with the pending number when there is one),
+/// tappable for the sheet. It is how "all synced" stays confirmable on demand
+/// while the [SyncStatusStrip] is collapsed. Uses the shell's [SyncStatusScope].
+class SyncStatusDot extends StatelessWidget {
+  const SyncStatusDot({super.key});
+
+  @override
+  Widget build(BuildContext context) => const SyncStatusIndicator(dotOnly: true);
+}
+
+/// Lays the always-visible [SyncStatusDot] over the top-right corner of a shell's
+/// bottom bar.
+class SyncStatusDotOverlay extends StatelessWidget {
+  const SyncStatusDotOverlay({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Stack(
         children: [
-          Container(
-            color: background,
-            padding: const EdgeInsets.fromLTRB(12, 2, 8, 0),
-            alignment: Alignment.centerRight,
-            height: 30,
-            child: const SyncStatusIndicator(),
-          ),
-          Expanded(child: child),
+          child,
+          const Positioned(top: 0, right: 2, child: SyncStatusDot()),
         ],
       );
 }

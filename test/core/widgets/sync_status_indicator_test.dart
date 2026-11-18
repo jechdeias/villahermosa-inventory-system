@@ -139,11 +139,13 @@ void main() {
       await unmount(tester);
     });
 
-    testWidgets('it clears after a sync even though the sync marks rows synced silently (polling catches it)', (tester) async {
+    testWidgets('it re-reads on the sync-completed signal — no timer — because sync marks rows synced silently', (tester) async {
       await tester.runAsync(() => addOrder('o1'));
+      final cycleEnded = ValueNotifier<int>(0);
+      addTearDown(cycleEnded.dispose);
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: Center(child: SyncStatusIndicator(database: db, initialOnline: true, refreshInterval: const Duration(milliseconds: 100))),
+          body: Center(child: SyncStatusIndicator(database: db, initialOnline: true, syncCompleted: cycleEnded)),
         ),
       ));
       await tester.pump(const Duration(milliseconds: 50));
@@ -151,9 +153,17 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       expect(find.text('Syncing 1 item...'), findsOneWidget);
 
+      // What _markRecordAsSynced does: a raw customUpdate Drift streams can't see.
       await tester.runAsync(markSyncedSilently);
-      // The stream does not fire for that write; the periodic re-read does.
-      await tester.pump(const Duration(milliseconds: 150));
+
+      // Time passing alone changes nothing: there is no polling timer.
+      await tester.pump(const Duration(seconds: 30));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Syncing 1 item...'), findsOneWidget, reason: 'stale until a cycle ends');
+
+      // The cycle ends: the indicator re-reads, once.
+      cycleEnded.value++;
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
       await tester.pump(const Duration(milliseconds: 50));
       expect(find.text('All synced'), findsOneWidget);
@@ -301,6 +311,109 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(milliseconds: 50));
+    });
+  });
+
+  group('SyncStatusStrip collapses when there is nothing to say', () {
+    Widget app(Widget child, {bool reduceMotion = false}) => MaterialApp(
+          builder: (context, c) => MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion), child: c!),
+          home: Scaffold(body: child),
+        );
+
+    Widget strip({bool online = true}) =>
+        SyncStatusScope(database: db, initialOnline: online, child: const SyncStatusStrip(child: SizedBox()));
+
+    Future<void> settle(WidgetTester tester) async {
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    Future<void> unmount(WidgetTester tester) async {
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('online and idle: zero height', (tester) async {
+      await tester.pumpWidget(app(strip()));
+      await settle(tester);
+      expect(find.byKey(const Key('sync-strip')), findsNothing);
+      expect(tester.getSize(find.byKey(const Key('sync-strip-collapsed'))).height, 0);
+      await unmount(tester);
+    });
+
+    testWidgets('pending rows: opens to full height', (tester) async {
+      await tester.runAsync(() => addOrder('o1'));
+      await tester.pumpWidget(app(strip()));
+      await settle(tester);
+      expect(tester.getSize(find.byKey(const Key('sync-strip'))).height, kSyncStripHeight);
+      expect(find.text('Syncing 1 item...'), findsOneWidget);
+      await unmount(tester);
+    });
+
+    testWidgets('offline (nothing pending): opens to full height', (tester) async {
+      await tester.pumpWidget(app(strip(online: false)));
+      await settle(tester);
+      expect(tester.getSize(find.byKey(const Key('sync-strip'))).height, kSyncStripHeight);
+      expect(find.text('Offline'), findsOneWidget);
+      await unmount(tester);
+    });
+
+    testWidgets('it closes again once everything has synced', (tester) async {
+      await tester.runAsync(() => addOrder('o1'));
+      await tester.pumpWidget(app(strip()));
+      await settle(tester);
+      expect(find.byKey(const Key('sync-strip')), findsOneWidget);
+
+      await tester.runAsync(markEverythingSynced);
+      await settle(tester);
+      expect(find.byKey(const Key('sync-strip')), findsNothing);
+      expect(tester.getSize(find.byKey(const Key('sync-strip-collapsed'))).height, 0);
+      await unmount(tester);
+    });
+
+    testWidgets('it animates open (mid-way height) and snaps open with reduced motion', (tester) async {
+      await tester.runAsync(() => addOrder('o1'));
+      await tester.pumpWidget(app(strip()));
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump(); // the count arrives, the strip starts opening
+      await tester.pump(const Duration(milliseconds: 60));
+      final midway = tester.getSize(find.byType(AnimatedSize)).height;
+      expect(midway, greaterThan(0));
+      expect(midway, lessThan(kSyncStripHeight), reason: 'still sliding open');
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(tester.getSize(find.byType(AnimatedSize)).height, kSyncStripHeight);
+      await unmount(tester);
+
+      await tester.pumpWidget(app(strip(), reduceMotion: true));
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(find.byType(AnimatedSize), findsNothing, reason: 'no animation widget with reduced motion');
+      expect(tester.getSize(find.byKey(const Key('sync-strip'))).height, kSyncStripHeight, reason: 'open at once');
+      await unmount(tester);
+    });
+  });
+
+  group('the always-visible dot', () {
+    testWidgets('the customer and sales shells show the dot even when idle (strip collapsed)', (tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      for (final shell in <Widget>[
+        const CustomerShell(currentRoute: CustomerRoutes.shop, child: SizedBox()),
+        const SalesShell(currentRoute: '/sales/home', child: SizedBox()),
+      ]) {
+        tester.view.physicalSize = const Size(400, 900);
+        tester.view.devicePixelRatio = 1;
+        await tester.pumpWidget(ProviderScope(child: MaterialApp(home: shell)));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.byKey(const Key('sync-dot')), findsOneWidget);
+        expect(find.byKey(const Key('sync-strip')), findsNothing);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(milliseconds: 50));
+      }
     });
   });
 }

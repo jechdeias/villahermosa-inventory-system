@@ -379,6 +379,29 @@ void syncInvariantTests() {
       expect(m.pulls, 2);
     });
 
+    test('syncCompleted ticks once per finished cycle, and a failing cycle still ticks', () async {
+      final m = _CountingSyncManager(db);
+      expect(m.syncCompleted.value, 0);
+      await m.syncPendingData();
+      expect(m.syncCompleted.value, 1);
+      await m.syncPendingData();
+      expect(m.syncCompleted.value, 2);
+
+      final seen = <int>[];
+      m.syncCompleted.addListener(() => seen.add(m.syncCompleted.value));
+      await m.performFullSync();
+      expect(seen, [3], reason: 'a full sync is one cycle too');
+
+      // Overlapping callers share ONE cycle, so one tick, not one per caller.
+      final held = _CountingSyncManager(db)..holdPush = Completer<void>();
+      final a1 = held.syncPendingData();
+      final a2 = held.syncPendingData();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      held.holdPush!.complete();
+      await Future.wait([a1, a2]);
+      expect(held.syncCompleted.value, 1);
+    });
+
     test('sequential calls each run their own cycle', () async {
       final m = _CountingSyncManager(db);
       await m.syncPendingData();
