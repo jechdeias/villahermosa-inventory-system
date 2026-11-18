@@ -286,31 +286,8 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
     super.dispose();
   }
 
-  Future<void> _syncNow() async {
-    // The sync-completed signal re-reads the count when the cycle ends.
-    final fn = widget.onSyncNow ?? SyncManager.instance.syncPendingData;
-    await fn();
-  }
-
-  DateTime? _lastSync() {
-    if (widget.lastSync != null) return widget.lastSync!();
-    try {
-      return AppSettings.instance.lastSyncTimestamp;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  void _openSheet(SyncStatusModel model) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      showDragHandle: true,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => _SyncSheet(model: model, onSyncNow: _syncNow, lastSync: _lastSync()),
-    );
-  }
+  void _openSheet(SyncStatusModel model) =>
+      showSyncStatusSheet(context, model, onSyncNow: widget.onSyncNow, lastSync: widget.lastSync);
 
   @override
   Widget build(BuildContext context) {
@@ -377,6 +354,41 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
       },
     );
   }
+}
+
+/// Opens the sync status sheet: what is pending (per table), the last sync time
+/// and a "Sync now" button. Used by the indicator and by the strip's hairline.
+/// [onSyncNow] / [lastSync] are test seams; defaults are
+/// [SyncManager.syncPendingData] and the persisted last-sync time.
+Future<void> showSyncStatusSheet(
+  BuildContext context,
+  SyncStatusModel model, {
+  Future<void> Function()? onSyncNow,
+  DateTime? Function()? lastSync,
+}) {
+  Future<void> syncNow() async {
+    // The sync-completed signal re-reads the count when the cycle ends.
+    final fn = onSyncNow ?? SyncManager.instance.syncPendingData;
+    await fn();
+  }
+
+  DateTime? last() {
+    if (lastSync != null) return lastSync();
+    try {
+      return AppSettings.instance.lastSyncTimestamp;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.white,
+    showDragHandle: true,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (_) => _SyncSheet(model: model, onSyncNow: syncNow, lastSync: last()),
+  );
 }
 
 class _SyncSheet extends StatefulWidget {
@@ -489,30 +501,50 @@ class _SyncSheetState extends State<_SyncSheet> {
 /// Height of the expanded strip.
 const double kSyncStripHeight = 30;
 
+/// Height of the collapsed strip: a hairline in the "all synced" green.
+const double kSyncHairlineHeight = 3;
+
+/// How tall the invisible tap target over the collapsed hairline is.
+const double kSyncHairlineTapHeight = 20;
+
 /// A status row above a mobile screen body, for the shells with no app bar
-/// (customer, sales rep / delivery). It takes ZERO height while the device is
-/// online with nothing pending — the uninteresting default — and animates open
-/// when rows are waiting or the device goes offline. (An always-visible dot for
-/// "all synced, on demand" lives in the shell's bottom bar; see [SyncStatusDot].)
+/// (customer, sales rep / delivery).
+///
+/// * online, nothing pending → a 3px hairline in the green token (so "all
+///   synced" is always confirmable at a glance), with an invisible ~20px tap
+///   target that opens the sync sheet;
+/// * rows pending, or offline → animates open to the full [kSyncStripHeight]
+///   strip carrying the pill.
+///
+/// The tap target is laid over the top of the screen's content (it adds no
+/// height), so while the strip is collapsed a tap in that top ~20px opens the
+/// sheet instead of reaching the content under it; screens keep their first
+/// controls ~16px below the top, so in practice it only covers padding.
 ///
 /// Needs a [SyncStatusScope] above it; wraps itself in one if there is none.
 class SyncStatusStrip extends StatelessWidget {
-  const SyncStatusStrip({super.key, required this.child, this.background});
+  const SyncStatusStrip({super.key, required this.child, this.background, this.onSyncNow, this.lastSync});
   final Widget child;
   final Color? background;
+
+  /// Test seams, passed on to the sheet.
+  final Future<void> Function()? onSyncNow;
+  final DateTime? Function()? lastSync;
 
   @override
   Widget build(BuildContext context) {
     final model = SyncStatusScope.maybeOf(context);
     if (model == null) {
-      return SyncStatusScope(child: SyncStatusStrip(background: background, child: child));
+      return SyncStatusScope(child: SyncStatusStrip(background: background, onSyncNow: onSyncNow, lastSync: lastSync, child: child));
     }
-    // Reduced motion: no slide, it just appears / disappears.
+    // Reduced motion: no slide, it just changes height. (Not AnimatedSize with a
+    // zero duration: that throws a layout assertion when it unmounts.)
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return ListenableBuilder(
       listenable: model,
       builder: (context, _) {
-        final bar = model.needsAttention
+        final attention = model.needsAttention;
+        final bar = attention
             ? Container(
                 key: const Key('sync-strip'),
                 color: background,
@@ -521,47 +553,46 @@ class SyncStatusStrip extends StatelessWidget {
                 height: kSyncStripHeight,
                 child: const SyncStatusIndicator(dotOnly: false),
               )
-            : const SizedBox(key: Key('sync-strip-collapsed'), width: double.infinity, height: 0);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+            : Semantics(
+                button: true,
+                label: 'Sync status: ${syncLabelFor(SyncIndicatorState.allSynced, 0)}',
+                child: Container(
+                  key: const Key('sync-strip-collapsed'),
+                  height: kSyncHairlineHeight,
+                  color: syncColorFor(SyncIndicatorState.allSynced),
+                ),
+              );
+        return Stack(
           children: [
-            reduceMotion
-                ? bar
-                : AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    alignment: Alignment.topCenter,
-                    child: bar,
-                  ),
-            Expanded(child: child),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                reduceMotion
+                    ? bar
+                    : AnimatedSize(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutCubic,
+                        alignment: Alignment.topCenter,
+                        child: bar,
+                      ),
+                Expanded(child: child),
+              ],
+            ),
+            if (!attention)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: kSyncHairlineTapHeight,
+                child: GestureDetector(
+                  key: const Key('sync-hairline-target'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => showSyncStatusSheet(context, model, onSyncNow: onSyncNow, lastSync: lastSync),
+                ),
+              ),
           ],
         );
       },
     );
   }
-}
-
-/// A small always-visible status dot (with the pending number when there is one),
-/// tappable for the sheet. It is how "all synced" stays confirmable on demand
-/// while the [SyncStatusStrip] is collapsed. Uses the shell's [SyncStatusScope].
-class SyncStatusDot extends StatelessWidget {
-  const SyncStatusDot({super.key});
-
-  @override
-  Widget build(BuildContext context) => const SyncStatusIndicator(dotOnly: true);
-}
-
-/// Lays the always-visible [SyncStatusDot] over the top-right corner of a shell's
-/// bottom bar.
-class SyncStatusDotOverlay extends StatelessWidget {
-  const SyncStatusDotOverlay({super.key, required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Stack(
-        children: [
-          child,
-          const Positioned(top: 0, right: 2, child: SyncStatusDot()),
-        ],
-      );
 }

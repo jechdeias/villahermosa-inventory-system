@@ -230,13 +230,16 @@ void main() {
 
     testWidgets('customer (CustomerShell)', (tester) async {
       await pumpAt(tester, 400, const CustomerShell(currentRoute: CustomerRoutes.shop, child: SizedBox()));
-      expect(find.byType(SyncStatusIndicator), findsOneWidget);
+      // Idle: the strip is its hairline; it opens to the indicator when there is something to say.
+      expect(find.byType(SyncStatusStrip), findsOneWidget);
+      expect(find.byKey(const Key('sync-strip-collapsed')), findsOneWidget);
       await unmount(tester);
     });
 
     testWidgets('sales rep and delivery (SalesShell — both roles land on /sales/home)', (tester) async {
       await pumpAt(tester, 400, const SalesShell(currentRoute: '/sales/home', child: SizedBox()));
-      expect(find.byType(SyncStatusIndicator), findsOneWidget);
+      expect(find.byType(SyncStatusStrip), findsOneWidget);
+      expect(find.byKey(const Key('sync-strip-collapsed')), findsOneWidget);
       await unmount(tester);
     });
   });
@@ -314,14 +317,20 @@ void main() {
     });
   });
 
-  group('SyncStatusStrip collapses when there is nothing to say', () {
+  group('SyncStatusStrip collapses to a hairline when there is nothing to say', () {
     Widget app(Widget child, {bool reduceMotion = false}) => MaterialApp(
           builder: (context, c) => MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion), child: c!),
           home: Scaffold(body: child),
         );
 
-    Widget strip({bool online = true}) =>
-        SyncStatusScope(database: db, initialOnline: online, child: const SyncStatusStrip(child: SizedBox()));
+    Widget strip({bool online = true, Future<void> Function()? onSyncNow}) => SizedBox(
+          height: 100,
+          child: SyncStatusScope(
+            database: db,
+            initialOnline: online,
+            child: SyncStatusStrip(onSyncNow: onSyncNow, lastSync: () => DateTime(2026, 11, 19, 9, 5), child: const SizedBox()),
+          ),
+        );
 
     Future<void> settle(WidgetTester tester) async {
       await tester.pump(const Duration(milliseconds: 50));
@@ -334,11 +343,16 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    testWidgets('online and idle: zero height', (tester) async {
+    testWidgets('online and idle: a 3px hairline in the green token, not zero', (tester) async {
       await tester.pumpWidget(app(strip()));
       await settle(tester);
       expect(find.byKey(const Key('sync-strip')), findsNothing);
-      expect(tester.getSize(find.byKey(const Key('sync-strip-collapsed'))).height, 0);
+      expect(tester.getSize(find.byKey(const Key('sync-strip-collapsed'))).height, 3);
+      final hairline = tester.widget<Container>(find.byKey(const Key('sync-strip-collapsed')));
+      expect(hairline.color, AppTheme.success);
+      // The tap target is bigger than the line but adds no layout height.
+      expect(tester.getSize(find.byKey(const Key('sync-hairline-target'))).height, 20);
+      expect(tester.getSize(find.byType(SyncStatusStrip)).height, 100, reason: 'the strip fills its parent; only 3px of it is the hairline');
       await unmount(tester);
     });
 
@@ -368,7 +382,37 @@ void main() {
       await tester.runAsync(markEverythingSynced);
       await settle(tester);
       expect(find.byKey(const Key('sync-strip')), findsNothing);
-      expect(tester.getSize(find.byKey(const Key('sync-strip-collapsed'))).height, 0);
+      expect(tester.getSize(find.byKey(const Key('sync-strip-collapsed'))).height, 3, reason: 'closes back to the hairline');
+      await unmount(tester);
+    });
+
+    testWidgets('tapping the hairline (anywhere in its ~20px target) opens the sync sheet', (tester) async {
+      var syncs = 0;
+      await tester.pumpWidget(app(strip(onSyncNow: () async => syncs++)));
+      await settle(tester);
+
+      // Not on the 3px line itself: 15px below the top, inside the invisible target.
+      await tester.tapAt(tester.getTopLeft(find.byKey(const Key('sync-hairline-target'))) + const Offset(100, 15));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('All synced'), findsOneWidget);
+      expect(find.text('Nothing is waiting to upload.'), findsOneWidget);
+      expect(find.text('Last sync: 2026-11-19 09:05'), findsOneWidget);
+      await tester.tap(find.text('Sync now'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(syncs, 1);
+
+      await tester.tapAt(const Offset(5, 5)); // dismiss the sheet
+      await tester.pump(const Duration(milliseconds: 400));
+      await unmount(tester);
+    });
+
+    testWidgets('while open (pending), there is no hairline target to steal taps from the content', (tester) async {
+      await tester.runAsync(() => addOrder('o1'));
+      await tester.pumpWidget(app(strip()));
+      await settle(tester);
+      expect(find.byKey(const Key('sync-hairline-target')), findsNothing);
       await unmount(tester);
     });
 
@@ -380,7 +424,7 @@ void main() {
       await tester.pump(); // the count arrives, the strip starts opening
       await tester.pump(const Duration(milliseconds: 60));
       final midway = tester.getSize(find.byType(AnimatedSize)).height;
-      expect(midway, greaterThan(0));
+      expect(midway, greaterThan(3));
       expect(midway, lessThan(kSyncStripHeight), reason: 'still sliding open');
       await tester.pump(const Duration(milliseconds: 400));
       expect(tester.getSize(find.byType(AnimatedSize)).height, kSyncStripHeight);
@@ -397,8 +441,8 @@ void main() {
     });
   });
 
-  group('the always-visible dot', () {
-    testWidgets('the customer and sales shells show the dot even when idle (strip collapsed)', (tester) async {
+  group('one indicator per mobile shell: no dot over the nav bar', () {
+    testWidgets('CustomerShell and SalesShell show the hairline strip and no SyncStatusDot', (tester) async {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       for (final shell in <Widget>[
@@ -409,8 +453,9 @@ void main() {
         tester.view.devicePixelRatio = 1;
         await tester.pumpWidget(ProviderScope(child: MaterialApp(home: shell)));
         await tester.pump(const Duration(milliseconds: 100));
-        expect(find.byKey(const Key('sync-dot')), findsOneWidget);
-        expect(find.byKey(const Key('sync-strip')), findsNothing);
+        expect(find.byKey(const Key('sync-dot')), findsNothing, reason: 'idle: no floating dot');
+        expect(find.byKey(const Key('sync-strip-collapsed')), findsOneWidget, reason: 'the hairline is the always-visible signal');
+        expect(find.byType(SyncStatusIndicator), findsNothing, reason: 'nothing overlays the bottom nav');
         await tester.pumpWidget(const SizedBox());
         await tester.pump(const Duration(milliseconds: 50));
       }

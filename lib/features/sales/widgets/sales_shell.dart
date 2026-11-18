@@ -28,8 +28,7 @@ class SalesShell extends StatelessWidget {
       child: Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: SafeArea(bottom: false, child: SyncStatusStrip(child: child)),
-      bottomNavigationBar: SyncStatusDotOverlay(
-        child: Container(
+      bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           border: Border(top: BorderSide(color: AppTheme.border)),
@@ -68,7 +67,6 @@ class SalesShell extends StatelessWidget {
             }).toList(),
           ),
         ),
-      ),
       ),
       ),
     );

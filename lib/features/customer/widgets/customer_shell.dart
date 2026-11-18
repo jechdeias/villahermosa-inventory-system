@@ -57,8 +57,7 @@ class CustomerShell extends ConsumerWidget {
         bottom: false,
         child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560), child: SyncStatusStrip(child: child))),
       ),
-      bottomNavigationBar: SyncStatusDotOverlay(
-        child: Container(
+      bottomNavigationBar: Container(
         decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: CcColors.border))),
         child: SafeArea(
           top: false,
@@ -98,7 +97,6 @@ class CustomerShell extends ConsumerWidget {
             ),
           ),
         ),
-      ),
       ),
       ),
     );
