@@ -66,10 +66,16 @@ class SyncEngine {
 
   /// SQLSTATE codes that mean "this exact write can never succeed on retry":
   /// unique violation, foreign-key violation, not-null violation, invalid input
-  /// syntax. PostgREST puts the SQLSTATE in [PostgrestException.code]. When the
+  /// syntax, check violation, undefined column / unknown column. PostgREST puts the SQLSTATE in [PostgrestException.code]. When the
   /// response body is not PostgREST JSON (a gateway 502/504, say) the client
   /// puts the HTTP status there instead ('502'), which matches none of these.
-  static const _permanentSqlStates = {'23505', '23503', '23502', '22P02'};
+  ///
+  /// 23514 (check violation) can never pass on retry. 42703 (undefined column)
+  /// and PGRST204 (column not found in the schema cache) mean a push map names a
+  /// column that does not exist server-side: schema drift, the class of bug that
+  /// hid `stock_movements.reference` / `performed_by_name` for months. Flagging
+  /// them surfaces it in days.
+  static const _permanentSqlStates = {'23505', '23503', '23502', '22P02', '23514', '42703', 'PGRST204'};
 
   /// True when [error] is a failure that will never succeed on retry:
   ///  * a [PostgrestException] with one of [_permanentSqlStates];
@@ -2053,7 +2059,9 @@ Future<void> _markRecordAsSynced(dynamic record, String remoteId) async {
             storeName: Value(data['store_name'] as String?),
             routeId: Value((data['route_id'] as num?)?.toInt()),
             routeName: Value(data['route_name'] as String?),
-            salesRepId: Value((data['sales_rep_id'] as num?)?.toInt()),
+            // Guarded with the name: a NULL id beside a kept name would be a mismatched
+            // pair (_assignPaymentsToRep copies the id "when valid").
+            salesRepId: Value((data['sales_rep_id'] as num?)?.toInt() ?? existingOrder?.salesRepId),
             // Keep the local value when the server sends none. Every customer-placed
             // order reaches the server unassigned (NULL); an admin's local assignment
             // must not be wiped by that row coming back before the push lands.

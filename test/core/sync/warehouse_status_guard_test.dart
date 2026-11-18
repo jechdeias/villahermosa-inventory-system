@@ -57,6 +57,22 @@ void main() {
       expect(o.salesRepName, 'Rita Rep');
     });
 
+    test('a pull with sales_rep_id NULL leaves the local rep id in place, so name and id stay a matched pair', () async {
+      await seedAssigned();
+      await engine.applyPulledRecord('orders', {'id': 1, 'uuid': 'o-1', 'order_number': 'ORD-1', 'sales_rep_name': null, 'sales_rep_id': null});
+      final o = (await db.getOrderById('o-1'))!;
+      expect(o.salesRepName, 'Rita Rep');
+      expect(o.salesRepId, 7);
+    });
+
+    test('a rep id the server does send wins', () async {
+      await seedAssigned();
+      await engine.applyPulledRecord('orders', {'id': 1, 'uuid': 'o-1', 'sales_rep_id': 9, 'sales_rep_name': 'Ben Rep'});
+      final o = (await db.getOrderById('o-1'))!;
+      expect(o.salesRepId, 9);
+      expect(o.salesRepName, 'Ben Rep');
+    });
+
     test('a rep the server does send wins', () async {
       await seedAssigned();
       await engine.applyPulledRecord('orders', {'id': 1, 'uuid': 'o-1', 'sales_rep_name': 'Ben Rep'});

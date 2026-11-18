@@ -59,6 +59,13 @@ void main() {
       }
     });
 
+    test('schema-drift and check-violation codes are permanent too (23514, 42703, PGRST204)', () {
+      // 42703 / PGRST204: a push map names a column that does not exist server-side.
+      for (final code in ['23514', '42703', 'PGRST204']) {
+        expect(SyncEngine.isPermanentPushError(PostgrestException(message: 'm', code: code)), isTrue, reason: code);
+      }
+    });
+
     test('a 4xx from privileged-sync is permanent except 408, 429 (and 401, an expired token)', () {
       for (final s in [400, 403, 404, 409, 422]) {
         expect(SyncEngine.isPermanentPushError(FunctionException(status: s)), isTrue, reason: '$s');
@@ -73,8 +80,8 @@ void main() {
         expect(SyncEngine.isPermanentPushError(e), isFalse, reason: '$e');
       }
       expect(SyncEngine.isPermanentPushError(null), isFalse);
-      expect(SyncEngine.isPermanentPushError(const PostgrestException(message: 'x', code: '23514')), isFalse,
-          reason: 'not on the agreed list: unsure means transient');
+      expect(SyncEngine.isPermanentPushError(const PostgrestException(message: 'x', code: '42P01')), isFalse,
+          reason: 'not on the list: unsure means transient');
     });
   });
 
