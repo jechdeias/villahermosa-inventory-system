@@ -339,92 +339,136 @@ class OrderDetailPanel extends ConsumerWidget {
     );
   }
 
+  /// Footer actions. Side by side only when every button gets enough width for
+  /// its full label; otherwise stacked vertically at full width (primary action
+  /// first). The labels ("Dispatch for Delivery", "Mark as Delivered") are
+  /// deliberately explicit about an irreversible status change, so they are never
+  /// shortened — and each button's Text is `maxLines: 1`, so if this layout ever
+  /// regresses the label clips visibly instead of silently re-wrapping.
   Widget _buildFooter(BuildContext context, WidgetRef ref, Order order, OrdersService service) {
     final itemsAsync = ref.watch(orderItemsProvider(order.uuid));
+    final action = _statusAction(ref, order, service);
+
+    Widget closeBtn() => OutlinedButton(
+          onPressed: onClose,
+          style: _outlineStyle,
+          child: _label('Close'),
+        );
+
+    Widget exportBtn() => OutlinedButton.icon(
+          onPressed: () async {
+            final lines = itemsAsync.valueOrNull ?? [];
+            final doc = await buildOrderPdf(order, lines);
+            if (!context.mounted) return;
+            final messenger = ScaffoldMessenger.of(context);
+            final path = await exportPdf(doc, 'Order_${order.orderNumber}.pdf');
+            if (path != null) {
+              messenger.showSnackBar(SnackBar(content: Text('PDF saved to $path')));
+            }
+          },
+          icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
+          label: _label('Export PDF'),
+          style: _outlineStyle,
+        );
+
+    Widget actionBtn() => action!.outline
+        ? OutlinedButton(onPressed: action.onPressed, style: _outlineStyle, child: _label(action.label))
+        : ElevatedButton(
+            onPressed: action.onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: action.bg ?? AppTheme.primary,
+              foregroundColor: Colors.white,
+              padding: _buttonPadding,
+            ),
+            child: _label(action.label),
+          );
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppTheme.border)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: onClose,
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppTheme.border),
-                foregroundColor: const Color(0xFF374151),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              child: const Text('Close', style: TextStyle(fontSize: 13)),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                final lines = itemsAsync.valueOrNull ?? [];
-                final doc = await buildOrderPdf(order, lines);
-                if (!context.mounted) return;
-                final messenger = ScaffoldMessenger.of(context);
-                final path = await exportPdf(doc, 'Order_${order.orderNumber}.pdf');
-                if (path != null) {
-                  messenger.showSnackBar(SnackBar(content: Text('PDF saved to $path')));
-                }
-              },
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
-              label: const Text('Export PDF', style: TextStyle(fontSize: 13)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppTheme.border),
-                foregroundColor: const Color(0xFF374151),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-            ),
-          ),
-          ..._statusActions(context, ref, order, service),
-        ],
-      ),
+      child: LayoutBuilder(builder: (context, constraints) {
+        // Natural width each button needs for its whole label on one line.
+        final scaler = MediaQuery.textScalerOf(context);
+        // Measure in the font the buttons actually render in: Material buttons
+        // take their text style from the theme's labelLarge, then our size applies.
+        final style = (Theme.of(context).textTheme.labelLarge ?? const TextStyle()).merge(_labelStyle);
+        double need(String label, {double extra = 0}) => _textWidth(label, style, scaler) + _buttonPadding.horizontal + extra;
+        final widest = [
+          need('Close'),
+          need('Export PDF', extra: 16 + 8), // icon + its gap
+          if (action != null) need(action.label),
+        ].reduce((a, b) => a > b ? a : b);
+        final count = action == null ? 2 : 3;
+        // The Row gives every button an equal Expanded share.
+        final share = (constraints.maxWidth - 8 * (count - 1)) / count;
+
+        if (share >= widest) {
+          return Row(children: [
+            Expanded(child: closeBtn()),
+            const SizedBox(width: 8),
+            Expanded(child: exportBtn()),
+            if (action != null) ...[const SizedBox(width: 8), Expanded(child: actionBtn())],
+          ]);
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (action != null) ...[actionBtn(), const SizedBox(height: 8)],
+            exportBtn(),
+            const SizedBox(height: 8),
+            closeBtn(),
+          ],
+        );
+      }),
     );
   }
 
-  List<Widget> _statusActions(BuildContext context, WidgetRef ref, Order order, OrdersService service) {
+  static const _buttonPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 10);
+  static const _labelStyle = TextStyle(fontSize: 13);
+
+  static final _outlineStyle = OutlinedButton.styleFrom(
+    side: const BorderSide(color: AppTheme.border),
+    foregroundColor: const Color(0xFF374151),
+    padding: _buttonPadding,
+  );
+
+  /// One-line, centred label: never wraps silently (see [_buildFooter]).
+  static Widget _label(String text) => Text(text, style: _labelStyle, maxLines: 1, textAlign: TextAlign.center);
+
+  /// Width of [text] in [style] on one line, honouring the user's text scale.
+  static double _textWidth(String text, TextStyle style, TextScaler scaler) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout();
+    return painter.width;
+  }
+
+  /// The one status action for this order's state, or null (e.g. completed).
+  ({String label, Future<void> Function() onPressed, Color? bg, bool outline})? _statusAction(
+      WidgetRef ref, Order order, OrdersService service) {
     Future<void> advance(Future<void> Function() fn) async {
       await fn();
       ref.read(selectedOrderProvider.notifier).state = null;
       onClose();
     }
 
-    Widget primaryBtn(String label, Future<void> Function() fn, {Color? bg}) => Expanded(
-          child: ElevatedButton(
-            onPressed: () => advance(fn),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: bg ?? AppTheme.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-            ),
-            child: Text(label, style: const TextStyle(fontSize: 13)),
-          ),
-        );
-
-    Widget outlineBtn(String label, Future<void> Function() fn) => Expanded(
-          child: OutlinedButton(
-            onPressed: () => advance(fn),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppTheme.border),
-              foregroundColor: const Color(0xFF374151),
-              padding: const EdgeInsets.symmetric(vertical: 10),
-            ),
-            child: Text(label, style: const TextStyle(fontSize: 13)),
-          ),
-        );
+    ({String label, Future<void> Function() onPressed, Color? bg, bool outline}) primary(
+            String label, Future<void> Function() fn, {Color? bg}) =>
+        (label: label, onPressed: () => advance(fn), bg: bg, outline: false);
 
     return switch (order.status) {
-      'pending'          => [const SizedBox(width: 8), primaryBtn('Start Processing',     () => service.markProcessing(order.uuid))],
-      'processing'       => [const SizedBox(width: 8), primaryBtn('Dispatch for Delivery', () => service.markOutForDelivery(order.uuid), bg: const Color(0xFF7C3AED))],
-      'out_for_delivery' => [const SizedBox(width: 8), primaryBtn('Mark as Delivered',    () => service.markDelivered(order.uuid), bg: const Color(0xFF059669))],
-      'delivered'        => [const SizedBox(width: 8), primaryBtn('Mark Completed',       () => service.markCompleted(order.uuid), bg: const Color(0xFF16A34A))],
-      'cancelled'        => [const SizedBox(width: 8), outlineBtn('Restore Order',        () => service.restoreOrder(order.uuid))],
-      _                  => [],
+      'pending'          => primary('Start Processing',     () => service.markProcessing(order.uuid)),
+      'processing'       => primary('Dispatch for Delivery', () => service.markOutForDelivery(order.uuid), bg: const Color(0xFF7C3AED)),
+      'out_for_delivery' => primary('Mark as Delivered',    () => service.markDelivered(order.uuid), bg: const Color(0xFF059669)),
+      'delivered'        => primary('Mark Completed',       () => service.markCompleted(order.uuid), bg: const Color(0xFF16A34A)),
+      'cancelled'        => (label: 'Restore Order', onPressed: () => advance(() => service.restoreOrder(order.uuid)), bg: null, outline: true),
+      _                  => null,
     };
   }
 
