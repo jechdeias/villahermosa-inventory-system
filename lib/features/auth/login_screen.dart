@@ -9,6 +9,7 @@ import '../../core/auth/auth_service.dart';
 import '../../core/business/role_based_access.dart';
 import '../../core/sync/sync_manager.dart';
 import 'viewmodels/auth_viewmodel.dart';
+import 'set_password_dialog.dart';
 import '../auth/widgets/responsive_auth_screen.dart';
 import '../auth/widgets/auth_card.dart';
 import '../../core/services/navigation_service.dart';
@@ -57,6 +58,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = await AuthService.instance.loginWithOAuthSession(session);
       if (!mounted) return;
       if (user != null) {
+        // Optional, once-only: offer to add a password so this account can also
+        // sign in without Google (e.g. on the Windows app). Never blocks.
+        await maybePromptToSetPassword(context);
+        if (!mounted) return;
         await _navigateToDashboard();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

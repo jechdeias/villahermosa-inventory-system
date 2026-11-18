@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/auth/auth_service.dart';
+import '../../auth/set_password_dialog.dart';
 import '../../../core/database/app_database.dart';
 import '../../admin/providers/customers_provider.dart' show kCustomerTowns, kCustomerChannels;
 import '../../admin/providers/orders_provider.dart' show customersProvider;
@@ -225,6 +226,22 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               const SizedBox(height: 8),
               const CcSectionLabel('Account'),
               CcInfoRows(rows: [
+                // Accounts created through Google sign-in have no password; this is
+                // the permanent way to add one (the post-sign-in prompt is once only).
+                if (AuthService.instance.currentUserNeedsPassword)
+                  (
+                    label: 'Password',
+                    value: Wrap(crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.end, spacing: 12, children: [
+                      ccValueText('Not set'),
+                      InkWell(
+                        onTap: () async {
+                          await showSetPasswordDialog(context);
+                          if (mounted) setState(() {});
+                        },
+                        child: const Text('Set', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: CcColors.blue)),
+                      ),
+                    ]),
+                  ),
                 (label: 'Member since', value: ccValueText(p.memberSince == null ? '—' : ccMonthYear(p.memberSince!))),
                 (
                   label: 'App version',

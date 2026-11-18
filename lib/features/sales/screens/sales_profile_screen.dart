@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
+import '../../auth/set_password_dialog.dart';
 import '../../../core/settings/app_settings.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../providers/sales_providers.dart';
@@ -144,6 +145,22 @@ class _SalesProfileScreenState extends ConsumerState<SalesProfileScreen> {
             children: [
               _InfoRow(label: 'Role', value: 'Sales Rep / Delivery'),
               _InfoRow(label: 'Phone', value: rep?.phone ?? '—'),
+              // Google-created accounts have no password; this adds one.
+              if (AuthService.instance.currentUserNeedsPassword)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(children: [
+                    const Expanded(child: Text('Password', style: TextStyle(fontSize: 13, color: AppTheme.textMuted))),
+                    const Text('Not set', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textPrimary)),
+                    TextButton(
+                      onPressed: () async {
+                        await showSetPasswordDialog(context);
+                        if (mounted) setState(() {});
+                      },
+                      child: const Text('Set'),
+                    ),
+                  ]),
+                ),
             ],
           ),
           const SizedBox(height: 24),

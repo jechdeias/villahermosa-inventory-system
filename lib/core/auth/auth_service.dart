@@ -418,6 +418,85 @@ class AuthService {
     }
   }
 
+  // ── Setting a password on an account that has none (Google sign-in) ─────────
+
+  /// Shortest password accepted (matches the sign-up form and Supabase's default).
+  static const minPasswordLength = 6;
+
+  /// True when [user] has no local password — i.e. the account was created by
+  /// Google sign-in (`loginWithOAuthSession` writes `passwordHash: ''`) and can
+  /// only sign in through Google until a password is set.
+  static bool needsPassword(User user) => user.passwordHash.isEmpty;
+
+  /// Whether the signed-in user still has no password.
+  bool get currentUserNeedsPassword {
+    final u = _currentUser;
+    return u != null && needsPassword(u);
+  }
+
+  /// Gives the signed-in account a real password, on BOTH sides:
+  ///  1. Supabase Auth (`auth.updateUser`), so a device that has never seen the
+  ///     account can authenticate and bootstrap it (login STEP 1b / STEP 2);
+  ///  2. the local row, as a bcrypt hash with `syncStatus = 'pending'`, so
+  ///     local (offline) login works and the hash is pushed.
+  /// Supabase goes first: if it fails nothing is written locally, so the two
+  /// sides never disagree about whether a password exists.
+  ///
+  /// Throws [PasswordSetException] with a message fit to show the user.
+  /// [updateRemote] replaces the Supabase call (tests only).
+  Future<void> setPassword(
+    String newPassword, {
+    @visibleForTesting Future<void> Function(String password)? updateRemote,
+  }) async {
+    final user = _currentUser;
+    if (user == null) {
+      throw const PasswordSetException('You need to be signed in to set a password.');
+    }
+    if (newPassword.length < minPasswordLength) {
+      throw const PasswordSetException('Password must be at least $minPasswordLength characters.');
+    }
+
+    try {
+      await (updateRemote ?? _updateSupabasePassword)(newPassword);
+    } on PasswordSetException {
+      rethrow;
+    } on AuthException catch (e) {
+      // Re-setting the password it already has is not a failure: carry on and
+      // make sure the local half is written.
+      if (e.code != 'same_password') {
+        throw PasswordSetException(e.message);
+      }
+    } catch (e) {
+      throw PasswordSetException("Couldn't reach the server — check your connection and try again.");
+    }
+
+    await _database.updateUser(
+      user.uuid,
+      UsersCompanion(
+        passwordHash: Value(_hashPassword(newPassword)), // bcrypt
+        syncStatus: const Value('pending'),
+      ),
+    );
+    _currentUser = await _database.getUserByEmail(user.email) ?? _currentUser;
+    // Push the new hash (best effort; the row stays 'pending' if this fails).
+    SyncManager.syncInBackground();
+  }
+
+  Future<void> _updateSupabasePassword(String password) async {
+    if (Supabase.instance.client.auth.currentSession == null) {
+      throw const PasswordSetException(
+          'Your online session has expired. Sign in with Google again, then set a password.');
+    }
+    await Supabase.instance.client.auth.updateUser(UserAttributes(password: password));
+  }
+
+  /// Test seam: act as [user] without going through login.
+  @visibleForTesting
+  void debugSetCurrentUser(User? user) {
+    _currentUser = user;
+    _isAuthenticated = user != null;
+  }
+
   /// Logout user
   Future<void> logout() async {
     SyncManager.instance.stopRealtime();
@@ -549,4 +628,12 @@ Future<void> _migratePasswordToBcrypt(String password, String oldHash) async {
     // This method is for AuthViewModel compatibility
     // In a real implementation, this would clear UI error state
   }
+}
+
+/// A failure setting a password, with a message that can be shown as-is.
+class PasswordSetException implements Exception {
+  const PasswordSetException(this.message);
+  final String message;
+  @override
+  String toString() => message;
 }
