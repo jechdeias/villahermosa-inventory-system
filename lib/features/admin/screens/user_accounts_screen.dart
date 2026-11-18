@@ -178,6 +178,16 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
     );
   }
 
+  void _showResetPasswordDialog(User user) {
+    showDialog(
+      context: context,
+      builder: (context) => _ResetPasswordDialog(
+        user: user,
+        database: widget.database,
+      ),
+    );
+  }
+
   Future<void> _deactivateUser(User user) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -473,7 +483,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       Expanded(flex: 2, child: Text('ROLE', style: _colHeader)),
       Expanded(flex: 2, child: Text('STATUS', style: _colHeader)),
       Expanded(flex: 2, child: Text('CREATED', style: _colHeader)),
-      SizedBox(width: 120, child: Text('ACTIONS', style: _colHeader)),
+      SizedBox(width: 130, child: Text('ACTIONS', style: _colHeader)),
     ]),
   );
 
@@ -526,10 +536,11 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
         ),
         // ACTIONS
         SizedBox(
-          width: 120,
+          width: 130,
           child: Row(children: [
             _actionBtn(Icons.visibility_outlined, 'View', () => _showUserDetails(user)),
             _actionBtn(Icons.edit_outlined, 'Edit', () => _editUser(user)),
+            _actionBtn(Icons.lock_reset_outlined, 'Reset password', () => _showResetPasswordDialog(user)),
             user.isActive
               ? _actionBtn(Icons.person_off_outlined, 'Deactivate', () => _deactivateUser(user), color: AppTheme.error)
               : _actionBtn(Icons.person_outlined, 'Activate', () => _activateUser(user), color: AppTheme.success),
@@ -565,6 +576,7 @@ class _UserAccountsScreenState extends State<UserAccountsScreen> {
       valueRight: MobileCardMuted(_formatDate(user.createdAt)),
       actions: [
         MobileCardAction(label: 'Edit', onPressed: () => _editUser(user)),
+        MobileCardAction(label: 'Reset Password', onPressed: () => _showResetPasswordDialog(user)),
         if (user.isActive)
           MobileCardAction(
             label: 'Deactivate',
