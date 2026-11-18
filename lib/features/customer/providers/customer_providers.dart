@@ -1,9 +1,10 @@
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show BooleanExpressionOperators, Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/constants/order_status.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
+import '../../admin/providers/customers_provider.dart' show kCustomerTowns;
 import '../../admin/providers/delivery_routes_provider.dart' show deliveryRoutesStreamProvider;
 import '../../admin/providers/orders_provider.dart' show customersProvider, databaseProvider;
 import '../../admin/providers/products_provider.dart' show productsStreamProvider, suppliersStreamProvider;
@@ -91,6 +92,7 @@ class CustomerProfile {
     this.email = '',
     this.memberSince,
     this.address = '',
+    this.routeAmbiguous = false,
   });
 
   final String firstName;
@@ -108,8 +110,83 @@ class CustomerProfile {
   final DateTime? memberSince;
   final String address;
 
+  /// More than one route serves [town] equally well; the lowest-id one was used
+  /// (see [matchRouteForTown]).
+  final bool routeAmbiguous;
+
   /// Only a linked customer record can be edited / have orders pushed.
   bool get hasCustomerRecord => customerUuid != null;
+
+  /// A town is set but no active route serves it: the customer is unroutable, so
+  /// they get no rep, no delivery day, and their payments reach no sales rep.
+  bool get townNotServed => town.isNotEmpty && routeName.isEmpty;
+}
+
+// ── Town → route derivation ──────────────────────────────────────────────────
+//
+// customers row → town → route matched by municipality → routeName,
+// deliveryDays, repName → the order's routeName/salesRepName → the payment's
+// rep. Break any link and the customer is unroutable. The customer chooses a
+// TOWN; the route is derived and never chosen.
+
+/// The route that serves a town, and whether the choice was ambiguous.
+class RouteMatch {
+  const RouteMatch(this.route, {this.ambiguous = false});
+  final DeliveryRoute? route;
+  final bool ambiguous;
+}
+
+String _normTown(String t) => t.trim().toLowerCase();
+
+bool _routeIsServing(DeliveryRoute r) => !r.isDeleted && r.status != 'inactive';
+
+/// RULE when several routes share a municipality (the old loop had no `break`,
+/// so the LAST one won arbitrarily): consider only routes that are in service
+/// (not deleted, not 'inactive'); prefer 'active' over 'on_hold'; among equals take
+/// the LOWEST id — deterministic, and the same on every device that has the same
+/// routes. If more than one route ties for first place the match is flagged
+/// [RouteMatch.ambiguous] so the ambiguity is visible instead of silent.
+RouteMatch matchRouteForTown(String town, List<DeliveryRoute> routes) {
+  final t = _normTown(town);
+  if (t.isEmpty) return const RouteMatch(null);
+  final candidates = routes.where((r) => _routeIsServing(r) && _normTown(r.municipality) == t).toList();
+  if (candidates.isEmpty) return const RouteMatch(null);
+  int rank(DeliveryRoute r) => r.status == 'active' ? 0 : 1;
+  candidates.sort((a, b) => rank(a) != rank(b) ? rank(a) - rank(b) : a.id.compareTo(b.id));
+  final best = candidates.first;
+  final tied = candidates.where((r) => rank(r) == rank(best)).length;
+  return RouteMatch(best, ambiguous: tied > 1);
+}
+
+/// One entry in the town picker.
+class TownOption {
+  const TownOption(this.town, {required this.served});
+  final String town;
+
+  /// An in-service route covers it.
+  final bool served;
+}
+
+/// The municipalities delivery routes actually serve, then the other known
+/// Marinduque towns marked as not served yet, then [current] if it is neither
+/// (a legacy free-text value). A picker, so a typo can't silently unroute
+/// someone; unserved towns stay selectable so "we don't deliver to X yet" is a
+/// real answer the customer can get, not a dead end.
+List<TownOption> townOptions(List<DeliveryRoute> routes, {String current = ''}) {
+  final served = <String, String>{}; // normalised -> display
+  for (final r in routes.where(_routeIsServing)) {
+    final display = r.municipality.trim();
+    if (display.isNotEmpty) served.putIfAbsent(_normTown(display), () => display);
+  }
+  final out = <TownOption>[
+    for (final t in (served.values.toList()..sort())) TownOption(t, served: true),
+  ];
+  for (final t in kCustomerTowns) {
+    if (!served.containsKey(_normTown(t))) out.add(TownOption(t, served: false));
+  }
+  final cur = current.trim();
+  if (cur.isNotEmpty && !out.any((o) => _normTown(o.town) == _normTown(cur))) out.add(TownOption(cur, served: false));
+  return out;
 }
 
 final customerProfileProvider = Provider<CustomerProfile>((ref) {
@@ -132,12 +209,8 @@ final customerProfileProvider = Provider<CustomerProfile>((ref) {
   final store = business.isNotEmpty ? business : (owner.isNotEmpty ? owner : 'My Store');
 
   final town = (customer?.town ?? '').isNotEmpty ? customer!.town! : (customer?.municipality ?? '');
-  DeliveryRoute? route;
-  if (town.isNotEmpty) {
-    for (final r in routes) {
-      if (r.municipality.toLowerCase() == town.toLowerCase()) route = r;
-    }
-  }
+  final match = matchRouteForTown(town, routes);
+  final route = match.route;
 
   return CustomerProfile(
     firstName: first.isNotEmpty ? first : (owner.split(' ').first),
@@ -154,6 +227,7 @@ final customerProfileProvider = Provider<CustomerProfile>((ref) {
     email: user?.email ?? customer?.email ?? '',
     memberSince: customer?.createdAt ?? user?.createdAt,
     address: customer?.address ?? '',
+    routeAmbiguous: match.ambiguous,
   );
 });
 
@@ -379,6 +453,93 @@ Future<void> updateCustomerPhone(WidgetRef ref, String customerUuid, String phon
         ),
       );
   ref.invalidate(customersProvider);
+}
+
+/// What a customer can tell us about their store. First/last name and email are
+/// NOT here: the name belongs to the account, and email is the login identity.
+class StoreDetails {
+  const StoreDetails({
+    required this.storeName,
+    required this.town,
+    required this.phone,
+    this.barangay = '',
+    this.channel = '',
+    this.address = '',
+  });
+  final String storeName;
+  final String town;
+  final String phone;
+  final String barangay;
+  final String channel;
+  final String address;
+}
+
+String? _blankToNull(String v) => v.trim().isEmpty ? null : v.trim();
+
+/// Creates the `customers` row for a signed-in customer who has none (a new
+/// Google sign-in, say), linked to their account by email — the link the profile
+/// provider uses — so the town → route → rep chain can finally be derived.
+/// Orders they already placed while unlinked carry their USER uuid as
+/// `customer_id` and are local-only (the push can't resolve them); they are
+/// re-pointed at the new customer so they can sync. Returns the new row's uuid.
+Future<String> createStoreForCurrentUser(WidgetRef ref, StoreDetails d) async {
+  final db = ref.read(databaseProvider);
+  final user = AuthService.instance.getCurrentUser();
+  if (user == null) throw StateError('Not signed in');
+  final uuid = 'cust-${DateTime.now().microsecondsSinceEpoch}';
+  final owner = '${user.firstName} ${user.lastName}'.trim();
+  await db.transaction(() async {
+    await db.createCustomer(CustomersCompanion.insert(
+      uuid: uuid,
+      name: owner.isEmpty ? d.storeName.trim() : owner,
+      businessName: Value(_blankToNull(d.storeName)),
+      email: Value(user.email),
+      phone: Value(d.phone.trim()),
+      address: Value(_blankToNull(d.address)),
+      municipality: d.town.trim(),
+      province: 'Marinduque',
+      storeType: d.channel.trim().isEmpty ? 'Sari-Sari Store' : d.channel.trim(),
+      contactNumber: d.phone.trim(),
+      barangay: Value(_blankToNull(d.barangay)),
+      town: Value(_blankToNull(d.town)),
+      channel: Value(_blankToNull(d.channel)),
+    ));
+    await (db.update(db.orders)..where((o) => o.customerId.equals(user.uuid) & o.isDeleted.equals(false))).write(OrdersCompanion(
+      customerId: Value(uuid),
+      syncStatus: const Value('pending'),
+      updatedAt: Value(DateTime.now()),
+    ));
+  });
+  ref.invalidate(customersProvider);
+  try {
+    SyncManager.instance.syncPendingData().catchError((_) {});
+  } catch (_) {}
+  return uuid;
+}
+
+/// Saves edits to an existing store record. `updateCustomer` marks the row
+/// pending. NOTE: the store name is denormalised onto orders and payments
+/// (`storeName`), so renaming does NOT change existing ones — old orders keep
+/// the old name on purpose (historical accuracy).
+Future<void> updateStoreDetails(WidgetRef ref, String customerUuid, StoreDetails d) async {
+  await ref.read(databaseProvider).updateCustomer(
+        customerUuid,
+        CustomersCompanion(
+          businessName: Value(_blankToNull(d.storeName)),
+          address: Value(_blankToNull(d.address)),
+          barangay: Value(_blankToNull(d.barangay)),
+          town: Value(_blankToNull(d.town)),
+          municipality: Value(d.town.trim()),
+          channel: Value(_blankToNull(d.channel)),
+          storeType: Value(d.channel.trim()),
+          phone: Value(d.phone.trim()),
+          contactNumber: Value(d.phone.trim()),
+        ),
+      );
+  ref.invalidate(customersProvider);
+  try {
+    SyncManager.instance.syncPendingData().catchError((_) {});
+  } catch (_) {}
 }
 
 /// Name of a product's supplier, '' if unknown.

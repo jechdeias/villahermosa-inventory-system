@@ -8,6 +8,7 @@ import '../widgets/customer_common.dart';
 import '../widgets/customer_shell.dart';
 import '../widgets/product_grid_card.dart';
 import 'customer_product_detail_screen.dart';
+import 'customer_store_screen.dart';
 
 class CustomerShopScreen extends ConsumerStatefulWidget {
   const CustomerShopScreen({super.key});
@@ -79,6 +80,8 @@ class _CustomerShopScreenState extends ConsumerState<CustomerShopScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
+                      if (!profile.hasCustomerRecord) ...[const SetUpStoreBanner(), const SizedBox(height: 14)],
+                      if (profile.townNotServed) ...[_UnservedTownNote(town: profile.town), const SizedBox(height: 14)],
                       if (balance > 0) ...[_BalanceAlert(balance: balance), const SizedBox(height: 14)],
                       SizedBox(
                         height: 44,
@@ -199,6 +202,29 @@ class _BalanceAlert extends StatelessWidget {
                 child: const Text('View Payments →', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: CcColors.amber, decoration: TextDecoration.underline)),
               ),
             ]),
+          ),
+        ]),
+      );
+}
+
+/// Shown when the customer's town has no route: they are unroutable.
+class _UnservedTownNote extends StatelessWidget {
+  const _UnservedTownNote({required this.town});
+  final String town;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        key: const Key('unserved-town-note'),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(12), border: Border.all(color: CcColors.red)),
+        child: Row(children: [
+          const Icon(Icons.info_outline, color: Color(0xFFB91C1C)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "We don't deliver to $town yet, so we can't schedule your deliveries or assign a sales rep. You can change your town in Profile.",
+              style: const TextStyle(fontSize: 13, color: Color(0xFFB91C1C)),
+            ),
           ),
         ]),
       );

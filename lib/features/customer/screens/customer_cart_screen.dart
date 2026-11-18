@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'customer_store_screen.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/cart_item_card.dart';
 import '../widgets/customer_common.dart';
@@ -20,6 +21,13 @@ class _CustomerCartScreenState extends ConsumerState<CustomerCartScreen> {
 
   Future<void> _confirm(List<CartItem> items, double total) async {
     final profile = ref.read(customerProfileProvider);
+    // No store record = no town = no route or rep, and the order would stay
+    // local-only (its push can't resolve the customer). Set up the store first.
+    if (!profile.hasCustomerRecord) {
+      final saved = await openCustomerStore(context);
+      if (saved != true || !mounted) return;
+      return _confirm(items, total);
+    }
     final delivery = nextDeliveryDate(profile.deliveryDays, DateTime.now());
     final units = items.fold<int>(0, (s, i) => s + i.quantity);
 

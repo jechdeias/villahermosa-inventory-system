@@ -1,17 +1,13 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../auth/set_password_dialog.dart';
-import '../../../core/database/app_database.dart';
-import '../../admin/providers/customers_provider.dart' show kCustomerTowns, kCustomerChannels;
-import '../../admin/providers/orders_provider.dart' show customersProvider;
 import '../providers/customer_providers.dart';
 import '../widgets/customer_common.dart';
 import '../widgets/customer_shell.dart';
+import 'customer_store_screen.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/sync/sync_manager.dart';
 
 
 class CustomerProfileScreen extends ConsumerStatefulWidget {
@@ -38,100 +34,6 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     if (parts.isEmpty) return p.storeName.isEmpty ? '?' : p.storeName[0].toUpperCase();
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-  }
-
-  Future<void> _editStoreDetails(CustomerProfile p) async {
-    if (p.customerUuid == null) return;
-    final barangayCtrl = TextEditingController(text: p.barangay);
-    String? town = p.town.isEmpty ? null : p.town;
-    String? channel = p.channel.isEmpty ? null : p.channel;
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Edit Store Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          content: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              TextField(
-                controller: barangayCtrl,
-                decoration: const InputDecoration(labelText: 'Barangay'),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: town,
-                decoration: const InputDecoration(labelText: 'Town'),
-                items: kCustomerTowns.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-                onChanged: (v) => setDialogState(() => town = v),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: channel,
-                decoration: const InputDecoration(labelText: 'Channel'),
-                items: kCustomerChannels.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                onChanged: (v) => setDialogState(() => channel = v),
-              ),
-            ]),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(color: CcColors.muted))),
-            CcPrimaryButton(label: 'Save', expand: false, height: 44, onPressed: () => Navigator.pop(ctx, true)),
-          ],
-        ),
-      ),
-    );
-    final barangay = barangayCtrl.text.trim();
-    barangayCtrl.dispose();
-    if (ok != true || p.customerUuid == null) return;
-    try {
-      final db = AuthService.instance.database;
-      await db.updateCustomer(
-        p.customerUuid!,
-        CustomersCompanion(
-          barangay: Value(barangay.isEmpty ? null : barangay),
-          town: Value(town),
-          municipality: Value(town ?? ''),
-          channel: Value(channel),
-          storeType: Value(channel ?? ''),
-          syncStatus: const Value('pending'),
-          updatedAt: Value(DateTime.now()),
-        ),
-      );
-      SyncManager.instance.syncPendingData().catchError((_) {});
-      ref.invalidate(customersProvider);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Store details updated')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-    }
-  }
-
-  Future<void> _editPhone(CustomerProfile p) async {
-    final ctrl = TextEditingController(text: p.phone);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Contact number', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        content: TextField(controller: ctrl, keyboardType: TextInputType.phone, autofocus: true, decoration: const InputDecoration(hintText: '0917 555 0142')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(color: CcColors.muted))),
-          CcPrimaryButton(label: 'Save', expand: false, height: 44, onPressed: () => Navigator.pop(ctx, true)),
-        ],
-      ),
-    );
-    final phone = ctrl.text.trim();
-    ctrl.dispose();
-    if (ok != true || phone.isEmpty || p.customerUuid == null) return;
-    await updateCustomerPhone(ref, p.customerUuid!, phone);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contact number updated')));
   }
 
   Future<void> _logout() async {
@@ -163,8 +65,6 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final p = ref.watch(customerProfileProvider);
-    final townLine = p.town.isEmpty ? '—' : '${p.town}, Marinduque';
-    final routeLine = p.routeName.isEmpty ? '—' : [p.routeName, if (p.deliveryDays.isNotEmpty) p.deliveryDays.split(',').map((d) => d.trim()).join(' & ')].join(' · ');
 
     return CustomerShell(
       currentRoute: CustomerRoutes.profile,
@@ -194,6 +94,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   ),
                 ]),
               ),
+              if (!p.hasCustomerRecord) ...[const SizedBox(height: 8), const SetUpStoreBanner()],
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -201,7 +102,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   const CcSectionLabel('Store details'),
                   if (p.hasCustomerRecord)
                     InkWell(
-                      onTap: () => _editStoreDetails(p),
+                      key: const Key('edit-store'),
+                      onTap: () => openCustomerStore(context),
                       child: const Padding(
                         padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                         child: Text('Edit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: CcColors.blue)),
@@ -210,19 +112,33 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                 ],
               ),
               CcInfoRows(rows: [
+                (label: 'Store name', value: ccValueText(p.hasCustomerRecord ? p.storeName : '—')),
+                (label: 'Address', value: ccValueText(p.address.isEmpty ? '—' : p.address)),
                 (label: 'Barangay', value: ccValueText(p.barangay.isEmpty ? '—' : p.barangay)),
-                (label: 'Town', value: ccValueText(townLine)),
-                (label: 'Route', value: ccValueText(routeLine)),
+                (label: 'Town', value: ccValueText(p.town.isEmpty ? '—' : p.town)),
+                // Derived from the town, read-only: the consequence of the choice above.
                 (
-                  label: 'Contact',
-                  value: Wrap(crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.end, spacing: 12, children: [
-                    ccValueText(p.phone.isEmpty ? '—' : p.phone),
-                    if (p.hasCustomerRecord)
-                      InkWell(onTap: () => _editPhone(p), child: const Text('Edit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: CcColors.blue))),
-                  ]),
+                  label: 'Route',
+                  value: p.townNotServed
+                      ? ccValueText('Not served yet', color: CcColors.red)
+                      : ccValueText(p.routeName.isEmpty ? '—' : p.routeName),
                 ),
+                (
+                  label: 'Delivery days',
+                  value: ccValueText(p.deliveryDays.isEmpty ? '—' : p.deliveryDays.split(',').map((d) => d.trim()).join(' & ')),
+                ),
+                (label: 'Sales rep', value: ccValueText(p.repName.isEmpty ? '—' : p.repName)),
+                (label: 'Contact', value: ccValueText(p.phone.isEmpty ? '—' : p.phone)),
                 (label: 'Email', value: ccValueText(p.email.isEmpty ? '—' : p.email)),
               ]),
+              if (p.townNotServed) ...[
+                const SizedBox(height: 8),
+                Text(
+                  "We don't deliver to ${p.town} yet, so there is no route, delivery day or sales rep for your store. Change your town if it is wrong.",
+                  key: const Key('profile-unserved-note'),
+                  style: const TextStyle(fontSize: 13, color: CcColors.red),
+                ),
+              ],
               const SizedBox(height: 8),
               const CcSectionLabel('Account'),
               CcInfoRows(rows: [
