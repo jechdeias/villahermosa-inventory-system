@@ -307,12 +307,22 @@ class AppDatabase extends _$AppDatabase {
 
   Future<User?> getUserByEmail(String email) async => (select(users)..where((t) => t.email.equals(email) & t.isDeleted.equals(false) & t.isActive.equals(true))).getSingleOrNull();
 
+  // ── Write helpers and the sync invariant ─────────────────────────────────────
+  // Push selects `WHERE sync_status = 'pending'`, so a local change to an
+  // already-synced row that doesn't set it is invisible to sync: it never
+  // uploads, and the next pull overwrites it with the server's copy. Every
+  // update*/softDelete*/updateOrder* helper below therefore FORCES
+  // syncStatus = 'pending' (and updatedAt), overriding whatever the caller
+  // passed, so no caller can forget. To mark a row synced, sync code writes it
+  // directly (see SyncEngine._markRecordAsSynced) — never through these.
+
   Future<bool> updateUser(String uuid, UsersCompanion user) async => await (update(users)..where((t) => t.uuid.equals(uuid)))
-        .write(user.copyWith(updatedAt: Value(DateTime.now()))) > 0;
+        .write(user.copyWith(updatedAt: Value(DateTime.now()), syncStatus: const Value('pending'))) > 0;
 
   Future<bool> softDeleteUser(String uuid) async => await (update(users)..where((t) => t.uuid.equals(uuid)))
         .write(UsersCompanion(
           isDeleted: const Value(true),
+          syncStatus: const Value('pending'),
           updatedAt: Value(DateTime.now()),
         )) > 0;
 
@@ -442,11 +452,12 @@ class AppDatabase extends _$AppDatabase {
   Future<Product?> getProductByUuid(String uuid) async => (select(products)..where((t) => t.uuid.equals(uuid) & t.isDeleted.equals(false))).getSingleOrNull();
 
   Future<bool> updateProduct(String uuid, ProductsCompanion product) async => await (update(products)..where((t) => t.uuid.equals(uuid)))
-        .write(product.copyWith(updatedAt: Value(DateTime.now()))) > 0;
+        .write(product.copyWith(updatedAt: Value(DateTime.now()), syncStatus: const Value('pending'))) > 0;
 
   Future<bool> softDeleteProduct(String uuid) async => await (update(products)..where((t) => t.uuid.equals(uuid)))
         .write(ProductsCompanion(
           isDeleted: const Value(true),
+          syncStatus: const Value('pending'),
           updatedAt: Value(DateTime.now()),
         )) > 0;
 
@@ -471,11 +482,12 @@ class AppDatabase extends _$AppDatabase {
   Future<Customer?> getCustomerByIntId(int id) async => (select(customers)..where((t) => t.id.equals(id) & t.isDeleted.equals(false))).getSingleOrNull();
 
   Future<bool> updateCustomer(String uuid, CustomersCompanion customer) async => await (update(customers)..where((t) => t.uuid.equals(uuid)))
-        .write(customer.copyWith(updatedAt: Value(DateTime.now()))) > 0;
+        .write(customer.copyWith(updatedAt: Value(DateTime.now()), syncStatus: const Value('pending'))) > 0;
 
   Future<bool> softDeleteCustomer(String uuid) async => await (update(customers)..where((t) => t.uuid.equals(uuid)))
         .write(CustomersCompanion(
           isDeleted: const Value(true),
+          syncStatus: const Value('pending'),
           updatedAt: Value(DateTime.now()),
         )) > 0;
 
@@ -630,6 +642,22 @@ class AppDatabase extends _$AppDatabase {
     ));
   }
 
+  /// Writes [changes] to an order by local id and marks it pending. The
+  /// warehouse screens use this instead of raw `update(orders)` so the
+  /// pending flag can't be forgotten (see the note above [updateUser]).
+  Future<void> updateOrderById(int id, OrdersCompanion changes) async {
+    await (update(orders)..where((o) => o.id.equals(id))).write(
+      changes.copyWith(updatedAt: Value(DateTime.now()), syncStatus: const Value('pending')),
+    );
+  }
+
+  /// Same as [updateOrderById], for an order line.
+  Future<void> updateOrderItemById(int id, OrderItemsCompanion changes) async {
+    await (update(orderItems)..where((t) => t.id.equals(id))).write(
+      changes.copyWith(updatedAt: Value(DateTime.now()), syncStatus: const Value('pending')),
+    );
+  }
+
   Future<String> generateOrderNumber() async {
     final all = await (select(orders)
           ..where((t) => t.isDeleted.equals(false)))
@@ -767,7 +795,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> updateDeliveryRoute(String uuid, DeliveryRoutesCompanion route) async {
     await (update(deliveryRoutes)..where((t) => t.uuid.equals(uuid)))
-        .write(route.copyWith(updatedAt: Value(DateTime.now())));
+        .write(route.copyWith(updatedAt: Value(DateTime.now()), syncStatus: const Value('pending')));
   }
 
   // Payment methods
@@ -799,7 +827,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> updatePayment(int id, PaymentsCompanion companion) async {
-    await (update(payments)..where((t) => t.id.equals(id))).write(companion);
+    await (update(payments)..where((t) => t.id.equals(id)))
+        .write(companion.copyWith(updatedAt: Value(DateTime.now()), syncStatus: const Value('pending')));
   }
 
   Future<List<Payment>> getPendingSyncPayments() async =>

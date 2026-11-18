@@ -239,11 +239,11 @@ void main() {
       final customer = await database.getCustomerByEmail('sync@example.com');
       expect(customer, isNotNull);
       // remoteId was dropped in v13; sync resolves by uuid, so only the status flips.
-      final synced = await database.updateCustomer(
-        customer!.uuid,
-        const CustomersCompanion(syncStatus: Value('synced')),
-      );
-      expect(synced, isTrue);
+      // updateCustomer deliberately forces 'pending' (so no caller can forget it),
+      // so marking synced is done the way the sync engine does: a direct write.
+      final synced = await (database.update(database.customers)..where((t) => t.uuid.equals(customer!.uuid)))
+          .write(const CustomersCompanion(syncStatus: Value('synced')));
+      expect(synced, 1);
 
       // Verify the sync status
       final syncedCustomer = await database.getCustomerByEmail('sync@example.com');

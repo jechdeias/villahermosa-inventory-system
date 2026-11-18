@@ -125,11 +125,9 @@ final lowStockProductsProvider = Provider<List<Product>>((ref) {
 
 // ── Writes ────────────────────────────────────────────────────────────────────
 //
-// Order *status* changes (pending → processing → out_for_delivery) are real
-// lifecycle changes the other roles need to see, so those writes mark the
-// order 'pending' for sync. warehouse_status, packed_at and per-line status
-// are local bookkeeping that Supabase doesn't have (see the push maps in
-// sync_engine.dart); writes that touch only those leave sync_status alone.
+// Order status, warehouse_status, packed_at and per-line status/picked_at all
+// sync (they are in the push maps in sync_engine.dart), so every write below
+// marks its row 'pending'.
 
 class WarehouseActions {
   const WarehouseActions(this._db);
@@ -137,24 +135,29 @@ class WarehouseActions {
 
   void _pushAsync() => SyncManager.syncInBackground();
 
+  // Every write here goes through updateOrderById / updateOrderItemById, which
+  // force syncStatus = 'pending'. That matters for ALL of them now: status,
+  // warehouse_status, packed_at, and per-line status/picked_at are all in the
+  // push maps, so a write that left the row 'synced' would never upload and the
+  // next pull would revert it.
+
   /// Warehouse picks the order up: pending → processing.
   Future<void> processOrder(Order o) async {
-    await (_db.update(_db.orders)..where((t) => t.id.equals(o.id))).write(
-      OrdersCompanion(
-        status: const Value(OrderStatus.processing),
-        warehouseStatus: const Value('processing'),
-        syncStatus: const Value('pending'),
-        updatedAt: Value(DateTime.now()),
+    await _db.updateOrderById(
+      o.id,
+      const OrdersCompanion(
+        status: Value(OrderStatus.processing),
+        warehouseStatus: Value('processing'),
       ),
     );
     _pushAsync();
   }
 
-  Future<void> setItemPicked(OrderItem i, bool picked) => (_db.update(_db.orderItems)..where((t) => t.id.equals(i.id))).write(
+  Future<void> setItemPicked(OrderItem i, bool picked) => _db.updateOrderItemById(
+        i.id,
         OrderItemsCompanion(
           status: Value(picked ? 'picked' : 'pending'),
           pickedAt: Value(picked ? DateTime.now() : null),
-          updatedAt: Value(DateTime.now()),
         ),
       );
 
@@ -166,35 +169,31 @@ class WarehouseActions {
 
   Future<void> completeOrder(Order o, List<OrderItem> items) async {
     final now = DateTime.now();
-    final user = AuthService.instance.getCurrentUser();
-    await (_db.update(_db.orders)..where((t) => t.id.equals(o.id))).write(
+    await _db.updateOrderById(
+      o.id,
       OrdersCompanion(
         warehouseStatus: const Value('ready'),
         packedAt: Value(now),
-        updatedAt: Value(now),
         // An order completed straight from pending skipped Process; its status
         // should still read "processing" from here on.
         status: o.status == OrderStatus.pending ? const Value(OrderStatus.processing) : const Value.absent(),
-        syncStatus: o.status == OrderStatus.pending ? const Value('pending') : const Value.absent(),
       ),
     );
     _pushAsync();
   }
 
-  Future<void> setItemLoaded(OrderItem i, bool loaded) => (_db.update(_db.orderItems)..where((t) => t.id.equals(i.id))).write(
-        OrderItemsCompanion(status: Value(loaded ? 'loaded' : 'picked'), updatedAt: Value(DateTime.now())),
-      );
+  Future<void> setItemLoaded(OrderItem i, bool loaded) =>
+      _db.updateOrderItemById(i.id, OrderItemsCompanion(status: Value(loaded ? 'loaded' : 'picked')));
 
   /// Truck leaves: every prepared order on the route becomes out_for_delivery
   /// (the customer's phone then shows its QR code). Returns how many.
   Future<int> dispatchOrders(List<Order> orders) async {
     for (final o in orders) {
-      await (_db.update(_db.orders)..where((t) => t.id.equals(o.id))).write(
-        OrdersCompanion(
-          status: const Value(OrderStatus.outForDelivery),
-          warehouseStatus: const Value('dispatched'),
-          syncStatus: const Value('pending'),
-          updatedAt: Value(DateTime.now()),
+      await _db.updateOrderById(
+        o.id,
+        const OrdersCompanion(
+          status: Value(OrderStatus.outForDelivery),
+          warehouseStatus: Value('dispatched'),
         ),
       );
     }
