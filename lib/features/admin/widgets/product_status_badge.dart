@@ -12,7 +12,12 @@ class ProductStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final _Style style;
     final String label;
-    if (currentStock <= 0) {
+    if (currentStock < 0) {
+      // Dispatch is allowed to take stock below zero (see OrderStockService);
+      // say so, instead of hiding it behind a plain "Out of Stock".
+      style = const _Style(bg: AppTheme.errorLight, text: Color(0xFF991B1B));
+      label = 'Negative Stock';
+    } else if (currentStock <= 0) {
       style = const _Style(bg: AppTheme.errorLight, text: Color(0xFF991B1B));
       label = 'Out of Stock';
     } else if (currentStock <= minStock) {

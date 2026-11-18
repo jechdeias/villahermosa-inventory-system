@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/order_stock_service.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../providers/orders_provider.dart';
 
@@ -33,7 +34,15 @@ class OrdersService {
   }
 
   Future<void> _setStatus(String uuid, String status) async {
-    await _ref.read(databaseProvider).updateOrderStatus(uuid, status);
+    final db = _ref.read(databaseProvider);
+    // The status write and its stock effect (deduct on out_for_delivery, put
+    // back on cancelled — see OrderStockService) commit together or not at all.
+    // restoreOrder (→ pending) deliberately changes no stock: a cancellation
+    // already put it back, and the next dispatch deducts again.
+    await db.transaction(() async {
+      await db.updateOrderStatus(uuid, status);
+      await OrderStockService(db).applyStatusChange(uuid, status);
+    });
     try {
       await SyncManager.instance.syncPendingData();
     } catch (_) {}

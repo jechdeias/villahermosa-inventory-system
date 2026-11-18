@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/constants/order_status.dart';
+import '../../../core/services/order_stock_service.dart';
 import '../../../core/settings/app_settings.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../admin/providers/orders_provider.dart' show databaseProvider;
@@ -189,13 +190,19 @@ class WarehouseActions {
   /// (the customer's phone then shows its QR code). Returns how many.
   Future<int> dispatchOrders(List<Order> orders) async {
     for (final o in orders) {
-      await _db.updateOrderById(
-        o.id,
-        const OrdersCompanion(
-          status: Value(OrderStatus.outForDelivery),
-          warehouseStatus: Value('dispatched'),
-        ),
-      );
+      // Status and stock deduction commit together per order (see
+      // OrderStockService: deduction is idempotent per order, so re-dispatching
+      // never deducts twice).
+      await _db.transaction(() async {
+        await _db.updateOrderById(
+          o.id,
+          const OrdersCompanion(
+            status: Value(OrderStatus.outForDelivery),
+            warehouseStatus: Value('dispatched'),
+          ),
+        );
+        await OrderStockService(_db).applyStatusChange(o.uuid, OrderStatus.outForDelivery);
+      });
     }
     _pushAsync();
     return orders.length;
