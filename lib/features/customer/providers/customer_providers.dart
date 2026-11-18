@@ -324,7 +324,8 @@ Future<String> placeCustomerOrder(
     }
   });
 
-  // Auto-create an unpaid payment record so admin can track credit immediately.
+  // Auto-create an UNPAID payment record so admin can track what the store owes
+  // from the moment the order is placed.
   try {
     final order = await db.getOrderById(orderUuid);
     if (order != null) {
@@ -334,15 +335,21 @@ Future<String> placeCustomerOrder(
         orderId: order.id,
         orderCode: orderNumber,
         storeName: profile.storeName,
-        // salesRepId 0 = unassigned; admin assigns the rep later via order detail.
+        // salesRepId 0 / the placeholder = unassigned. When admin assigns a rep
+        // in order detail, AppDatabase.assignOrderRoute carries the rep onto this
+        // payment (the rep's payments list reads payments by rep name).
         salesRepId: 0,
-        salesRepName: profile.repName.isEmpty ? '—' : profile.repName,
+        salesRepName: profile.repName.isEmpty ? AppDatabase.unassignedRepPlaceholder : profile.repName,
         orderAmount: total,
         amountPaid: const Value(0.0),
         balance: total,
         paymentMethod: Value(paymentMethod),
         paymentDate: DateTime.now(),
-        status: const Value('credit'),
+        // 'unpaid', not 'credit': 'credit' is the admin's deliberate "on credit
+        // terms" decision (Mark as Credit). A fresh customer order is simply owed,
+        // and 'credit' hid it from the admin's Outstanding total and from every
+        // status chip on the rep's screen.
+        status: const Value('unpaid'),
         syncStatus: const Value('pending'),
       ));
     }

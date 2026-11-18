@@ -36,6 +36,9 @@ class _SalesPaymentsScreenState extends ConsumerState<SalesPaymentsScreen> {
       ('unpaid', 'Unpaid', payments.where((p) => p.status == 'unpaid').length),
       ('partial', 'Partial', payments.where((p) => p.status == 'partial').length),
       ('paid', 'Paid', payments.where((p) => p.status == 'paid').length),
+      // 'credit' is a real status (admin "Mark as Credit"); without its own chip
+      // it appeared under All and under no filter at all.
+      ('credit', 'Credit', payments.where((p) => p.status == 'credit').length),
     ];
 
     final totalCollected = payments.fold(0.0, (s, p) => s + p.amountPaid);

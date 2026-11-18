@@ -745,16 +745,80 @@ class AppDatabase extends _$AppDatabase {
     required int salesRepId,
     required String salesRepName,
   }) async {
-    await (update(orders)..where((t) => t.uuid.equals(uuid))).write(
-      OrdersCompanion(
-        routeId:      Value(routeId),
-        routeName:    Value(routeName),
-        salesRepId:   Value(salesRepId),
-        salesRepName: Value(salesRepName),
-        syncStatus:   const Value('pending'),
-        updatedAt:    Value(DateTime.now()),
-      ),
-    );
+    await transaction(() async {
+      await (update(orders)..where((t) => t.uuid.equals(uuid))).write(
+        OrdersCompanion(
+          routeId:      Value(routeId),
+          routeName:    Value(routeName),
+          salesRepId:   Value(salesRepId),
+          salesRepName: Value(salesRepName),
+          syncStatus:   const Value('pending'),
+          updatedAt:    Value(DateTime.now()),
+        ),
+      );
+      // The rep's Payments list and Record Payment sheet read PAYMENTS by
+      // salesRepName, and a customer-placed order's payment is created before
+      // any rep is assigned. Without this the payment keeps its "unassigned"
+      // placeholder forever and no rep can ever see or collect it.
+      final order = await (select(orders)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
+      if (order != null) await _assignPaymentsToRep(order, salesRepId: salesRepId, salesRepName: salesRepName);
+    });
+  }
+
+  /// The placeholder customer-placed payments are created with while no rep is
+  /// assigned (the order's own salesRepName is just null).
+  static const unassignedRepPlaceholder = '\u2014'; // em dash
+
+  /// True for a payment rep name that means "nobody yet".
+  static bool isUnassignedRepName(String name) {
+    final n = name.trim();
+    return n.isEmpty || n == unassignedRepPlaceholder;
+  }
+
+  /// Points the payment row(s) of [order] at its rep. A payment is matched to
+  /// its order by order code + store name — NOT by `orderId`, which is a local
+  /// int that differs between devices (the server assigns its own order ids, so
+  /// a payment pulled onto the admin's PC does not carry this PC's order id).
+  /// Fully paid payments keep the rep who collected them.
+  Future<void> _assignPaymentsToRep(Order order, {required int salesRepId, required String salesRepName}) async {
+    final store = order.storeName;
+    await (update(payments)
+          ..where((t) =>
+              t.orderCode.equals(order.orderNumber) &
+              (store == null ? const Constant(true) : t.storeName.equals(store)) &
+              t.status.equals('paid').not() &
+              t.isDeleted.equals(false)))
+        .write(PaymentsCompanion(
+      salesRepName: Value(salesRepName),
+      salesRepId: salesRepId > 0 ? Value(salesRepId) : const Value.absent(),
+      syncStatus: const Value('pending'),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  /// One-off + idempotent backfill: payments stuck on the unassigned
+  /// placeholder whose order DOES have a rep (assigned before the assignment
+  /// propagated to payments) get that rep. Returns how many were repaired.
+  Future<int> repairUnassignedPaymentReps() async {
+    final stuck = await (select(payments)..where((t) => t.isDeleted.equals(false))).get();
+    var fixed = 0;
+    for (final p in stuck.where((p) => isUnassignedRepName(p.salesRepName))) {
+      final order = await (select(orders)
+            ..where((o) => o.orderNumber.equals(p.orderCode) & o.isDeleted.equals(false))
+            ..orderBy([(o) => OrderingTerm(expression: o.createdAt, mode: OrderingMode.desc)]))
+          .get();
+      final match = order.where((o) => o.storeName == null || o.storeName == p.storeName).firstOrNull;
+      final rep = match?.salesRepName;
+      if (match == null || rep == null || isUnassignedRepName(rep)) continue;
+      await (update(payments)..where((t) => t.id.equals(p.id))).write(PaymentsCompanion(
+        salesRepName: Value(rep),
+        salesRepId: (match.salesRepId ?? 0) > 0 ? Value(match.salesRepId!) : const Value.absent(),
+        syncStatus: const Value('pending'),
+        updatedAt: Value(DateTime.now()),
+      ));
+      fixed++;
+    }
+    return fixed;
   }
 
   Future<void> seedOrdersForDemo() async {

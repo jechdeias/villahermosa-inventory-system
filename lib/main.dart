@@ -106,6 +106,16 @@ void main() async {
   final authRepository = AuthRepository(database);
   await authRepository.seedAdminUserIfEmpty();
   await database.seedOrdersForDemo();
+
+  // Customer-placed payments stuck on the "no rep" placeholder although their
+  // order has a rep (assigned before the assignment reached payments). Local,
+  // idempotent, and the repaired rows push themselves.
+  try {
+    final repaired = await database.repairUnassignedPaymentReps();
+    if (repaired > 0) debugPrint('🔧 Assigned $repaired payment(s) to the rep on their order');
+  } catch (e) {
+    debugPrint('Payment rep repair failed (non-fatal): $e');
+  }
   
   // Complete stale deliveries locally — no network needed, so this runs even offline.
   await SyncManager.instance.autoConfirmDeliveries();
