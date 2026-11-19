@@ -52,63 +52,63 @@ class AppDatabase extends _$AppDatabase {
       // still exists. stockMovements remoteId dropped in v14 — addColumn call
       // removed. deliveries remoteId still exists.
       if (from < 2) {
-        try { await m.addColumn(users, users.forcePasswordChange); } catch (_) {}
-        try { await m.addColumn(orders, orders.remoteId); } catch (_) {}
-        try { await m.addColumn(deliveries, deliveries.remoteId); } catch (_) {}
+        await _tryMigrate('users.forcePasswordChange', () => m.addColumn(users, users.forcePasswordChange));
+        await _tryMigrate('orders.remoteId', () => m.addColumn(orders, orders.remoteId));
+        await _tryMigrate('deliveries.remoteId', () => m.addColumn(deliveries, deliveries.remoteId));
         // stockMovements.remoteId removed (dropped v14)
       }
       // Columns added in v3 (uuid on every table)
       if (from < 3) {
-        try { await m.addColumn(users, users.uuid); } catch (_) {}
-        try { await m.addColumn(products, products.uuid); } catch (_) {}
-        try { await m.addColumn(customers, customers.uuid); } catch (_) {}
-        try { await m.addColumn(orders, orders.uuid); } catch (_) {}
-        try { await m.addColumn(orderItems, orderItems.uuid); } catch (_) {}
-        try { await m.addColumn(deliveries, deliveries.uuid); } catch (_) {}
-        try { await m.addColumn(stockMovements, stockMovements.uuid); } catch (_) {}
+        await _tryMigrate('users.uuid', () => m.addColumn(users, users.uuid));
+        await _tryMigrate('products.uuid', () => m.addColumn(products, products.uuid));
+        await _tryMigrate('customers.uuid', () => m.addColumn(customers, customers.uuid));
+        await _tryMigrate('orders.uuid', () => m.addColumn(orders, orders.uuid));
+        await _tryMigrate('orderItems.uuid', () => m.addColumn(orderItems, orderItems.uuid));
+        await _tryMigrate('deliveries.uuid', () => m.addColumn(deliveries, deliveries.uuid));
+        await _tryMigrate('stockMovements.uuid', () => m.addColumn(stockMovements, stockMovements.uuid));
       }
       // New table added in v4
       if (from < 4) {
-        try { await m.createTable(suppliers); } catch (_) {}
+        await _tryMigrate('create table suppliers', () => m.createTable(suppliers));
       }
       // Columns added in v5 (Supabase schema alignment)
       if (from < 5) {
-        try { await m.addColumn(customers, customers.currentCredit); } catch (_) {}
-        try { await m.addColumn(customers, customers.barangay); } catch (_) {}
-        try { await m.addColumn(customers, customers.town); } catch (_) {}
-        try { await m.addColumn(customers, customers.channel); } catch (_) {}
-        try { await m.addColumn(products, products.supplierId); } catch (_) {}
-        try { await m.addColumn(products, products.qtyPerCase); } catch (_) {}
-        try { await m.addColumn(deliveries, deliveries.deliveryDate); } catch (_) {}
-        try { await m.addColumn(stockMovements, stockMovements.createdBy); } catch (_) {}
+        await _tryMigrate('customers.currentCredit', () => m.addColumn(customers, customers.currentCredit));
+        await _tryMigrate('customers.barangay', () => m.addColumn(customers, customers.barangay));
+        await _tryMigrate('customers.town', () => m.addColumn(customers, customers.town));
+        await _tryMigrate('customers.channel', () => m.addColumn(customers, customers.channel));
+        await _tryMigrate('products.supplierId', () => m.addColumn(products, products.supplierId));
+        await _tryMigrate('products.qtyPerCase', () => m.addColumn(products, products.qtyPerCase));
+        await _tryMigrate('deliveries.deliveryDate', () => m.addColumn(deliveries, deliveries.deliveryDate));
+        await _tryMigrate('stockMovements.createdBy', () => m.addColumn(stockMovements, stockMovements.createdBy));
       }
       // Columns added in v6 (orders screen: cached display fields)
       if (from < 6) {
-        try { await m.addColumn(orders, orders.storeName); } catch (_) {}
-        try { await m.addColumn(orders, orders.routeId); } catch (_) {}
-        try { await m.addColumn(orders, orders.routeName); } catch (_) {}
-        try { await m.addColumn(orders, orders.salesRepId); } catch (_) {}
-        try { await m.addColumn(orders, orders.salesRepName); } catch (_) {}
-        try { await m.addColumn(orders, orders.itemCount); } catch (_) {}
+        await _tryMigrate('orders.storeName', () => m.addColumn(orders, orders.storeName));
+        await _tryMigrate('orders.routeId', () => m.addColumn(orders, orders.routeId));
+        await _tryMigrate('orders.routeName', () => m.addColumn(orders, orders.routeName));
+        await _tryMigrate('orders.salesRepId', () => m.addColumn(orders, orders.salesRepId));
+        await _tryMigrate('orders.salesRepName', () => m.addColumn(orders, orders.salesRepName));
+        await _tryMigrate('orders.itemCount', () => m.addColumn(orders, orders.itemCount));
       }
       // v7/v8: payments table (migration may have been skipped on some devices)
       if (from < 8) {
-        try { await m.createTable(payments); } catch (_) {}
+        await _tryMigrate('create table payments', () => m.createTable(payments));
       }
       // v9: delivery routes table
       if (from < 9) {
-        try { await m.createTable(deliveryRoutes); } catch (_) {}
+        await _tryMigrate('create table deliveryRoutes', () => m.createTable(deliveryRoutes));
       }
       // v10: payments — add is_deleted, created_at, updated_at to match Supabase schema
       if (from < 10) {
-        try { await m.addColumn(payments, payments.isDeleted); } catch (_) {}
-        try { await m.addColumn(payments, payments.createdAt); } catch (_) {}
-        try { await m.addColumn(payments, payments.updatedAt); } catch (_) {}
+        await _tryMigrate('payments.isDeleted', () => m.addColumn(payments, payments.isDeleted));
+        await _tryMigrate('payments.createdAt', () => m.addColumn(payments, payments.createdAt));
+        await _tryMigrate('payments.updatedAt', () => m.addColumn(payments, payments.updatedAt));
       }
       // v11: orders — add order_code and order_date to match Supabase schema
       if (from < 11) {
-        try { await m.addColumn(orders, orders.orderCode); } catch (_) {}
-        try { await m.addColumn(orders, orders.orderDate); } catch (_) {}
+        await _tryMigrate('orders.orderCode', () => m.addColumn(orders, orders.orderCode));
+        await _tryMigrate('orders.orderDate', () => m.addColumn(orders, orders.orderDate));
       }
       // v12: order_items — drop dead columns. Their only writers were the
       // (deleted) dead order_workflow.dart, or nothing ever read them.
@@ -225,35 +225,16 @@ class AppDatabase extends _$AppDatabase {
           "UPDATE customers SET sync_status = 'pending' WHERE sync_status IS NULL",
           "UPDATE customers SET is_deleted = 0 WHERE is_deleted IS NULL",
         ]) {
-          try { await customStatement(sql); } catch (_) {}
+          await _tryMigrate(sql, () => customStatement(sql));
         }
       }
     },
     beforeOpen: (details) async {
       // Nuclear option: guarantee payments table exists regardless of
       // migration history by using raw SQL IF NOT EXISTS.
-      await customStatement(
-        'CREATE TABLE IF NOT EXISTS payments ('
-        '  id INTEGER PRIMARY KEY AUTOINCREMENT,'
-        '  payment_id TEXT NOT NULL,'
-        '  order_id INTEGER NOT NULL,'
-        '  order_code TEXT NOT NULL,'
-        '  store_name TEXT NOT NULL,'
-        '  sales_rep_id INTEGER NOT NULL,'
-        '  sales_rep_name TEXT NOT NULL,'
-        '  order_amount REAL NOT NULL,'
-        '  amount_paid REAL NOT NULL DEFAULT 0,'
-        '  balance REAL NOT NULL,'
-        '  payment_method TEXT,'
-        '  payment_date INTEGER NOT NULL,'
-        '  status TEXT NOT NULL DEFAULT \'unpaid\','
-        '  notes TEXT,'
-        '  is_deleted INTEGER NOT NULL DEFAULT 0,'
-        '  sync_status TEXT NOT NULL DEFAULT \'pending\','
-        '  created_at INTEGER NOT NULL DEFAULT (unixepoch()),'
-        '  updated_at INTEGER NOT NULL DEFAULT (unixepoch())'
-        ')',
-      );
+      await customStatement(_paymentsCreateSql);
+      // Before anything reads payments through the typed reader (the seed below does).
+      await _repairPaymentsTimestamps();
       if (!_isTestInstance) {
         await _seedPaymentsIfEmpty();
         await _seedProductsIfEmpty();
@@ -276,8 +257,138 @@ class AppDatabase extends _$AppDatabase {
         '  updated_at INTEGER NOT NULL DEFAULT (unixepoch())'
         ')',
       );
+      await _logSchemaGaps();
     },
   );
+
+
+  /// Runs one migration step. A failure is logged, never thrown: these steps are
+  /// deliberately defensive across schema versions (a column may already exist),
+  /// and a fatal migration would brick the app on open. But a SILENT failure hid
+  /// the payments created_at/updated_at gap for months (SQLite refuses ADD COLUMN
+  /// with a non-constant default), so every failure now names itself.
+  Future<void> _tryMigrate(String what, Future<void> Function() step) async {
+    try {
+      await step();
+    } catch (e) {
+      debugPrint('⚠️ migration step failed (continuing): $what -> $e');
+    }
+  }
+
+  /// REPAIR, run from beforeOpen on every launch (not a migration step, so it also
+  /// reaches devices already at the current schema version). Devices that upgraded
+  /// from before v10 have a `payments` table WITHOUT created_at/updated_at: the v10
+  /// migration adds them with a non-constant default (`currentDateAndTime`), which
+  /// SQLite refuses for ALTER TABLE ADD COLUMN, and the failure was swallowed. Drift's
+  /// generated reader does `read(created_at)!`, so EVERY typed read of payments
+  /// throws "Null check operator used on a null value" - including
+  /// getPendingSyncPayments(), which killed the whole payments push.
+  ///
+  /// Idempotent: if both columns exist it returns at once. Otherwise it REBUILDS the
+  /// table (the only way to get a non-constant default) in one transaction, with the
+  /// same DDL beforeOpen uses, preserving every id (payments.order_id and the
+  /// rep-assignment repair key on it) and the AUTOINCREMENT counter. Missing
+  /// timestamps are backfilled from payment_date, never now(). Never throws: on
+  /// failure the transaction rolls back and the old table is left as it was.
+  Future<void> _repairPaymentsTimestamps() async {
+    try {
+      final cols = (await customSelect('PRAGMA table_info(payments)').get()).map((r) => r.read<String>('name')).toSet();
+      if (cols.isEmpty || (cols.contains('created_at') && cols.contains('updated_at'))) return;
+      debugPrint('🔧 payments is missing created_at/updated_at - rebuilding the table');
+      String ts(String c) => cols.contains(c) ? 'COALESCE($c, payment_date_)' : 'payment_date_';
+      await transaction(() async {
+        final oldSeqRow = await customSelect("SELECT seq FROM sqlite_sequence WHERE name = 'payments'").getSingleOrNull();
+        final oldSeq = oldSeqRow?.read<int>('seq') ?? 0;
+        await customStatement('ALTER TABLE payments RENAME TO payments_old');
+        await customStatement(_paymentsCreateSql);
+        await customStatement(
+          'INSERT INTO payments (id, payment_id, order_id, order_code, store_name, sales_rep_id, sales_rep_name, '
+          'order_amount, amount_paid, balance, payment_method, payment_date, status, notes, is_deleted, sync_status, '
+          'created_at, updated_at) '
+          "SELECT id, COALESCE(payment_id, 'PAY-' || id), COALESCE(order_id, 0), COALESCE(order_code, ''), "
+          "COALESCE(store_name, ''), COALESCE(sales_rep_id, 0), COALESCE(sales_rep_name, ''), COALESCE(order_amount, 0), "
+          "COALESCE(amount_paid, 0), COALESCE(balance, 0), payment_method, payment_date_, COALESCE(status, 'unpaid'), notes, "
+          "COALESCE(is_deleted, 0), COALESCE(sync_status, 'pending'), ${ts('created_at')}, ${ts('updated_at')} "
+          'FROM (SELECT *, COALESCE(payment_date, unixepoch()) AS payment_date_ FROM payments_old) ORDER BY id',
+        );
+        // Keep the AUTOINCREMENT counter at least where it was (rows are never
+        // hard-deleted, but the counter can exceed max(id)).
+        final maxId = (await customSelect('SELECT COALESCE(MAX(id), 0) AS m FROM payments').getSingle()).read<int>('m');
+        final seq = oldSeq > maxId ? oldSeq : maxId;
+        if (seq > 0) {
+          final has = await customSelect("SELECT 1 AS x FROM sqlite_sequence WHERE name = 'payments'").getSingleOrNull();
+          if (has == null) {
+            await customStatement("INSERT INTO sqlite_sequence (name, seq) VALUES ('payments', $seq)");
+          } else {
+            await customStatement("UPDATE sqlite_sequence SET seq = $seq WHERE name = 'payments'");
+          }
+        }
+        await customStatement('DROP TABLE payments_old');
+      });
+      debugPrint('✅ payments rebuilt with created_at/updated_at');
+    } catch (e) {
+      debugPrint('❌ payments timestamp repair failed (table left as it was): $e');
+    }
+  }
+
+  /// Log-only detector: compares PRAGMA table_info for every synced table with the
+  /// columns Drift expects and returns one line per gap, e.g.
+  /// `payments: missing created_at, updated_at`. Mutates nothing. Run at startup
+  /// and logged, because this class of bug (a swallowed migration leaving a table
+  /// short of a column) was invisible for months.
+  @visibleForTesting
+  Future<List<String>> findSchemaGaps() async {
+    final gaps = <String>[];
+    for (final t in allTables) {
+      final name = t.actualTableName;
+      if (!syncedTableNames.contains(name)) continue;
+      try {
+        final have = (await customSelect('PRAGMA table_info($name)').get()).map((r) => r.read<String>('name')).toSet();
+        final missing = [for (final c in t.$columns) if (!have.contains(c.name)) c.name];
+        if (have.isEmpty) {
+          gaps.add('$name: table does not exist');
+        } else if (missing.isNotEmpty) {
+          gaps.add('$name: missing ${missing.join(', ')}');
+        }
+      } catch (e) {
+        gaps.add('$name: could not inspect ($e)');
+      }
+    }
+    return gaps;
+  }
+
+  Future<void> _logSchemaGaps() async {
+    try {
+      final gaps = await findSchemaGaps();
+      if (gaps.isEmpty) return;
+      for (final g in gaps) {
+        debugPrint('⚠️ SCHEMA GAP: $g');
+      }
+    } catch (e) {
+      debugPrint('Schema gap check failed: $e');
+    }
+  }
+
+  static const String _paymentsCreateSql = 'CREATE TABLE IF NOT EXISTS payments ('
+      '  id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      '  payment_id TEXT NOT NULL,'
+      '  order_id INTEGER NOT NULL,'
+      '  order_code TEXT NOT NULL,'
+      '  store_name TEXT NOT NULL,'
+      '  sales_rep_id INTEGER NOT NULL,'
+      '  sales_rep_name TEXT NOT NULL,'
+      '  order_amount REAL NOT NULL,'
+      '  amount_paid REAL NOT NULL DEFAULT 0,'
+      '  balance REAL NOT NULL,'
+      '  payment_method TEXT,'
+      '  payment_date INTEGER NOT NULL,'
+      "  status TEXT NOT NULL DEFAULT 'unpaid',"
+      '  notes TEXT,'
+      '  is_deleted INTEGER NOT NULL DEFAULT 0,'
+      "  sync_status TEXT NOT NULL DEFAULT 'pending',"
+      '  created_at INTEGER NOT NULL DEFAULT (unixepoch()),'
+      '  updated_at INTEGER NOT NULL DEFAULT (unixepoch())'
+      ')';
 
   Future<void> createUser(UsersCompanion user) async {
     await into(users).insert(user);
