@@ -341,6 +341,9 @@ String paymentBadgeOf(Payment p) => switch (p.status) {
 
 /// Payment method recorded at checkout lives in the order's notes.
 const _methodPrefix = 'Payment method: ';
+
+/// The notes line that records an order's payment method (what [paymentMethodFromNotes] reads).
+String paymentMethodNote(String method) => '$_methodPrefix$method';
 String? paymentMethodFromNotes(String? notes) {
   if (notes == null) return null;
   final i = notes.indexOf(_methodPrefix);

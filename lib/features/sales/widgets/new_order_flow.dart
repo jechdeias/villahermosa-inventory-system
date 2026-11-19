@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../admin/providers/products_provider.dart';
+import '../../customer/providers/customer_providers.dart' show paymentMethodNote;
 import '../providers/sales_providers.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -69,13 +70,15 @@ class _NewOrderFlowState extends ConsumerState<NewOrderFlow> {
       final orderUuid = 'ord-${DateTime.now().microsecondsSinceEpoch}';
       final storeName = salesDisplayStoreName(_selectedCustomer!);
       final now = DateTime.now();
-      final paidUpfront = _paymentMethod != 'Credit';
 
       final orderId = await db.createOrder(OrdersCompanion(
         uuid: Value(orderUuid),
         orderNumber: Value(orderNumber),
         customerId: Value(_selectedCustomer!.uuid),
         storeName: Value(storeName),
+        // How the store INTENDS to pay, in the same notes line the customer's checkout
+        // writes (the delivery card's "Collect ₱X" reads it). It is not a payment.
+        customerNotes: Value(paymentMethodNote(_paymentMethod)),
         routeName: Value(route?.routeName),
         salesRepId: Value(rep?.id),
         salesRepName: Value(rep == null ? null : '${rep.firstName} ${rep.lastName}'.trim()),
@@ -105,20 +108,15 @@ class _NewOrderFlowState extends ConsumerState<NewOrderFlow> {
       }
 
       final paymentId = await db.generatePaymentId();
-      await db.createPayment(PaymentsCompanion(
-        paymentId: Value(paymentId),
-        orderId: Value(orderId),
-        orderCode: Value(orderNumber),
-        storeName: Value(storeName),
-        salesRepId: Value(rep?.id ?? 0),
-        salesRepName: Value(rep == null ? '' : '${rep.firstName} ${rep.lastName}'.trim()),
-        orderAmount: Value(_total),
-        amountPaid: Value(paidUpfront ? _total : 0),
-        balance: Value(paidUpfront ? 0 : _total),
-        paymentMethod: Value(paidUpfront ? _paymentMethod : null),
-        paymentDate: Value(now),
-        status: Value(paidUpfront ? 'paid' : 'unpaid'),
-        syncStatus: const Value('pending'),
+      await db.createPayment(newRepOrderPayment(
+        paymentId: paymentId,
+        orderId: orderId,
+        orderCode: orderNumber,
+        storeName: storeName,
+        repId: rep?.id ?? 0,
+        repName: rep == null ? '' : '${rep.firstName} ${rep.lastName}'.trim(),
+        total: _total,
+        now: now,
       ));
 
       if (!asDraft) {
@@ -490,7 +488,7 @@ class _ReviewStep extends StatelessWidget {
           Text('₱${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         ]),
         const SizedBox(height: 20),
-        const Text('Payment Method', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+        const Text('How will the store pay?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
         const SizedBox(height: 8),
         Row(
           children: ['Cash', 'Credit', 'GCash'].map((m) {
@@ -595,3 +593,38 @@ class _BottomBar extends StatelessWidget {
 
 // See the note above the Save Draft button before flipping this.
 const bool _kShowSaveDraft = false;
+
+/// The payment row created with a rep-entered order: always UNPAID, balance = the
+/// order total, no payment method (a payment method belongs to an actual payment).
+///
+/// It used to be created `paid` with balance 0 whenever the rep left the method on
+/// its default 'Cash', i.e. an order was "settled" the moment it was typed in -
+/// before any goods moved or any money was collected - so nothing was ever
+/// outstanding for Record Payment or the admin's Outstanding total. Money is
+/// recorded only when someone records it (PaymentsService.recordPayment); a deliberate
+/// credit is the admin's "Mark as Credit". The chosen method is kept on the order.
+PaymentsCompanion newRepOrderPayment({
+  required String paymentId,
+  required int orderId,
+  required String orderCode,
+  required String storeName,
+  required int repId,
+  required String repName,
+  required double total,
+  required DateTime now,
+}) =>
+    PaymentsCompanion(
+      paymentId: Value(paymentId),
+      orderId: Value(orderId),
+      orderCode: Value(orderCode),
+      storeName: Value(storeName),
+      salesRepId: Value(repId),
+      salesRepName: Value(repName),
+      orderAmount: Value(total),
+      amountPaid: const Value(0),
+      balance: Value(total),
+      paymentMethod: const Value(null),
+      paymentDate: Value(now),
+      status: const Value('unpaid'),
+      syncStatus: const Value('pending'),
+    );
