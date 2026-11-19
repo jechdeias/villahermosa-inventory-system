@@ -479,8 +479,15 @@ class AppDatabase extends _$AppDatabase {
   Future<Map<String, int>> getErrorCounts() async => _pendingCountsOf(await _pendingCountsQuery('error').get());
 
   Selectable<QueryRow> _pendingCountsQuery([String status = 'pending']) {
+    // Seed/demo orders (customer_id 'seed-customer') are never pushed:
+    // SyncEngine._pushOrders skips them by design, so they stay 'pending' forever.
+    // Don't count them as "waiting to upload" - the indicator must agree with that
+    // skip. Keep the two in step. Only the PENDING count is filtered; error counts
+    // are untouched.
+    String filter(String t) =>
+        (t == 'orders' && status == 'pending') ? " AND customer_id <> 'seed-customer'" : '';
     final sql = syncedTableNames
-        .map((t) => "SELECT '$t' AS t, COUNT(*) AS n FROM $t WHERE sync_status = '$status'")
+        .map((t) => "SELECT '$t' AS t, COUNT(*) AS n FROM $t WHERE sync_status = '$status'${filter(t)}")
         .join(' UNION ALL ');
     return customSelect(sql, readsFrom: {
       users, products, customers, orders, orderItems,

@@ -63,6 +63,25 @@ void main() {
       await sub.cancel();
     });
 
+    test('a seed order stuck at pending is not counted (the push skips it by design); a real pending order is', () async {
+      await db.createOrder(OrdersCompanion.insert(
+          uuid: 'seed-ord-1', customerId: 'seed-customer', orderNumber: 'ORD-2401', deliveryAddress: 'x',
+          syncStatus: const Value('pending')));
+      expect(await db.getPendingCounts(), isEmpty, reason: 'seed order ignored');
+      expect(await db.watchPendingCount().first, 0);
+
+      await addOrder('real'); // pending, customer 'c'
+      expect(await db.getPendingCounts(), {'orders': 1}, reason: 'only the real one');
+      expect(await db.watchPendingCount().first, 1);
+    });
+
+    test('error counts are not filtered: a seed order in error is still reported', () async {
+      await db.createOrder(OrdersCompanion.insert(
+          uuid: 'seed-ord-2', customerId: 'seed-customer', orderNumber: 'ORD-2402', deliveryAddress: 'x',
+          syncStatus: const Value('error')));
+      expect(await db.getErrorCounts(), {'orders': 1});
+    });
+
     test('soft-deleted rows still count (they have to push)', () async {
       await addCustomer('c1', status: 'synced');
       await db.softDeleteCustomer('c1'); // forces pending
