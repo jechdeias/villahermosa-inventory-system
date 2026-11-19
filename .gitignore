@@ -44,3 +44,6 @@ ios/Pods/
 # not source. The .iss script itself IS committed.
 installer/**/*.exe
 installer/**/*.zip
+
+# Diagnostic capture from `flutter run ... | Tee-Object -FilePath sync.log`
+sync.log
